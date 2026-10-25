@@ -11,7 +11,7 @@ namespace SeedClicker
 
         class TileView
         {
-            public SpriteRenderer ground, soil, overlay, wet, obj;
+            public SpriteRenderer ground, soil, overlay, wet, obj, shadow;
             public Transform objT;
             public float punch, shake, squash, popIn = 1f, bobPhase;
             public bool ripe;
@@ -118,6 +118,16 @@ namespace SeedClicker
             var sr = MakeSR("Tree", parent, Art.Get(key), new Vector3(x, y, 0), Order(y));
             float s = 0.9f + (float)r.NextDouble() * 0.35f;
             sr.transform.localScale = new Vector3(r.NextDouble() < 0.5 ? s : -s, s, 1);
+            Shadow(parent, new Vector3(x + 0.45f, y + 0.05f, 0), 2.6f * s, 0.9f * s, 0.3f);
+        }
+
+        /// <summary>Weicher Schlagschatten nach rechts unten (Licht kommt von oben links).</summary>
+        SpriteRenderer Shadow(Transform parent, Vector3 pos, float w, float h, float alpha)
+        {
+            var sh = MakeSR("Shadow", parent, Art.Get("soft"), pos, -995);
+            sh.color = new Color(0.05f, 0.1f, 0.12f, alpha);
+            sh.transform.localScale = new Vector3(w, h, 1);
+            return sh;
         }
 
         void BuildTiles()
@@ -134,6 +144,7 @@ namespace SeedClicker
                     tv.soil = MakeSR("soil", tv.ground.transform, null, pos, -999);
                     tv.overlay = MakeSR("ov", tv.ground.transform, null, pos, -998);
                     tv.wet = MakeSR("wet", tv.ground.transform, Art.Get("wet"), pos, -997);
+                    tv.shadow = Shadow(tv.ground.transform, pos + new Vector3(0.12f, -0.3f, 0), 0.9f, 0.4f, 0.28f);
                     tv.obj = MakeSR("obj", tv.ground.transform, null, pos + new Vector3(0, -0.42f, 0), Order(y));
                     tv.objT = tv.obj.transform;
                     tv.bobPhase = Random.value * 10f;
@@ -150,6 +161,8 @@ namespace SeedClicker
         {
             var root = new GameObject("Buildings").transform;
             root.SetParent(transform, false);
+            Shadow(root, HousePos + new Vector3(0.5f, 0.1f, 0), 6f, 1.2f, 0.32f);
+            Shadow(root, BinPos + new Vector3(0.2f, 0.05f, 0), 2f, 0.6f, 0.3f);
             House = MakeSR("House", root, null, HousePos, Order(HousePos.y));
             Bin = MakeSR("Bin", root, null, BinPos, Order(BinPos.y));
             houseScaffold = MakeSR("Scaffold", House.transform, Art.Get("scaffold"), HousePos, Order(HousePos.y) + 1);
@@ -226,6 +239,10 @@ namespace SeedClicker
             {
                 tv.objKey = key;
                 tv.obj.sprite = key.Length > 0 ? Art.Get(key) : null;
+                // Schattengroesse je nach Objekt
+                float sw = key.Length == 0 ? 0 : key == "ob:boulder" ? 1.25f : key == "ob:stump" ? 1.0f : key.StartsWith("ob:") ? 0.8f : key.Contains(":3") ? 0.95f : 0.65f;
+                tv.shadow.enabled = sw > 0;
+                tv.shadow.transform.localScale = new Vector3(sw, sw * 0.42f, 1);
                 // Hindernisse und Gegenstaende sind zentriert, Pflanzen stehen auf dem Boden
                 bool bottom = key.StartsWith("crop:") || key == "item:scarecrow" || key.Contains("beehive") || key.Contains("harvester");
                 tv.objT.position = TileCenter(x, y) + new Vector3(0, bottom ? -0.42f : 0f, 0);
@@ -528,6 +545,25 @@ namespace SeedClicker
             }
 
             UpdateLight();
+            Ambient(dt);
+        }
+
+        float ambientT;
+
+        /// <summary>Schwebende Pollen und Pusteblumen-Samen fuer Atmosphaere.</summary>
+        void Ambient(float dt)
+        {
+            ambientT -= dt;
+            if (ambientT > 0) return;
+            ambientT = 0.18f;
+            var cam = Camera.main;
+            if (cam == null) return;
+            float h = cam.orthographicSize, w = h * cam.aspect;
+            var p = cam.transform.position + new Vector3(Random.Range(-w, w), Random.Range(-h, h), 0);
+            p.z = 0;
+            bool night = g.Hour >= 20f;
+            var col = night ? new Color(0.75f, 1f, 0.55f, 0.9f) : new Color(1f, 0.98f, 0.85f, 0.75f);
+            Particles.I.Spawn(p, night ? "spark" : "square", col, new Vector3(Random.Range(0.1f, 0.35f), Random.Range(-0.05f, 0.15f), 0), Random.Range(3f, 5f), night ? 0.9f : 0.45f, 0.1f, -0.02f, 20f);
         }
 
         void ApplyTransform(int i, TileView tv)
@@ -553,9 +589,9 @@ namespace SeedClicker
 
         static readonly (float h, Color c, float i)[] sky =
         {
-            (6f,  new Color(1.0f, 0.82f, 0.72f), 0.85f),
-            (9f,  new Color(1.0f, 0.98f, 0.94f), 1.0f),
-            (16f, new Color(1.0f, 0.97f, 0.9f),  1.0f),
+            (6f,  new Color(1.0f, 0.8f, 0.68f), 0.85f),
+            (9f,  new Color(1.0f, 0.97f, 0.88f), 1.0f),
+            (16f, new Color(1.0f, 0.95f, 0.84f), 1.0f),
             (19f, new Color(1.0f, 0.72f, 0.5f),  0.9f),
             (21f, new Color(0.55f, 0.55f, 0.95f), 0.62f),
             (24f, new Color(0.38f, 0.42f, 0.85f), 0.48f),

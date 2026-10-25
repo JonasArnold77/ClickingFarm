@@ -41,13 +41,13 @@ namespace SeedClicker
             var p = key.Split(':');
             switch (p[0])
             {
-                case "white": { var c = new Px(4, 4); c.Fill(Color.white); return c.ToSprite(new Vector2(0.5f, 0.5f), 4); }
-                case "dot": { var c = new Px(8, 8); c.Circle(4, 4, 4, Color.white); return c.ToSprite(new Vector2(0.5f, 0.5f), 8); }
+                case "white": { var c = new Px(4, 4, 1, 1); c.Fill(Color.white); return c.ToSprite(new Vector2(0.5f, 0.5f), 4); }
+                case "dot": { var c = new Px(8, 8, 1, 1); c.Circle(4, 4, 4, Color.white); return c.ToSprite(new Vector2(0.5f, 0.5f), 8); }
                 case "soft": return SoftCircle();
                 case "ground": return Ground(p[1], p.Length > 2 ? int.Parse(p[2]) : 0);
                 case "fert": return Fert(int.Parse(p[1]));
                 case "wet": return WetOverlay();
-                case "ob": return Obstacle(p[1]);
+                case "ob": return ObstacleG(p[1]);
                 case "crop": return p.Length > 2 ? Crop(p[1], int.Parse(p[2])) : Crop(p[1], 3);
                 case "item": return Item(p[1]);
                 case "house": return HouseV2(p.Length > 1 ? int.Parse(p[1]) : (Game.I != null ? Game.I.S.houseLevel : 0));
@@ -216,7 +216,7 @@ namespace SeedClicker
 
             if (stage == 0)
             {
-                c.Ellipse(cx, 3, 4, 2, SoilDark);
+                c.BlobC(cx, 3, 4, 2, SoilDark);
                 c.Set((int)cx - 2, 3, H("#F4D6A0")); c.Set((int)cx + 1, 4, H("#F4D6A0")); c.Set((int)cx, 2, H("#F4D6A0"));
                 c.Outline(0.6f);
                 return c.ToSprite(new Vector2(0.5f, 0f));
@@ -224,8 +224,8 @@ namespace SeedClicker
             if (stage == 1)
             {
                 c.Line(cx, 1, cx, 6, Dark(L, 0.8f));
-                c.Ellipse(cx - 2.2f, 6.5f, 2.4f, 1.4f, L);
-                c.Ellipse(cx + 2.2f, 7.2f, 2.4f, 1.4f, Light(L, 0.15f));
+                c.BlobC(cx - 2.2f, 6.5f, 2.4f, 1.4f, L);
+                c.BlobC(cx + 2.2f, 7.2f, 2.4f, 1.4f, Light(L, 0.15f));
                 c.Shade(); c.Outline();
                 return c.ToSprite(new Vector2(0.5f, 0f));
             }
@@ -237,10 +237,10 @@ namespace SeedClicker
                 case "leafy":
                     {
                         float s = ripe ? 1f : 0.7f;
-                        c.Ellipse(cx, 5 * s + 1, 6.5f * s, 4.5f * s, Dark(L, 0.8f));
-                        c.Ellipse(cx - 2.5f * s, 6 * s + 1, 3.2f * s, 3.5f * s, L);
-                        c.Ellipse(cx + 2.5f * s, 6 * s + 1, 3.2f * s, 3.5f * s, L);
-                        c.Ellipse(cx, 8 * s + 1, 3 * s, 3.5f * s, Light(L, 0.15f));
+                        c.BlobC(cx, 5 * s + 1, 6.5f * s, 4.5f * s, Dark(L, 0.8f));
+                        c.BlobC(cx - 2.5f * s, 6 * s + 1, 3.2f * s, 3.5f * s, L);
+                        c.BlobC(cx + 2.5f * s, 6 * s + 1, 3.2f * s, 3.5f * s, L);
+                        c.BlobC(cx, 8 * s + 1, 3 * s, 3.5f * s, Light(L, 0.15f));
                         if (ripe) { c.Line(cx, 3, cx, 10, F); c.Line(cx - 3, 5, cx - 1, 9, F); c.Line(cx + 3, 5, cx + 1, 9, F); }
                         break;
                     }
@@ -248,20 +248,20 @@ namespace SeedClicker
                     {
                         int top = ripe ? 13 : 10;
                         for (int i = -2; i <= 2; i++) c.Line(cx + i * 0.6f, 3, cx + i * 1.8f, top - Mathf.Abs(i), i % 2 == 0 ? L : Light(L, 0.2f));
-                        if (ripe) { c.Ellipse(cx, 2.5f, 3.6f, 2.6f, F); c.Set((int)cx - 1, 3, Light(F, 0.5f)); }
-                        else c.Ellipse(cx, 1.6f, 2f, 1.3f, Dark(F, 0.8f));
+                        if (ripe) { c.BlobC(cx, 2.5f, 3.6f, 2.6f, F); c.Set((int)cx - 1, 3, Light(F, 0.5f)); }
+                        else c.BlobC(cx, 1.6f, 2f, 1.3f, Dark(F, 0.8f));
                         break;
                     }
                 case "bush":
                     {
                         float r = ripe ? 6.2f : 4.6f;
-                        c.Ellipse(cx, r + 0.5f, r + 0.6f, r, Dark(L, 0.8f));
-                        c.Ellipse(cx - r * 0.35f, r + 1.5f, r * 0.6f, r * 0.6f, L);
-                        c.Ellipse(cx + r * 0.4f, r + 1.2f, r * 0.55f, r * 0.55f, Light(L, 0.12f));
+                        c.BlobC(cx, r + 0.5f, r + 0.6f, r, Dark(L, 0.8f));
+                        c.BlobC(cx - r * 0.35f, r + 1.5f, r * 0.6f, r * 0.6f, L);
+                        c.BlobC(cx + r * 0.4f, r + 1.2f, r * 0.55f, r * 0.55f, Light(L, 0.12f));
                         if (ripe)
                         {
                             Vector2[] pos = { new Vector2(-3.5f, 4), new Vector2(2.5f, 3), new Vector2(0, 8), new Vector2(4, 8), new Vector2(-4, 9), new Vector2(-1, 4.5f) };
-                            foreach (var q in pos) { c.Circle(cx + q.x, q.y, 1.6f, F); c.Set((int)(cx + q.x) - 1, (int)q.y + 1, Light(F, 0.6f)); }
+                            foreach (var q in pos) { c.BlobC(cx + q.x, q.y, 1.6f, 1.6f, F); c.Set((int)(cx + q.x) - 1, (int)q.y + 1, Light(F, 0.6f)); }
                         }
                         break;
                     }
@@ -275,7 +275,7 @@ namespace SeedClicker
                         }
                         if (ripe)
                         {
-                            c.Ellipse(cx + 3.5f, hgt - 7, 2.2f, 4.2f, F);
+                            c.BlobC(cx + 3.5f, hgt - 7, 2.2f, 4.2f, F);
                             for (int y = hgt - 10; y < hgt - 4; y += 2) c.Set((int)cx + 3, y, Dark(F, 0.8f));
                             c.Line(cx + 2, hgt - 11, cx + 5, hgt - 9, L);
                             c.Line(cx, hgt, cx - 2, hgt + 2, H("#F2D57A")); c.Line(cx + 1, hgt, cx + 3, hgt + 2, H("#F2D57A"));
@@ -286,33 +286,33 @@ namespace SeedClicker
                     {
                         int hgt = ripe ? 16 : 11;
                         c.Line(cx, 1, cx, hgt, Dark(L, 0.85f), 1);
-                        c.Ellipse(cx - 2.5f, 6, 2.6f, 1.4f, L); c.Ellipse(cx + 2.8f, 9, 2.6f, 1.4f, Light(L, 0.1f));
+                        c.BlobC(cx - 2.5f, 6, 2.6f, 1.4f, L); c.BlobC(cx + 2.8f, 9, 2.6f, 1.4f, Light(L, 0.1f));
                         if (ripe)
                         {
                             for (int i = 0; i < 10; i++)
                             {
                                 float a = i / 10f * Mathf.PI * 2;
-                                c.Ellipse(cx + Mathf.Cos(a) * 4f, hgt + 2 + Mathf.Sin(a) * 4f, 2.1f, 2.1f, i % 2 == 0 ? F : Light(F, 0.2f));
+                                c.BlobC(cx + Mathf.Cos(a) * 4f, hgt + 2 + Mathf.Sin(a) * 4f, 2.1f, 2.1f, i % 2 == 0 ? F : Light(F, 0.2f));
                             }
-                            c.Circle(cx, hgt + 2, 2.8f, H("#7A4A1E"));
+                            c.BlobC(cx, hgt + 2, 2.8f, 2.8f, H("#7A4A1E"));
                             c.Set((int)cx - 1, hgt + 3, H("#A86A30"));
                         }
-                        else c.Ellipse(cx, hgt + 1, 2, 2.4f, Dark(L, 0.9f));
+                        else c.BlobC(cx, hgt + 1, 2, 2.4f, Dark(L, 0.9f));
                         break;
                     }
                 case "round":
                     {
                         c.Line(cx - 7, 3, cx + 7, 4, Dark(L, 0.8f));
-                        c.Ellipse(cx - 5, 5, 2.6f, 2f, L); c.Ellipse(cx + 5, 6, 2.6f, 2f, Light(L, 0.1f));
+                        c.BlobC(cx - 5, 5, 2.6f, 2f, L); c.BlobC(cx + 5, 6, 2.6f, 2f, Light(L, 0.1f));
                         if (ripe)
                         {
-                            c.Ellipse(cx, 6, 6.5f, 5.2f, F);
+                            c.BlobC(cx, 6, 6.5f, 5.2f, F);
                             bool melon = id == "melon";
                             for (int i = -2; i <= 2; i++) c.Line(cx + i * 2.2f, 2, cx + i * 2.6f, 10, melon ? Dark(F, 0.6f) : Dark(F, 0.82f));
-                            c.Ellipse(cx - 2.5f, 8.5f, 2, 1.2f, Light(F, 0.4f));
+                            c.BlobC(cx - 2.5f, 8.5f, 2, 1.2f, Light(F, 0.4f));
                             c.Rect((int)cx - 1, 11, 2, 2, H("#5B8A2E"));
                         }
-                        else c.Ellipse(cx, 4, 3, 2.5f, Dark(F, 0.7f));
+                        else c.BlobC(cx, 4, 3, 2.5f, Dark(F, 0.7f));
                         break;
                     }
                 case "tree":
@@ -322,14 +322,14 @@ namespace SeedClicker
                         c.Set((int)cx - 1, 5, WoodDark); c.Set((int)cx, 9, WoodDark);
                         float r = ripe ? 9.5f : 6.5f;
                         float cy = trunkTop + r * 0.7f;
-                        c.Ellipse(cx, cy, r, r * 0.85f, Dark(L, 0.78f));
-                        c.Ellipse(cx - r * 0.35f, cy + 1.5f, r * 0.6f, r * 0.55f, L);
-                        c.Ellipse(cx + r * 0.35f, cy + 0.5f, r * 0.55f, r * 0.5f, Light(L, 0.12f));
-                        c.Ellipse(cx, cy + r * 0.45f, r * 0.45f, r * 0.35f, Light(L, 0.25f));
+                        c.BlobC(cx, cy, r, r * 0.85f, Dark(L, 0.78f));
+                        c.BlobC(cx - r * 0.35f, cy + 1.5f, r * 0.6f, r * 0.55f, L);
+                        c.BlobC(cx + r * 0.35f, cy + 0.5f, r * 0.55f, r * 0.5f, Light(L, 0.12f));
+                        c.BlobC(cx, cy + r * 0.45f, r * 0.45f, r * 0.35f, Light(L, 0.25f));
                         if (ripe)
                         {
                             Vector2[] pos = { new Vector2(-5, -2), new Vector2(4, -3), new Vector2(0, 2), new Vector2(-3, 4), new Vector2(5, 3), new Vector2(1, -5) };
-                            foreach (var q in pos) { c.Circle(cx + q.x, cy + q.y, 1.7f, F); c.Set((int)(cx + q.x), (int)(cy + q.y) + 1, Light(F, 0.6f)); }
+                            foreach (var q in pos) { c.BlobC(cx + q.x, cy + q.y, 1.7f, 1.7f, F); c.Set((int)(cx + q.x), (int)(cy + q.y) + 1, Light(F, 0.6f)); }
                         }
                         break;
                     }
@@ -341,7 +341,7 @@ namespace SeedClicker
                         c.Tri(new Vector2(cx - 1, hgt - 4), new Vector2(cx + 1, hgt - 4), new Vector2(cx, hgt + 6 * s), F);
                         c.Tri(new Vector2(cx - 4 * s, hgt - 5), new Vector2(cx - 2, hgt - 4), new Vector2(cx - 5 * s, hgt + 3 * s), Light(F, 0.2f));
                         c.Tri(new Vector2(cx + 2, hgt - 4), new Vector2(cx + 4 * s, hgt - 5), new Vector2(cx + 5 * s, hgt + 3 * s), Dark(F, 0.85f));
-                        c.Ellipse(cx - 3, 4, 2.5f, 1.3f, L); c.Ellipse(cx + 3, 5, 2.5f, 1.3f, Light(L, 0.2f));
+                        c.BlobC(cx - 3, 4, 2.5f, 1.3f, L); c.BlobC(cx + 3, 5, 2.5f, 1.3f, Light(L, 0.2f));
                         if (ripe) { c.Set((int)cx, hgt + 2, Color.white); c.Set((int)cx - 4, hgt, Color.white); }
                         break;
                     }
@@ -362,10 +362,10 @@ namespace SeedClicker
             {
                 case "sprinkler":
                     c = new Px(16, 16, 3);
-                    c.Ellipse(8, 5, 5, 3, StoneDark);
-                    c.Ellipse(8, 6, 4, 2.4f, col);
+                    c.BlobC(8, 5, 5, 3, StoneDark);
+                    c.BlobC(8, 6, 4, 2.4f, col);
                     c.Rect(7, 6, 2, 5, Dark(col, 0.8f));
-                    c.Ellipse(8, 11, 2.4f, 1.6f, col);
+                    c.BlobC(8, 11, 2.4f, 1.6f, col);
                     if (def.range >= 2) { c.Rect(3, 6, 2, 2, col); c.Rect(11, 6, 2, 2, col); }
                     if (def.range >= 3) { c.Set(8, 13, H("#FF5FA2")); c.Set(6, 12, H("#FFE45C")); c.Set(10, 12, H("#5FE3FF")); }
                     c.Set(3, 13, WaterLight); c.Set(13, 13, WaterLight); c.Set(2, 10, WaterLight); c.Set(14, 10, WaterLight);
@@ -375,7 +375,7 @@ namespace SeedClicker
                     c = new Px(16, 16, 4);
                     c.Rect(4, 2, 8, 9, def.power >= 2 ? H("#7B4FC9") : H("#C9A26B"));
                     c.Rect(4, 10, 8, 2, Dark(col, 0.9f));
-                    c.Ellipse(8, 6, 2.5f, 2.5f, def.power >= 2 ? H("#FFE45C") : H("#6FCB4A"));
+                    c.BlobC(8, 6, 2.5f, 2.5f, def.power >= 2 ? H("#FFE45C") : H("#6FCB4A"));
                     c.Set(5, 12, H("#7DBF4A")); c.Set(8, 13, H("#7DBF4A")); c.Set(10, 12, H("#3E2716"));
                     c.Shade(); c.Outline();
                     return c.ToSprite(new Vector2(0.5f, 0.5f));
@@ -385,7 +385,7 @@ namespace SeedClicker
                     c.Rect(2, 11, 12, 2, Wood);
                     c.Rect(5, 7, 6, 7, H("#5B8FD9"));
                     c.Rect(5, 7, 6, 1, H("#3E6BB0"));
-                    c.Circle(8, 17, 3, H("#F2D57A"));
+                    c.BlobC(8, 17, 3, 3, H("#F2D57A"));
                     c.Set(7, 17, Brown); c.Set(9, 17, Brown); c.Line(7, 15.5f, 9, 15.5f, H("#D9534F"));
                     c.Rect(4, 19, 8, 1, H("#C9532E")); c.Rect(6, 20, 4, 2, H("#E06A3C"));
                     c.Set(2, 12, H("#F2D57A")); c.Set(13, 12, H("#F2D57A")); c.Set(1, 11, H("#F2D57A")); c.Set(14, 11, H("#F2D57A"));
@@ -407,7 +407,7 @@ namespace SeedClicker
                     c.Rect(4, 11, 8, 5, Light(col, 0.25f));
                     c.Rect(5, 13, 2, 2, Color.white); c.Rect(9, 13, 2, 2, Color.white);
                     c.Set(6, 13, H("#2B2B2B")); c.Set(10, 13, H("#2B2B2B"));
-                    c.Rect(7, 16, 2, 2, StoneDark); c.Circle(8, 18.5f, 1.2f, H("#FF5F5F"));
+                    c.Rect(7, 16, 2, 2, StoneDark); c.BlobC(8, 18.5f, 1.2f, 1.2f, H("#FF5F5F"));
                     c.Rect(1, 5, 2, 4, StoneDark); c.Rect(13, 5, 2, 4, StoneDark);
                     c.Rect(4, 0, 3, 2, H("#3A3A3A")); c.Rect(9, 0, 3, 2, H("#3A3A3A"));
                     c.Rect(5, 4, 6, 4, H("#C99A5B")); c.Set(6, 7, H("#FF5050")); c.Set(9, 6, H("#FFD93B"));
@@ -609,25 +609,25 @@ namespace SeedClicker
             Px c;
             switch (kind)
             {
-                case "leaf": c = new Px(5, 4); c.Ellipse(2.5f, 2, 2.5f, 1.6f, Color.white); c.Set(0, 0, Color.white); break;
-                case "drop": c = new Px(4, 6); c.Circle(2, 2, 2, Color.white); c.Set(1, 4, Color.white); c.Set(2, 4, Color.white); c.Set(2, 5, Color.white); break;
+                case "leaf": c = new Px(5, 4, 1, 1); c.Ellipse(2.5f, 2, 2.5f, 1.6f, Color.white); c.Set(0, 0, Color.white); break;
+                case "drop": c = new Px(4, 6, 1, 1); c.Circle(2, 2, 2, Color.white); c.Set(1, 4, Color.white); c.Set(2, 4, Color.white); c.Set(2, 5, Color.white); break;
                 case "star":
-                    c = new Px(7, 7);
+                    c = new Px(7, 7, 1, 1);
                     c.Rect(3, 0, 1, 7, Color.white); c.Rect(0, 3, 7, 1, Color.white); c.Rect(2, 2, 3, 3, Color.white);
                     break;
-                case "spark": c = new Px(3, 3); c.Set(1, 0, Color.white); c.Set(0, 1, Color.white); c.Set(1, 1, Color.white); c.Set(2, 1, Color.white); c.Set(1, 2, Color.white); break;
+                case "spark": c = new Px(3, 3, 1, 1); c.Set(1, 0, Color.white); c.Set(0, 1, Color.white); c.Set(1, 1, Color.white); c.Set(2, 1, Color.white); c.Set(1, 2, Color.white); break;
                 case "ring":
-                    c = new Px(16, 16);
+                    c = new Px(16, 16, 1, 1);
                     for (int i = 0; i < 64; i++) { float a = i / 64f * Mathf.PI * 2; c.Set(8 + Mathf.RoundToInt(Mathf.Cos(a) * 7), 8 + Mathf.RoundToInt(Mathf.Sin(a) * 7), Color.white); }
                     break;
-                default: c = new Px(2, 2); c.Fill(Color.white); break;
+                default: c = new Px(2, 2, 1, 1); c.Fill(Color.white); break;
             }
             return c.ToSprite(new Vector2(0.5f, 0.5f), 16);
         }
 
         static Sprite SoftCircle()
         {
-            int n = 32; var c = new Px(n, n);
+            int n = 32; var c = new Px(n, n, 1, 1);
             for (int y = 0; y < n; y++) for (int x = 0; x < n; x++)
                 {
                     float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(n / 2f, n / 2f)) / (n / 2f);
@@ -643,7 +643,7 @@ namespace SeedClicker
             Color fill = style == "dark" ? H("#4A2C17") : style == "paper" ? H("#FCE3B4") : H("#F6CB8C");
             Color border = style == "dark" ? H("#1F1008") : H("#5B2A0E");
             Color inner = style == "dark" ? H("#7A4A26") : H("#C8742E");
-            var c = new Px(16, 16);
+            var c = new Px(16, 16, 1, 1);
             c.Fill(fill);
             for (int i = 0; i < 16; i++) { c.Set(i, 0, border); c.Set(i, 15, border); c.Set(0, i, border); c.Set(15, i, border); }
             for (int i = 1; i < 15; i++) { c.Set(i, 1, inner); c.Set(1, i, inner); c.Set(14, i, inner); c.Set(i, 14, Light(fill, 0.5f)); }
@@ -656,7 +656,7 @@ namespace SeedClicker
 
         static Sprite Button(Color col)
         {
-            var c = new Px(16, 16);
+            var c = new Px(16, 16, 1, 1);
             var dark = Dark(col, 0.62f);
             c.Fill(col);
             for (int x = 0; x < 16; x++) { c.Set(x, 0, Dark(dark, 0.8f)); c.Set(x, 1, dark); c.Set(x, 2, dark); c.Set(x, 15, Dark(dark, 0.8f)); c.Set(x, 14, Light(col, 0.35f)); }
@@ -667,7 +667,7 @@ namespace SeedClicker
 
         static Sprite Bar()
         {
-            var c = new Px(8, 8);
+            var c = new Px(8, 8, 1, 1);
             c.Fill(Color.white);
             c.Set(0, 0, Color.clear); c.Set(7, 0, Color.clear); c.Set(0, 7, Color.clear); c.Set(7, 7, Color.clear);
             return c.ToSprite(new Vector2(0.5f, 0.5f), 8, new Vector4(2, 2, 2, 2));
@@ -692,7 +692,7 @@ namespace SeedClicker
                     break;
                 case "axe":
                     c.Line(4, 2, 10, 13, Wood, 2);
-                    c.Ellipse(11, 12, 3.5f, 3, head); c.Rect(7, 11, 3, 2, hd);
+                    c.BlobC(11, 12, 3.5f, 3, head); c.Rect(7, 11, 3, 2, hd);
                     break;
                 case "pickaxe":
                     c.Line(4, 2, 10, 12, Wood, 2);
@@ -713,8 +713,8 @@ namespace SeedClicker
             switch (id)
             {
                 case "green_thumb":
-                    c.Ellipse(8, 6, 4.5f, 5, H("#F2C08A")); c.Rect(6, 9, 4, 5, H("#F2C08A")); c.Ellipse(8, 13, 2, 1.6f, H("#FFD9B0"));
-                    c.Ellipse(11, 4, 3.5f, 2, H("#5FCB4B")); c.Line(9, 3, 13, 5, H("#3FA43A"));
+                    c.BlobC(8, 6, 4.5f, 5, H("#F2C08A")); c.Rect(6, 9, 4, 5, H("#F2C08A")); c.BlobC(8, 13, 2, 1.6f, H("#FFD9B0"));
+                    c.BlobC(11, 4, 3.5f, 2, H("#5FCB4B")); c.Line(9, 3, 13, 5, H("#3FA43A"));
                     break;
                 case "lucky_star":
                     StarShape(c, 8, 8, 7, 3, Gold); c.Set(6, 10, Color.white); c.Set(7, 10, Color.white);
@@ -745,13 +745,13 @@ namespace SeedClicker
             switch (id)
             {
                 case "coin":
-                    c.Circle(8, 8, 6.5f, GoldDark); c.Circle(8, 8.5f, 5.5f, Gold); c.Rect(7, 5, 2, 7, GoldDark); c.Set(6, 11, Color.white); c.Set(5, 10, Color.white);
+                    c.BlobC(8, 8, 6.5f, 6.5f, GoldDark); c.BlobC(8, 8.5f, 5.5f, 5.5f, Gold); c.Rect(7, 5, 2, 7, GoldDark); c.Set(6, 11, Color.white); c.Set(5, 10, Color.white);
                     break;
                 case "wood":
-                    c.Rect(2, 5, 12, 6, Wood); c.Ellipse(13, 8, 2, 3, WoodLight); c.Ellipse(13, 8, 0.9f, 1.3f, Wood); c.Line(3, 7, 10, 7, WoodDark);
+                    c.Rect(2, 5, 12, 6, Wood); c.BlobC(13, 8, 2, 3, WoodLight); c.BlobC(13, 8, 0.9f, 1.3f, Wood); c.Line(3, 7, 10, 7, WoodDark);
                     break;
                 case "stone":
-                    c.Ellipse(8, 7, 6, 4.5f, StoneC); c.Ellipse(6, 9, 2.5f, 1.5f, StoneLight); c.Line(9, 4, 11, 7, StoneDark);
+                    c.BlobC(8, 7, 6, 4.5f, StoneC); c.BlobC(6, 9, 2.5f, 1.5f, StoneLight); c.Line(9, 4, 11, 7, StoneDark);
                     break;
                 case "fiber":
                     for (int i = 0; i < 5; i++) c.Line(5 + i * 1.5f, 2, 3 + i * 2.5f, 14, i % 2 == 0 ? H("#7EE04A") : H("#5FB83A"));
@@ -764,11 +764,11 @@ namespace SeedClicker
                 case "star": StarShape(c, 8, 8, 7.5f, 3.2f, H("#9B6BFF")); c.Set(7, 10, Color.white); break;
                 case "gift":
                     c.Rect(2, 2, 12, 8, H("#FF5F8F")); c.Rect(1, 9, 14, 3, H("#FF8FB0")); c.Rect(7, 2, 2, 10, Gold);
-                    c.Ellipse(5.5f, 13, 2.5f, 1.5f, Gold); c.Ellipse(10.5f, 13, 2.5f, 1.5f, Gold);
+                    c.BlobC(5.5f, 13, 2.5f, 1.5f, Gold); c.BlobC(10.5f, 13, 2.5f, 1.5f, Gold);
                     break;
                 case "map":
                     c.Rect(2, 3, 12, 10, H("#F2DDB2")); c.Line(5, 3, 5, 12, H("#C9A26B")); c.Line(10, 3, 10, 12, H("#C9A26B"));
-                    c.Circle(7.5f, 8, 2, H("#5FCB4B")); c.Set(11, 6, H("#E8473C")); c.Set(12, 7, H("#E8473C")); c.Set(11, 8, H("#E8473C")); c.Set(12, 5, H("#E8473C"));
+                    c.BlobC(7.5f, 8, 2, 2, H("#5FCB4B")); c.Set(11, 6, H("#E8473C")); c.Set(12, 7, H("#E8473C")); c.Set(11, 8, H("#E8473C")); c.Set(12, 5, H("#E8473C"));
                     break;
                 case "hammer":
                     c.Line(4, 2, 10, 10, Wood, 2); c.Rect(7, 9, 7, 4, StoneC); c.Rect(7, 9, 2, 4, StoneDark);
@@ -782,12 +782,12 @@ namespace SeedClicker
                     c.Rect(7, 7, 4, 3, Gold);
                     break;
                 case "bag":
-                    c.Ellipse(8, 6, 6, 5.5f, H("#E0913A")); c.Rect(5, 10, 6, 3, H("#C97A2A")); c.Rect(4, 12, 8, 2, H("#FF5F8F"));
-                    c.Circle(8, 6, 2, Gold);
+                    c.BlobC(8, 6, 6, 5.5f, H("#E0913A")); c.Rect(5, 10, 6, 3, H("#C97A2A")); c.Rect(4, 12, 8, 2, H("#FF5F8F"));
+                    c.BlobC(8, 6, 2, 2, Gold);
                     break;
                 case "gear":
                     for (int i = 0; i < 8; i++) { float a = i * Mathf.PI / 4; c.Rect(8 + Mathf.RoundToInt(Mathf.Cos(a) * 5.5f) - 1, 8 + Mathf.RoundToInt(Mathf.Sin(a) * 5.5f) - 1, 3, 3, StoneC); }
-                    c.Circle(8, 8, 5, StoneC); c.Circle(8, 8, 2, StoneDark);
+                    c.BlobC(8, 8, 5, 5, StoneC); c.BlobC(8, 8, 2, 2, StoneDark);
                     break;
                 case "lock":
                     c.Rect(3, 2, 10, 8, Gold); c.Rect(5, 10, 2, 4, StoneC); c.Rect(9, 10, 2, 4, StoneC); c.Rect(5, 13, 6, 2, StoneC);
@@ -797,7 +797,7 @@ namespace SeedClicker
                     c.Rect(1, 3, 14, 10, H("#FF5F5F")); c.Tri(new Vector2(6, 5), new Vector2(6, 11), new Vector2(11, 8), Color.white);
                     break;
                 case "bug":
-                    c.Ellipse(8, 7, 5, 5.5f, H("#FF3B3B")); c.Line(8, 2, 8, 12, H("#2B2B2B")); c.Ellipse(8, 12.5f, 3, 2, H("#2B2B2B"));
+                    c.BlobC(8, 7, 5, 5.5f, H("#FF3B3B")); c.Line(8, 2, 8, 12, H("#2B2B2B")); c.BlobC(8, 12.5f, 3, 2, H("#2B2B2B"));
                     c.Set(5, 8, H("#2B2B2B")); c.Set(11, 6, H("#2B2B2B")); c.Set(6, 4, H("#2B2B2B")); c.Set(10, 9, H("#2B2B2B"));
                     break;
                 case "honey":
@@ -817,20 +817,20 @@ namespace SeedClicker
                         }
                     break;
                 case "sun":
-                    c.Circle(8, 8, 4.5f, H("#FFD23F"));
+                    c.BlobC(8, 8, 4.5f, 4.5f, H("#FFD23F"));
                     for (int i = 0; i < 8; i++) { float a = i * Mathf.PI / 4; c.Set(8 + Mathf.RoundToInt(Mathf.Cos(a) * 6.5f), 8 + Mathf.RoundToInt(Mathf.Sin(a) * 6.5f), H("#FFB627")); }
                     break;
                 case "bell":
-                    c.Ellipse(8, 9, 5, 5, Gold); c.Rect(3, 4, 10, 5, Gold); c.Rect(2, 3, 12, 2, GoldDark); c.Circle(8, 2, 1.5f, GoldDark); c.Rect(7, 14, 2, 2, GoldDark);
+                    c.BlobC(8, 9, 5, 5, Gold); c.Rect(3, 4, 10, 5, Gold); c.Rect(2, 3, 12, 2, GoldDark); c.BlobC(8, 2, 1.5f, 1.5f, GoldDark); c.Rect(7, 14, 2, 2, GoldDark);
                     break;
                 case "error":
-                    c.Circle(8, 8, 6, H("#FF5F5F")); c.Rect(7, 4, 2, 6, Color.white); c.Rect(7, 11, 2, 2, Color.white);
+                    c.BlobC(8, 8, 6, 6, H("#FF5F5F")); c.Rect(7, 4, 2, 6, Color.white); c.Rect(7, 11, 2, 2, Color.white);
                     break;
                 case "unknown":
-                    c.Circle(8, 8, 6, H("#6B6B6B")); c.Rect(7, 4, 2, 2, Color.white); c.Rect(7, 7, 2, 2, Color.white); c.Rect(8, 9, 2, 1, Color.white); c.Rect(9, 10, 1, 2, Color.white); c.Rect(6, 11, 4, 1, Color.white);
+                    c.BlobC(8, 8, 6, 6, H("#6B6B6B")); c.Rect(7, 4, 2, 2, Color.white); c.Rect(7, 7, 2, 2, Color.white); c.Rect(8, 9, 2, 1, Color.white); c.Rect(9, 10, 1, 2, Color.white); c.Rect(6, 11, 4, 1, Color.white);
                     break;
                 case "seedbag":
-                    c.Rect(4, 2, 8, 10, H("#F2DDB2")); c.Rect(3, 11, 10, 2, H("#C9A26B")); c.Circle(8, 7, 2.5f, H("#5FCB4B"));
+                    c.Rect(4, 2, 8, 10, H("#F2DDB2")); c.Rect(3, 11, 10, 2, H("#C9A26B")); c.BlobC(8, 7, 2.5f, 2.5f, H("#5FCB4B"));
                     break;
                 case "arrow":
                     c.Tri(new Vector2(2, 9), new Vector2(14, 9), new Vector2(8, 1), Color.white); c.Rect(5, 9, 6, 6, Color.white);
@@ -839,7 +839,7 @@ namespace SeedClicker
                     c.Rect(5, 1, 7, 7, H("#FFE0BD")); c.Rect(6, 8, 2, 7, H("#FFE0BD")); c.Rect(8, 6, 2, 3, H("#FFE0BD")); c.Rect(10, 6, 2, 3, H("#FFE0BD"));
                     break;
                 default:
-                    c.Circle(8, 8, 6, H("#C9A26B"));
+                    c.BlobC(8, 8, 6, 6, H("#C9A26B"));
                     break;
             }
             c.Shade(); c.Outline();
