@@ -51,6 +51,7 @@ namespace SeedClicker
             PlaceHouse();
             PlaceNature();
             SetupLight();
+            LoadWorldSave();
         }
 
         // ------------------------------------------------------------------ Wege
@@ -252,12 +253,13 @@ namespace SeedClicker
                 bool big = R() < 0.6f;
                 float r = big ? 1.05f : 0.7f;
                 if (!Free(p, r)) continue;
+                int occ = occupied.Count;
                 Reserve(p, r);
                 treePos.Add(p);
                 bool pine = grove < 0.5f ? R() < 0.55f : R() < 0.3f;
                 string name = pine ? (big ? "sk_Tree_2" : "sk_Tree_1") : (big ? "sk_Tree_3" : "sk_Tree_0");
                 float s = (big ? 1.55f : 1.3f) * (0.88f + R() * 0.3f);
-                Place(name, p, s, R() < 0.5f, 0.06f);
+                RegisterTree(Place(name, p, s, R() < 0.5f, 0.06f), p, big, occ);
             }
 
             // Buesche und Pilze an Baeumen
@@ -266,12 +268,12 @@ namespace SeedClicker
                 if (R() < 0.45f)
                 {
                     var p = t + new Vector2(R() * 1.6f - 0.8f, -0.3f - R() * 0.5f);
-                    if (OnBareGrass(p, 0.6f) && Free(p, 0.35f)) { Reserve(p, 0.35f); Place("sk_Bush", p, 0.7f + R() * 0.3f, R() < 0.5f, 0.05f); }
+                    if (OnBareGrass(p, 0.6f) && Free(p, 0.35f)) { Reserve(p, 0.35f); AddDecor(Place("sk_Bush", p, 0.7f + R() * 0.3f, R() < 0.5f, 0.05f), p, occupied.Count - 1); }
                 }
                 if (R() < 0.18f)
                 {
                     var p = t + new Vector2(R() * 1.2f - 0.6f, -0.2f - R() * 0.4f);
-                    if (OnBareGrass(p, 0.5f) && Free(p, 0.2f)) { Reserve(p, 0.2f); Place("sk_Mushroom_" + rnd.Next(0, 5), p, 0.6f + R() * 0.3f, R() < 0.5f, 0.03f); }
+                    if (OnBareGrass(p, 0.5f) && Free(p, 0.2f)) { Reserve(p, 0.2f); AddDecor(Place("sk_Mushroom_" + rnd.Next(0, 5), p, 0.6f + R() * 0.3f, R() < 0.5f, 0.03f), p, occupied.Count - 1); }
                 }
             }
 
@@ -296,8 +298,8 @@ namespace SeedClicker
                 var p = RandomPoint(0.5f);
                 if ((p - HousePos).magnitude < 2.2f || !OnBareGrass(p, 0.45f) || !Free(p, 0.12f)) continue;
                 string n = smalls[rnd.Next(smalls.Length)];
-                if (n.StartsWith("hh_")) PlaceSized(n, p, n.Contains("grass") ? 0.3f + R() * 0.1f : 0.22f, R() < 0.5f);
-                else Place(n, p, 0.55f + R() * 0.3f, R() < 0.5f, 0.02f);
+                if (n.StartsWith("hh_")) AddDecor(PlaceSized(n, p, n.Contains("grass") ? 0.3f + R() * 0.1f : 0.22f, R() < 0.5f), p, -1);
+                else AddDecor(Place(n, p, 0.55f + R() * 0.3f, R() < 0.5f, 0.02f), p, -1);
             }
 
             // Blumenbeete am Haus
@@ -331,6 +333,7 @@ namespace SeedClicker
         void Update()
         {
             UpdateAbyss(Time.deltaTime);
+            UpdateInteract(Time.deltaTime);
             ambientT -= Time.deltaTime;
             if (ambientT > 0 || Particles.I == null) return;
             ambientT = 0.2f;

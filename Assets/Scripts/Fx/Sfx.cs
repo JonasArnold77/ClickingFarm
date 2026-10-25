@@ -22,7 +22,7 @@ namespace SeedClicker
 
         public static void Play(string name, float pitch = 1f, float volume = 1f)
         {
-            if (inst == null || Game.I == null || !Game.I.S.sound) return;
+            if (inst == null || (Game.I != null && !Game.I.S.sound)) return;
             if (!inst.clips.TryGetValue(name, out var clip)) return;
             var src = inst.pool[inst.next];
             inst.next = (inst.next + 1) % inst.pool.Length;

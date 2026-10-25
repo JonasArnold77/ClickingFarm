@@ -27,10 +27,12 @@ namespace SeedClicker
 
             if (!LegacyFarm)
             {
-                // Neue, frei gezeichnete Welt (ohne Tile-Raster): erst mal nur Landschaft + Haus
+                // Neue, frei gezeichnete Welt (ohne Tile-Raster): Landschaft, Haus, Baeume faellen, Felder anlegen
+                root.AddComponent<Sfx>();
                 new GameObject("Particles").AddComponent<Particles>().transform.SetParent(root.transform);
                 new GameObject("World").AddComponent<WorldBuilder>().transform.SetParent(root.transform);
                 root.AddComponent<WorldCamera>();
+                root.AddComponent<WorldUI>();
                 return;
             }
 

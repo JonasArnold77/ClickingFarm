@@ -12,7 +12,7 @@ namespace SeedClicker
 
         public static void Tap(long ms = 12)
         {
-            if (Game.I == null || !Game.I.S.vibration) return;
+            if (Game.I != null && !Game.I.S.vibration) return;
 #if UNITY_ANDROID && !UNITY_EDITOR
             try
             {
