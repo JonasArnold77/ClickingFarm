@@ -117,7 +117,15 @@ namespace SeedClicker
             downScreen = lastScreen = screen;
             overUI = OverUI(id);
             if (overUI) return;
-            if (Tool == WorldTool.Field) { painting = true; Paint(screen); }
+            if (Tool == WorldTool.Field)
+            {
+                // Auf einer wachsenden Pflanze wird getippt (wachsen), nicht gemalt
+                var w = World(screen);
+                var c = WorldBuilder.CellAt(w);
+                if (WorldBuilder.I != null && WorldBuilder.I.PlantAt(c) != null) return;
+                if (NightWave.I != null && NightWave.I.Active) return;
+                painting = true; Paint(screen);
+            }
         }
 
         void PointerMove(Vector2 screen)
@@ -135,7 +143,17 @@ namespace SeedClicker
             down = false;
             if (overUI || panning || painting) { painting = false; return; }
             var w = World(screen);
-            if (Tool == WorldTool.Axe && WorldBuilder.I != null) WorldBuilder.I.TryChop(w);
+            var wb = WorldBuilder.I;
+            if (wb == null) return;
+            if (NightWave.I != null && NightWave.I.TapMonster(w)) return;
+            if (wb.HitWorkbench(w)) { wb.TapWorkbench(); return; }
+            var cell = WorldBuilder.CellAt(w);
+            if (wb.PlantAt(cell) != null && (Tool != WorldTool.Axe || wb.IsPlantGrowing(cell))) { wb.TapPlant(cell); return; }
+            switch (Tool)
+            {
+                case WorldTool.Axe: wb.TryChop(w); break;
+                case WorldTool.Plant: if (wb.HasField(cell)) wb.TapEmptyField(cell); break;
+            }
         }
 
         void Paint(Vector2 screen)

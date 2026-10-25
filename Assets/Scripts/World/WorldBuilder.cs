@@ -48,9 +48,11 @@ namespace SeedClicker
             if (art == null) { Debug.LogError("Resources/WorldArt.asset fehlt"); return; }
             BuildMountain();
             PlaceHouse();
+            PlaceWorkbench();
             PlaceNature();
             SetupLight();
             LoadWorldSave();
+            LoadPlants();
         }
 
         // ------------------------------------------------------------------ Wege
@@ -333,6 +335,7 @@ namespace SeedClicker
         {
             UpdateMountain(Time.deltaTime);
             UpdateInteract(Time.deltaTime);
+            UpdatePlants(Time.deltaTime);
             ambientT -= Time.deltaTime;
             if (ambientT > 0 || Particles.I == null) return;
             ambientT = 0.2f;

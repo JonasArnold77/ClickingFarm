@@ -32,6 +32,7 @@ namespace SeedClicker
                 new GameObject("Particles").AddComponent<Particles>().transform.SetParent(root.transform);
                 new GameObject("World").AddComponent<WorldBuilder>().transform.SetParent(root.transform);
                 root.AddComponent<WorldCamera>();
+                root.AddComponent<NightWave>();
                 root.AddComponent<WorldUI>();
                 root.AddComponent<WorldPostFX>();
                 return;

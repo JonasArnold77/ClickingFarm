@@ -101,3 +101,47 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 9a4116da924db7c449f25e2a457972bc, type: 3}
   - name: hh_circle
     sprite: {fileID: 21300000, guid: cb9db054ab6fd124b9e33fe48db678f5, type: 3}
+  - name: hh_carrot_0
+    sprite: {fileID: 21300000, guid: b64ed751a8d06be4d818fe6fd5ff0e27, type: 3}
+  - name: hh_carrot_1
+    sprite: {fileID: 21300000, guid: d4eda8a3bb2da1b43a0d4ef141013f1f, type: 3}
+  - name: hh_carrot_2
+    sprite: {fileID: 21300000, guid: ff063f9a0379e0541aab159afc1a826a, type: 3}
+  - name: hh_carrot_3
+    sprite: {fileID: 21300000, guid: 6e10df267be7aa2449627dd81e604269, type: 3}
+  - name: hh_corn_1
+    sprite: {fileID: 21300000, guid: a32847caea407534781aa33b4e9f4fc3, type: 3}
+  - name: hh_corn_2
+    sprite: {fileID: 21300000, guid: aa71ac71b4b4611438d5a3a9b9401d50, type: 3}
+  - name: hh_corn_3
+    sprite: {fileID: 21300000, guid: 2655039b56e68714f987c070487362ef, type: 3}
+  - name: hh_corn_4
+    sprite: {fileID: 21300000, guid: c987c4ba699b23d418ae6133bb78dc94, type: 3}
+  - name: hh_corn_5
+    sprite: {fileID: 21300000, guid: d6744f7013a0e0c4d9b5f4e12077069b, type: 3}
+  - name: hh_wheat_1
+    sprite: {fileID: 21300000, guid: 9a75639b0ffc1fe4cb740c4f67d60a28, type: 3}
+  - name: hh_wheat_2
+    sprite: {fileID: 21300000, guid: bea6ee297e65a8f428b042829b03b11b, type: 3}
+  - name: hh_wheat_3
+    sprite: {fileID: 21300000, guid: a2efd7b8992dcb640aad1bfdf13a0751, type: 3}
+  - name: hh_wheat_4
+    sprite: {fileID: 21300000, guid: f7406ac8c968e2144899aaca1f25067f, type: 3}
+  - name: hh_wheat_5
+    sprite: {fileID: 21300000, guid: 0c0e277deb754894e8a170f419e64bcc, type: 3}
+  - name: hh_carrot_icon
+    sprite: {fileID: 21300000, guid: f2c50504d7db1cd4d8df1e3bb31d78e2, type: 3}
+  - name: hh_carrot_seedbag
+    sprite: {fileID: 21300000, guid: 19c6f05575d117643bab6333c35c4855, type: 3}
+  - name: hh_corn_icon
+    sprite: {fileID: 21300000, guid: df8c24fccc5958a4399921627716fff1, type: 3}
+  - name: hh_corn_seedbag
+    sprite: {fileID: 21300000, guid: 3896de64703b0ca42be152482d64c873, type: 3}
+  - name: hh_wheat_icon
+    sprite: {fileID: 21300000, guid: c491ea482c05c5747a804797b1556048, type: 3}
+  - name: hh_wheat_seedbag
+    sprite: {fileID: 21300000, guid: 86237958bb89e654d9fd98f1283742a8, type: 3}
+  - name: hh_logpile
+    sprite: {fileID: 21300000, guid: 0e74068346d51084abc13e9cef13c78b, type: 3}
+  - name: hh_coin
+    sprite: {fileID: 21300000, guid: e62e85a2605f5044aa05771c6aa3a53b, type: 3}

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace SeedClicker
 {
-    public enum WorldTool { Axe, Field }
+    public enum WorldTool { Axe, Field, Plant }
 
     [Serializable] public struct Cell { public int x, y; public Cell(int x, int y) { this.x = x; this.y = y; } }
 
@@ -16,6 +16,12 @@ namespace SeedClicker
         public List<int> felled = new List<int>();       // gefaellte Baeume (Stumpf steht noch)
         public List<int> stumpsGone = new List<int>();   // auch der Stumpf ist weg
         public List<Cell> fields = new List<Cell>();
+        // Angriffspflanzen, Samen, Wellen
+        public List<PlantGenome> plants = new List<PlantGenome>();
+        public List<Gene> seeds = new List<Gene>();
+        public int nextUid = 1;
+        public bool starterChosen;
+        public int wave;   // ueberstandene Wellen
 
         const string Key = "seedclicker_world_v1";
         public static WorldSave Load()
@@ -54,6 +60,7 @@ namespace SeedClicker
         readonly Dictionary<Cell, SpriteRenderer> fields = new Dictionary<Cell, SpriteRenderer>();
         readonly List<(Transform t, float k)> popping = new List<(Transform, float)>();
         WorldSave save = new WorldSave();
+        public WorldSave Save => save;
         SpriteRenderer hpBack, hpFill, cellCursor;
         TreeObj hpTree;
         Sprite fieldSprite;
@@ -185,6 +192,8 @@ namespace SeedClicker
             t.gone = true;
             if (t.occ >= 0 && t.occ < occupiedR.Count) occupiedR[t.occ] = 0f; // Platz ist jetzt frei
         }
+
+        public void RaiseFloater(Vector2 at, string text, Color col) => Floater?.Invoke(at, text, col);
 
         void AddWood(int n, Vector2 at)
         {

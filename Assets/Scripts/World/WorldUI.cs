@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace SeedClicker
 {
     /// <summary>Oberflaeche der freien Welt: Holz-Anzeige oben, Werkzeugleiste unten, schwebende Texte.</summary>
-    public class WorldUI : MonoBehaviour
+    public partial class WorldUI : MonoBehaviour
     {
         RectTransform canvasRt, safe;
         CanvasScaler scaler;
@@ -30,6 +30,7 @@ namespace SeedClicker
                 WorldBuilder.I.Floater += (w, txt, col) => SpawnFloater(w, txt, col);
             }
             SelectTool(WorldTool.Axe);
+            InitPlantsUI();
         }
 
         /// <summary>Weiches, abgerundetes Rechteck (9-Slice) fuer schlichte, saubere Flaechen.</summary>
@@ -55,7 +56,7 @@ namespace SeedClicker
             }
         }
 
-        Image Panel(Transform parent, string name, Color col)
+        static Image Panel(Transform parent, string name, Color col)
         {
             var img = UIKit.Rect(parent, name).gameObject.AddComponent<Image>();
             img.sprite = Rounded; img.type = Image.Type.Sliced; img.color = col;
@@ -101,14 +102,15 @@ namespace SeedClicker
         void BuildToolbar()
         {
             var bar = Panel(safe, "Toolbar", new Color(0.12f, 0.1f, 0.08f, 0.5f));
-            bar.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(560, 290));
+            bar.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(800, 290));
             var row = UIKit.HRow(bar.transform, "Row", 40, TextAnchor.MiddleCenter, new RectOffset(30, 30, 20, 20));
             row.GetComponent<RectTransform>().Stretch();
             AddSlot(row.transform, WorldTool.Axe, "sk_Tree_0", "Bäume fällen");
             AddSlot(row.transform, WorldTool.Field, "hh_hoe_icon", "Felder");
+            AddSlot(row.transform, WorldTool.Plant, "hh_corn_seedbag", "Pflanzen");
 
-            hintText = UIKit.Txt(safe, "", 38, Color.white, TextAnchor.MiddleCenter, true, true);
-            hintText.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 335), new Vector2(1000, 70));
+            hintText = UIKit.Txt(safe, "", 32, Color.white, TextAnchor.MiddleCenter, true, true);
+            hintText.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 335), new Vector2(-60, 80));
         }
 
         void AddSlot(Transform parent, WorldTool tool, string iconName, string label)
@@ -141,9 +143,9 @@ namespace SeedClicker
                 slot.color = sel ? new Color(1f, 0.95f, 0.75f) : new Color(1, 1, 1, 0.85f);
                 rt.sizeDelta = sel ? new Vector2(205, 205) : new Vector2(180, 180);
             }
-            hintText.text = tool == WorldTool.Axe
-                ? "Tippe oft auf einen Baum, um ihn zu fällen"
-                : "Tippe oder wische über die Wiese, um Felder anzulegen";
+            hintText.text = tool == WorldTool.Axe ? "Tippe oft auf einen Baum, um ihn zu fällen"
+                : tool == WorldTool.Field ? "Tippe oder wische über die Wiese, um Felder anzulegen"
+                : "Tippe auf ein Feld, um eine Angriffspflanze einzusetzen";
         }
 
         void SpawnFloater(Vector2 world, string text, Color col)
@@ -156,6 +158,7 @@ namespace SeedClicker
 
         void Update()
         {
+            UpdatePlantsUI(Time.unscaledDeltaTime);
             scaler.matchWidthOrHeight = Screen.width > Screen.height * 0.75f ? 1f : 0f;
             if (WorldBuilder.I != null) woodText.text = Mathf.RoundToInt((float)woodCount.Step(WorldBuilder.I.Wood, Time.unscaledDeltaTime)).ToString();
 

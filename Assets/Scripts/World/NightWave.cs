@@ -1,0 +1,575 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Rendering.Universal;
+
+namespace SeedClicker
+{
+    public class WaveResult { public int wave; public bool victory; public int kills; public int seeds; public int plants; public int woodLost; }
+
+    /// <summary>
+    /// Nachtwellen: Pflanzenmonster kommen aus dem Wald und wollen zum Haus.
+    /// Ausgewachsene Angriffspflanzen schiessen je nach Erbgut (Flaeche, Distanz, Projektil, Wirkung, Zusatzeffekt).
+    /// Besiegte Monster lassen Samen fallen, selten auch ganze neue Angriffspflanzen.
+    /// Zum Testen startet automatisch eine Welle (siehe plants.json -> waves.autoWave).
+    /// </summary>
+    public class NightWave : MonoBehaviour
+    {
+        public static NightWave I { get; private set; }
+
+        class Monster
+        {
+            public MonsterDefW def;
+            public Transform root; public SpriteRenderer sr; public Transform eyes;
+            public Vector2 pos; public float hp, maxHp, hop, hitFlash;
+            public float slowT, slowAmt, burnT, burnDps, poisonT, poisonDps; public int poisonStacks;
+            public Vector2 knock;
+            public bool dead;
+            public float Speed => def.speed * (slowT > 0 ? 1f - slowAmt : 1f);
+        }
+
+        class Shot
+        {
+            public SpriteRenderer sr; public Vector2 pos, vel; public Monster target; public PlantGenome src;
+            public float speed, damage, homing, life; public int pierce; public HashSet<Monster> hit = new HashSet<Monster>();
+            public bool done;
+        }
+
+        public bool Active { get; private set; }
+        public int WaveNumber => (wb != null ? wb.Save.wave : 0) + 1;
+        public float Countdown { get; private set; }
+        public float NightAmount { get; private set; }
+        public int MonstersLeft => monsters.Count + toSpawn;
+        public float HouseHp { get; private set; }
+        public float HouseHpMax => B.waves.houseHp;
+
+        public event Action<int> WaveStarted;
+        public event Action<WaveResult> WaveEnded;
+        public event Action<Gene, Vector2> SeedDropped;
+        public event Action<PlantGenome, Vector2> PlantFound;
+
+        WorldBuilder wb;
+        PlantBalance B => PlantBalance.I;
+        readonly List<Monster> monsters = new List<Monster>();
+        readonly List<Shot> shots = new List<Shot>();
+        readonly List<(SpriteRenderer sr, float t)> beams = new List<(SpriteRenderer, float)>();
+        readonly Dictionary<int, float> cooldowns = new Dictionary<int, float>();
+        int toSpawn; float spawnT;
+        WaveResult result;
+        Light2D global; Light2D window;
+        System.Random rnd = new System.Random();
+        static Sprite eyeSprite, white;
+
+        void Awake() { I = this; }
+
+        void Start()
+        {
+            wb = WorldBuilder.I;
+            foreach (var l in FindObjectsOfType<Light2D>())
+            {
+                if (l.lightType == Light2D.LightType.Global) global = l;
+                else if (l.name == "WindowLight") window = l;
+            }
+            Countdown = B.waves.firstWaveDelay;
+            HouseHp = B.waves.houseHp;
+        }
+
+        // ------------------------------------------------------------------ Ablauf
+
+        public void StartWave()
+        {
+            if (Active || wb == null) return;
+            Active = true;
+            toSpawn = B.waves.baseCount + B.waves.countPerWave * (WaveNumber - 1);
+            spawnT = 1.5f;
+            HouseHp = B.waves.houseHp;
+            cooldowns.Clear();
+            result = new WaveResult { wave = WaveNumber };
+            Sfx.Play("sleep", 0.8f);
+            WaveStarted?.Invoke(WaveNumber);
+        }
+
+        void EndWave(bool victory)
+        {
+            Active = false;
+            result.victory = victory;
+            foreach (var m in monsters) Poof(m, false);
+            monsters.Clear();
+            foreach (var s in shots) if (s.sr != null) Destroy(s.sr.gameObject);
+            shots.Clear();
+            toSpawn = 0;
+            if (victory) wb.Save.wave++;
+            else
+            {
+                result.woodLost = Mathf.Min(wb.Save.wood, B.waves.woodLossOnDefeat);
+                wb.Save.wood -= result.woodLost;
+            }
+            wb.NotifyInventory();
+            Countdown = B.waves.dayDuration;
+            WaveEnded?.Invoke(result);
+        }
+
+        void Update()
+        {
+            float dt = Time.deltaTime;
+            NightAmount = Mathf.MoveTowards(NightAmount, Active ? 1f : 0f, dt * 0.5f);
+            UpdateLight();
+            UpdateBeams(dt);
+            if (wb == null) return;
+
+            if (!Active)
+            {
+                if (B.waves.autoWave && wb.Save.starterChosen)
+                {
+                    Countdown -= dt;
+                    if (Countdown <= 0f) StartWave();
+                }
+                return;
+            }
+
+            if (toSpawn > 0)
+            {
+                spawnT -= dt;
+                if (spawnT <= 0f) { Spawn(); toSpawn--; spawnT = B.waves.spawnInterval * (0.6f + (float)rnd.NextDouble() * 0.8f); }
+            }
+            UpdateMonsters(dt);
+            UpdatePlantsFire(dt);
+            UpdateShots(dt);
+            monsters.RemoveAll(m => m.dead);
+            shots.RemoveAll(s => s.done);
+            if (HouseHp <= 0f) { EndWave(false); return; }
+            if (toSpawn == 0 && monsters.Count == 0) EndWave(true);
+        }
+
+        void UpdateLight()
+        {
+            float n = NightAmount;
+            if (global != null)
+            {
+                global.color = Color.Lerp(new Color(1f, 0.97f, 0.9f), new Color(0.48f, 0.55f, 0.85f), n);
+                global.intensity = Mathf.Lerp(1f, 0.55f, n);
+            }
+            if (window != null) window.intensity = n * 1.3f;
+        }
+
+        // ------------------------------------------------------------------ Monster
+
+        static Sprite EyeSprite
+        {
+            get
+            {
+                if (eyeSprite != null) return eyeSprite;
+                const int n = 32;
+                var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                var px = new Color[n * n];
+                for (int y = 0; y < n; y++)
+                    for (int x = 0; x < n; x++)
+                    {
+                        float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(16, 16));
+                        float dp = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(17.5f, 14.5f));
+                        Color c = Color.clear;
+                        if (d < 15) c = d > 13.5f ? new Color(0.15f, 0.08f, 0.05f) : Color.white;
+                        if (dp < 7.5f) c = new Color(0.08f, 0.05f, 0.04f);
+                        if (Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(15f, 18f)) < 2.5f) c = Color.white;
+                        c.a *= Mathf.Clamp01(15.5f - d);
+                        px[y * n + x] = c;
+                    }
+                tex.SetPixels(px); tex.Apply();
+                eyeSprite = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), n);
+                return eyeSprite;
+            }
+        }
+
+        static Sprite White
+        {
+            get
+            {
+                if (white != null) return white;
+                var t = new Texture2D(4, 4); var p = new Color[16]; for (int i = 0; i < 16; i++) p[i] = Color.white; t.SetPixels(p); t.Apply();
+                white = Sprite.Create(t, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4);
+                return white;
+            }
+        }
+
+        void Spawn()
+        {
+            int wave = WaveNumber;
+            float total = 0;
+            foreach (var d in B.monsters) if (d.firstWave <= wave) total += d.weight;
+            float roll = (float)rnd.NextDouble() * total;
+            MonsterDefW def = B.monsters[0];
+            foreach (var d in B.monsters) { if (d.firstWave > wave) continue; roll -= d.weight; if (roll <= 0) { def = d; break; } }
+
+            // aus dem Waldrand: links, rechts oder unten
+            float hw = WorldBuilder.MapW / 2f, hh = WorldBuilder.MapH / 2f;
+            Vector2 p;
+            int side = rnd.Next(3);
+            if (side == 0) p = new Vector2(-hw + 0.5f, -hh + 2 + (float)rnd.NextDouble() * (hh + 1));
+            else if (side == 1) p = new Vector2(hw - 0.5f, -hh + 2 + (float)rnd.NextDouble() * (hh + 1));
+            else p = new Vector2(-hw + 2 + (float)rnd.NextDouble() * (hw * 2 - 4), -hh + 0.8f);
+
+            var root = new GameObject("Monster_" + def.id).transform;
+            root.SetParent(transform, false);
+            var sr = new GameObject("Body").AddComponent<SpriteRenderer>();
+            sr.transform.SetParent(root, false);
+            var art = WorldArtSet.I;
+            sr.sprite = art != null ? art.Get(def.art) : null;
+            float s = def.scale;
+            sr.transform.localScale = new Vector3(s, s, 1);
+            if (sr.sprite != null) sr.transform.localPosition = new Vector3(0, -sr.sprite.bounds.min.y * s, 0);
+            // Augen machen aus Pilzen und Pflanzen Monster
+            var eyes = new GameObject("Eyes").transform;
+            eyes.SetParent(root, false);
+            float h = sr.sprite != null ? sr.sprite.bounds.size.y * s : 0.6f;
+            float w = sr.sprite != null ? sr.sprite.bounds.size.x * s : 0.6f;
+            eyes.localPosition = new Vector3(0, h * 0.42f, 0);
+            for (int i = 0; i < 2; i++)
+            {
+                var e = new GameObject("Eye").AddComponent<SpriteRenderer>();
+                e.transform.SetParent(eyes, false);
+                e.sprite = EyeSprite;
+                float es = Mathf.Clamp(w * 0.22f, 0.12f, 0.3f);
+                e.transform.localScale = new Vector3(es, es, 1);
+                e.transform.localPosition = new Vector3((i == 0 ? -1 : 1) * w * 0.14f, 0, 0);
+            }
+            float hp = def.hp * (1 + B.waves.hpGrowthPerWave * (wave - 1));
+            var m = new Monster { def = def, root = root, sr = sr, eyes = eyes, pos = p, hp = hp, maxHp = hp, hop = (float)rnd.NextDouble() * 6 };
+            root.position = p;
+            monsters.Add(m);
+            Particles.I?.Burst(p, "leaf", new Color(0.4f, 0.6f, 0.3f), 8, 2.5f, 0.5f, 0.6f, 4f, 1.5f);
+        }
+
+        Vector2 HouseTarget => WorldBuilder.HousePos + new Vector2(0, -0.8f);
+
+        void UpdateMonsters(float dt)
+        {
+            foreach (var m in monsters)
+            {
+                if (m.dead) continue;
+                m.hitFlash = Mathf.Max(0, m.hitFlash - dt * 5f);
+                if (m.slowT > 0) m.slowT -= dt;
+                if (m.burnT > 0) { m.burnT -= dt; Damage(m, m.burnDps * dt, null, silent: true); }
+                if (m.poisonT > 0) { m.poisonT -= dt; Damage(m, m.poisonDps * m.poisonStacks * dt, null, silent: true); } else m.poisonStacks = 0;
+                if (m.dead) continue;
+
+                var to = HouseTarget - m.pos;
+                float dist = to.magnitude;
+                if (dist < 0.7f)
+                {
+                    HouseHp -= m.def.damage;
+                    WorldCamera.I?.Shake(0.12f);
+                    Haptics.Tap(40);
+                    Sfx.Play("error", 0.9f);
+                    wb.RaiseFloater(HouseTarget + new Vector2(0, 1.5f), "-" + Mathf.RoundToInt(m.def.damage), new Color(1f, 0.45f, 0.4f));
+                    Poof(m, true);
+                    continue;
+                }
+                // leicht schlaengelnd auf das Haus zu, Rueckstoss klingt ab
+                var dir = to / dist;
+                var side = new Vector2(-dir.y, dir.x) * Mathf.Sin(m.hop * 0.7f) * 0.35f;
+                m.pos += (dir + side).normalized * m.Speed * dt + m.knock * dt;
+                m.knock = Vector2.MoveTowards(m.knock, Vector2.zero, dt * 6f);
+                m.hop += dt * (4f + m.Speed * 3f);
+                float hopY = Mathf.Abs(Mathf.Sin(m.hop)) * 0.12f;
+                float sq = (1 - Mathf.Abs(Mathf.Sin(m.hop))) * 0.15f;
+                m.root.position = m.pos + new Vector2(0, hopY);
+                float flip = dir.x < 0 ? -1 : 1;
+                m.root.localScale = new Vector3((1 + sq + m.hitFlash * 0.15f) * flip, 1 - sq + m.hitFlash * 0.1f, 1);
+                m.sr.sortingOrder = WorldBuilder.Order(m.pos.y) + 1;
+                foreach (Transform e in m.eyes) e.GetComponent<SpriteRenderer>().sortingOrder = m.sr.sortingOrder + 1;
+                Color c = Color.white;
+                if (m.slowT > 0) c = new Color(0.7f, 0.88f, 1f);
+                if (m.burnT > 0) c = new Color(1f, 0.75f, 0.55f);
+                if (m.poisonT > 0) c = Color.Lerp(c, new Color(0.8f, 0.65f, 1f), 0.6f);
+                m.sr.color = Color.Lerp(c, new Color(1f, 0.35f, 0.3f), m.hitFlash);
+                if (m.burnT > 0 && rnd.NextDouble() < dt * 10) Particles.I?.Spawn(m.pos + new Vector2(0, 0.4f), "square", new Color(1f, 0.6f, 0.2f), new Vector3(0, 1.2f, 0), 0.5f, 0.6f, 0f, 0f);
+            }
+        }
+
+        Monster Nearest(Vector2 p, float range, HashSet<Monster> exclude = null)
+        {
+            Monster best = null; float bd = range * range;
+            foreach (var m in monsters)
+            {
+                if (m.dead || (exclude != null && exclude.Contains(m))) continue;
+                float d = (m.pos - p).sqrMagnitude;
+                if (d <= bd) { bd = d; best = m; }
+            }
+            return best;
+        }
+
+        // ------------------------------------------------------------------ Pflanzen schiessen
+
+        void UpdatePlantsFire(float dt)
+        {
+            foreach (var g in wb.Plants)
+            {
+                if (!g.planted || !g.Grown) continue;
+                float cd = cooldowns.TryGetValue(g.uid, out var v) ? v : (float)rnd.NextDouble() * g.Cooldown;
+                cd -= dt;
+                if (cd <= 0f)
+                {
+                    var muzzle = wb.PlantMuzzle(g);
+                    var target = Nearest(muzzle, g.Range);
+                    if (target != null) { Fire(g, muzzle, target); cd = g.Cooldown; }
+                    else cd = 0.15f;
+                }
+                cooldowns[g.uid] = cd;
+            }
+        }
+
+        void Fire(PlantGenome g, Vector2 muzzle, Monster target)
+        {
+            wb.KickPlant(g);
+            var proj = B.Option(PlantAttr.Projectile, g.projectile.id);
+            // Zielauswahl nach Flaechenmuster
+            var targets = new List<Monster> { target };
+            int extra = 0; float fan = 0f;
+            switch (g.pattern.id)
+            {
+                case "double":
+                    {
+                        var ex = new HashSet<Monster> { target };
+                        var t2 = Nearest(muzzle, g.Range, ex);
+                        targets.Add(t2 ?? target);
+                        if (g.pattern.level >= 4) { ex.Add(t2); var t3 = Nearest(muzzle, g.Range, ex); if (t3 != null) targets.Add(t3); }
+                        break;
+                    }
+                case "spread": extra = 2 + (g.pattern.level >= 3 ? 1 : 0) + (g.pattern.level >= 5 ? 1 : 0); fan = 13f; break;
+            }
+            if (g.effect.id == "multishot") { extra += g.effect.level >= 4 ? 2 : 1; if (fan == 0) fan = 10f; }
+
+            float dmg = g.Damage;
+            var col = g.ElementColor;
+            if (proj != null && proj.id == "beam")
+            {
+                foreach (var t in targets) { Beam(muzzle, t.pos + new Vector2(0, 0.35f), col); Hit(t, dmg, g, null); }
+                for (int i = 0; i < extra; i++) { var t = Nearest(muzzle, g.Range, new HashSet<Monster>(targets)); if (t == null) break; targets.Add(t); Beam(muzzle, t.pos + new Vector2(0, 0.35f), col); Hit(t, dmg * 0.8f, g, null); }
+                Sfx.Play("crit", 1.4f, 0.35f);
+                return;
+            }
+            foreach (var t in targets) LaunchShot(g, proj, muzzle, t, 0f, dmg);
+            for (int i = 0; i < extra; i++)
+            {
+                float ang = ((i / 2) + 1) * fan * (i % 2 == 0 ? 1 : -1);
+                LaunchShot(g, proj, muzzle, target, ang, dmg * 0.8f);
+            }
+            Sfx.Play("pop", 1.2f + (float)rnd.NextDouble() * 0.3f, 0.45f);
+        }
+
+        void LaunchShot(PlantGenome g, OptionDef proj, Vector2 from, Monster target, float angle, float dmg)
+        {
+            var sr = new GameObject("Shot").AddComponent<SpriteRenderer>();
+            sr.transform.SetParent(transform, false);
+            sr.sprite = WorldBuilder.Mist;
+            var col = g.ElementColor;
+            sr.color = new Color(Mathf.Min(1, col.r * 1.3f), Mathf.Min(1, col.g * 1.3f), Mathf.Min(1, col.b * 1.3f), 1f);
+            float size = proj.id == "spore" ? 0.42f : proj.id == "thorn" ? 0.22f : 0.3f;
+            sr.transform.localScale = proj.id == "thorn" ? new Vector3(size * 2.2f, size * 0.7f, 1) : new Vector3(size, size, 1);
+            sr.sortingOrder = 30000;
+            var dir = ((target.pos + new Vector2(0, 0.35f)) - from).normalized;
+            dir = Quaternion.Euler(0, 0, angle) * dir;
+            if (proj.id == "petal") dir = Quaternion.Euler(0, 0, (rnd.NextDouble() < 0.5 ? 1 : -1) * 40f) * dir;
+            int pierce = (g.pattern.id == "pierce" ? 1 + g.pattern.level : 0) + (proj.id == "thorn" ? 1 : 0);
+            shots.Add(new Shot { sr = sr, pos = from, vel = dir * proj.speed, target = target, src = g, speed = proj.speed, damage = dmg, homing = proj.homing, pierce = pierce, life = 3f });
+            sr.transform.position = from;
+        }
+
+        void UpdateShots(float dt)
+        {
+            foreach (var s in shots)
+            {
+                if (s.done) continue;
+                s.life -= dt;
+                if (s.life <= 0) { s.done = true; Destroy(s.sr.gameObject); continue; }
+                if (s.target != null && !s.target.dead && s.homing > 0)
+                {
+                    var want = ((s.target.pos + new Vector2(0, 0.35f)) - s.pos).normalized * s.speed;
+                    s.vel = Vector2.Lerp(s.vel, want, Mathf.Clamp01(s.homing * dt * 6f));
+                }
+                s.pos += s.vel * dt;
+                s.sr.transform.position = s.pos;
+                if (s.vel.sqrMagnitude > 0.01f) s.sr.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(s.vel.y, s.vel.x) * Mathf.Rad2Deg);
+                if (rnd.NextDouble() < dt * 30) Particles.I?.Spawn(s.pos, "spark", s.src.ElementColor, Vector3.zero, 0.3f, 0.5f, 0f, 0f);
+                // Treffer
+                foreach (var m in monsters)
+                {
+                    if (m.dead || s.hit.Contains(m)) continue;
+                    if (((m.pos + new Vector2(0, 0.3f)) - s.pos).sqrMagnitude > 0.35f * 0.35f) continue;
+                    s.hit.Add(m);
+                    Hit(m, s.damage, s.src, s.pos);
+                    if (s.pierce > 0) { s.pierce--; s.damage *= 0.85f; continue; }
+                    s.done = true; Destroy(s.sr.gameObject);
+                    break;
+                }
+            }
+        }
+
+        // ------------------------------------------------------------------ Treffer, Wirkungen, Zusatzeffekte
+
+        void Hit(Monster m, float dmg, PlantGenome g, Vector2? impact)
+        {
+            if (m.dead) return;
+            var pos = impact ?? m.pos + new Vector2(0, 0.3f);
+            bool crit = false;
+            if (g.effect.id == "crit" && rnd.NextDouble() < 0.08 * g.effect.level) { dmg *= 2f; crit = true; }
+            if (m.def.weakTo == g.element.id) dmg *= 1.5f;
+            Damage(m, dmg, g, crit: crit);
+            ApplyElement(m, g, dmg);
+
+            switch (g.effect.id)
+            {
+                case "explosion":
+                    {
+                        float r = 0.55f + 0.15f * g.effect.level;
+                        Particles.I?.Ring(pos, new Color(1f, 0.75f, 0.4f, 0.9f), r * 1.6f, 0.35f);
+                        Particles.I?.Burst(pos, "square", new Color(1f, 0.6f, 0.25f), 10, 3.5f, 0.4f, 0.8f, 2f, 0.5f);
+                        WorldCamera.I?.Shake(0.04f);
+                        Sfx.Play("break", 1.3f, 0.5f);
+                        foreach (var o in monsters) if (o != m && !o.dead && (o.pos - m.pos).magnitude < r) Damage(o, dmg * (0.3f + 0.1f * g.effect.level), g);
+                        break;
+                    }
+                case "toxin": AddPoison(m, dmg * 0.12f * g.effect.level, g.effect.level); break;
+                case "knockback":
+                    m.knock += (m.pos - HouseTarget).normalized * (0.6f + 0.35f * g.effect.level);
+                    break;
+            }
+
+            if (g.pattern.id == "splash")
+            {
+                float r = 0.5f + 0.15f * g.pattern.level;
+                Particles.I?.Ring(pos, g.ElementColor, r * 1.5f, 0.3f);
+                foreach (var o in monsters) if (o != m && !o.dead && (o.pos - m.pos).magnitude < r) { Damage(o, dmg * 0.6f, g); ApplyElement(o, g, dmg * 0.6f); }
+            }
+            if (g.pattern.id == "chain") Chain(m, g, dmg * 0.7f, 1 + g.pattern.level / 2);
+            if (g.element.id == "lightning") Chain(m, g, dmg * 0.5f, 1 + g.element.level / 2);
+        }
+
+        void ApplyElement(Monster m, PlantGenome g, float dmg)
+        {
+            switch (g.element.id)
+            {
+                case "fire": m.burnT = 2f; m.burnDps = Mathf.Max(m.burnDps, dmg * 0.22f * g.element.level); break;
+                case "ice": m.slowT = 1.5f; m.slowAmt = Mathf.Min(0.6f, 0.15f * g.element.level); break;
+                case "poison": AddPoison(m, dmg * 0.1f * g.element.level, 1); break;
+            }
+        }
+
+        void AddPoison(Monster m, float dps, int stacks)
+        {
+            m.poisonDps = Mathf.Max(m.poisonDps, dps);
+            m.poisonStacks = Mathf.Min(5, m.poisonStacks + stacks);
+            m.poisonT = 3f;
+        }
+
+        void Chain(Monster from, PlantGenome g, float dmg, int jumps)
+        {
+            var ex = new HashSet<Monster> { from };
+            var cur = from;
+            for (int i = 0; i < jumps; i++)
+            {
+                var next = Nearest(cur.pos, 2.4f, ex);
+                if (next == null) break;
+                ex.Add(next);
+                Beam(cur.pos + new Vector2(0, 0.35f), next.pos + new Vector2(0, 0.35f), g.ElementColor);
+                Damage(next, dmg, g);
+                cur = next;
+            }
+        }
+
+        void Damage(Monster m, float dmg, PlantGenome g, bool silent = false, bool crit = false)
+        {
+            if (m.dead || dmg <= 0) return;
+            m.hp -= dmg;
+            if (!silent)
+            {
+                m.hitFlash = 1f;
+                var col = g != null ? g.ElementColor : Color.white;
+                Particles.I?.Burst(m.pos + new Vector2(0, 0.35f), "spark", col, crit ? 8 : 3, 2.5f, 0.3f, 0.8f, 2f);
+                wb.RaiseFloater(m.pos + new Vector2(0, 0.9f), (crit ? "!" : "") + Mathf.Max(1, Mathf.RoundToInt(dmg)), crit ? new Color(1f, 0.9f, 0.3f) : Color.white);
+            }
+            if (m.hp <= 0) Kill(m);
+        }
+
+        void Kill(Monster m)
+        {
+            result.kills++;
+            Poof(m, true);
+            // Beute: Samen (eine Eigenschaft), selten eine ganze Pflanze
+            if (rnd.NextDouble() < m.def.seedChance)
+            {
+                var seed = Genetics.RandomSeed(rnd, WaveNumber);
+                wb.Save.seeds.Add(seed);
+                result.seeds++;
+                SeedDropped?.Invoke(seed, m.pos + new Vector2(0, 0.3f));
+            }
+            if (rnd.NextDouble() < m.def.plantChance)
+            {
+                int lvMax = Mathf.Clamp(1 + WaveNumber / 2, 2, 4);
+                var g = Genetics.Random(0, rnd, 1, lvMax);
+                wb.AddPlant(g);
+                result.plants++;
+                PlantFound?.Invoke(g, m.pos + new Vector2(0, 0.3f));
+            }
+            wb.NotifyInventory();
+        }
+
+        void Poof(Monster m, bool fx)
+        {
+            m.dead = true;
+            if (fx)
+            {
+                Particles.I?.Burst(m.pos + new Vector2(0, 0.3f), "leaf", new Color(0.6f, 0.45f, 0.65f), 12, 3.5f, 0.6f, 0.6f, 3f, 1.5f);
+                Particles.I?.Ring(m.pos + new Vector2(0, 0.3f), Color.white, 1f);
+                Sfx.Play("break", 1.4f, 0.6f);
+            }
+            if (m.root != null) Destroy(m.root.gameObject);
+        }
+
+        void Beam(Vector2 a, Vector2 b, Color col)
+        {
+            var sr = new GameObject("Beam").AddComponent<SpriteRenderer>();
+            sr.transform.SetParent(transform, false);
+            sr.sprite = White;
+            var d = b - a;
+            sr.transform.position = (a + b) / 2f;
+            sr.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg);
+            sr.transform.localScale = new Vector3(d.magnitude, 0.07f, 1);
+            sr.color = new Color(Mathf.Min(1, col.r * 1.4f), Mathf.Min(1, col.g * 1.4f), Mathf.Min(1, col.b * 1.4f), 1f);
+            sr.sortingOrder = 30001;
+            beams.Add((sr, 0.14f));
+        }
+
+        void UpdateBeams(float dt)
+        {
+            for (int i = beams.Count - 1; i >= 0; i--)
+            {
+                var (sr, t) = beams[i];
+                t -= dt;
+                if (t <= 0) { Destroy(sr.gameObject); beams.RemoveAt(i); continue; }
+                var c = sr.color; c.a = t / 0.14f; sr.color = c;
+                beams[i] = (sr, t);
+            }
+        }
+
+        // ------------------------------------------------------------------ Spieler
+
+        /// <summary>Monster direkt antippen (kleiner Schaden). Gibt true zurueck, wenn eines getroffen wurde.</summary>
+        public bool TapMonster(Vector2 world)
+        {
+            if (!Active) return false;
+            Monster best = null; float bd = 0.75f * 0.75f;
+            foreach (var m in monsters)
+            {
+                if (m.dead) continue;
+                float d = (m.pos + new Vector2(0, 0.35f) - world).sqrMagnitude;
+                if (d < bd) { bd = d; best = m; }
+            }
+            if (best == null) return false;
+            Damage(best, B.waves.tapDamage * (1 + 0.15f * (WaveNumber - 1)), null);
+            Sfx.Play("chop", 1.3f, 0.6f);
+            Haptics.Tap(10);
+            return true;
+        }
+    }
+}

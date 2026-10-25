@@ -83,6 +83,7 @@ namespace SeedClicker
         }
 
         static Sprite mistSprite;
+        public static Sprite Mist => MistSprite;
 
         /// <summary>Weicher Kreis mit bilinearer Filterung (Wolken, Dunst, Lichtstrahlen).</summary>
         static Sprite MistSprite
