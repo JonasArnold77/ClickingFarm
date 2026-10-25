@@ -111,26 +111,31 @@ namespace SeedClicker
 
         // ------------------------------------------------------------------ Werkzeuglogik
 
+        bool consumed;   // Druck wurde schon verarbeitet (z. B. Wachstums-Tipp)
+
         void PointerDown(Vector2 screen, int id)
         {
-            down = true; panning = false; painting = false; hasLastCell = false;
+            down = true; panning = false; painting = false; hasLastCell = false; consumed = false;
             downScreen = lastScreen = screen;
             overUI = OverUI(id);
             if (overUI) return;
-            if (Tool == WorldTool.Field)
+            var wb = WorldBuilder.I;
+            if (wb == null) return;
+            var w = World(screen);
+            var c = WorldBuilder.CellAt(w);
+            // Wachsende Pflanze: sofort beim Druecken reagieren – das macht das Klicken knackig
+            if (wb.IsPlantGrowing(c)) { wb.TapPlant(c); consumed = true; return; }
+            if (NightWave.I != null && NightWave.I.Active && NightWave.I.TapMonster(w)) { consumed = true; return; }
+            if (wb.PlantAt(c) != null) return;   // fertige Pflanze -> Info beim Loslassen
+            if (Tool == WorldTool.Field || (Tool == WorldTool.Plant && wb.HasField(c)))
             {
-                // Auf einer wachsenden Pflanze wird getippt (wachsen), nicht gemalt
-                var w = World(screen);
-                var c = WorldBuilder.CellAt(w);
-                if (WorldBuilder.I != null && WorldBuilder.I.PlantAt(c) != null) return;
-                if (NightWave.I != null && NightWave.I.Active) return;
                 painting = true; Paint(screen);
             }
         }
 
         void PointerMove(Vector2 screen)
         {
-            if (overUI) return;
+            if (overUI || consumed) return;
             if (painting) { Paint(screen); return; }
             float dpi = Screen.dpi > 0 ? Screen.dpi : 160f;
             if (!panning && Vector2.Distance(screen, downScreen) > dpi * 0.08f) panning = true;
@@ -141,21 +146,20 @@ namespace SeedClicker
         void PointerUp(Vector2 screen)
         {
             down = false;
-            if (overUI || panning || painting) { painting = false; return; }
+            if (overUI || panning || painting || consumed) { painting = false; return; }
             var w = World(screen);
             var wb = WorldBuilder.I;
             if (wb == null) return;
-            if (NightWave.I != null && NightWave.I.TapMonster(w)) return;
             if (wb.HitWorkbench(w)) { wb.TapWorkbench(); return; }
             var cell = WorldBuilder.CellAt(w);
-            if (wb.PlantAt(cell) != null && (Tool != WorldTool.Axe || wb.IsPlantGrowing(cell))) { wb.TapPlant(cell); return; }
-            switch (Tool)
+            if (wb.PlantAt(cell) != null && Tool != WorldTool.Axe) { wb.TapPlant(cell); return; }
+            if (Tool == WorldTool.Axe)
             {
-                case WorldTool.Axe: wb.TryChop(w); break;
-                case WorldTool.Plant: if (wb.HasField(cell)) wb.TapEmptyField(cell); break;
+                if (!wb.TryChop(w) && wb.PlantAt(cell) != null) wb.TapPlant(cell);
             }
         }
 
+        /// <summary>Wischen: Felder anlegen (Feld-Werkzeug) bzw. leere Felder bepflanzen (Pflanzen-Werkzeug).</summary>
         void Paint(Vector2 screen)
         {
             var wb = WorldBuilder.I;
@@ -163,8 +167,13 @@ namespace SeedClicker
             var c = WorldBuilder.CellAt(World(screen));
             if (hasLastCell && c.x == lastCell.x && c.y == lastCell.y) return;
             hasLastCell = true; lastCell = c;
-            wb.ShowCellCursor(c);
-            wb.PlaceField(c, true);
+            if (Tool == WorldTool.Field) { wb.ShowCellCursor(c); wb.PlaceField(c, true); return; }
+            if (Tool == WorldTool.Plant && wb.HasField(c) && wb.PlantAt(c) == null)
+            {
+                var sel = wb.Save.selectedPlant;
+                if (string.IsNullOrEmpty(sel) || !wb.IsUnlocked(sel)) { wb.TapEmptyField(c); painting = false; return; }
+                wb.PlantInto(c, sel);
+            }
         }
 
         // ------------------------------------------------------------------ Verschieben / Zoomen

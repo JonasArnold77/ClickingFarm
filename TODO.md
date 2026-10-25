@@ -1,6 +1,9 @@
 # TODO.md – offene Punkte
 
 ## Als Nächstes
+- [ ] Zombies: Arme nach vorn (IK-Ziele der Figur verschieben), eigene Zombie-Grafik statt umgefärbter Bauer, Umfall-Animation beim Besiegen.
+- [ ] Mehr Pflanzen-Grafiken: aktuell nur Mais/Weizen/Rübe als Arten, die Katalog-Pflanzen unterscheiden sich nur durch Farbe/Werte.
+- [ ] Balancing 100 Tipps pro Pflanze vs. Wellentempo (Auto-Welle alle 60 s ist nur zum Testen).
 - [ ] **Playtest und Balancing**: Werte in `balance.json` sind geschätzt. Besonders prüfen: Tempo der ersten 10 Minuten, Kosten Kupfer-Werkzeuge, XP-Kurve ab Stufe 15, Wert von Erdbeere vs. Tomate.
 - [ ] Auf echtem Android-Gerät testen: Touch-Gefühl, Wischen vs. Kamera verschieben, Vibration, Safe Area, Performance.
 - [ ] Spieler-Einstellungen: Android-Build auf Hochformat fixieren (Player Settings → Resolution and Presentation → Default Orientation: Portrait). Zur Laufzeit wird Portrait bereits gesetzt.

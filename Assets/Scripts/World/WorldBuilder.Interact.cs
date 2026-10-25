@@ -17,13 +17,13 @@ namespace SeedClicker
         public List<int> stumpsGone = new List<int>();   // auch der Stumpf ist weg
         public List<Cell> fields = new List<Cell>();
         // Angriffspflanzen, Samen, Wellen
-        public List<PlantGenome> plants = new List<PlantGenome>();
-        public List<Gene> seeds = new List<Gene>();
-        public int nextUid = 1;
+        public List<PlantedState> planted = new List<PlantedState>();
+        public List<string> unlocked = new List<string>();   // freigeschaltete Pflanzenarten
+        public string selectedPlant = "";
         public bool starterChosen;
         public int wave;   // ueberstandene Wellen
 
-        const string Key = "seedclicker_world_v1";
+        const string Key = "seedclicker_world_v2";   // v2: kleineres Feldraster, Pflanzen-Katalog
         public static WorldSave Load()
         {
             try { if (PlayerPrefs.HasKey(Key)) return JsonUtility.FromJson<WorldSave>(PlayerPrefs.GetString(Key)) ?? new WorldSave(); }
@@ -59,6 +59,7 @@ namespace SeedClicker
         readonly List<Decor> decor = new List<Decor>();
         readonly Dictionary<Cell, SpriteRenderer> fields = new Dictionary<Cell, SpriteRenderer>();
         readonly List<(Transform t, float k)> popping = new List<(Transform, float)>();
+        readonly HashSet<Transform> fieldPop = new HashSet<Transform>();
         WorldSave save = new WorldSave();
         public WorldSave Save => save;
         SpriteRenderer hpBack, hpFill, cellCursor;
@@ -205,26 +206,29 @@ namespace SeedClicker
 
         // ------------------------------------------------------------------ Felder im Raster
 
-        public static Cell CellAt(Vector2 world) => new Cell(Mathf.FloorToInt(world.x), Mathf.FloorToInt(world.y));
-        static Vector2 CellCenter(Cell c) => new Vector2(c.x + 0.5f, c.y + 0.5f);
+        /// <summary>Kantenlaenge einer Feldzelle in Welteinheiten (kleiner als eine Bodenkachel, passend zum Haus).</summary>
+        public const float CellSize = 0.6f;
+        public static Cell CellAt(Vector2 world) => new Cell(Mathf.FloorToInt(world.x / CellSize), Mathf.FloorToInt(world.y / CellSize));
+        static Vector2 CellCenter(Cell c) => new Vector2((c.x + 0.5f) * CellSize, (c.y + 0.5f) * CellSize);
 
         public bool CanPlaceField(Cell c)
         {
             if (fields.ContainsKey(c)) return false;
             var center = CellCenter(c);
-            foreach (var corner in new[] { new Vector2(-0.5f, -0.5f), new Vector2(0.5f, -0.5f), new Vector2(-0.5f, 0.5f), new Vector2(0.5f, 0.5f) })
+            float hc = CellSize / 2f;
+            foreach (var corner in new[] { new Vector2(-hc, -hc), new Vector2(hc, -hc), new Vector2(-hc, hc), new Vector2(hc, hc) })
             {
                 var p = center + corner;
                 if (Inside(p) < 0.35f) return false;                         // nicht an die Klippe
                 if (Mathf.Abs(p.x) > MapW / 2f - 0.5f || Mathf.Abs(p.y) > MapH / 2f - 0.5f) return false;
             }
-            if (DistToPath(center) < 0.85f) return false;                    // nicht auf den Weg
+            if (DistToPath(center) < 0.6f) return false;                     // nicht auf den Weg
             if (MaskAt(center).a > 0.15f) return false;                      // nicht aufs Pflaster
             // Baeume, Stuempfe, Felsen, Haus blockieren; Blumen/Gras/Buesche werden weggeraeumt
             for (int i = 0; i < occupied.Count; i++)
             {
                 if (occupiedR[i] <= 0f || IsDecorOcc(i)) continue;
-                float d = 0.42f + occupiedR[i] * 0.75f;
+                float d = CellSize * 0.42f + occupiedR[i] * 0.75f;
                 if ((occupied[i] - center).sqrMagnitude < d * d) return false;
             }
             return true;
@@ -241,7 +245,7 @@ namespace SeedClicker
             for (int i = decor.Count - 1; i >= 0; i--)
             {
                 var d = decor[i];
-                if (Mathf.Abs(d.p.x - center.x) > 0.75f || Mathf.Abs(d.p.y - center.y) > 0.75f) continue;
+                if (Mathf.Abs(d.p.x - center.x) > CellSize * 0.75f || Mathf.Abs(d.p.y - center.y) > CellSize * 0.75f) continue;
                 if (d.go != null) Destroy(d.go);
                 if (d.occ >= 0 && d.occ < occupiedR.Count) occupiedR[d.occ] = 0f;
                 decor.RemoveAt(i);
@@ -250,6 +254,7 @@ namespace SeedClicker
             var go = new GameObject("Field");
             go.transform.SetParent(objects, false);
             go.transform.position = center;
+            go.transform.localScale = Vector3.one * CellSize;
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = fieldSprite;
             sr.sortingOrder = -32300;
@@ -258,6 +263,7 @@ namespace SeedClicker
             {
                 go.transform.localScale = Vector3.one * 0.01f;
                 popping.Add((go.transform, 0f));
+                fieldPop.Add(go.transform);
                 Particles.I?.Burst(center, "square", new Color(0.45f, 0.3f, 0.18f), 9, 2.4f, 0.5f, 1f, 6f, 1.2f);
                 Sfx.Play("dig", UnityEngine.Random.Range(0.9f, 1.1f));
                 Haptics.Tap(10);
@@ -277,7 +283,7 @@ namespace SeedClicker
                 cellCursor.sortingOrder = 32000;
             }
             var s = cellCursor.sprite;
-            if (s != null) cellCursor.transform.localScale = Vector3.one * (1.0f / s.bounds.size.x);
+            if (s != null) cellCursor.transform.localScale = Vector3.one * (CellSize / s.bounds.size.x);
             cellCursor.transform.position = CellCenter(c);
             bool ok = CanPlaceField(c) || fields.ContainsKey(c);
             cellCursor.color = ok ? new Color(0.75f, 1f, 0.7f, 0.55f) : new Color(1f, 0.5f, 0.45f, 0.55f);
@@ -337,7 +343,7 @@ namespace SeedClicker
                 k = Mathf.Min(1f, k + dt * 4f);
                 float e = 1 + 2.70158f * Mathf.Pow(k - 1, 3) + 1.70158f * Mathf.Pow(k - 1, 2);
                 bool isStump = tr.name == "sk_Tree_4";
-                var target = isStump ? StumpScale(tr) : Vector3.one;
+                var target = isStump ? StumpScale(tr) : fieldPop.Contains(tr) ? Vector3.one * CellSize : Vector3.one;
                 tr.localScale = new Vector3(target.x * e, target.y * e, 1);
                 popping[i] = (tr, k);
                 if (k >= 1f) { tr.localScale = target; popping.RemoveAt(i); }

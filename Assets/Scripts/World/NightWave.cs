@@ -1,16 +1,17 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace SeedClicker
 {
-    public class WaveResult { public int wave; public bool victory; public int kills; public int seeds; public int plants; public int woodLost; }
+    public class WaveResult { public int wave; public bool victory; public int kills; public int woodLost; public List<CatalogDef> unlocked = new List<CatalogDef>(); }
 
     /// <summary>
-    /// Nachtwellen: Pflanzenmonster kommen aus dem Wald und wollen zum Haus.
+    /// Nachtwellen: Zombies schlurfen aus dem Wald heran und wollen zum Haus.
     /// Ausgewachsene Angriffspflanzen schiessen je nach Erbgut (Flaeche, Distanz, Projektil, Wirkung, Zusatzeffekt).
-    /// Besiegte Monster lassen Samen fallen, selten auch ganze neue Angriffspflanzen.
+    /// Jede ueberstandene Welle schaltet neue Pflanzenarten frei (siehe plants.json -> catalog.unlockWave).
     /// Zum Testen startet automatisch eine Welle (siehe plants.json -> waves.autoWave).
     /// </summary>
     public class NightWave : MonoBehaviour
@@ -21,6 +22,8 @@ namespace SeedClicker
         {
             public MonsterDefW def;
             public Transform root; public SpriteRenderer sr; public Transform eyes;
+            // Zombie-Figur (geriggt, animiert); sr ist dann null
+            public Animator anim; public SpriteRenderer[] parts; public Color[] partCols; public SortingGroup group;
             public Vector2 pos; public float hp, maxHp, hop, hitFlash;
             public float slowT, slowAmt, burnT, burnDps, poisonT, poisonDps; public int poisonStacks;
             public Vector2 knock;
@@ -45,15 +48,13 @@ namespace SeedClicker
 
         public event Action<int> WaveStarted;
         public event Action<WaveResult> WaveEnded;
-        public event Action<Gene, Vector2> SeedDropped;
-        public event Action<PlantGenome, Vector2> PlantFound;
 
         WorldBuilder wb;
         PlantBalance B => PlantBalance.I;
         readonly List<Monster> monsters = new List<Monster>();
         readonly List<Shot> shots = new List<Shot>();
         readonly List<(SpriteRenderer sr, float t)> beams = new List<(SpriteRenderer, float)>();
-        readonly Dictionary<int, float> cooldowns = new Dictionary<int, float>();
+        readonly Dictionary<PlantedState, float> cooldowns = new Dictionary<PlantedState, float>();
         int toSpawn; float spawnT;
         WaveResult result;
         Light2D global; Light2D window;
@@ -98,7 +99,7 @@ namespace SeedClicker
             foreach (var s in shots) if (s.sr != null) Destroy(s.sr.gameObject);
             shots.Clear();
             toSpawn = 0;
-            if (victory) wb.Save.wave++;
+            if (victory) { wb.Save.wave++; result.unlocked = wb.UnlockForWave(wb.Save.wave); }
             else
             {
                 result.woodLost = Mathf.Min(wb.Save.wood, B.waves.woodLossOnDefeat);
@@ -210,6 +211,18 @@ namespace SeedClicker
 
             var root = new GameObject("Monster_" + def.id).transform;
             root.SetParent(transform, false);
+            float hp0 = def.hp * (1 + B.waves.hpGrowthPerWave * (wave - 1));
+            var zprefab = WorldArtSet.I != null ? WorldArtSet.I.zombiePrefab : null;
+            if (zprefab != null)
+            {
+                var zm = BuildZombie(def, root, zprefab);
+                zm.pos = p; zm.hp = zm.maxHp = hp0; zm.hop = (float)rnd.NextDouble() * 6;
+                root.position = p;
+                monsters.Add(zm);
+                Particles.I?.Burst(p, "square", new Color(0.35f, 0.26f, 0.18f), 10, 2.2f, 0.5f, 0.3f, 6f, 2f);
+                if (rnd.NextDouble() < 0.5) Sfx.Play("groan", 0.8f + (float)rnd.NextDouble() * 0.4f, 0.45f);
+                return;
+            }
             var sr = new GameObject("Body").AddComponent<SpriteRenderer>();
             sr.transform.SetParent(root, false);
             var art = WorldArtSet.I;
@@ -237,6 +250,41 @@ namespace SeedClicker
             root.position = p;
             monsters.Add(m);
             Particles.I?.Burst(p, "leaf", new Color(0.4f, 0.6f, 0.3f), 8, 2.5f, 0.5f, 0.6f, 4f, 1.5f);
+        }
+
+        const float ZombieNativeHeight = 3.5f;   // Hoehe der Happy-Harvest-Figur in Welteinheiten (unskaliert)
+
+        /// <summary>Zombie aus der geriggten Happy-Harvest-Figur: fahle Haut, langsamer Schlurf-Gang.</summary>
+        Monster BuildZombie(MonsterDefW def, Transform root, GameObject prefab)
+        {
+            // eigener Zwischenknoten: der Animator der Figur setzt die Skalierung ihres Wurzelobjekts selbst
+            var holder = new GameObject("Rig").transform;
+            holder.SetParent(root, false);
+            holder.localScale = Vector3.one * (def.scale / ZombieNativeHeight);
+            var z = Instantiate(prefab, holder, false);
+            z.name = "Zombie";
+            var parts = z.GetComponentsInChildren<SpriteRenderer>(true);
+            var skin = new Color(0.6f, 0.75f, 0.5f);
+            if (!string.IsNullOrEmpty(def.tint)) ColorUtility.TryParseHtmlString(def.tint, out skin);
+            var cols = new Color[parts.Length];
+            for (int i = 0; i < parts.Length; i++) cols[i] = ZombiePartColor(parts[i].name, skin);
+            var anim = z.GetComponentInChildren<Animator>();
+            if (anim != null) { anim.speed = 0.5f + (float)rnd.NextDouble() * 0.2f; anim.gameObject.AddComponent<ZombieAnimEvents>(); }
+            var eyes = new GameObject("Eyes").transform;
+            eyes.SetParent(root, false);
+            return new Monster { def = def, root = root, eyes = eyes, anim = anim, parts = parts, partCols = cols, group = root.gameObject.AddComponent<SortingGroup>() };
+        }
+
+        /// <summary>Faerbung je Koerperteil: faulig-gruene Haut, graues Haar, verblasste Kleidung, gluehende Augen.</summary>
+        static Color ZombiePartColor(string part, Color skin)
+        {
+            if (part.StartsWith("pupil")) return new Color(2.4f, 0.35f, 0.25f);          // HDR -> leuchtet mit Bloom
+            if (part.StartsWith("eye_")) return new Color(0.92f, 0.95f, 0.7f);
+            if (part.StartsWith("eyebrow") || part.StartsWith("hair")) return new Color(0.45f, 0.47f, 0.42f);
+            if (part.StartsWith("mouth")) return new Color(0.35f, 0.2f, 0.2f);
+            if (part.StartsWith("head") || part.StartsWith("ear") || part.StartsWith("nose") || part.StartsWith("hand") || part.StartsWith("eyelid") || part.StartsWith("arm"))
+                return skin;
+            return new Color(0.62f, 0.64f, 0.56f);                                       // Kleidung: verblasst, schmutzig
         }
 
         Vector2 HouseTarget => WorldBuilder.HousePos + new Vector2(0, -0.8f);
@@ -269,19 +317,35 @@ namespace SeedClicker
                 var side = new Vector2(-dir.y, dir.x) * Mathf.Sin(m.hop * 0.7f) * 0.35f;
                 m.pos += (dir + side).normalized * m.Speed * dt + m.knock * dt;
                 m.knock = Vector2.MoveTowards(m.knock, Vector2.zero, dt * 6f);
-                m.hop += dt * (4f + m.Speed * 3f);
-                float hopY = Mathf.Abs(Mathf.Sin(m.hop)) * 0.12f;
-                float sq = (1 - Mathf.Abs(Mathf.Sin(m.hop))) * 0.15f;
-                m.root.position = m.pos + new Vector2(0, hopY);
-                float flip = dir.x < 0 ? -1 : 1;
-                m.root.localScale = new Vector3((1 + sq + m.hitFlash * 0.15f) * flip, 1 - sq + m.hitFlash * 0.1f, 1);
-                m.sr.sortingOrder = WorldBuilder.Order(m.pos.y) + 1;
-                foreach (Transform e in m.eyes) e.GetComponent<SpriteRenderer>().sortingOrder = m.sr.sortingOrder + 1;
                 Color c = Color.white;
                 if (m.slowT > 0) c = new Color(0.7f, 0.88f, 1f);
                 if (m.burnT > 0) c = new Color(1f, 0.75f, 0.55f);
                 if (m.poisonT > 0) c = Color.Lerp(c, new Color(0.8f, 0.65f, 1f), 0.6f);
-                m.sr.color = Color.Lerp(c, new Color(1f, 0.35f, 0.3f), m.hitFlash);
+                if (m.group != null)
+                {
+                    // Zombie: schwerfaelliges Schwanken statt Huepfen, Animation zeigt in Laufrichtung
+                    m.hop += dt * (2.2f + m.Speed * 1.5f);
+                    m.root.position = m.pos + new Vector2(0, Mathf.Abs(Mathf.Sin(m.hop)) * 0.025f);
+                    m.root.localRotation = Quaternion.Euler(0, 0, Mathf.Sin(m.hop * 0.5f) * 7f - dir.x * 7f);
+                    m.root.localScale = new Vector3(1 + m.hitFlash * 0.12f, 1 - m.hitFlash * 0.08f, 1);
+                    if (m.anim != null) { m.anim.SetFloat("DirX", dir.x); m.anim.SetFloat("DirY", dir.y); m.anim.SetFloat("Speed", 1f); }
+                    m.group.sortingOrder = WorldBuilder.Order(m.pos.y) + 1;
+                    for (int i = 0; i < m.parts.Length; i++)
+                        if (m.parts[i] != null) m.parts[i].color = Color.Lerp(Color.Lerp(m.partCols[i], m.partCols[i] * c, 0.5f), new Color(1f, 0.35f, 0.3f), m.hitFlash);
+                    if (rnd.NextDouble() < dt * 0.08) Sfx.Play("groan", 0.75f + (float)rnd.NextDouble() * 0.4f, 0.35f);
+                }
+                else
+                {
+                    m.hop += dt * (4f + m.Speed * 3f);
+                    float hopY = Mathf.Abs(Mathf.Sin(m.hop)) * 0.12f;
+                    float sq = (1 - Mathf.Abs(Mathf.Sin(m.hop))) * 0.15f;
+                    m.root.position = m.pos + new Vector2(0, hopY);
+                    float flip = dir.x < 0 ? -1 : 1;
+                    m.root.localScale = new Vector3((1 + sq + m.hitFlash * 0.15f) * flip, 1 - sq + m.hitFlash * 0.1f, 1);
+                    m.sr.sortingOrder = WorldBuilder.Order(m.pos.y) + 1;
+                    foreach (Transform e in m.eyes) e.GetComponent<SpriteRenderer>().sortingOrder = m.sr.sortingOrder + 1;
+                    m.sr.color = Color.Lerp(c, new Color(1f, 0.35f, 0.3f), m.hitFlash);
+                }
                 if (m.burnT > 0 && rnd.NextDouble() < dt * 10) Particles.I?.Spawn(m.pos + new Vector2(0, 0.4f), "square", new Color(1f, 0.6f, 0.2f), new Vector3(0, 1.2f, 0), 0.5f, 0.6f, 0f, 0f);
             }
         }
@@ -302,25 +366,27 @@ namespace SeedClicker
 
         void UpdatePlantsFire(float dt)
         {
-            foreach (var g in wb.Plants)
+            foreach (var p in wb.Planted)
             {
-                if (!g.planted || !g.Grown) continue;
-                float cd = cooldowns.TryGetValue(g.uid, out var v) ? v : (float)rnd.NextDouble() * g.Cooldown;
+                if (!p.Grown) continue;
+                var g = p.Genome;
+                float cd = cooldowns.TryGetValue(p, out var v) ? v : (float)rnd.NextDouble() * g.Cooldown;
                 cd -= dt;
                 if (cd <= 0f)
                 {
-                    var muzzle = wb.PlantMuzzle(g);
+                    var muzzle = wb.PlantMuzzle(p);
                     var target = Nearest(muzzle, g.Range);
-                    if (target != null) { Fire(g, muzzle, target); cd = g.Cooldown; }
+                    if (target != null) { Fire(p, muzzle, target); cd = g.Cooldown; }
                     else cd = 0.15f;
                 }
-                cooldowns[g.uid] = cd;
+                cooldowns[p] = cd;
             }
         }
 
-        void Fire(PlantGenome g, Vector2 muzzle, Monster target)
+        void Fire(PlantedState plant, Vector2 muzzle, Monster target)
         {
-            wb.KickPlant(g);
+            var g = plant.Genome;
+            wb.KickPlant(plant);
             var proj = B.Option(PlantAttr.Projectile, g.projectile.id);
             // Zielauswahl nach Flaechenmuster
             var targets = new List<Monster> { target };
@@ -495,23 +561,6 @@ namespace SeedClicker
         {
             result.kills++;
             Poof(m, true);
-            // Beute: Samen (eine Eigenschaft), selten eine ganze Pflanze
-            if (rnd.NextDouble() < m.def.seedChance)
-            {
-                var seed = Genetics.RandomSeed(rnd, WaveNumber);
-                wb.Save.seeds.Add(seed);
-                result.seeds++;
-                SeedDropped?.Invoke(seed, m.pos + new Vector2(0, 0.3f));
-            }
-            if (rnd.NextDouble() < m.def.plantChance)
-            {
-                int lvMax = Mathf.Clamp(1 + WaveNumber / 2, 2, 4);
-                var g = Genetics.Random(0, rnd, 1, lvMax);
-                wb.AddPlant(g);
-                result.plants++;
-                PlantFound?.Invoke(g, m.pos + new Vector2(0, 0.3f));
-            }
-            wb.NotifyInventory();
         }
 
         void Poof(Monster m, bool fx)

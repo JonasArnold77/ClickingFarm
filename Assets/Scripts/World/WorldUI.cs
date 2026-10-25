@@ -128,7 +128,13 @@ namespace SeedClicker
             t.horizontalOverflow = HorizontalWrapMode.Overflow;
             var b = slot.gameObject.AddComponent<Button>();
             b.transition = Selectable.Transition.None;
-            b.onClick.AddListener(() => { SelectTool(tool); Sfx.Play("click"); Haptics.Tap(8); });
+            if (tool == WorldTool.Plant) plantSlotIcon = icon;
+            b.onClick.AddListener(() =>
+            {
+                bool again = WorldCamera.Tool == tool;
+                SelectTool(tool); Sfx.Play("click"); Haptics.Tap(8);
+                if (tool == WorldTool.Plant) OnPlantToolTapped(again);
+            });
             slot.gameObject.AddComponent<Juicy>();
             slots.Add((slot, slot.rectTransform, tool));
         }
@@ -145,7 +151,7 @@ namespace SeedClicker
             }
             hintText.text = tool == WorldTool.Axe ? "Tippe oft auf einen Baum, um ihn zu fällen"
                 : tool == WorldTool.Field ? "Tippe oder wische über die Wiese, um Felder anzulegen"
-                : "Tippe auf ein Feld, um eine Angriffspflanze einzusetzen";
+                : "Tippe auf ein Feld zum Einsetzen – dann ~100× auf die Pflanze tippen, bis sie reif ist";
         }
 
         void SpawnFloater(Vector2 world, string text, Color col)

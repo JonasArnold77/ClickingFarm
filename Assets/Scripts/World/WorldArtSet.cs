@@ -19,6 +19,8 @@ namespace SeedClicker
         [Tooltip("Klippen-Atlas (Skyden Mountain Tiles, 256 px pro Kachel)")]
         public Texture2D mountainAtlas;
         public List<Entry> sprites = new List<Entry>();
+        [Tooltip("Geriggte Figur (Happy Harvest Prefab_character_base), wird fuer die Zombies benutzt")]
+        public GameObject zombiePrefab;
 
         static WorldArtSet inst;
         Dictionary<string, Sprite> lookup;

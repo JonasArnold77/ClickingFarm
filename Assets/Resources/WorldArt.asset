@@ -145,3 +145,4 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 0e74068346d51084abc13e9cef13c78b, type: 3}
   - name: hh_coin
     sprite: {fileID: 21300000, guid: e62e85a2605f5044aa05771c6aa3a53b, type: 3}
+  zombiePrefab: {fileID: 7051185335647055784, guid: f8d24aa3b2fcc6f4d9bddba5a1e896b3, type: 3}

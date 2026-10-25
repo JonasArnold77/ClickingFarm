@@ -53,6 +53,10 @@ namespace SeedClicker
             clips["error"] = Tone(0.18f, (t, p) => Square(Lerp(180, 140, p) * t) * Env(p, 0.01f, 0.6f), 0.25f);
             clips["sleep"] = Arp(new[] { 784f, 659f, 523f, 392f }, 0.16f, 0.3f);
             clips["morning"] = Arp(new[] { 392f, 523f, 659f, 784f }, 0.12f, 0.3f);
+            // Knackiger Klick beim Wachsen: kurzer Rausch-Knack + tiefer Plopp + heller Klick
+            clips["crunch"] = Tone(0.09f, (t, p) => (Noise() * 0.55f * Env(p, 0.001f, 1.6f) + Sin(Lerp(190, 70, p) * t) * 0.7f * Env(p, 0.003f, 0.7f) + Sin(2400 * t) * 0.25f * Env(p, 0.0005f, 2.5f)), 0.65f);
+            clips["tick"] = Tone(0.18f, (t, p) => (Sin(1760 * t) + Sin(2640 * t) * 0.5f) * Env(p, 0.002f, 0.6f), 0.35f);
+            clips["groan"] = Tone(0.85f, (t, p) => (Sin(Lerp(105, 78, p) * t) * 0.55f + Sin(Lerp(212, 150, p) * t) * 0.25f + LowNoise(0.15f) * 0.3f) * Env(p, 0.18f, 1.1f) * (0.7f + 0.3f * Sin(5.5f * t)), 0.5f);
             clips["bug"] = Arp(new[] { 1568f, 2093f, 1568f, 2349f }, 0.04f, 0.3f);
         }
 

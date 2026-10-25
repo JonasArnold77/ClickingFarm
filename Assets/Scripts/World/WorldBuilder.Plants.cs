@@ -6,246 +6,334 @@ using UnityEngine.Rendering.Universal;
 namespace SeedClicker
 {
     /// <summary>
-    /// Angriffspflanzen auf den Feldern: einpflanzen, durch Tippen gross ziehen (Klick-Wachstum),
-    /// ausgraben. Ausgewachsene Pflanzen leuchten in der Farbe ihrer Wirkung und verteidigen nachts.
-    /// Ausserdem die Werkbank zum Veredeln und Kreuzen.
+    /// Angriffspflanzen auf den Feldern: Art waehlen, einsetzen, mit ~100 Tipps gross ziehen.
+    /// Jeder Tipp soll sich "crunchy" anfuehlen: Stauchen, Kruemel, Funken, Knack-Sound mit steigender
+    /// Tonhoehe, Vibration, Mini-Wackler, pulsierender Fortschrittsbalken, Combo bei schnellem Tippen,
+    /// Meilensteine bei 25/50/75 % und ein grosses Finale.
+    /// Ausserdem das Pflanzenbuch (Stumpf neben dem Haus) mit allen freigeschalteten Arten.
     /// </summary>
     public partial class WorldBuilder
     {
-        class PlantView { public Transform root; public SpriteRenderer sr, glow; public Light2D light; public float squash, pop; public int stage = -1; }
+        class PlantView
+        {
+            public Transform root; public SpriteRenderer sr, glow, barBack, barFill; public Light2D light;
+            public float squash, pop = 1f, tilt, barPunch, barShow; public int stage = -1;
+        }
 
-        readonly Dictionary<int, PlantView> plantViews = new Dictionary<int, PlantView>();
-        SpriteRenderer workbench;
-        Vector2 workbenchPos;
-        float workbenchSquash;
+        readonly Dictionary<Cell, PlantView> plantViews = new Dictionary<Cell, PlantView>();
+        SpriteRenderer book;
+        Vector2 bookPos;
+        float bookSquash;
+        int combo; float lastTapTime = -10f;
 
         public event Action<Cell> EmptyFieldTapped;
-        public event Action<PlantGenome> PlantTapped;
-        public event Action WorkbenchTapped;
-        public event Action<PlantGenome> PlantGrown;
+        public event Action<PlantedState> PlantTapped;
+        public event Action BookTapped;
+        public event Action<PlantedState> PlantGrown;
         public event Action InventoryChanged;
+        public event Action<string> PlantUnlocked;
 
-        public IEnumerable<PlantGenome> Plants => save.plants;
+        public List<PlantedState> Planted => save.planted;
         public bool HasField(Cell c) => fields.ContainsKey(c);
-        public static Vector2 CellCenterOf(Cell c) => new Vector2(c.x + 0.5f, c.y + 0.5f);
+        public static Vector2 CellCenterOf(Cell c) => CellCenter(c);
+        public bool IsUnlocked(string id) => save.unlocked.Contains(id);
+        public int Combo => combo;
 
-        public PlantGenome PlantAt(Cell c)
+        public PlantedState PlantAt(Cell c)
         {
-            foreach (var p in save.plants) if (p.planted && p.cellX == c.x && p.cellY == c.y) return p;
+            foreach (var p in save.planted) if (p.x == c.x && p.y == c.y) return p;
             return null;
         }
 
         public void NotifyInventory() { save.Save(); InventoryChanged?.Invoke(); }
 
-        // ------------------------------------------------------------------ Werkbank
+        // ------------------------------------------------------------------ Freischalten
+
+        /// <summary>Schaltet alle Arten frei, deren Welle erreicht ist. Gibt die neu freigeschalteten zurueck.</summary>
+        public List<CatalogDef> UnlockForWave(int wavesSurvived)
+        {
+            var list = new List<CatalogDef>();
+            foreach (var c in PlantBalance.I.catalog)
+                if (c.unlockWave <= wavesSurvived && !IsUnlocked(c.id)) { save.unlocked.Add(c.id); list.Add(c); }   // auch nicht gewaehlte Start-Pflanzen (spaeter)
+            if (list.Count > 0) { foreach (var c in list) PlantUnlocked?.Invoke(c.id); NotifyInventory(); }
+            return list;
+        }
+
+        /// <summary>Naechste Art, die noch nicht freigeschaltet ist (fuer die Ziel-Anzeige).</summary>
+        public CatalogDef NextUnlock()
+        {
+            CatalogDef best = null;
+            foreach (var c in PlantBalance.I.catalog)
+                if (!IsUnlocked(c.id) && (best == null || c.unlockWave < best.unlockWave)) best = c;
+            return best;
+        }
+
+        public void ChooseStarter(string id)
+        {
+            if (!save.unlocked.Contains(id)) save.unlocked.Add(id);
+            save.selectedPlant = id;
+            save.starterChosen = true;
+            NotifyInventory();
+        }
+
+        public void SelectPlant(string id) { if (IsUnlocked(id)) { save.selectedPlant = id; NotifyInventory(); } }
+
+        // ------------------------------------------------------------------ Pflanzenbuch (Stumpf mit Saatgut)
 
         void PlaceWorkbench()
         {
-            workbenchPos = HousePos + new Vector2(-3.5f, -0.9f);
-            Shadow(workbenchPos, 1.6f, 0.4f, 0.3f);
-            workbench = Place("sk_Tree_4", workbenchPos, 1.35f, false, 0.02f);
-            Reserve(workbenchPos, 0.75f);
-            // Werkzeug und Saatgut auf dem Stumpf
-            float top = workbench != null ? workbench.bounds.max.y - 0.12f : workbenchPos.y + 0.4f;
-            var bag1 = PlaceSized("hh_corn_seedbag", new Vector2(workbenchPos.x - 0.3f, top - 0.05f), 0.42f);
-            var bag2 = PlaceSized("hh_carrot_seedbag", new Vector2(workbenchPos.x + 0.12f, top - 0.1f), 0.36f);
-            var hoe = PlaceSized("hh_hoe_icon", new Vector2(workbenchPos.x + 0.55f, workbenchPos.y - 0.05f), 0.75f);
-            foreach (var sr in new[] { bag1, bag2, hoe }) if (sr != null) { sr.sortingOrder = Order(workbenchPos.y) + 1; sr.transform.SetParent(workbench.transform, true); }
-            if (hoe != null) hoe.transform.rotation = Quaternion.Euler(0, 0, -12f);
+            bookPos = HousePos + new Vector2(-3.5f, -0.9f);
+            Shadow(bookPos, 1.6f, 0.4f, 0.3f);
+            book = Place("sk_Tree_4", bookPos, 1.35f, false, 0.02f);
+            Reserve(bookPos, 0.75f);
+            float top = book != null ? book.bounds.max.y - 0.12f : bookPos.y + 0.4f;
+            var bag1 = PlaceSized("hh_corn_seedbag", new Vector2(bookPos.x - 0.3f, top - 0.05f), 0.42f);
+            var bag2 = PlaceSized("hh_carrot_seedbag", new Vector2(bookPos.x + 0.12f, top - 0.1f), 0.36f);
+            var bag3 = PlaceSized("hh_wheat_seedbag", new Vector2(bookPos.x + 0.5f, top - 0.12f), 0.32f);
+            foreach (var sr in new[] { bag1, bag2, bag3 }) if (sr != null && book != null) { sr.sortingOrder = Order(bookPos.y) + 1; sr.transform.SetParent(book.transform, true); }
         }
 
         public bool HitWorkbench(Vector2 w)
         {
-            if (workbench == null) return false;
-            var b = workbench.bounds; b.Expand(new Vector3(0.4f, 0.8f, 0));
+            if (book == null) return false;
+            var b = book.bounds; b.Expand(new Vector3(0.4f, 0.8f, 0));
             b.center += new Vector3(0, 0.3f, 0);
             return b.Contains(new Vector3(w.x, w.y, b.center.z));
         }
 
         public void TapWorkbench()
         {
-            workbenchSquash = 1f;
+            bookSquash = 1f;
             Sfx.Play("pop", 0.9f);
             Haptics.Tap(10);
-            WorkbenchTapped?.Invoke();
+            BookTapped?.Invoke();
         }
 
-        // ------------------------------------------------------------------ Pflanzen setzen / ausgraben
+        // ------------------------------------------------------------------ Einsetzen / Ausgraben
 
-        public void PlantInto(Cell c, PlantGenome g)
+        public bool PlantInto(Cell c, string type)
         {
-            if (!HasField(c) || PlantAt(c) != null || g.planted) return;
-            g.planted = true; g.cellX = c.x; g.cellY = c.y; g.growth = 0;
-            CreatePlantView(g, true);
-            Particles.I?.Burst(CellCenterOf(c), "square", new Color(0.45f, 0.3f, 0.18f), 8, 2.2f, 0.45f, 0.9f, 6f, 1f);
-            Sfx.Play("sow");
+            if (!HasField(c) || PlantAt(c) != null || !IsUnlocked(type)) return false;
+            var p = new PlantedState { x = c.x, y = c.y, type = type, growth = 0 };
+            save.planted.Add(p);
+            CreatePlantView(p, true);
+            var pos = CellCenterOf(c);
+            Particles.I?.Burst(pos, "square", new Color(0.45f, 0.3f, 0.18f), 8, 2.2f, 0.45f, 0.7f, 6f, 1f);
+            Sfx.Play("sow", UnityEngine.Random.Range(0.95f, 1.1f));
             Haptics.Tap(12);
             NotifyInventory();
+            return true;
         }
 
-        public void Unplant(PlantGenome g)
+        public void Unplant(PlantedState p)
         {
-            if (!g.planted) return;
-            var pos = CellCenterOf(new Cell(g.cellX, g.cellY));
-            RemovePlantView(g.uid);
-            g.planted = false; g.growth = 0;
-            Particles.I?.Burst(pos, "leaf", new Color(0.5f, 0.8f, 0.35f), 8, 2.5f, 0.6f, 0.6f, 4f, 1.5f);
+            var c = new Cell(p.x, p.y);
+            RemovePlantView(c);
+            save.planted.Remove(p);
+            Particles.I?.Burst(CellCenterOf(c), "leaf", new Color(0.5f, 0.8f, 0.35f), 8, 2.5f, 0.6f, 0.5f, 4f, 1.5f);
             Sfx.Play("dig");
             NotifyInventory();
         }
 
-        /// <summary>Pflanze aus dem Spielstand entfernen (z. B. beim Kreuzen als Spender verbraucht).</summary>
-        public void RemovePlant(PlantGenome g)
+        void RemovePlantView(Cell c)
         {
-            RemovePlantView(g.uid);
-            save.plants.Remove(g);
-            NotifyInventory();
+            if (plantViews.TryGetValue(c, out var v))
+            {
+                if (v.root != null) Destroy(v.root.gameObject);
+                if (v.barBack != null) Destroy(v.barBack.gameObject);
+                if (v.barFill != null) Destroy(v.barFill.gameObject);
+                plantViews.Remove(c);
+            }
         }
 
-        /// <summary>Pflanze ersetzen (Ergebnis einer Kreuzung), Feldposition bleibt.</summary>
-        public void ReplacePlant(PlantGenome old, PlantGenome neu)
+        SpriteRenderer WorldSprite(Transform parent, string name, Sprite s, int order)
         {
-            int i = save.plants.IndexOf(old);
-            RemovePlantView(old.uid);
-            if (i >= 0) save.plants[i] = neu; else save.plants.Add(neu);
-            if (neu.planted) CreatePlantView(neu, true);
-            NotifyInventory();
+            var sr = new GameObject(name).AddComponent<SpriteRenderer>();
+            sr.transform.SetParent(parent, false);
+            sr.sprite = s; sr.sortingOrder = order;
+            return sr;
         }
 
-        public void RefreshPlant(PlantGenome g) { if (g.planted) { RemovePlantView(g.uid); CreatePlantView(g, true); } }
-
-        public PlantGenome AddPlant(PlantGenome g) { g.uid = save.nextUid++; save.plants.Add(g); NotifyInventory(); return g; }
-        public int NextUid() => save.nextUid++;
-
-        void RemovePlantView(int uid)
+        void CreatePlantView(PlantedState p, bool fx)
         {
-            if (plantViews.TryGetValue(uid, out var v)) { if (v.root != null) Destroy(v.root.gameObject); plantViews.Remove(uid); }
-        }
-
-        void CreatePlantView(PlantGenome g, bool fx)
-        {
-            var c = new Cell(g.cellX, g.cellY);
-            var root = new GameObject("Plant_" + g.uid).transform;
+            var c = new Cell(p.x, p.y);
+            var g = p.Genome;
+            var root = new GameObject("Plant_" + p.type).transform;
             root.SetParent(objects, false);
-            root.position = CellCenterOf(c) + new Vector2(0, -0.32f);
-            var glowGo = new GameObject("Glow").AddComponent<SpriteRenderer>();
-            glowGo.transform.SetParent(root, false);
-            glowGo.sprite = MistSprite;
-            glowGo.transform.localPosition = new Vector3(0, 0.25f, 0);
-            glowGo.transform.localScale = new Vector3(1.3f, 0.75f, 1);
-            glowGo.sortingOrder = -31400;
-            var sr = new GameObject("Body").AddComponent<SpriteRenderer>();
-            sr.transform.SetParent(root, false);
-            sr.sortingOrder = Order(root.position.y);
+            root.position = CellCenterOf(c) + new Vector2(0, -CellSize * 0.32f);
+            var glow = WorldSprite(root, "Glow", MistSprite, -31400);
+            glow.transform.localPosition = new Vector3(0, CellSize * 0.25f, 0);
+            glow.transform.localScale = new Vector3(CellSize * 1.4f, CellSize * 0.8f, 1);
+            var sr = WorldSprite(root, "Body", null, Order(root.position.y));
+            var barBack = WorldSprite(transform, "BarBack", Art.Get("white"), 31000);
+            var barFill = WorldSprite(transform, "BarFill", Art.Get("white"), 31001);
+            barBack.color = new Color(0.12f, 0.08f, 0.05f, 0.75f);
             var light = root.gameObject.AddComponent<Light2D>();
             light.lightType = Light2D.LightType.Point;
-            light.pointLightOuterRadius = 1.6f; light.pointLightInnerRadius = 0.1f;
+            light.pointLightOuterRadius = 1.2f; light.pointLightInnerRadius = 0.05f;
             light.color = g.ElementColor; light.intensity = 0f;
-            var v = new PlantView { root = root, sr = sr, glow = glowGo, light = light, pop = fx ? 0f : 1f };
-            plantViews[g.uid] = v;
-            UpdatePlantSprite(g, v);
+            var v = new PlantView { root = root, sr = sr, glow = glow, light = light, barBack = barBack, barFill = barFill, pop = fx ? 0f : 1f };
+            plantViews[c] = v;
+            UpdatePlantSprite(p, v);
         }
 
-        void UpdatePlantSprite(PlantGenome g, PlantView v)
+        void UpdatePlantSprite(PlantedState p, PlantView v)
         {
+            var g = p.Genome;
             var sp = PlantBalance.I.Species(g.species);
-            float f = g.growth / (float)Mathf.Max(1, PlantBalance.I.growTaps);
-            int stage = g.Grown ? 2 : f >= 0.5f ? 1 : 0;
-            if (stage == v.stage) return;
-            v.stage = stage;
+            float f = p.growth / (float)Mathf.Max(1, PlantBalance.I.growTaps);
+            int stage = p.Grown ? 2 : f >= 0.5f ? 1 : 0;
+            // Groesse waechst stufenlos mit jedem Tipp mit
+            float width = CellSize * (p.Grown ? 1.1f : Mathf.Lerp(0.8f, 1.0f, f)) * sp.scale;
             var sprite = art.Get(sp.art + sp.stages[Mathf.Clamp(stage, 0, sp.stages.Length - 1)]);
-            v.sr.sprite = sprite;
+            if (stage != v.stage) { v.stage = stage; v.sr.sprite = sprite; }
             if (sprite != null)
             {
-                float width = (stage == 2 ? 0.95f : stage == 1 ? 0.75f : 0.5f) * sp.scale;
                 float s = width / Mathf.Max(0.01f, sprite.bounds.size.x);
                 v.sr.transform.localScale = new Vector3(s, s, 1);
                 v.sr.transform.localPosition = new Vector3(0, -sprite.bounds.min.y * s, 0);
             }
+            // leichter Farbstich der Wirkung, damit man die Arten unterscheidet
             var col = g.ElementColor;
-            v.glow.color = new Color(col.r, col.g, col.b, g.Grown ? 0.35f : 0f);
+            v.sr.color = Color.Lerp(Color.white, col, 0.18f);
+            v.glow.color = new Color(col.r, col.g, col.b, p.Grown ? 0.35f : 0f);
         }
 
         /// <summary>Tipp auf eine Pflanze: waechst ein Stueck (Klick-Wachstum) oder zeigt Infos, wenn sie fertig ist.</summary>
         public bool TapPlant(Cell c)
         {
-            var g = PlantAt(c);
-            if (g == null) return false;
-            if (!plantViews.TryGetValue(g.uid, out var v)) return false;
-            if (g.Grown) { v.squash = 0.6f; PlantTapped?.Invoke(g); return true; }
-            g.growth++;
-            v.squash = 1f;
+            var p = PlantAt(c);
+            if (p == null || !plantViews.TryGetValue(c, out var v)) return false;
+            if (p.Grown) { v.squash = 0.6f; Sfx.Play("pop", 1.3f, 0.6f); PlantTapped?.Invoke(p); return true; }
+
+            // Combo: schnelles Tippen macht es lauter, heller, spritziger
+            float now = Time.unscaledTime;
+            combo = now - lastTapTime <= PlantBalance.I.comboWindow ? combo + 1 : 1;
+            lastTapTime = now;
+            float heat = Mathf.Clamp01(combo / 30f);
+
+            p.growth++;
+            int taps = PlantBalance.I.growTaps;
+            float progress = p.growth / (float)taps;
+            var g = p.Genome;
             var pos = CellCenterOf(c);
-            Particles.I?.Burst(pos + new Vector2(0, 0.1f), "leaf", new Color(0.55f, 0.85f, 0.35f), 3, 1.8f, 0.5f, 0.5f, 3f, 1.2f);
-            float progress = g.growth / (float)PlantBalance.I.growTaps;
-            Sfx.Play("grow", 0.9f + progress * 0.8f, 0.8f);
-            Haptics.Tap(6);
-            UpdatePlantSprite(g, v);
-            if (g.Grown)
+            var P = Particles.I;
+
+            v.squash = 1f;
+            v.tilt = UnityEngine.Random.Range(-1f, 1f);
+            v.barPunch = 1f;
+            v.barShow = 2.5f;
+            // Kruemel und Blaetter
+            P?.Burst(pos + new Vector2(0, -0.05f), "square", new Color(0.42f, 0.28f, 0.16f), 3 + (int)(heat * 3), 1.5f + heat * 0.6f, 0.4f, 0.26f, 9f, 1.5f);
+            P?.Burst(pos + new Vector2(0, 0.15f), "leaf", new Color(0.55f, 0.85f, 0.35f), 1 + (int)(heat * 2), 1.4f, 0.55f, 0.2f, 3f, 1f);
+            P?.Spawn(pos + new Vector2(UnityEngine.Random.Range(-0.15f, 0.15f), 0.35f), "spark", Color.Lerp(Color.white, g.ElementColor, 0.6f), new Vector3(0, 1.1f, 0), 0.3f, 0.45f + heat * 0.35f, 0f, 0f);
+            if (heat > 0.5f && combo % 4 == 0) P?.Ring(pos, new Color(1f, 1f, 1f, 0.15f + heat * 0.2f), 0.3f + heat * 0.2f, 0.2f);
+            // Knack + Ton, der mit dem Fortschritt und der Combo steigt
+            Sfx.Play("crunch", UnityEngine.Random.Range(0.9f, 1.1f), 0.9f);
+            Sfx.Play("grow", 0.8f + progress * 0.7f + heat * 0.3f, 0.45f);
+            if (combo % 10 == 0) Sfx.Play("tick", 1f + heat * 0.5f, 0.7f);
+            if (combo % 25 == 0) { Floater?.Invoke(pos + new Vector2(0, 0.8f), "Combo ×" + combo, new Color(1f, 0.85f, 0.4f)); }
+            Haptics.Tap(heat > 0.5f ? 14 : 8);
+            WorldCamera.I?.Shake(0.012f + heat * 0.015f);
+
+            // Meilensteine
+            foreach (var m in PlantBalance.I.growMilestones)
+                if (p.growth == m)
+                {
+                    v.pop = 0.4f;
+                    P?.Burst(pos + new Vector2(0, 0.3f), "star", new Color(1f, 0.95f, 0.6f), 10, 2.2f, 0.6f, 0.35f, 1f, 1f);
+                    P?.Ring(pos, Color.white, 0.6f, 0.35f);
+                    Sfx.Play("unlock", 0.9f + m / 100f, 0.7f);
+                    Haptics.Tap(30);
+                    WorldCamera.I?.Shake(0.05f);
+                    Floater?.Invoke(pos + new Vector2(0, 1.1f), m + " %", new Color(0.8f, 1f, 0.6f));
+                }
+
+            UpdatePlantSprite(p, v);
+            if (p.Grown)
             {
                 v.pop = 0f;
-                Particles.I?.Burst(pos + new Vector2(0, 0.4f), "star", g.ElementColor, 14, 3.5f, 0.7f, 0.8f, 1f, 1f);
-                Particles.I?.Ring(pos, Color.white, 1.4f);
-                Sfx.Play("levelup", 1.1f, 0.7f);
-                Haptics.Tap(35);
-                Floater?.Invoke(pos + new Vector2(0, 1f), g.name + " ist bereit!", g.ElementColor);
-                PlantGrown?.Invoke(g);
+                P?.Burst(pos + new Vector2(0, 0.4f), "star", g.ElementColor, 22, 3.2f, 0.8f, 0.45f, 1f, 1f);
+                P?.Burst(pos, "leaf", new Color(0.55f, 0.85f, 0.35f), 14, 3f, 0.8f, 0.3f, 3f, 1f);
+                P?.Ring(pos, Color.white, 1.4f, 0.45f);
+                Sfx.Play("levelup", 1.05f, 0.8f);
+                Haptics.Tap(60);
+                WorldCamera.I?.Shake(0.12f);
+                Floater?.Invoke(pos + new Vector2(0, 1.2f), g.name + " ist bereit!", g.ElementColor);
+                PlantGrown?.Invoke(p);
+                combo = 0;
             }
             save.Save();
             return true;
         }
 
-        public void TapEmptyField(Cell c) { if (PlantAt(c) == null) EmptyFieldTapped?.Invoke(c); }
+        public bool IsPlantGrowing(Cell c) { var p = PlantAt(c); return p != null && !p.Grown; }
 
-        public bool IsPlantGrowing(Cell c) { var g = PlantAt(c); return g != null && !g.Grown; }
+        public void TapEmptyField(Cell c) { if (PlantAt(c) == null) EmptyFieldTapped?.Invoke(c); }
 
         void LoadPlants()
         {
-            foreach (var g in save.plants)
-                if (g.planted)
-                {
-                    if (HasField(new Cell(g.cellX, g.cellY))) CreatePlantView(g, false);
-                    else g.planted = false;
-                }
+            if (save.starterChosen && !string.IsNullOrEmpty(save.selectedPlant) && !save.unlocked.Contains(save.selectedPlant)) save.unlocked.Add(save.selectedPlant);
+            UnlockForWave(save.wave);
+            for (int i = save.planted.Count - 1; i >= 0; i--)
+            {
+                var p = save.planted[i];
+                if (HasField(new Cell(p.x, p.y)) && PlantBalance.I.Plant(p.type) != null) CreatePlantView(p, false);
+                else save.planted.RemoveAt(i);
+            }
         }
 
         void UpdatePlants(float dt)
         {
             float t = Time.time;
-            bool night = NightWave.I != null && NightWave.I.NightAmount > 0.01f;
             float nightAmt = NightWave.I != null ? NightWave.I.NightAmount : 0f;
-            foreach (var g in save.plants)
+            if (Time.unscaledTime - lastTapTime > PlantBalance.I.comboWindow * 2f) combo = 0;
+            foreach (var p in save.planted)
             {
-                if (!g.planted || !plantViews.TryGetValue(g.uid, out var v)) continue;
-                v.squash = Mathf.MoveTowards(v.squash, 0, dt * 4f);
+                var c = new Cell(p.x, p.y);
+                if (!plantViews.TryGetValue(c, out var v)) continue;
+                v.squash = Mathf.MoveTowards(v.squash, 0, dt * 5f);
                 v.pop = Mathf.MoveTowards(v.pop, 1f, dt * 3f);
-                float sq = Mathf.Sin(v.squash * Mathf.PI * 1.5f) * v.squash * 0.22f;
+                v.barPunch = Mathf.MoveTowards(v.barPunch, 0, dt * 6f);
+                v.barShow -= dt;
+                float sq = Mathf.Sin(v.squash * Mathf.PI * 2f) * v.squash * 0.3f;
                 float pop = 1 + 2.70158f * Mathf.Pow(v.pop - 1, 3) + 1.70158f * Mathf.Pow(v.pop - 1, 2);
-                float sway = Mathf.Sin(t * 1.6f + g.uid) * 0.025f;
-                v.root.localScale = new Vector3((1 + sq * 0.8f) * pop, (1 - sq) * pop, 1);
-                v.root.localRotation = Quaternion.Euler(0, 0, sway * 40f);
-                if (g.Grown)
+                float sway = Mathf.Sin(t * 1.6f + p.x * 0.7f + p.y) * 1.2f;
+                v.root.localScale = new Vector3((1 + sq * 0.9f) * pop, (1 - sq) * pop, 1);
+                v.root.localRotation = Quaternion.Euler(0, 0, sway + v.tilt * v.squash * 9f);
+                var g = p.Genome;
+                if (p.Grown)
                 {
                     var col = g.ElementColor;
-                    v.glow.color = new Color(col.r, col.g, col.b, 0.22f + 0.1f * Mathf.Sin(t * 2f + g.uid) + nightAmt * 0.2f);
-                    v.light.intensity = nightAmt * (0.9f + 0.2f * Mathf.Sin(t * 3f + g.uid));
+                    v.glow.color = new Color(col.r, col.g, col.b, 0.22f + 0.1f * Mathf.Sin(t * 2f + p.x) + nightAmt * 0.2f);
+                    v.light.intensity = nightAmt * (0.9f + 0.2f * Mathf.Sin(t * 3f + p.y));
                 }
                 else v.light.intensity = 0f;
+
+                // Fortschrittsbalken ueber der Pflanze (waehrend des Wachsens)
+                bool showBar = !p.Grown && (v.barShow > 0f || p.growth > 0);
+                v.barBack.enabled = v.barFill.enabled = showBar;
+                if (showBar)
+                {
+                    float f = p.growth / (float)PlantBalance.I.growTaps;
+                    var top = CellCenterOf(c) + new Vector2(0, CellSize * 1.15f);
+                    float w = CellSize * 0.85f, h = 0.06f * (1 + v.barPunch * 0.6f);
+                    v.barBack.transform.position = top; v.barBack.transform.localScale = new Vector3(w + 0.04f, h + 0.04f, 1);
+                    v.barFill.transform.position = top + new Vector2(-w * 0.5f * (1 - f), 0); v.barFill.transform.localScale = new Vector3(w * f, h, 1);
+                    v.barFill.color = Color.Lerp(new Color(0.55f, 0.85f, 0.35f), new Color(1f, 0.85f, 0.35f), f) * (1 + v.barPunch * 0.4f);
+                }
             }
 
-            // Werkbank wippt beim Antippen
-            if (workbench != null)
+            if (book != null)
             {
-                workbenchSquash = Mathf.MoveTowards(workbenchSquash, 0, dt * 4f);
-                float sq = Mathf.Sin(workbenchSquash * Mathf.PI * 1.5f) * workbenchSquash * 0.12f;
-                workbench.transform.localScale = new Vector3(1.35f * (1 + sq), 1.35f * (1 - sq), 1);
+                bookSquash = Mathf.MoveTowards(bookSquash, 0, dt * 4f);
+                float sq = Mathf.Sin(bookSquash * Mathf.PI * 1.5f) * bookSquash * 0.12f;
+                book.transform.localScale = new Vector3(1.35f * (1 + sq), 1.35f * (1 - sq), 1);
             }
         }
 
-        /// <summary>Weltposition einer gepflanzten Pflanze (Schussursprung).</summary>
-        public Vector2 PlantMuzzle(PlantGenome g) => CellCenterOf(new Cell(g.cellX, g.cellY)) + new Vector2(0, 0.35f);
+        public Vector2 PlantMuzzle(PlantedState p) => CellCenterOf(new Cell(p.x, p.y)) + new Vector2(0, CellSize * 0.5f);
 
-        /// <summary>Kleiner Rueckstoss-Wackler beim Schiessen.</summary>
-        public void KickPlant(PlantGenome g) { if (plantViews.TryGetValue(g.uid, out var v)) v.squash = Mathf.Max(v.squash, 0.5f); }
+        public void KickPlant(PlantedState p) { if (plantViews.TryGetValue(new Cell(p.x, p.y), out var v)) v.squash = Mathf.Max(v.squash, 0.5f); }
     }
 }
