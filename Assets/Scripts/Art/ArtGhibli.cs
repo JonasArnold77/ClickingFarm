@@ -48,10 +48,10 @@ namespace SeedClicker
             return r;
         }
 
-        static Color At(Color[] ramp, float t) => ramp[Mathf.Clamp(Mathf.FloorToInt(t * ramp.Length), 0, ramp.Length - 1)];
+        internal static Color At(Color[] ramp, float t) => ramp[Mathf.Clamp(Mathf.FloorToInt(t * ramp.Length), 0, ramp.Length - 1)];
 
         /// <summary>Periodisches Rauschen ueber eine Kachel (nahtlos kachelbar).</summary>
-        static float TileNoise(Px c, float x, float y, int period, int salt)
+        internal static float TileNoise(Px c, float x, float y, int period, int salt)
         {
             int xi = Mathf.FloorToInt(x), yi = Mathf.FloorToInt(y);
             float fx = x - xi, fy = y - yi;
@@ -320,7 +320,7 @@ namespace SeedClicker
             }
         }
 
-        static Sprite Oak(int v)
+        internal static Sprite Oak(int v)
         {
             var c = new Px(40, 56, 1000 + v);
             var rnd = new System.Random(v * 17 + 3);
@@ -336,7 +336,7 @@ namespace SeedClicker
             return c.ToSprite(new Vector2(0.5f, 0.02f));
         }
 
-        static Sprite Pine(int v)
+        internal static Sprite Pine(int v)
         {
             var c = new Px(30, 54, 1100 + v);
             Trunk(c, 15, 0, 10, 3.5f);
@@ -362,7 +362,7 @@ namespace SeedClicker
             return c.ToSprite(new Vector2(0.5f, 0.02f));
         }
 
-        static Sprite Bush(int v)
+        internal static Sprite Bush(int v)
         {
             var c = new Px(22, 18, 1200 + v);
             var rnd = new System.Random(v * 5 + 9);

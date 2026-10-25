@@ -8,6 +8,12 @@ namespace SeedClicker
     /// </summary>
     public static class Bootstrap
     {
+        /// <summary>
+        /// true = bisheriges Raster-Farmspiel (Beete, Nachtkampf, UI). false = neue frei gezeichnete Welt.
+        /// Die Spiellogik bleibt erhalten und wird spaeter auf die freie Welt umgezogen.
+        /// </summary>
+        public static bool LegacyFarm = false;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Init()
         {
@@ -18,6 +24,16 @@ namespace SeedClicker
 
             var root = new GameObject("SeedClicker");
             Object.DontDestroyOnLoad(root);
+
+            if (!LegacyFarm)
+            {
+                // Neue, frei gezeichnete Welt (ohne Tile-Raster): erst mal nur Landschaft + Haus
+                new GameObject("Particles").AddComponent<Particles>().transform.SetParent(root.transform);
+                new GameObject("World").AddComponent<WorldBuilder>().transform.SetParent(root.transform);
+                root.AddComponent<WorldCamera>();
+                return;
+            }
+
             // Reihenfolge wichtig: Game zuerst (laedt Balancing und Spielstand)
             root.AddComponent<Game>();
             root.AddComponent<Sfx>();

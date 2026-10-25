@@ -215,6 +215,18 @@ namespace SeedClicker
             for (int yy = y * s; yy < (y + rh) * s; yy++) for (int xx = x * s; xx < (x + rw) * s; xx++) if (SolidP(xx, yy) && Rand() < density) SetP(xx, yy, col);
         }
 
+        /// <summary>Kachelbare Textur (fuer Boden-Materialien).</summary>
+        public Texture2D ToTexture(TextureWrapMode wrap = TextureWrapMode.Repeat, FilterMode filter = FilterMode.Point)
+        {
+            var tex = new Texture2D(pw, ph, TextureFormat.RGBA32, false) { filterMode = filter, wrapMode = wrap };
+            tex.SetPixels(c);
+            tex.Apply(false, true);
+            return tex;
+        }
+
+        /// <summary>Setzt ein physisches Pixel mit Umbruch an den Raendern (nahtlose Texturen).</summary>
+        public void SetWrap(int x, int y, Color col) => SetP(((x % pw) + pw) % pw, ((y % ph) + ph) % ph, col);
+
         public Sprite ToSprite(Vector2 pivot, float ppu = 16, Vector4 border = default)
         {
             var tex = new Texture2D(pw, ph, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };

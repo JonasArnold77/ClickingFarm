@@ -52,6 +52,13 @@
 - Pixel-Art im Stil gemütlicher 16-px-Farmspiele (Stardew-artige Ästhetik): erdige, warme Palette, dunkelbraune statt schwarzer Konturen, Beete verbinden sich automatisch (Autotiling), Holzzäune um das freigeschaltete Land, buschige Laubbäume und Tannen, Holzhaus mit Schindeldach, Menüs als Holzrahmen mit Pergament. Alles selbst gezeichnet, nichts aus Stardew Valley übernommen.
 - Beschützer-Pflanzen und Monster haben Gesichter, damit sie Charakter bekommen.
 
+## Frei gezeichnete Welt ohne Tile-Raster (aktueller Stand)
+- `Bootstrap.LegacyFarm = false` startet die neue Welt (`Scripts/World/`). Das bisherige Raster-Farmspiel (Beete, Nachtkampf, UI) bleibt im Code und lässt sich mit `LegacyFarm = true` wieder einschalten; es wird später auf die freie Welt umgezogen.
+- **Boden = ein Material** (`Resources/Shaders/TerrainSplat2D.shader`, URP-2D-beleuchtet): mischt die Texturen Gras, Blumenwiese, Schlamm und Erdweg über eine Splat-Maske (R = Schlamm, G = Weg, B = Wiese). Kanten werden mit Rauschen ausgefranst und aufs Pixelraster gerastet (32 px pro Einheit), damit es wie gemalt wirkt.
+- Boden-Texturen sind prozedural und nahtlos (`GroundMaterials.cs`, 128 px = 4 Einheiten). Eigene Texturen unter `Resources/Ground/grass|meadow|mud|dirt` ersetzen sie automatisch.
+- Karte 48 × 64 Einheiten, Haus oben in der Mitte, Erdweg nach Süden mit Abzweig, Schlammlöcher mit Pfützen, Blumenwiesen-Flecken. Bäume, Büsche, Steine, Gras, Blumen frei platziert (Abstandsprüfung, dichter Waldrand, Lichtung ums Haus). Sortierung nach Y.
+- Kamera: Wischen verschiebt, zwei Finger/Mausrad zoomen, begrenzt auf die Karte.
+
 ## Werbung
 - `Core/AdService.cs` ist die einzige Stelle für Werbung. Derzeit zeigt die UI ein 2-Sekunden-Platzhalter-Video und vergibt dann die Belohnung.
 - Belohnungsvideos: Energie auffüllen, Offline-Ertrag verdoppeln, alles wachsen lassen, Gratis-Samenpaket.
