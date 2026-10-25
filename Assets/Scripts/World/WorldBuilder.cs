@@ -18,7 +18,7 @@ namespace SeedClicker
         public const float MapW = 22f, MapH = 30f;
         public static readonly Vector2 HousePos = new Vector2(0f, 4.5f);   // Mitte der Hausunterkante
         const int MaskPerUnit = 8;
-        const float HouseScale = 1.6f;
+        const float HouseScale = 2.3f;
 
         Texture2D mask;
         Color[] maskPixels;
@@ -46,8 +46,7 @@ namespace SeedClicker
             BuildTerrain();
             BuildPlateauMask();
             if (art == null) { Debug.LogError("Resources/WorldArt.asset fehlt"); return; }
-            BuildCliffEdge();
-            BuildAbyss();
+            BuildMountain();
             PlaceHouse();
             PlaceNature();
             SetupLight();
@@ -102,7 +101,7 @@ namespace SeedClicker
             mw = Mathf.RoundToInt(MapW * MaskPerUnit); mh = Mathf.RoundToInt(MapH * MaskPerUnit);
             maskPixels = new Color[mw * mh];
             var mudSpots = new[] { (HousePos + new Vector2(-4.2f, -3.2f), 1.1f), (HousePos + new Vector2(3.8f, -6.5f), 0.8f), (new Vector2(-5f, -9f), 1.4f), (new Vector2(6.5f, -12f), 1.0f) };
-            var yardC = HousePos + new Vector2(0f, -0.65f);
+            var yardC = HousePos + new Vector2(0f, -0.85f);
             for (int y = 0; y < mh; y++)
                 for (int x = 0; x < mw; x++)
                 {
@@ -110,7 +109,7 @@ namespace SeedClicker
                     float edge = (Fbm(w.x * 1.2f, w.y * 1.2f, 3) - 0.5f) * 0.35f;
                     float dirt = 1f - Mathf.InverseLerp(0.32f, 0.62f, DistToPath(w) + edge);
                     // Vorplatz aus Pflaster vor dem Haus, von Erde umrandet
-                    var yd = (w - yardC) / new Vector2(1.9f, 0.85f);
+                    var yd = (w - yardC) / new Vector2(2.6f, 1.1f);
                     float stone = 1f - Mathf.InverseLerp(0.85f, 1.0f, yd.magnitude + edge * 0.4f);
                     dirt = Mathf.Max(dirt, 1f - Mathf.InverseLerp(1.0f, 1.35f, yd.magnitude + edge));
                     float mud = 0f;
@@ -214,15 +213,15 @@ namespace SeedClicker
 
         void PlaceHouse()
         {
-            Shadow(HousePos + new Vector2(0.15f, 0.05f), 3.6f, 0.55f, 0.35f);
+            Shadow(HousePos + new Vector2(0.2f, 0.05f), 5.2f, 0.8f, 0.35f);
             Place("sk_House_0", HousePos, HouseScale, false, 0.02f);
-            Reserve(HousePos + new Vector2(0, 0.9f), 2.0f);
-            Reserve(HousePos + new Vector2(0, -0.6f), 1.2f); // Vorplatz frei halten
+            Reserve(HousePos + new Vector2(0, 1.3f), 2.7f);
+            Reserve(HousePos + new Vector2(0, -0.8f), 1.6f); // Vorplatz frei halten
             // ein paar Happy-Harvest-Props direkt am Haus
-            var barrel = HousePos + new Vector2(1.85f, -0.25f);
-            PlaceSized("hh_barrel", barrel, 0.5f); Shadow(barrel, 0.55f, 0.18f); Reserve(barrel, 0.3f);
+            var barrel = HousePos + new Vector2(2.65f, -0.3f);
+            PlaceSized("hh_barrel", barrel, 0.7f); Shadow(barrel, 0.75f, 0.22f); Reserve(barrel, 0.4f);
             var sign = path[4] + new Vector2(0.75f, 0f);
-            PlaceSized("hh_sign", sign, 0.7f); Shadow(sign, 0.35f, 0.12f); Reserve(sign, 0.25f);
+            PlaceSized("hh_sign", sign, 0.95f); Shadow(sign, 0.45f, 0.14f); Reserve(sign, 0.3f);
 
             // warmes Fensterlicht fuer die Nacht vorbereiten
             var lgo = new GameObject("WindowLight");
@@ -249,16 +248,16 @@ namespace SeedClicker
                 float grove = Fbm(p.x * 0.2f, p.y * 0.2f, 31);
                 float density = edge < 2.5f ? 1f : grove > 0.62f ? 0.5f : 0.02f;
                 if (R() > density) continue;
-                if ((p - HousePos).magnitude < 4f || !OnBareGrass(p, 0.9f)) continue;
+                if ((p - HousePos).magnitude < 5.5f || !OnBareGrass(p, 1.0f)) continue;
                 bool big = R() < 0.6f;
-                float r = big ? 1.05f : 0.7f;
+                float r = big ? 1.35f : 0.95f;
                 if (!Free(p, r)) continue;
                 int occ = occupied.Count;
                 Reserve(p, r);
                 treePos.Add(p);
                 bool pine = grove < 0.5f ? R() < 0.55f : R() < 0.3f;
                 string name = pine ? (big ? "sk_Tree_2" : "sk_Tree_1") : (big ? "sk_Tree_3" : "sk_Tree_0");
-                float s = (big ? 1.55f : 1.3f) * (0.88f + R() * 0.3f);
+                float s = (big ? 2.1f : 1.75f) * (0.88f + R() * 0.3f);
                 RegisterTree(Place(name, p, s, R() < 0.5f, 0.06f), p, big, occ);
             }
 
@@ -303,8 +302,8 @@ namespace SeedClicker
             }
 
             // Blumenbeete am Haus
-            foreach (var dx in new[] { -1.55f, -1.2f, 1.25f })
-                PlaceSized(dx < 0 ? "hh_flowers_red" : "hh_flowers_yellow", HousePos + new Vector2(dx, -0.1f), 0.24f);
+            foreach (var dx in new[] { -2.2f, -1.75f, 1.8f })
+                PlaceSized(dx < 0 ? "hh_flowers_red" : "hh_flowers_yellow", HousePos + new Vector2(dx, -0.1f), 0.3f);
 
             // Dunkle Waldkante ausserhalb der Karte, damit der Rand nie leer wirkt
             // (oben ist der Abgrund, dort kein Wald)
@@ -332,7 +331,7 @@ namespace SeedClicker
 
         void Update()
         {
-            UpdateAbyss(Time.deltaTime);
+            UpdateMountain(Time.deltaTime);
             UpdateInteract(Time.deltaTime);
             ambientT -= Time.deltaTime;
             if (ambientT > 0 || Particles.I == null) return;

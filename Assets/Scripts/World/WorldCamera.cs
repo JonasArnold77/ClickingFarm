@@ -37,8 +37,8 @@ namespace SeedClicker
             cam.orthographic = true;
             cam.clearFlags = CameraClearFlags.SolidColor;
             Input.simulateMouseWithTouches = false;
-            cam.orthographicSize = Mathf.Clamp(3.6f / Mathf.Max(0.3f, cam.aspect), MinSize, MaxSize);
-            basePos = new Vector3(WorldBuilder.HousePos.x, WorldBuilder.HousePos.y - 1.2f, -10);
+            cam.orthographicSize = Mathf.Clamp(4.4f / Mathf.Max(0.3f, cam.aspect), MinSize, MaxSize);
+            basePos = new Vector3(WorldBuilder.HousePos.x, WorldBuilder.HousePos.y - 0.3f, -10);
         }
 
         public void Shake(float amount) => shake = Mathf.Max(shake, amount);
@@ -167,7 +167,8 @@ namespace SeedClicker
             float h = cam.orthographicSize, w = h * cam.aspect;
             float hx = WorldBuilder.MapW / 2f, hy = WorldBuilder.MapH / 2f;
             basePos.x = w * 2 >= hx * 2 ? 0 : Mathf.Clamp(basePos.x, -hx + w, hx - w);
-            basePos.y = h * 2 >= hy * 2 ? 0 : Mathf.Clamp(basePos.y, -hy + h, hy - h);
+            const float topExtra = 4.5f; // oben darf man ein Stueck ueber die Karte hinaus auf den Berg schauen
+            basePos.y = h * 2 >= hy * 2 + topExtra ? topExtra / 2f : Mathf.Clamp(basePos.y, -hy + h, hy + topExtra - h);
             basePos.z = -10;
         }
     }

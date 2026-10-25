@@ -33,6 +33,7 @@ namespace SeedClicker
                 new GameObject("World").AddComponent<WorldBuilder>().transform.SetParent(root.transform);
                 root.AddComponent<WorldCamera>();
                 root.AddComponent<WorldUI>();
+                root.AddComponent<WorldPostFX>();
                 return;
             }
 

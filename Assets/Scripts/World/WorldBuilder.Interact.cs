@@ -164,7 +164,7 @@ namespace SeedClicker
 
         void CreateStump(TreeObj t, bool fx)
         {
-            var sr = Place("sk_Tree_4", t.foot + new Vector2(0, -0.05f), t.big ? 0.75f : 0.6f, t.id % 2 == 0, 0.02f);
+            var sr = Place("sk_Tree_4", t.foot + new Vector2(0, -0.05f), StumpSize(t), t.id % 2 == 0, 0.02f);
             if (sr == null) return;
             t.stump = sr;
             t.stumpHp = StumpHp;
@@ -296,7 +296,7 @@ namespace SeedClicker
                     var col = t.sr.color; col.a = k < 0.7f ? 1f : 1f - (k - 0.7f) / 0.3f; t.sr.color = col;
                     if (t.fallT >= 1f)
                     {
-                        var land = t.foot + new Vector2(t.fallDir * (t.big ? 1.6f : 1.1f), 0.2f);
+                        var land = t.foot + new Vector2(t.fallDir * (t.big ? 2.2f : 1.5f), 0.2f);
                         Particles.I?.Burst(land, "leaf", new Color(0.45f, 0.72f, 0.3f), 16, 3.5f, 0.9f, 0.6f, 4f, 1.5f);
                         Particles.I?.Burst(land, "square", new Color(0.75f, 0.68f, 0.5f), 10, 3f, 0.6f, 1f, 5f, 1f);
                         WorldCamera.I?.Shake(0.1f);
@@ -315,7 +315,7 @@ namespace SeedClicker
                 {
                     t.pop = Mathf.MoveTowards(t.pop, 1f, dt * 4f);
                     float sq = Mathf.Sin(t.pop * Mathf.PI) * 0.15f;
-                    float sx = (t.big ? 0.75f : 0.6f);
+                    float sx = StumpSize(t);
                     t.stump.transform.localScale = new Vector3(Mathf.Sign(t.stump.transform.localScale.x) * sx * (1 + sq), sx * (1 - sq), 1);
                 }
             }
@@ -339,9 +339,11 @@ namespace SeedClicker
             if (cellCursor != null && cursorT > 0f) { cursorT -= dt; if (cursorT <= 0f) cellCursor.enabled = false; }
         }
 
+        static float StumpSize(TreeObj t) => t.big ? 1.0f : 0.8f;
+
         Vector3 StumpScale(Transform tr)
         {
-            foreach (var t in trees) if (t.stump != null && t.stump.transform == tr) { float s = t.big ? 0.75f : 0.6f; return new Vector3(t.id % 2 == 0 ? -s : s, s, 1); }
+            foreach (var t in trees) if (t.stump != null && t.stump.transform == tr) { float s = StumpSize(t); return new Vector3(t.id % 2 == 0 ? -s : s, s, 1); }
             return Vector3.one;
         }
 
@@ -362,7 +364,7 @@ namespace SeedClicker
             hpBack.enabled = hpFill.enabled = show;
             if (!show) return;
             float f = hpTree.hp / (float)hpTree.maxHp;
-            var top = hpTree.foot + new Vector2(0, 1.25f);
+            var top = hpTree.foot + new Vector2(0, 1.7f);
             hpBack.transform.position = top; hpBack.transform.localScale = new Vector3(0.9f, 0.13f, 1);
             hpFill.transform.position = top + new Vector2(-0.42f * (1 - f), 0); hpFill.transform.localScale = new Vector3(0.84f * f, 0.08f, 1);
         }
