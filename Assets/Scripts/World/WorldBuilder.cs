@@ -5,78 +5,80 @@ using UnityEngine.Rendering.Universal;
 namespace SeedClicker
 {
     /// <summary>
-    /// Baut eine frei gezeichnete Welt ohne Tile-Raster:
-    /// ein grosser Boden mit Material-Mischung (Gras, Wiese, Schlamm, Erdweg) ueber eine Splat-Maske,
-    /// darauf frei platzierte Baeume, Buesche, Steine, Blumen und ein Haus.
+    /// Baut eine frei gezeichnete Welt ohne Tile-Raster mit den Grafiken aus
+    /// Skyden "Cozy Farm" (Boden, Baeume, Haus, Natur) und Happy Harvest (Props):
+    /// ein Boden-Material (Gras, dunkles Gras, Erdweg, Pflaster, Schlamm) ueber eine Splat-Maske,
+    /// darauf frei platzierte Objekte, sortiert nach Y.
+    /// 1 Welteinheit = 1 Skyden-Kachel (256 px).
     /// </summary>
     public class WorldBuilder : MonoBehaviour
     {
         public static WorldBuilder I { get; private set; }
 
-        // Kartengroesse in Welteinheiten (1 Einheit = 32 Pixel), Mittelpunkt bei (0, 0)
-        public const float MapW = 48f, MapH = 64f;
-        public static readonly Vector2 HousePos = new Vector2(0f, 6f);
-        const int MaskPerUnit = 4;
+        public const float MapW = 22f, MapH = 30f;
+        public static readonly Vector2 HousePos = new Vector2(0f, 4.5f);   // Mitte der Hausunterkante
+        const int MaskPerUnit = 8;
+        const float HouseScale = 1.6f;
 
         Texture2D mask;
         Color[] maskPixels;
         int mw, mh;
         System.Random rnd;
-        readonly List<Vector2> pathPoints = new List<Vector2>();
-        readonly List<Vector2> trees = new List<Vector2>();
+        readonly List<Vector2> path = new List<Vector2>();
+        readonly List<Vector2> branch = new List<Vector2>();
+        readonly List<Vector2> occupied = new List<Vector2>();
+        readonly List<float> occupiedR = new List<float>();
         Transform objects;
         float ambientT;
+        WorldArtSet art;
 
-        public static int Order(float y) => Mathf.RoundToInt(-y * 20f);
+        public static int Order(float y) => Mathf.RoundToInt(-y * 100f);
 
         void Awake()
         {
             I = this;
+            art = WorldArtSet.I;
             rnd = new System.Random(1234);
             objects = new GameObject("Objects").transform;
             objects.SetParent(transform, false);
-            BuildPath();
+            BuildPaths();
             BuildMask();
             BuildTerrain();
+            if (art == null) { Debug.LogError("Resources/WorldArt.asset fehlt"); return; }
             PlaceHouse();
             PlaceNature();
             SetupLight();
         }
 
-        // ------------------------------------------------------------------ Weg vom Haus nach Sueden
+        // ------------------------------------------------------------------ Wege
 
-        void BuildPath()
+        void BuildPaths()
         {
-            pathPoints.Clear();
-            var p = HousePos + new Vector2(0.1f, -0.3f);
-            pathPoints.Add(p);
+            var p = HousePos + new Vector2(0f, -0.2f);
+            path.Add(p);
             float x = p.x;
-            for (float y = p.y - 1.5f; y > -MapH / 2f - 2; y -= 1.5f)
+            for (float y = p.y - 0.8f; y > -MapH / 2f - 1; y -= 0.8f)
             {
-                x += Mathf.Sin(y * 0.18f) * 0.55f + Mathf.Sin(y * 0.07f + 1.3f) * 0.35f;
-                pathPoints.Add(new Vector2(x, y));
+                x += Mathf.Sin(y * 0.35f) * 0.28f + Mathf.Sin(y * 0.13f + 1.3f) * 0.18f;
+                path.Add(new Vector2(x, y));
             }
-            // Abzweig nach Osten zum Waldrand
-            var branchStart = pathPoints[6];
-            for (int i = 1; i < 14; i++) pathPoints2.Add(branchStart + new Vector2(i * 1.6f, Mathf.Sin(i * 0.6f) * 0.8f - i * 0.25f));
+            var b = path[7];
+            for (int i = 1; i < 16; i++) branch.Add(b + new Vector2(i * 0.8f, Mathf.Sin(i * 0.5f) * 0.35f - i * 0.12f));
         }
-
-        readonly List<Vector2> pathPoints2 = new List<Vector2>();
 
         static float DistToPolyline(Vector2 p, List<Vector2> pts)
         {
             float best = float.MaxValue;
             for (int i = 0; i < pts.Count - 1; i++)
             {
-                var a = pts[i]; var b = pts[i + 1];
-                var ab = b - a;
+                var a = pts[i]; var ab = pts[i + 1] - a;
                 float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / Mathf.Max(0.0001f, ab.sqrMagnitude));
                 best = Mathf.Min(best, (a + ab * t - p).magnitude);
             }
             return best;
         }
 
-        public float DistToPath(Vector2 p) => Mathf.Min(DistToPolyline(p, pathPoints), DistToPolyline(p, pathPoints2));
+        public float DistToPath(Vector2 p) => Mathf.Min(DistToPolyline(p, path), DistToPolyline(p, branch));
 
         // ------------------------------------------------------------------ Splat-Maske
 
@@ -95,26 +97,26 @@ namespace SeedClicker
         {
             mw = Mathf.RoundToInt(MapW * MaskPerUnit); mh = Mathf.RoundToInt(MapH * MaskPerUnit);
             maskPixels = new Color[mw * mh];
-            var mudSpots = new[] { (HousePos + new Vector2(-7f, -4f), 2.6f), (HousePos + new Vector2(5.5f, -9f), 1.8f), (new Vector2(-9f, -18f), 3.2f), (new Vector2(10f, 12f), 2.2f) };
+            var mudSpots = new[] { (HousePos + new Vector2(-4.2f, -3.2f), 1.1f), (HousePos + new Vector2(3.8f, -6.5f), 0.8f), (new Vector2(-5f, -9f), 1.4f), (new Vector2(6f, 9f), 1.0f) };
+            var yardC = HousePos + new Vector2(0f, -0.65f);
             for (int y = 0; y < mh; y++)
                 for (int x = 0; x < mw; x++)
                 {
                     var w = MaskToWorld(x, y);
-                    // Erdweg und Vorplatz
-                    float path = 1f - Mathf.InverseLerp(0.9f, 1.6f, DistToPath(w) + (Fbm(w.x * 0.6f, w.y * 0.6f, 3) - 0.5f) * 0.8f);
-                    var yard = (w - (HousePos + new Vector2(0, -1.2f))) / new Vector2(4.2f, 2.2f);
-                    path = Mathf.Max(path, 1f - Mathf.InverseLerp(0.8f, 1.15f, yard.magnitude + (Fbm(w.x, w.y, 4) - 0.5f) * 0.4f));
-                    // Schlammloecher (und matschige Stellen am Weg)
+                    float edge = (Fbm(w.x * 1.2f, w.y * 1.2f, 3) - 0.5f) * 0.35f;
+                    float dirt = 1f - Mathf.InverseLerp(0.32f, 0.62f, DistToPath(w) + edge);
+                    // Vorplatz aus Pflaster vor dem Haus, von Erde umrandet
+                    var yd = (w - yardC) / new Vector2(1.9f, 0.85f);
+                    float stone = 1f - Mathf.InverseLerp(0.85f, 1.0f, yd.magnitude + edge * 0.4f);
+                    dirt = Mathf.Max(dirt, 1f - Mathf.InverseLerp(1.0f, 1.35f, yd.magnitude + edge));
                     float mud = 0f;
                     foreach (var (c, r) in mudSpots)
                     {
-                        float d = (w - c).magnitude / r + (Fbm(w.x * 0.8f, w.y * 0.8f, 9) - 0.5f) * 0.9f;
-                        mud = Mathf.Max(mud, 1f - Mathf.InverseLerp(0.75f, 1.1f, d));
+                        float d = (w - c).magnitude / r + (Fbm(w.x * 1.5f, w.y * 1.5f, 9) - 0.5f) * 0.8f;
+                        mud = Mathf.Max(mud, 1f - Mathf.InverseLerp(0.75f, 1.05f, d));
                     }
-                    if ((w - HousePos).magnitude > 6f) mud = Mathf.Max(mud, path * Mathf.InverseLerp(0.62f, 0.8f, Fbm(w.x * 0.35f, w.y * 0.35f, 11)));
-                    // Blumenwiesen-Flecken
-                    float meadow = Mathf.InverseLerp(0.48f, 0.66f, Fbm(w.x * 0.12f, w.y * 0.12f, 21));
-                    maskPixels[y * mw + x] = new Color(mud, path, meadow, 1);
+                    float dark = Mathf.InverseLerp(0.42f, 0.62f, Fbm(w.x * 0.3f, w.y * 0.3f, 21));
+                    maskPixels[y * mw + x] = new Color(mud, dirt, dark, stone);
                 }
             mask = new Texture2D(mw, mh, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp, name = "SplatMask" };
             mask.SetPixels(maskPixels);
@@ -123,7 +125,6 @@ namespace SeedClicker
 
         Vector2 MaskToWorld(int x, int y) => new Vector2((x + 0.5f) / MaskPerUnit - MapW / 2f, (y + 0.5f) / MaskPerUnit - MapH / 2f);
 
-        /// <summary>Maskenwert an einer Weltposition (R Schlamm, G Weg, B Wiese).</summary>
         public Color MaskAt(Vector2 w)
         {
             int x = Mathf.Clamp(Mathf.FloorToInt((w.x + MapW / 2f) * MaskPerUnit), 0, mw - 1);
@@ -136,122 +137,176 @@ namespace SeedClicker
             var go = new GameObject("Terrain");
             go.transform.SetParent(transform, false);
             var sr = go.AddComponent<SpriteRenderer>();
+            // Rand etwas groesser als die Karte, damit man nie ins Leere schaut
             sr.sprite = Sprite.Create(mask, new Rect(0, 0, mw, mh), new Vector2(0.5f, 0.5f), MaskPerUnit, 0, SpriteMeshType.FullRect);
             sr.sharedMaterial = GroundMaterials.Terrain;
-            sr.sortingOrder = -30000;
+            sr.sortingOrder = -32000;
         }
 
-        // ------------------------------------------------------------------ Objekte
+        // ------------------------------------------------------------------ Objekte setzen
 
-        SpriteRenderer Place(string name, Sprite sprite, Vector2 pos, float scale = 1f, bool flip = false)
+        /// <summary>Setzt ein Sprite so, dass seine Unterkante auf "foot" steht (Sortierung nach Y).</summary>
+        SpriteRenderer Place(string spriteName, Vector2 foot, float scale = 1f, bool flip = false, float footInset = 0f)
         {
-            var go = new GameObject(name);
+            var sprite = art.Get(spriteName);
+            if (sprite == null) return null;
+            var go = new GameObject(spriteName);
             go.transform.SetParent(objects, false);
-            go.transform.position = pos;
             go.transform.localScale = new Vector3(flip ? -scale : scale, scale, 1);
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = sprite;
-            sr.sortingOrder = Order(pos.y);
+            float bottom = sprite.bounds.min.y * scale;
+            go.transform.position = new Vector3(foot.x, foot.y - bottom - footInset * scale, 0);
+            sr.sortingOrder = Order(foot.y);
             return sr;
         }
 
-        void Shadow(Vector2 pos, float w, float h, float alpha = 0.3f)
+        /// <summary>Wie Place, aber auf eine Zielhoehe (Welteinheiten) normiert – fuer Props mit anderer Pixeldichte.</summary>
+        SpriteRenderer PlaceSized(string spriteName, Vector2 foot, float height, bool flip = false)
         {
-            var sr = Place("Shadow", Art.Get("soft"), pos + new Vector2(w * 0.12f, -h * 0.1f));
-            sr.transform.localScale = new Vector3(w, h, 1);
-            sr.color = new Color(0.04f, 0.09f, 0.1f, alpha);
-            sr.sortingOrder = -20000;
+            var sprite = art.Get(spriteName);
+            if (sprite == null) return null;
+            return Place(spriteName, foot, height / sprite.bounds.size.y, flip);
         }
+
+        void Shadow(Vector2 foot, float w, float h, float alpha = 0.28f)
+        {
+            var go = new GameObject("Shadow");
+            go.transform.SetParent(objects, false);
+            go.transform.position = foot + new Vector2(w * 0.1f, 0.02f);
+            go.transform.localScale = new Vector3(w, h, 1);
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = Art.Get("soft");
+            sr.color = new Color(0.08f, 0.14f, 0.1f, alpha);
+            sr.sortingOrder = -31000;
+        }
+
+        void Reserve(Vector2 p, float r) { occupied.Add(p); occupiedR.Add(r); }
+
+        bool Free(Vector2 p, float r)
+        {
+            for (int i = 0; i < occupied.Count; i++)
+            {
+                float d = r + occupiedR[i];
+                if ((occupied[i] - p).sqrMagnitude < d * d) return false;
+            }
+            return true;
+        }
+
+        bool OnBareGrass(Vector2 p, float pathClear)
+        {
+            if (DistToPath(p) < pathClear) return false;
+            var m = MaskAt(p);
+            return m.r < 0.3f && m.g < 0.25f && m.a < 0.2f;
+        }
+
+        Vector2 RandomPoint(float margin = 0f) =>
+            new Vector2((float)(rnd.NextDouble() * (MapW - 2 * margin) - MapW / 2f + margin), (float)(rnd.NextDouble() * (MapH - 2 * margin) - MapH / 2f + margin));
+
+        float R() => (float)rnd.NextDouble();
+
+        // ------------------------------------------------------------------ Haus
 
         void PlaceHouse()
         {
-            const float scale = 1.25f;
-            var sr = Place("House", Art.Get("house:2"), HousePos, scale);
-            Shadow(HousePos + new Vector2(0.4f, 0.2f), 7.5f, 1.6f, 0.35f);
+            Shadow(HousePos + new Vector2(0.15f, 0.05f), 3.6f, 0.55f, 0.35f);
+            Place("sk_House_0", HousePos, HouseScale, false, 0.02f);
+            Reserve(HousePos + new Vector2(0, 0.9f), 2.0f);
+            Reserve(HousePos + new Vector2(0, -0.6f), 1.2f); // Vorplatz frei halten
+            // ein paar Happy-Harvest-Props direkt am Haus
+            var barrel = HousePos + new Vector2(1.85f, -0.25f);
+            PlaceSized("hh_barrel", barrel, 0.5f); Shadow(barrel, 0.55f, 0.18f); Reserve(barrel, 0.3f);
+            var sign = path[4] + new Vector2(0.75f, 0f);
+            PlaceSized("hh_sign", sign, 0.7f); Shadow(sign, 0.35f, 0.12f); Reserve(sign, 0.25f);
+
             // warmes Fensterlicht fuer die Nacht vorbereiten
             var lgo = new GameObject("WindowLight");
-            lgo.transform.SetParent(sr.transform, false);
-            lgo.transform.position = HousePos + new Vector2(0, 1.4f);
+            lgo.transform.SetParent(transform, false);
+            lgo.transform.position = HousePos + new Vector2(0, 0.6f);
             var l = lgo.AddComponent<Light2D>();
             l.lightType = Light2D.LightType.Point;
-            l.pointLightOuterRadius = 6f; l.pointLightInnerRadius = 0.5f;
+            l.pointLightOuterRadius = 3f; l.pointLightInnerRadius = 0.3f;
             l.color = new Color(1f, 0.8f, 0.5f); l.intensity = 0f;
         }
 
-        bool Free(Vector2 p, float houseClear, float pathClear)
-        {
-            if ((p - (HousePos + new Vector2(0, 1.5f))).magnitude < houseClear) return false;
-            if (DistToPath(p) < pathClear) return false;
-            var m = MaskAt(p);
-            return m.r < 0.4f && m.g < 0.3f;
-        }
+        // ------------------------------------------------------------------ Natur
 
         void PlaceNature()
         {
             float hw = MapW / 2f, hh = MapH / 2f;
 
             // Baeume: dichter Waldrand, lockere Gruppen auf der Lichtung
-            for (int i = 0; i < 6000 && trees.Count < 230; i++)
+            var treePos = new List<Vector2>();
+            for (int i = 0; i < 9000 && treePos.Count < 150; i++)
             {
-                var p = new Vector2((float)(rnd.NextDouble() * (MapW + 6) - hw - 3), (float)(rnd.NextDouble() * (MapH + 6) - hh - 3));
+                var p = RandomPoint(-1.5f);
                 float edge = Mathf.Min(hw - Mathf.Abs(p.x), hh - Mathf.Abs(p.y));
-                float forest = Fbm(p.x * 0.09f, p.y * 0.09f, 31);
-                float density = edge < 6f ? 1f : forest > 0.6f ? 0.55f : 0.03f;
-                if (rnd.NextDouble() > density) continue;
-                if (!Free(p, 8.5f, 2.4f)) continue;
-                float minD = edge < 6f ? 1.9f : 2.6f;
-                bool ok = true;
-                foreach (var t in trees) if ((t - p).sqrMagnitude < minD * minD) { ok = false; break; }
-                if (!ok) continue;
-                trees.Add(p);
-                bool pine = forest < 0.45f ? rnd.NextDouble() < 0.6 : rnd.NextDouble() < 0.25;
-                float s = 0.95f + (float)rnd.NextDouble() * 0.45f;
-                Place(pine ? "Pine" : "Oak", pine ? Art.Pine(rnd.Next(0, 3)) : Art.Oak(rnd.Next(0, 6)), p, s, rnd.NextDouble() < 0.5);
-                Shadow(p + new Vector2(0.4f, 0.1f), (pine ? 2.2f : 3.2f) * s, 0.9f * s, 0.3f);
+                float grove = Fbm(p.x * 0.2f, p.y * 0.2f, 31);
+                float density = edge < 2.5f ? 1f : grove > 0.62f ? 0.5f : 0.02f;
+                if (R() > density) continue;
+                if ((p - HousePos).magnitude < 4f || !OnBareGrass(p, 0.9f)) continue;
+                bool big = R() < 0.6f;
+                float r = big ? 1.05f : 0.7f;
+                if (!Free(p, r)) continue;
+                Reserve(p, r);
+                treePos.Add(p);
+                bool pine = grove < 0.5f ? R() < 0.55f : R() < 0.3f;
+                string name = pine ? (big ? "sk_Tree_2" : "sk_Tree_1") : (big ? "sk_Tree_3" : "sk_Tree_0");
+                float s = (big ? 1.55f : 1.3f) * (0.88f + R() * 0.3f);
+                Place(name, p, s, R() < 0.5f, 0.06f);
             }
 
-            // Buesche am Waldrand und an Baeumen
-            for (int i = 0; i < 400; i++)
+            // Buesche und Pilze an Baeumen
+            foreach (var t in treePos)
             {
-                if (trees.Count == 0) break;
-                var t = trees[rnd.Next(trees.Count)];
-                var p = t + new Vector2((float)(rnd.NextDouble() * 4 - 2), (float)(rnd.NextDouble() * 2 - 1.5f));
-                if (!Free(p, 7f, 1.8f)) continue;
-                if (rnd.NextDouble() < 0.7) continue;
-                float s = 0.9f + (float)rnd.NextDouble() * 0.5f;
-                Place("Bush", Art.Bush(rnd.Next(0, 4)), p, s, rnd.NextDouble() < 0.5);
-                Shadow(p, 1.6f * s, 0.5f * s, 0.25f);
+                if (R() < 0.45f)
+                {
+                    var p = t + new Vector2(R() * 1.6f - 0.8f, -0.3f - R() * 0.5f);
+                    if (OnBareGrass(p, 0.6f) && Free(p, 0.35f)) { Reserve(p, 0.35f); Place("sk_Bush", p, 0.7f + R() * 0.3f, R() < 0.5f, 0.05f); }
+                }
+                if (R() < 0.18f)
+                {
+                    var p = t + new Vector2(R() * 1.2f - 0.6f, -0.2f - R() * 0.4f);
+                    if (OnBareGrass(p, 0.5f) && Free(p, 0.2f)) { Reserve(p, 0.2f); Place("sk_Mushroom_" + rnd.Next(0, 5), p, 0.6f + R() * 0.3f, R() < 0.5f, 0.03f); }
+                }
             }
 
-            // Steine, Felsen, Baumstuempfe, hohes Gras, Blumen
+            // Felsen, Steine, Baumstamm
+            for (int i = 0; i < 40; i++)
+            {
+                var p = RandomPoint(1f);
+                if ((p - HousePos).magnitude < 3f || !OnBareGrass(p, 0.7f) || !Free(p, 0.4f)) continue;
+                Reserve(p, 0.4f);
+                float roll = R();
+                if (roll < 0.35f) Place("sk_Stones", p, 0.6f + R() * 0.3f, R() < 0.5f, 0.04f);
+                else if (roll < 0.55f) { PlaceSized("hh_rock_big", p, 0.6f + R() * 0.2f, R() < 0.5f); Shadow(p, 0.9f, 0.2f); }
+                else if (roll < 0.75f) { PlaceSized("hh_rock_medium", p, 0.4f, R() < 0.5f); Shadow(p, 0.6f, 0.15f); }
+                else if (roll < 0.88f) { PlaceSized("hh_log", p, 0.3f, R() < 0.5f); Shadow(p, 0.9f, 0.15f); }
+                else { PlaceSized("hh_rock_small", p, 0.25f, R() < 0.5f); Shadow(p, 0.4f, 0.1f); }
+            }
+
+            // Blumen, Gras, kleine Pflanzen
+            string[] smalls = { "sk_Flowers_0", "sk_Flowers_1", "sk_Grass", "sk_Grass", "hh_grass1", "hh_grass2", "hh_flowers_red", "hh_flowers_white", "hh_flowers_yellow" };
             for (int i = 0; i < 260; i++)
             {
-                var p = new Vector2((float)(rnd.NextDouble() * MapW - hw), (float)(rnd.NextDouble() * MapH - hh));
-                if (!Free(p, 6f, 1.6f)) continue;
-                double roll = rnd.NextDouble();
-                var m = MaskAt(p);
-                if (roll < 0.12) { Place("Stone", Art.Get("ob:stone"), p, 0.8f + (float)rnd.NextDouble() * 0.4f); Shadow(p, 0.9f, 0.35f, 0.25f); }
-                else if (roll < 0.17) { Place("Boulder", Art.Get("ob:boulder"), p, 1.1f + (float)rnd.NextDouble() * 0.4f); Shadow(p, 1.5f, 0.5f, 0.3f); }
-                else if (roll < 0.21) { Place("Stump", Art.Get("ob:stump"), p, 1f); Shadow(p, 1.2f, 0.4f, 0.25f); }
-                else if (roll < 0.62) Place("TallGrass", Art.Get("ob:grass"), p, 0.8f + (float)rnd.NextDouble() * 0.5f, rnd.NextDouble() < 0.5);
-                else if (m.b > 0.4f || roll < 0.75) Place("Flowers", Art.Get("decor:flowers:" + rnd.Next(0, 4)), p, 1f);
+                var p = RandomPoint(0.5f);
+                if ((p - HousePos).magnitude < 2.2f || !OnBareGrass(p, 0.45f) || !Free(p, 0.12f)) continue;
+                string n = smalls[rnd.Next(smalls.Length)];
+                if (n.StartsWith("hh_")) PlaceSized(n, p, n.Contains("grass") ? 0.3f + R() * 0.1f : 0.22f, R() < 0.5f);
+                else Place(n, p, 0.55f + R() * 0.3f, R() < 0.5f, 0.02f);
             }
 
-            // Nicht begehbarer Rand: noch eine dunkle Waldkante ausserhalb der Karte
-            for (float x = -hw - 4; x < hw + 4; x += 1.7f)
-            {
-                foreach (var y in new[] { hh + 1.5f, -hh - 2.5f })
-                {
-                    var p = new Vector2(x + (float)rnd.NextDouble(), y + (float)rnd.NextDouble() * 1.5f);
-                    Place("EdgePine", Art.Pine(rnd.Next(0, 3)), p, 1.2f, rnd.NextDouble() < 0.5).color = new Color(0.8f, 0.85f, 0.85f);
-                }
-            }
-            for (float y = -hh - 3; y < hh + 3; y += 1.6f)
-                foreach (var x in new[] { -hw - 2f, hw + 2f })
-                {
-                    var p = new Vector2(x + (float)rnd.NextDouble() * 1.5f - 0.75f, y);
-                    Place("EdgeOak", Art.Oak(rnd.Next(0, 6)), p, 1.2f, rnd.NextDouble() < 0.5).color = new Color(0.8f, 0.85f, 0.85f);
-                }
+            // Blumenbeete am Haus
+            foreach (var dx in new[] { -1.55f, -1.2f, 1.25f })
+                PlaceSized(dx < 0 ? "hh_flowers_red" : "hh_flowers_yellow", HousePos + new Vector2(dx, -0.1f), 0.24f);
+
+            // Dunkle Waldkante ausserhalb der Karte, damit der Rand nie leer wirkt
+            for (float x = -hw - 1.5f; x < hw + 1.5f; x += 0.9f)
+                foreach (var y in new[] { hh + 0.4f, -hh - 0.6f })
+                    Place(R() < 0.5f ? "sk_Tree_2" : "sk_Tree_3", new Vector2(x + R() * 0.4f, y + R() * 0.6f), 1.6f, R() < 0.5f, 0.06f).color = new Color(0.78f, 0.84f, 0.82f);
+            for (float y = -hh - 1f; y < hh + 1f; y += 0.9f)
+                foreach (var x in new[] { -hw - 0.6f, hw + 0.6f })
+                    Place(R() < 0.5f ? "sk_Tree_2" : "sk_Tree_3", new Vector2(x + R() * 0.6f - 0.3f, y), 1.6f, R() < 0.5f, 0.06f).color = new Color(0.78f, 0.84f, 0.82f);
         }
 
         void SetupLight()
@@ -259,24 +314,24 @@ namespace SeedClicker
             Light2D global = null;
             foreach (var l in FindObjectsOfType<Light2D>()) if (l.lightType == Light2D.LightType.Global) { global = l; break; }
             if (global == null) { global = new GameObject("Global Light 2D").AddComponent<Light2D>(); global.lightType = Light2D.LightType.Global; }
-            global.color = new Color(1f, 0.96f, 0.86f);
+            global.color = new Color(1f, 0.97f, 0.9f);
             global.intensity = 1f;
             var cam = Camera.main;
-            if (cam != null) cam.backgroundColor = new Color(0.12f, 0.24f, 0.16f);
+            if (cam != null) cam.backgroundColor = new Color(0.2f, 0.32f, 0.2f);
         }
 
-        // ------------------------------------------------------------------ Atmosphaere
+        // ------------------------------------------------------------------ Atmosphaere: schwebende Pollen
 
         void Update()
         {
             ambientT -= Time.deltaTime;
             if (ambientT > 0 || Particles.I == null) return;
-            ambientT = 0.15f;
+            ambientT = 0.2f;
             var cam = Camera.main;
             float h = cam.orthographicSize, w = h * cam.aspect;
             var p = cam.transform.position + new Vector3(Random.Range(-w, w), Random.Range(-h, h), 0);
             p.z = 0;
-            Particles.I.Spawn(p, "square", new Color(1f, 0.98f, 0.85f, 0.75f), new Vector3(Random.Range(0.1f, 0.35f), Random.Range(-0.05f, 0.15f), 0), Random.Range(3f, 5f), 0.45f, 0.1f, -0.02f, 20f);
+            Particles.I.Spawn(p, "square", new Color(1f, 0.98f, 0.85f, 0.7f), new Vector3(Random.Range(0.04f, 0.12f), Random.Range(-0.02f, 0.05f), 0), Random.Range(3f, 5f), 0.18f, 0.04f, -0.01f, 20f, 0f, 30000);
         }
     }
 }

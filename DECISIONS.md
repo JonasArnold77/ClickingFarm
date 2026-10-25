@@ -54,10 +54,13 @@
 
 ## Frei gezeichnete Welt ohne Tile-Raster (aktueller Stand)
 - `Bootstrap.LegacyFarm = false` startet die neue Welt (`Scripts/World/`). Das bisherige Raster-Farmspiel (Beete, Nachtkampf, UI) bleibt im Code und lässt sich mit `LegacyFarm = true` wieder einschalten; es wird später auf die freie Welt umgezogen.
-- **Boden = ein Material** (`Resources/Shaders/TerrainSplat2D.shader`, URP-2D-beleuchtet): mischt die Texturen Gras, Blumenwiese, Schlamm und Erdweg über eine Splat-Maske (R = Schlamm, G = Weg, B = Wiese). Kanten werden mit Rauschen ausgefranst und aufs Pixelraster gerastet (32 px pro Einheit), damit es wie gemalt wirkt.
-- Boden-Texturen sind prozedural und nahtlos (`GroundMaterials.cs`, 128 px = 4 Einheiten). Eigene Texturen unter `Resources/Ground/grass|meadow|mud|dirt` ersetzen sie automatisch.
-- Karte 48 × 64 Einheiten, Haus oben in der Mitte, Erdweg nach Süden mit Abzweig, Schlammlöcher mit Pfützen, Blumenwiesen-Flecken. Bäume, Büsche, Steine, Gras, Blumen frei platziert (Abstandsprüfung, dichter Waldrand, Lichtung ums Haus). Sortierung nach Y.
-- Kamera: Wischen verschiebt, zwei Finger/Mausrad zoomen, begrenzt auf die Karte.
+- **Grafik kommt aus gekauften/importierten Paketen, nicht mehr aus Code:**
+  - **Skyden Games „Cozy Farm“** ist der Hauptstil (weich gemalt): Boden-Atlas, Bäume, Haus, Büsche, Steine, Blumen, Pilze.
+  - **Happy Harvest** nur für passende Props (Fass, Wegweiser, Baumstamm, Felsen, Grasbüschel, Blumen). Dessen Bäume/Büsche sind flacher Vektorstil und werden bewusst nicht benutzt.
+- `Resources/WorldArt.asset` (`WorldArtSet`) listet alle benutzten Sprites mit Namen (`sk_…`, `hh_…`) und den Boden-Atlas. Neue Grafik = Eintrag im Inspector hinzufügen.
+- **Boden = ein Material** (`Resources/Shaders/TerrainSplat2D.shader`, URP-2D-beleuchtet) mit Kacheln aus dem Skyden-Atlas: Gras, dunkles Gras, Erdweg, Kopfsteinpflaster, Schlamm (abgedunkelte Erde mit Pfützen). Splat-Maske: R Schlamm, G Weg, B dunkles Gras, A Pflaster. Kanten mit Rauschen ausgefranst.
+- Maßstab: 1 Welteinheit = 1 Skyden-Kachel (256 px). Karte 22 × 30, Haus (Skyden House_0, Skalierung 1,6) oben mittig mit Pflaster-Vorplatz, Erdweg nach Süden mit Abzweig, Schlammlöcher. Objekte frei platziert mit Abstandsprüfung, Sortierung nach Unterkante (Y).
+- Die prozedurale Grafik (`Scripts/Art`) wird nur noch vom alten Raster-Spiel benutzt.
 
 ## Werbung
 - `Core/AdService.cs` ist die einzige Stelle für Werbung. Derzeit zeigt die UI ein 2-Sekunden-Platzhalter-Video und vergibt dann die Belohnung.

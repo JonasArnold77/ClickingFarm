@@ -1,0 +1,45 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace SeedClicker
+{
+    /// <summary>
+    /// Liste der Grafiken fuer die freie Welt (Skyden "Cozy Farm" + ausgewaehlte Happy-Harvest-Props).
+    /// Liegt als Resources/WorldArt.asset vor; Sprites werden per Namen abgefragt.
+    /// Neue Grafik: im Inspector einen Eintrag (Name + Sprite) hinzufuegen.
+    /// </summary>
+    [CreateAssetMenu(menuName = "Seed Clicker/World Art Set")]
+    public class WorldArtSet : ScriptableObject
+    {
+        [Serializable] public class Entry { public string name; public Sprite sprite; }
+
+        [Tooltip("Boden-Atlas (256 px pro Kachel, 8x8 Kacheln)")]
+        public Texture2D groundAtlas;
+        public List<Entry> sprites = new List<Entry>();
+
+        static WorldArtSet inst;
+        Dictionary<string, Sprite> lookup;
+
+        public static WorldArtSet I
+        {
+            get
+            {
+                if (inst == null) inst = Resources.Load<WorldArtSet>("WorldArt");
+                return inst;
+            }
+        }
+
+        public Sprite Get(string name)
+        {
+            if (lookup == null)
+            {
+                lookup = new Dictionary<string, Sprite>();
+                foreach (var e in sprites) if (e.sprite != null && !string.IsNullOrEmpty(e.name)) lookup[e.name] = e.sprite;
+            }
+            if (lookup.TryGetValue(name, out var s)) return s;
+            Debug.LogWarning("WorldArt: Sprite fehlt: " + name);
+            return null;
+        }
+    }
+}

@@ -1,0 +1,90 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98a7904335924e22b6939eac3fa5a4ff, type: 3}
+  m_Name: WorldArt
+  m_EditorClassIdentifier: 
+  groundAtlas: {fileID: 2800000, guid: 9507db848132f1d43b659e6482620ed7, type: 3}
+  sprites:
+  - name: sk_House_0
+    sprite: {fileID: 349632745, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_House_1
+    sprite: {fileID: 430192704, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_House_2
+    sprite: {fileID: 1183965214, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Bush
+    sprite: {fileID: 1170036138, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Tree_0
+    sprite: {fileID: 1577017016, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Tree_1
+    sprite: {fileID: -672004544, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Tree_2
+    sprite: {fileID: 1668949542, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Tree_3
+    sprite: {fileID: 333524857, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Stones
+    sprite: {fileID: 1792615456, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Flowers_0
+    sprite: {fileID: -1408680954, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Flowers_1
+    sprite: {fileID: -1122005770, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Grass
+    sprite: {fileID: -1843640213, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Mushroom_0
+    sprite: {fileID: -220955993, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Mushroom_1
+    sprite: {fileID: 1344922931, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Mushroom_2
+    sprite: {fileID: -2036801927, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Mushroom_3
+    sprite: {fileID: 2139970757, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Mushroom_4
+    sprite: {fileID: -1850397872, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Plant_0
+    sprite: {fileID: -1657660519, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Plant_1
+    sprite: {fileID: 1969825466, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Plant_2
+    sprite: {fileID: -2083224468, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Plant_3
+    sprite: {fileID: 2146758189, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Plant_4
+    sprite: {fileID: 210193317, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Plant_5
+    sprite: {fileID: 185944362, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Plant_6
+    sprite: {fileID: 2000740215, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Plant_7
+    sprite: {fileID: -1827895245, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: sk_Cave
+    sprite: {fileID: 1480505166, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}
+  - name: hh_barrel
+    sprite: {fileID: 21300000, guid: dfabc71acad1eb945aa8a8b065eaa859, type: 3}
+  - name: hh_log
+    sprite: {fileID: 21300000, guid: 60d286ed26ead7b42afb615f2cd1e4c2, type: 3}
+  - name: hh_sign
+    sprite: {fileID: 21300000, guid: daa5fffdd6ee6b54ca9de7338d757114, type: 3}
+  - name: hh_rock_big
+    sprite: {fileID: 21300000, guid: 87095d04b03805c4792df1e59232d987, type: 3}
+  - name: hh_rock_medium
+    sprite: {fileID: 21300000, guid: f821bd76d5361a54da7171a2121821c7, type: 3}
+  - name: hh_rock_small
+    sprite: {fileID: 21300000, guid: fe7f7b7c2a86df24c8312db290aa11e8, type: 3}
+  - name: hh_grass1
+    sprite: {fileID: 21300000, guid: dec6f6001b1eec94ba3cec1a3bb770c2, type: 3}
+  - name: hh_grass2
+    sprite: {fileID: 21300000, guid: 48ab02bef0b5dd9409229786b265b915, type: 3}
+  - name: hh_flowers_red
+    sprite: {fileID: 21300000, guid: 88ba89bb5e2e39e4c8546619c7443f87, type: 3}
+  - name: hh_flowers_white
+    sprite: {fileID: 21300000, guid: f2b488816c86caa40befdd0d50809584, type: 3}
+  - name: hh_flowers_yellow
+    sprite: {fileID: 21300000, guid: 450c13aff2063fc41a7bd41d529213a8, type: 3}

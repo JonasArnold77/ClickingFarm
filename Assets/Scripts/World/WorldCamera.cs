@@ -15,7 +15,7 @@ namespace SeedClicker
         float lastPinch;
         int lastTouchCount;
 
-        float MinSize => 2.5f / Mathf.Max(0.3f, cam.aspect);
+        float MinSize => 1.5f / Mathf.Max(0.3f, cam.aspect);
         float MaxSize => Mathf.Min(WorldBuilder.MapH / 2f, WorldBuilder.MapW / 2f / Mathf.Max(0.3f, cam.aspect));
 
         void Awake()
@@ -26,8 +26,8 @@ namespace SeedClicker
             cam.orthographic = true;
             cam.clearFlags = CameraClearFlags.SolidColor;
             Input.simulateMouseWithTouches = false;
-            cam.orthographicSize = Mathf.Clamp(5.5f / Mathf.Max(0.3f, cam.aspect), MinSize, MaxSize);
-            basePos = new Vector3(WorldBuilder.HousePos.x, WorldBuilder.HousePos.y - 1.5f, -10);
+            cam.orthographicSize = Mathf.Clamp(3.6f / Mathf.Max(0.3f, cam.aspect), MinSize, MaxSize);
+            basePos = new Vector3(WorldBuilder.HousePos.x, WorldBuilder.HousePos.y - 1.2f, -10);
         }
 
         void LateUpdate()
