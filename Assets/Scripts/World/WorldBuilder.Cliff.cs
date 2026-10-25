@@ -21,7 +21,6 @@ namespace SeedClicker
         Texture2D plateauTex;
         Transform abyss;
         Vector3 camStart;
-        readonly List<Transform> mists = new List<Transform>();
 
         /// <summary>Hoehe der Klippenkante an Stelle x (mit leicht welliger, natuerlicher Kante).</summary>
         public float EdgeY(float x)
@@ -104,12 +103,12 @@ namespace SeedClicker
                 Quad(verts, uvs, cols, tris,
                     a - na * inner, b - nb * inner, b + nb * wall, a + na * wall,
                     new Vector2(ua, vTop), new Vector2(ub, vTop), new Vector2(ub, vMid), new Vector2(ua, vMid),
-                    Color.white, Color.white, new Color(0.7f, 0.78f, 0.8f), new Color(0.7f, 0.78f, 0.8f));
+                    Color.white, Color.white, new Color(0.74f, 0.75f, 0.76f), new Color(0.74f, 0.75f, 0.76f));
                 // Band 2: Fels verschwindet im Nebel
                 Quad(verts, uvs, cols, tris,
                     a + na * wall, b + nb * wall, b + nb * (wall + fade), a + na * (wall + fade),
                     new Vector2(ua, vMid), new Vector2(ub, vMid), new Vector2(ub, vBot), new Vector2(ua, vBot),
-                    new Color(0.7f, 0.78f, 0.8f), new Color(0.7f, 0.78f, 0.8f), new Color(0.75f, 0.85f, 0.9f, 0f), new Color(0.75f, 0.85f, 0.9f, 0f));
+                    new Color(0.74f, 0.75f, 0.76f), new Color(0.74f, 0.75f, 0.76f), new Color(0.78f, 0.79f, 0.8f, 0f), new Color(0.78f, 0.79f, 0.8f, 0f));
             }
             var mesh = new Mesh { name = "CliffEdge" };
             mesh.SetVertices(verts); mesh.SetUVs(0, uvs); mesh.SetColors(cols); mesh.SetTriangles(tris, 0);
@@ -138,7 +137,7 @@ namespace SeedClicker
             t.Add(b); t.Add(b + 2); t.Add(b + 1); t.Add(b); t.Add(b + 3); t.Add(b + 2);
         }
 
-        // ------------------------------------------------------------------ Abgrund: Nebel ueber schimmerndem Blau
+        // ------------------------------------------------------------------ Abgrund: grauer, wabernder Nebel
 
         static Sprite mistSprite;
 
@@ -164,8 +163,9 @@ namespace SeedClicker
             }
         }
 
-        class Glint { public Transform t; public SpriteRenderer sr; public float phase, speed, baseA; public Vector3 drift; }
-        readonly List<Glint> glints = new List<Glint>();
+        /// <summary>Eine Nebelschwade, die treibt und dabei "atmet" (Groesse, Dichte, leichtes Auf und Ab).</summary>
+        class Puff { public Transform t; public SpriteRenderer sr; public Vector3 baseScale; public float baseA, phase, speed, drift, bob; public bool world; }
+        readonly List<Puff> puffs = new List<Puff>();
 
         void BuildAbyss()
         {
@@ -174,73 +174,62 @@ namespace SeedClicker
             var cam = Camera.main;
             camStart = cam != null ? cam.transform.position : Vector3.zero;
 
-            // Tiefe: wasserartiges Blau, nach oben (weiter weg) heller und dunstiger
-            const int n = 48;
-            var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp, name = "AbyssWater" };
-            var px = new Color[n * n];
-            for (int y = 0; y < n; y++)
-                for (int x = 0; x < n; x++)
-                {
-                    float f = Fbm(x * 0.18f, y * 0.18f, 77);
-                    var deep = Color.Lerp(new Color(0.09f, 0.27f, 0.42f), new Color(0.18f, 0.45f, 0.62f), f);
-                    px[y * n + x] = Color.Lerp(deep, new Color(0.62f, 0.76f, 0.84f), Mathf.Pow(y / (n - 1f), 1.4f) * 0.55f);
-                }
-            tex.SetPixels(px); tex.Apply();
-            var floor = new GameObject("AbyssWater").AddComponent<SpriteRenderer>();
-            floor.transform.SetParent(abyss, false);
-            floor.sprite = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 1f);
-            floor.transform.localPosition = new Vector3(0, 8, 0);
-            floor.transform.localScale = new Vector3((MapW + 30f) / n, 36f / n, 1);
-            floor.sortingOrder = -32700;
-
-            // Schimmer: weiche, hellblaue Lichtflecken und lange Wellenstreifen, die sanft pulsieren
-            for (int i = 0; i < 90; i++)
+            // Grundschicht: grauer, wabernder Nebel (Shader), fuellt den ganzen Abgrund
+            var fogShader = Resources.Load<Shader>("Shaders/Fog2D");
+            var white = new Texture2D(4, 4) { name = "White" };
+            var wp = new Color[16]; for (int i = 0; i < 16; i++) wp[i] = Color.white; white.SetPixels(wp); white.Apply();
+            var fog = new GameObject("FogBase").AddComponent<SpriteRenderer>();
+            fog.transform.SetParent(abyss, false);
+            fog.sprite = Sprite.Create(white, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4f);
+            fog.transform.localPosition = new Vector3(0, 8, 0);
+            fog.transform.localScale = new Vector3(MapW + 34f, 40f, 1);
+            if (fogShader != null && fogShader.isSupported)
             {
-                var sr = new GameObject("Glint").AddComponent<SpriteRenderer>();
-                sr.transform.SetParent(abyss, false);
-                sr.sprite = MistSprite;
-                bool streak = rnd.NextDouble() < 0.55;
-                float s = streak ? 1.2f + (float)rnd.NextDouble() * 2.2f : 0.5f + (float)rnd.NextDouble() * 1.2f;
-                sr.transform.localScale = streak ? new Vector3(s * 2.6f, s * 0.22f, 1) : new Vector3(s, s * 0.6f, 1);
-                sr.transform.localPosition = new Vector3((float)(rnd.NextDouble() * (MapW + 24) - MapW / 2f - 12f), (float)(rnd.NextDouble() * 26f - 4f), 0);
-                sr.color = new Color(0.62f, 0.88f, 1f, 0f);
-                sr.sortingOrder = -32690;
-                glints.Add(new Glint
-                {
-                    t = sr.transform, sr = sr, phase = (float)rnd.NextDouble() * 10f, speed = 0.4f + (float)rnd.NextDouble() * 0.8f,
-                    baseA = streak ? 0.28f : 0.4f, drift = new Vector3(0.05f + (float)rnd.NextDouble() * 0.08f, 0, 0)
-                });
+                var mat = new Material(fogShader) { name = "Fog" };
+                mat.SetTexture("_NoiseTex", GroundMaterials.FogNoiseTex());
+                fog.sharedMaterial = mat;
+            }
+            else { Debug.LogWarning("Fog2D-Shader fehlt"); fog.color = new Color(0.6f, 0.62f, 0.64f); }
+            fog.sortingOrder = -32700;
+
+            // Schwaden in der Tiefe (bewegen sich mit der Parallaxe)
+            for (int i = 0; i < 55; i++)
+            {
+                var pos = new Vector3((float)(rnd.NextDouble() * (MapW + 26) - MapW / 2f - 13f), (float)(rnd.NextDouble() * 26f - 4f), 0);
+                float sz = 3f + (float)rnd.NextDouble() * 5f;
+                float g = 0.68f + (float)rnd.NextDouble() * 0.2f;
+                AddPuff(abyss, pos, new Vector3(sz * 1.8f, sz * 0.7f, 1), new Color(g, g + 0.01f, g + 0.02f), 0.25f + (float)rnd.NextDouble() * 0.3f, -32580 + i % 3, false);
             }
 
-            // Nebel: dichte, treibende Schwaden; nahe der Kante am dichtesten
-            for (int i = 0; i < 60; i++)
+            // Dichter Nebelsaum direkt hinter der Kante (bewegt sich mit dem Plateau)
+            for (float x = -MapW / 2f - 3f; x <= MapW / 2f + 3f; x += 0.9f)
             {
-                var m = new GameObject("Mist").AddComponent<SpriteRenderer>();
-                m.transform.SetParent(abyss, false);
-                m.sprite = MistSprite;
-                float y = (float)(rnd.NextDouble() * 24f - 4f);
-                m.color = new Color(0.9f, 0.95f, 0.97f, 0.3f + (float)rnd.NextDouble() * 0.25f);
-                m.transform.localPosition = new Vector3((float)(rnd.NextDouble() * (MapW + 24) - MapW / 2f - 12f), y, 0);
-                float s = 3.5f + (float)rnd.NextDouble() * 5f;
-                m.transform.localScale = new Vector3(s * 1.9f, s * 0.55f, 1);
-                m.sortingOrder = -32580 + (i % 3);
-                mists.Add(m.transform);
-            }
-
-            // Nebelsaum direkt hinter der Kante (bewegt sich mit dem Plateau, nicht mit der Tiefe)
-            for (float x = -MapW / 2f - 3f; x <= MapW / 2f + 3f; x += 1.1f)
-            {
-                var m = new GameObject("EdgeMist").AddComponent<SpriteRenderer>();
-                m.transform.SetParent(transform, false);
-                m.sprite = MistSprite;
-                m.color = new Color(0.9f, 0.95f, 0.98f, 0.45f);
-                m.transform.position = new Vector3(x, EdgeY(x) + 1.0f, 0);
-                m.transform.localScale = new Vector3(3.2f, 1.4f, 1);
-                m.sortingOrder = -32450;
+                var pos = new Vector3(x + (float)rnd.NextDouble() * 0.5f, EdgeY(x) + 0.9f + (float)rnd.NextDouble() * 0.5f, 0);
+                float g = 0.78f + (float)rnd.NextDouble() * 0.1f;
+                AddPuff(transform, pos, new Vector3(3.0f, 1.5f, 1), new Color(g, g, g + 0.01f), 0.5f, -32450, true);
             }
         }
 
-        /// <summary>Parallaxe (Tiefe) + treibender Nebel + pulsierender Wasserschimmer.</summary>
+        void AddPuff(Transform parent, Vector3 pos, Vector3 scale, Color col, float alpha, int order, bool world)
+        {
+            var sr = new GameObject("Mist").AddComponent<SpriteRenderer>();
+            sr.transform.SetParent(parent, false);
+            sr.sprite = MistSprite;
+            if (world) sr.transform.position = pos; else sr.transform.localPosition = pos;
+            sr.transform.localScale = scale;
+            col.a = alpha;
+            sr.color = col;
+            sr.sortingOrder = order;
+            puffs.Add(new Puff
+            {
+                t = sr.transform, sr = sr, baseScale = scale, baseA = alpha, world = world,
+                phase = (float)rnd.NextDouble() * 20f, speed = 0.25f + (float)rnd.NextDouble() * 0.35f,
+                drift = world ? 0.04f + (float)rnd.NextDouble() * 0.05f : 0.1f + (float)rnd.NextDouble() * 0.2f,
+                bob = 0.15f + (float)rnd.NextDouble() * 0.25f
+            });
+        }
+
+        /// <summary>Parallaxe (Tiefe) + treibende, atmende Nebelschwaden.</summary>
         void UpdateAbyss(float dt)
         {
             if (abyss == null) return;
@@ -248,21 +237,25 @@ namespace SeedClicker
             if (cam == null) return;
             var d = cam.transform.position - camStart;
             abyss.position = new Vector3(d.x * 0.55f, d.y * 0.55f, 0);
-            foreach (var m in mists)
-            {
-                var p = m.localPosition;
-                p.x += dt * 0.15f;
-                if (p.x > MapW / 2f + 14f) p.x = -MapW / 2f - 14f;
-                m.localPosition = p;
-            }
             float time = Time.time;
-            foreach (var g in glints)
+            foreach (var p in puffs)
             {
-                float a = Mathf.Max(0f, Mathf.Sin(time * g.speed + g.phase));
-                var c = g.sr.color; c.a = a * a * g.baseA; g.sr.color = c;
-                var p = g.t.localPosition + g.drift * dt;
-                if (p.x > MapW / 2f + 12f) p.x = -MapW / 2f - 12f;
-                g.t.localPosition = p;
+                float k = time * p.speed + p.phase;
+                // atmen: Groesse und Dichte schwanken, leicht versetzt
+                float breathe = Mathf.Sin(k);
+                p.t.localScale = new Vector3(p.baseScale.x * (1f + breathe * 0.14f), p.baseScale.y * (1f + Mathf.Sin(k * 1.3f + 1f) * 0.18f), 1);
+                var c = p.sr.color; c.a = p.baseA * (0.65f + 0.35f * Mathf.Sin(k * 0.7f + 2f)); p.sr.color = c;
+                // treiben + leichtes Auf und Ab
+                var pos = p.world ? p.t.position : p.t.localPosition;
+                pos.x += p.drift * dt;
+                pos.y += Mathf.Cos(k * 0.8f) * p.bob * dt;
+                float limit = MapW / 2f + (p.world ? 4f : 14f);
+                if (pos.x > limit)
+                {
+                    pos.x = -limit;
+                    if (p.world) pos.y = EdgeY(pos.x) + 0.9f;
+                }
+                if (p.world) p.t.position = pos; else p.t.localPosition = pos;
             }
         }
     }
