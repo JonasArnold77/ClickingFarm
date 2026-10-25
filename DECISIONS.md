@@ -62,7 +62,7 @@
 - Maßstab: 1 Welteinheit = 1 Skyden-Kachel (256 px). Karte 22 × 30, Haus (Skyden House_0, Skalierung 1,6) oben mittig mit Pflaster-Vorplatz, Erdweg nach Süden mit Abzweig, Schlammlöcher. Objekte frei platziert mit Abstandsprüfung, Sortierung nach Unterkante (Y).
 - Die prozedurale Grafik (`Scripts/Art`) wird nur noch vom alten Raster-Spiel benutzt.
 - **Klippe hinter dem Haus** (`WorldBuilder.Cliff.cs`, nach Skizze): Das Plateau endet an einer Kammlinie (`Ridge`), Spitze direkt hinter dem Haus, links steil, rechts flacher mit Knick. Der Boden-Shader macht alles jenseits der Kante durchsichtig (`_Plateau`-Maske). Entlang der Kante liegt ein Mesh-Band mit der Skyden-Klippenwand (Grasrand → Fels → Nebel).
-- **Abgrund:** nebliges Tal weit unten mit Fluss, kleinen dunstigen Bäumen und treibenden Nebelschwaden. Es bewegt sich mit halber Kamerageschwindigkeit (Parallaxe) und wirkt dadurch tief.
+- **Klippenkante** ist nur ein schmaler Fels-/Grasrand. **Abgrund:** keine Bäume; dichter, treibender Nebel über einem tiefen, wasserartigen Blau mit sanft pulsierendem Lichtschimmer. Die Tiefe bewegt sich mit halber Kamerageschwindigkeit (Parallaxe); Nebel-Sprites sind bilinear gefiltert, damit sie weich bleiben.
 - Sortierwerte (`sortingOrder`) müssen in −32768…32767 liegen; Hintergrundebenen nutzen −32700…−32400.
 
 ## Werbung
