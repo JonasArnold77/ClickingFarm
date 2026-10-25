@@ -16,6 +16,8 @@ namespace SeedClicker
 
         [Tooltip("Boden-Atlas (256 px pro Kachel, 8x8 Kacheln)")]
         public Texture2D groundAtlas;
+        [Tooltip("Klippen-Atlas (Skyden Mountain Tiles, 256 px pro Kachel)")]
+        public Texture2D mountainAtlas;
         public List<Entry> sprites = new List<Entry>();
 
         static WorldArtSet inst;

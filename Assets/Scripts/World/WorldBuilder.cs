@@ -11,7 +11,7 @@ namespace SeedClicker
     /// darauf frei platzierte Objekte, sortiert nach Y.
     /// 1 Welteinheit = 1 Skyden-Kachel (256 px).
     /// </summary>
-    public class WorldBuilder : MonoBehaviour
+    public partial class WorldBuilder : MonoBehaviour
     {
         public static WorldBuilder I { get; private set; }
 
@@ -44,7 +44,10 @@ namespace SeedClicker
             BuildPaths();
             BuildMask();
             BuildTerrain();
+            BuildPlateauMask();
             if (art == null) { Debug.LogError("Resources/WorldArt.asset fehlt"); return; }
+            BuildCliffEdge();
+            BuildAbyss();
             PlaceHouse();
             PlaceNature();
             SetupLight();
@@ -97,7 +100,7 @@ namespace SeedClicker
         {
             mw = Mathf.RoundToInt(MapW * MaskPerUnit); mh = Mathf.RoundToInt(MapH * MaskPerUnit);
             maskPixels = new Color[mw * mh];
-            var mudSpots = new[] { (HousePos + new Vector2(-4.2f, -3.2f), 1.1f), (HousePos + new Vector2(3.8f, -6.5f), 0.8f), (new Vector2(-5f, -9f), 1.4f), (new Vector2(6f, 9f), 1.0f) };
+            var mudSpots = new[] { (HousePos + new Vector2(-4.2f, -3.2f), 1.1f), (HousePos + new Vector2(3.8f, -6.5f), 0.8f), (new Vector2(-5f, -9f), 1.4f), (new Vector2(6.5f, -12f), 1.0f) };
             var yardC = HousePos + new Vector2(0f, -0.65f);
             for (int y = 0; y < mh; y++)
                 for (int x = 0; x < mw; x++)
@@ -140,7 +143,7 @@ namespace SeedClicker
             // Rand etwas groesser als die Karte, damit man nie ins Leere schaut
             sr.sprite = Sprite.Create(mask, new Rect(0, 0, mw, mh), new Vector2(0.5f, 0.5f), MaskPerUnit, 0, SpriteMeshType.FullRect);
             sr.sharedMaterial = GroundMaterials.Terrain;
-            sr.sortingOrder = -32000;
+            sr.sortingOrder = -32500; // Sortierwerte muessen in -32768..32767 liegen
         }
 
         // ------------------------------------------------------------------ Objekte setzen
@@ -195,6 +198,7 @@ namespace SeedClicker
 
         bool OnBareGrass(Vector2 p, float pathClear)
         {
+            if (Inside(p) < 0.9f) return false; // Abstand zur Klippenkante
             if (DistToPath(p) < pathClear) return false;
             var m = MaskAt(p);
             return m.r < 0.3f && m.g < 0.25f && m.a < 0.2f;
@@ -301,12 +305,14 @@ namespace SeedClicker
                 PlaceSized(dx < 0 ? "hh_flowers_red" : "hh_flowers_yellow", HousePos + new Vector2(dx, -0.1f), 0.24f);
 
             // Dunkle Waldkante ausserhalb der Karte, damit der Rand nie leer wirkt
+            // (oben ist der Abgrund, dort kein Wald)
             for (float x = -hw - 1.5f; x < hw + 1.5f; x += 0.9f)
-                foreach (var y in new[] { hh + 0.4f, -hh - 0.6f })
+                foreach (var y in new[] { -hh - 0.6f })
                     Place(R() < 0.5f ? "sk_Tree_2" : "sk_Tree_3", new Vector2(x + R() * 0.4f, y + R() * 0.6f), 1.6f, R() < 0.5f, 0.06f).color = new Color(0.78f, 0.84f, 0.82f);
             for (float y = -hh - 1f; y < hh + 1f; y += 0.9f)
                 foreach (var x in new[] { -hw - 0.6f, hw + 0.6f })
-                    Place(R() < 0.5f ? "sk_Tree_2" : "sk_Tree_3", new Vector2(x + R() * 0.6f - 0.3f, y), 1.6f, R() < 0.5f, 0.06f).color = new Color(0.78f, 0.84f, 0.82f);
+                    if (Inside(new Vector2(x, y)) > 1.2f)
+                        Place(R() < 0.5f ? "sk_Tree_2" : "sk_Tree_3", new Vector2(x + R() * 0.6f - 0.3f, y), 1.6f, R() < 0.5f, 0.06f).color = new Color(0.78f, 0.84f, 0.82f);
         }
 
         void SetupLight()
@@ -324,6 +330,7 @@ namespace SeedClicker
 
         void Update()
         {
+            UpdateAbyss(Time.deltaTime);
             ambientT -= Time.deltaTime;
             if (ambientT > 0 || Particles.I == null) return;
             ambientT = 0.2f;

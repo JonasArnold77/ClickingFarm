@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: WorldArt
   m_EditorClassIdentifier: 
   groundAtlas: {fileID: 2800000, guid: 9507db848132f1d43b659e6482620ed7, type: 3}
+  mountainAtlas: {fileID: 2800000, guid: d5538051723787748a815d6e2f4ab933, type: 3}
   sprites:
   - name: sk_House_0
     sprite: {fileID: 349632745, guid: 38e1aac53e3ba4a4e8d3f8abeb2b6497, type: 3}

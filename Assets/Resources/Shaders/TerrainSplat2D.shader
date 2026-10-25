@@ -9,6 +9,7 @@ Shader "SeedClicker/TerrainSplat2D"
     Properties
     {
         _MainTex("Splat Mask", 2D) = "black" {}
+        _Plateau("Plateau-Maske (R = begehbarer Boden, sonst Abgrund)", 2D) = "white" {}
         _Atlas("Boden-Atlas", 2D) = "white" {}
         _GrassRect("Gras (Atlas-Rechteck)", Vector) = (0.5, 0.875, 0.125, 0.125)
         _MeadowRect("Dunkles Gras", Vector) = (0.375, 0.875, 0.125, 0.125)
@@ -111,6 +112,7 @@ Shader "SeedClicker/TerrainSplat2D"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/2D/Include/LightingUtility.hlsl"
 
             TEXTURE2D(_MainTex);  SAMPLER(sampler_MainTex);
+            TEXTURE2D(_Plateau);  SAMPLER(sampler_Plateau);
             TEXTURE2D(_Atlas);    SAMPLER(sampler_Atlas);
             TEXTURE2D(_NoiseTex); SAMPLER(sampler_NoiseTex);
             half4 _MainTex_ST;
@@ -152,9 +154,14 @@ Shader "SeedClicker/TerrainSplat2D"
                 half3 col;
                 TERRAIN_BLEND(i.posWS, i.uv, col)
                 col *= i.color.rgb;
+                // Klippenrand: ausserhalb des Plateaus durchsichtig (dahinter liegt der Abgrund)
+                half pl = SAMPLE_TEXTURE2D(_Plateau, sampler_Plateau, i.uv).r;
+                half en = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, i.posWS * 1.7).r - 0.5h;
+                half alpha = saturate((pl + en * 0.25h - 0.5h) * 14.0h + 0.5h);
+                col *= 1.0h - saturate(1.0h - pl * 1.6h) * 0.35h;
                 SurfaceData2D surfaceData;
                 InputData2D inputData;
-                InitializeSurfaceData(col, 1.0h, half4(1, 1, 1, 1), surfaceData);
+                InitializeSurfaceData(col, alpha, half4(1, 1, 1, 1), surfaceData);
                 InitializeInputData(i.uv, i.lightingUV, inputData);
                 return CombinedShapeLightShared(surfaceData, inputData);
             }
@@ -176,6 +183,7 @@ Shader "SeedClicker/TerrainSplat2D"
             struct Varyings { float4 positionCS : SV_POSITION; half4 color : COLOR; float2 uv : TEXCOORD0; float2 posWS : TEXCOORD1; };
 
             TEXTURE2D(_MainTex);  SAMPLER(sampler_MainTex);
+            TEXTURE2D(_Plateau);  SAMPLER(sampler_Plateau);
             TEXTURE2D(_Atlas);    SAMPLER(sampler_Atlas);
             TEXTURE2D(_NoiseTex); SAMPLER(sampler_NoiseTex);
             float4 _MainTex_ST;
@@ -198,7 +206,8 @@ Shader "SeedClicker/TerrainSplat2D"
             {
                 half3 col;
                 TERRAIN_BLEND(i.posWS, i.uv, col)
-                return half4(col * i.color.rgb, 1);
+                half pl = SAMPLE_TEXTURE2D(_Plateau, sampler_Plateau, i.uv).r;
+                return half4(col * i.color.rgb, saturate((pl - 0.5h) * 14.0h + 0.5h));
             }
             ENDHLSL
         }

@@ -61,6 +61,9 @@
 - **Boden = ein Material** (`Resources/Shaders/TerrainSplat2D.shader`, URP-2D-beleuchtet) mit Kacheln aus dem Skyden-Atlas: Gras, dunkles Gras, Erdweg, Kopfsteinpflaster, Schlamm (abgedunkelte Erde mit Pfützen). Splat-Maske: R Schlamm, G Weg, B dunkles Gras, A Pflaster. Kanten mit Rauschen ausgefranst.
 - Maßstab: 1 Welteinheit = 1 Skyden-Kachel (256 px). Karte 22 × 30, Haus (Skyden House_0, Skalierung 1,6) oben mittig mit Pflaster-Vorplatz, Erdweg nach Süden mit Abzweig, Schlammlöcher. Objekte frei platziert mit Abstandsprüfung, Sortierung nach Unterkante (Y).
 - Die prozedurale Grafik (`Scripts/Art`) wird nur noch vom alten Raster-Spiel benutzt.
+- **Klippe hinter dem Haus** (`WorldBuilder.Cliff.cs`, nach Skizze): Das Plateau endet an einer Kammlinie (`Ridge`), Spitze direkt hinter dem Haus, links steil, rechts flacher mit Knick. Der Boden-Shader macht alles jenseits der Kante durchsichtig (`_Plateau`-Maske). Entlang der Kante liegt ein Mesh-Band mit der Skyden-Klippenwand (Grasrand → Fels → Nebel).
+- **Abgrund:** nebliges Tal weit unten mit Fluss, kleinen dunstigen Bäumen und treibenden Nebelschwaden. Es bewegt sich mit halber Kamerageschwindigkeit (Parallaxe) und wirkt dadurch tief.
+- Sortierwerte (`sortingOrder`) müssen in −32768…32767 liegen; Hintergrundebenen nutzen −32700…−32400.
 
 ## Werbung
 - `Core/AdService.cs` ist die einzige Stelle für Werbung. Derzeit zeigt die UI ein 2-Sekunden-Platzhalter-Video und vergibt dann die Belohnung.
