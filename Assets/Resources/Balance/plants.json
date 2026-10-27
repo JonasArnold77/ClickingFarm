@@ -62,9 +62,9 @@
 
   "monsters": [
     { "id": "schlurfer",  "name": "Schlurfer",  "art": "sk_Mushroom_0", "tint": "#6cc35e", "hp": 8,  "speed": 0.85, "damage": 4,  "scale": 1.0,  "weakTo": "fire",      "firstWave": 1, "weight": 1.0 },
-    { "id": "kriecher",   "name": "Kriecher",   "art": "sk_Plant_4",    "tint": "#8ad072", "hp": 6,  "speed": 0.85,  "damage": 3,  "scale": 0.8,  "weakTo": "ice",       "firstWave": 2, "weight": 0.8 },
-    { "id": "moderbauer", "name": "Moderbauer", "art": "sk_Mushroom_3", "tint": "#58a24c", "hp": 26, "speed": 0.85,  "damage": 8,  "scale": 1.15, "weakTo": "lightning", "firstWave": 3, "weight": 0.6 },
-    { "id": "grabkoloss", "name": "Grabkoloss", "art": "sk_Bush",       "tint": "#4a8a42", "hp": 70, "speed": 0.85,  "damage": 18, "scale": 1.6,  "weakTo": "poison",    "firstWave": 4, "weight": 0.3 }
+    { "id": "kriecher",   "name": "Kriecher",   "art": "sk_Plant_4",    "tint": "#8ad072", "hp": 6,  "speed": 0.85,  "damage": 3,  "scale": 1.0,  "weakTo": "ice",       "firstWave": 2, "weight": 0.8 },
+    { "id": "moderbauer", "name": "Moderbauer", "art": "sk_Mushroom_3", "tint": "#58a24c", "hp": 26, "speed": 0.85,  "damage": 8,  "scale": 1.0, "weakTo": "lightning", "firstWave": 3, "weight": 0.6 },
+    { "id": "grabkoloss", "name": "Grabkoloss", "art": "sk_Bush",       "tint": "#4a8a42", "hp": 70, "speed": 0.85,  "damage": 18, "scale": 1.0,  "weakTo": "poison",    "firstWave": 4, "weight": 0.3 }
   ],
 
   "waves": {
