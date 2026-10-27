@@ -67,6 +67,7 @@ namespace SeedClicker
             // Abendglocke: warnt vor der Nacht
             clips["bell"] = Tone(1.6f, (t, p) => (Sin(523 * t) * 0.55f + Sin(1046 * t) * 0.25f + Sin(1569 * t) * 0.12f + Sin(784 * t) * 0.18f) * Env(p, 0.002f, 0.6f), 0.5f);
             clips["thump"] = Tone(0.16f, (t, p) => (Sin(Lerp(150, 42, p) * t) * 1.0f * Env(p, 0.001f, 0.9f) + Noise() * 0.25f * Env(p, 0.0005f, 5f)), 0.75f);
+            clips["note"] = Tone(0.55f, (t, p) => (Sin(660 * t) + Sin(1320 * t) * 0.45f + Sin(1980 * t) * 0.18f + Sin(2640 * t) * 0.08f) * Env(p, 0.002f, 1.5f), 0.4f);
             clips["bug"] = Arp(new[] { 1568f, 2093f, 1568f, 2349f }, 0.04f, 0.3f);
         }
 

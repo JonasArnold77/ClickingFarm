@@ -479,6 +479,7 @@ namespace SeedClicker
         {
             foreach (var p in wb.Pots)
             {
+                if (string.IsNullOrEmpty(p.type)) continue;   // leerer Topf
                 var g = p.Genome;
                 float cd = cooldowns.TryGetValue(p, out var v) ? v : (float)rnd.NextDouble() * g.Cooldown;
                 cd -= dt;

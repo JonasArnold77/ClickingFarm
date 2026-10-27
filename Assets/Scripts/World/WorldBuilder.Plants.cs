@@ -21,12 +21,20 @@ namespace SeedClicker
             public Material mat;
             public float pop = 1f, barPunch, barShow;
             public float sy, syVel, tilt, tiltVel, freeze, flash, size = -1f, heat;   // Feder (Stauchen), Kippen, Treffer-Stopp, Blitz
+            public float readyAt, nextHop, lift;   // reif: erst nach readyAt antippbar; Huepfer als Hinweis; angehoben beim Platzieren
+            public bool readyShown = true;
             public int stage = -1;
         }
 
-        struct Shock { public SpriteRenderer sr; public float t, dur, w; }
+        struct Shock { public SpriteRenderer sr; public float t, dur, w; public int kind; }   // 0 Bodenwelle, 1 Strahlenkranz, 2 Lichtsaeule
         readonly List<Shock> shocks = new List<Shock>();
-        static Sprite ringSprite;
+        static Sprite ringSprite, burstSprite;
+        static readonly int[] Penta = { 0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24 };   // Tonleiter fuer die Klick-Toene
+
+        /// <summary>Jeder Wachstums-Tipp: Weltposition oben an der Pflanze, Combo, Hitze 0..1 (fuer den Combo-Zaehler).</summary>
+        public event Action<Vector2, int, float> PlantPumped;
+        /// <summary>Wartezeit, bis eine gerade reif gewordene Pflanze angetippt werden kann.</summary>
+        public const float ReadyDelay = 2f;
         static Material plantMat;
 
         /// <summary>Gemeinsames Pflanzen-Material (plastische Schattierung ueber die Normal-Maps).</summary>
@@ -49,7 +57,6 @@ namespace SeedClicker
         int combo; float lastTapTime = -10f;
 
         public event Action<Cell> EmptyFieldTapped;
-        public event Action<PlantedState> PlantTapped;
         public event Action BookTapped;
         public event Action<PlantedState> PlantGrown;
         public event Action InventoryChanged;
@@ -249,7 +256,18 @@ namespace SeedClicker
         {
             var p = PlantAt(c);
             if (p == null || !plantViews.TryGetValue(c, out var v)) return false;
-            if (p.Grown) { v.sy = -0.12f; v.flash = 0.4f; Sfx.Play("pop", 1.3f, 0.6f); PlantTapped?.Invoke(p); return true; }
+            if (p.Grown)
+            {
+                if (Time.unscaledTime < v.readyAt)
+                {
+                    // noch gesperrt: nur ein dumpfes Wackeln
+                    v.tiltVel += UnityEngine.Random.Range(-1f, 1f) * 25f;
+                    Sfx.Play("dry", 0.7f, 0.4f);
+                    return true;
+                }
+                if (carrying == p) CancelPlacing(); else StartPlacing(p);
+                return true;
+            }
 
             // Combo: schnelles Tippen macht es lauter, heller, spritziger
             float now = Time.unscaledTime;
@@ -284,7 +302,13 @@ namespace SeedClicker
             P?.Spawn(top + new Vector2(UnityEngine.Random.Range(-0.1f, 0.1f), -0.1f), "spark", new Color(1f, 1f, 0.9f), Vector3.zero, 0.09f, 0.55f + heat * 0.3f, 0f, 0f);
             P?.Burst(top, "spark", Color.Lerp(Color.white, g.ElementColor, 0.6f), 2 + (int)(heat * 4), 2.6f + heat * 2f, 0.3f, 0.22f, 0f, 0.8f);
 
-            // Sound: Knack + tiefer Schlag + steigender Wachs-Ton
+            // Strahlenkranz am Treffpunkt und Licht-Stoss im ganzen Bild
+            Burst(top, v.size * (1.3f + heat * 0.8f), 0.13f, new Color(1f, 1f, 0.9f, 0.85f));
+            WorldPostFX.Punch(0.18f + heat * 0.3f);
+            PlantPumped?.Invoke(top, combo, heat);
+
+            // Sound: Knack + tiefer Schlag + steigender Wachs-Ton + Ton aus der Tonleiter (Combo steigt hoch)
+            Sfx.Play("note", Mathf.Pow(2f, Penta[(combo - 1) % Penta.Length] / 12f), 0.3f + heat * 0.15f);
             Sfx.Play("crunch", UnityEngine.Random.Range(0.85f, 1.15f), 1f);
             Sfx.Play("thump", UnityEngine.Random.Range(0.9f, 1.1f) + heat * 0.15f, 0.9f);
             Sfx.Play("grow", 0.8f + progress * 0.7f + heat * 0.3f, 0.4f);
@@ -312,26 +336,109 @@ namespace SeedClicker
                 }
 
             UpdatePlantSprite(p, v);
-            if (p.Grown)
-            {
-                v.pop = 0f;
-                v.flash = 1f;
-                HitStop(0.12f);
-                Shockwave(basePos, v.size * 3.5f, 0.55f, Color.white);
-                Shockwave(basePos, v.size * 2.2f, 0.35f, g.ElementColor);
-                P?.Burst(top, "star", g.ElementColor, 26, 3.6f, 0.9f, 0.4f, 1f, 1f);
-                P?.Burst(basePos, "leaf", new Color(0.55f, 0.85f, 0.35f), 16, 3.2f, 0.9f, 0.25f, 3f, 1.5f);
-                Sfx.Play("levelup", 1.05f, 0.9f);
-                Sfx.Play("thump", 0.7f, 1f);
-                Haptics.Tap(70);
-                WorldCamera.I?.Shake(0.14f);
-                WorldCamera.I?.Punch(0.06f);
-                Floater?.Invoke(top + new Vector2(0, 0.7f), g.name + " ist reif – antippen zum Eintopfen!", g.ElementColor);
-                PlantGrown?.Invoke(p);
-                combo = 0;
-            }
+            if (p.Grown) Ripe(p, v, basePos, top);
             save.Save();
             return true;
+        }
+
+        /// <summary>Die Pflanze ist reif: der groesste Moment des Spiels. Stillstand, Zeitlupe, Lichtsaeule,
+        /// drei Bodenwellen, Sternenregen, Fanfare. Danach 2 Sekunden Sperre, dann antippen zum Platzieren.</summary>
+        void Ripe(PlantedState p, PlantView v, Vector2 basePos, Vector2 top)
+        {
+            var g = p.Genome;
+            var P = Particles.I;
+            v.pop = 0f;
+            v.flash = 1f;
+            v.sy = 0.45f;
+            v.readyAt = Time.unscaledTime + ReadyDelay;
+            v.readyShown = false;
+            StartCoroutine(RipeSlowMo());
+            Pillar(basePos, v.size * 1.6f, g.ElementColor);
+            Shockwave(basePos, v.size * 4.5f, 0.6f, Color.white);
+            Shockwave(basePos, v.size * 3f, 0.45f, g.ElementColor);
+            Shockwave(basePos, v.size * 6.5f, 0.85f, new Color(1f, 0.95f, 0.7f, 0.6f));
+            Burst(top, v.size * 3.5f, 0.3f, Color.white);
+            P?.Burst(top, "star", g.ElementColor, 30, 4.2f, 1f, 0.42f, 1.5f, 2f);
+            P?.Burst(top, "star", new Color(1f, 0.95f, 0.6f), 20, 3f, 1.2f, 0.3f, 1f, 2.5f);
+            P?.Burst(basePos, "leaf", new Color(0.55f, 0.85f, 0.35f), 18, 3.5f, 1f, 0.22f, 3f, 2f);
+            P?.Burst(basePos, "square", new Color(0.4f, 0.28f, 0.16f), 16, 3.5f, 0.6f, 0.11f, 12f, 3.5f);
+            Sfx.Play("levelup", 1.05f, 1f);
+            Sfx.Play("boom", 1.6f, 0.55f);
+            Sfx.Play("thump", 0.6f, 1f);
+            Sfx.Play("unlock", 1.3f, 0.8f);
+            Haptics.Tap(90);
+            WorldCamera.I?.Shake(0.18f);
+            WorldCamera.I?.Punch(0.08f);
+            WorldCamera.I?.Kick(Vector2.down * 3f);
+            WorldPostFX.Punch(1.2f);
+            PlantGrown?.Invoke(p);
+            combo = 0;
+        }
+
+        System.Collections.IEnumerator RipeSlowMo()
+        {
+            if (hitStopping) yield break;
+            hitStopping = true;
+            Time.timeScale = 0.02f;
+            yield return new WaitForSecondsRealtime(0.16f);
+            // Zeitlupe, die langsam wieder auf normale Geschwindigkeit kommt
+            for (float k = 0; k < 1f; k += Time.unscaledDeltaTime / 0.7f)
+            {
+                Time.timeScale = Mathf.Lerp(0.25f, 1f, k * k);
+                yield return null;
+            }
+            Time.timeScale = 1f;
+            hitStopping = false;
+        }
+
+        /// <summary>Lichtsaeule, die aus dem Himmel auf die Pflanze faellt.</summary>
+        void Pillar(Vector2 at, float width, Color col)
+        {
+            var sr = new GameObject("Pillar").AddComponent<SpriteRenderer>();
+            sr.transform.SetParent(transform, false);
+            sr.transform.position = at + new Vector2(0, 3.5f);
+            sr.sprite = MistSprite;
+            sr.color = new Color(Mathf.Lerp(col.r, 1f, 0.6f), Mathf.Lerp(col.g, 1f, 0.6f), Mathf.Lerp(col.b, 1f, 0.6f), 0.9f);
+            sr.sortingOrder = 31500;
+            shocks.Add(new Shock { sr = sr, t = 0f, dur = 1.3f, w = width, kind = 2 });
+        }
+
+        /// <summary>Strahlenkranz (Speedlines) am Treffpunkt.</summary>
+        void Burst(Vector2 at, float size, float dur, Color col)
+        {
+            var sr = new GameObject("Burst").AddComponent<SpriteRenderer>();
+            sr.transform.SetParent(transform, false);
+            sr.transform.position = at;
+            sr.transform.rotation = Quaternion.Euler(0, 0, UnityEngine.Random.Range(0f, 360f));
+            sr.sprite = BurstSprite;
+            sr.color = col;
+            sr.sortingOrder = 31400;
+            shocks.Add(new Shock { sr = sr, t = 0f, dur = dur, w = size, kind = 1 });
+        }
+
+        static Sprite BurstSprite
+        {
+            get
+            {
+                if (burstSprite != null) return burstSprite;
+                const int n = 128; const int rays = 12;
+                var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                var px = new Color[n * n];
+                for (int y = 0; y < n; y++)
+                    for (int x = 0; x < n; x++)
+                    {
+                        float dx = x + 0.5f - n / 2f, dy = y + 0.5f - n / 2f;
+                        float d = Mathf.Sqrt(dx * dx + dy * dy) / (n / 2f);
+                        float ang = Mathf.Atan2(dy, dx) / (Mathf.PI * 2f) * rays;
+                        float f = Mathf.Abs(ang - Mathf.Round(ang));                  // 0 = Mitte eines Strahls
+                        float width = Mathf.Lerp(0.16f, 0.03f, d);                     // spitz nach aussen
+                        float a = Mathf.Clamp01((width - f) * 40f) * Mathf.Clamp01((d - 0.35f) * 6f) * Mathf.Clamp01((1f - d) * 8f);
+                        px[y * n + x] = new Color(1, 1, 1, a);
+                    }
+                tex.SetPixels(px); tex.Apply();
+                burstSprite = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), n);
+                return burstSprite;
+            }
         }
 
         /// <summary>Kurzer Stillstand der Welt (Treffer-Gefuehl bei grossen Momenten).</summary>
@@ -349,6 +456,39 @@ namespace SeedClicker
             yield return new WaitForSecondsRealtime(seconds);
             Time.timeScale = old <= 0.02f ? 1f : old;
             hitStopping = false;
+        }
+
+        void UpdateRipe(PlantedState p, PlantView v, float udt)
+        {
+            float now = Time.unscaledTime;
+            var top = new Vector2(v.root.position.x, v.sr.bounds.max.y);
+            if (now < v.readyAt)
+            {
+                // Sperre: es funkelt nach oben, die Pflanze "laedt auf"
+                if (UnityEngine.Random.value < udt * 25f)
+                    Particles.I?.Spawn((Vector2)v.root.position + new Vector2(UnityEngine.Random.Range(-0.25f, 0.25f), UnityEngine.Random.Range(0f, 0.6f)), "spark",
+                        Color.Lerp(Color.white, p.Genome.ElementColor, 0.5f), new Vector3(0, 1.4f, 0), 0.5f, 0.18f, 0f, 0f);
+                return;
+            }
+            if (!v.readyShown)
+            {
+                v.readyShown = true;
+                v.sy = 0.35f; v.flash = 0.7f;
+                Burst(top, v.size * 2f, 0.2f, new Color(1f, 0.95f, 0.6f, 0.9f));
+                Particles.I?.Burst(top, "star", new Color(1f, 0.95f, 0.6f), 10, 2.5f, 0.6f, 0.25f, 1f, 1.5f);
+                Sfx.Play("tick", 1.5f, 0.8f);
+                Sfx.Play("note", 2f, 0.4f);
+                Haptics.Tap(25);
+                Floater?.Invoke(top + new Vector2(0, 0.5f), "Antippen zum Platzieren!", new Color(1f, 0.95f, 0.6f));
+                v.nextHop = now + 1.6f;
+            }
+            // als Hinweis regelmaessig ein kleiner Huepfer mit Glitzer
+            if (carrying != p && now >= v.nextHop)
+            {
+                v.nextHop = now + 1.6f;
+                v.sy = 0.18f;
+                Particles.I?.Burst(top, "spark", new Color(1f, 0.95f, 0.7f), 3, 1.2f, 0.5f, 0.15f, 0f, 0.8f);
+            }
         }
 
         /// <summary>Flache Bodenwelle (Ellipse in Draufsicht), die schnell auseinanderlaeuft.</summary>
@@ -372,9 +512,19 @@ namespace SeedClicker
                 float k = Mathf.Clamp01(s.t / s.dur);
                 if (k >= 1f || s.sr == null) { if (s.sr != null) Destroy(s.sr.gameObject); shocks.RemoveAt(i); continue; }
                 float e = 1f - Mathf.Pow(1f - k, 3f);
-                float w = Mathf.Lerp(s.w * 0.25f, s.w, e);
-                s.sr.transform.localScale = new Vector3(w, w * 0.42f, 1);
-                var c = s.sr.color; c.a = Mathf.Min(c.a, (1f - k) * 0.9f); s.sr.color = c;
+                if (s.kind == 2)
+                {
+                    // Lichtsaeule: schiesst schmal herab, wird breit, verblasst
+                    float wp = s.w * Mathf.Sin(Mathf.Min(1f, k * 1.6f) * Mathf.PI * 0.5f) * (1f - k * 0.6f);
+                    s.sr.transform.localScale = new Vector3(Mathf.Max(0.01f, wp), 9f * Mathf.Min(1f, k * 6f), 1);
+                    var cp = s.sr.color; cp.a = (1f - k) * 0.85f; s.sr.color = cp;
+                }
+                else
+                {
+                    float w = Mathf.Lerp(s.w * (s.kind == 1 ? 0.5f : 0.25f), s.w, e);
+                    s.sr.transform.localScale = new Vector3(w, s.kind == 1 ? w : w * 0.42f, 1);
+                    var c = s.sr.color; c.a = Mathf.Min(c.a, (1f - k) * 0.9f); s.sr.color = c;
+                }
                 shocks[i] = s;
             }
         }
@@ -446,8 +596,11 @@ namespace SeedClicker
                     v.tiltVel += (-v.tilt * 300f - v.tiltVel * 12f) * udt;
                     v.tilt += v.tiltVel * udt;
                 }
+                if (p.Grown) UpdateRipe(p, v, udt);
                 float pop = 1 + 2.70158f * Mathf.Pow(v.pop - 1, 3) + 1.70158f * Mathf.Pow(v.pop - 1, 2);
                 float sway = Mathf.Sin(t * 1.6f + p.x * 0.7f + p.y) * 1f;
+                v.lift = Mathf.MoveTowards(v.lift, carrying == p ? 0.18f + Mathf.Sin(Time.unscaledTime * 6f) * 0.04f : 0f, udt * 2f);
+                v.body.localPosition = new Vector3(0, v.lift, 0);
                 v.body.localScale = new Vector3((1f - v.sy * 0.75f) * pop, (1f + v.sy) * pop, 1);
                 v.body.localRotation = Quaternion.Euler(0, 0, sway + v.tilt);
                 v.shadow.color = new Color(0.05f, 0.04f, 0.02f, 0.42f * (1f + v.sy * 0.8f));

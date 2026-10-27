@@ -18,6 +18,12 @@ namespace SeedClicker
         Camera cam;
         ColorAdjustments adjust;
         WhiteBalance balance;
+        Bloom bloomFx;
+        float bloomBase, exposureBase;
+        static float punch;
+
+        /// <summary>Kurzer Licht-Stoss (Bloom + Helligkeit), z. B. bei einem kraeftigen Klick. 0..1</summary>
+        public static void Punch(float amount) => punch = Mathf.Min(1.5f, Mathf.Max(punch, amount));
 
         void Start()
         {
@@ -31,6 +37,7 @@ namespace SeedClicker
             profile.name = "GhibliLook";
 
             var bloom = profile.Add<Bloom>(true);
+            bloomFx = bloom;
             bloom.threshold.Override(0.82f);
             bloom.intensity.Override(0.55f);
             bloom.scatter.Override(0.78f);
@@ -112,6 +119,7 @@ namespace SeedClicker
         void Update()
         {
             UpdateTimeOfDay();
+            UpdatePunch();
             if (cam == null || rayRoot == null) return;
             // Strahlen passen sich der Zoomstufe an und atmen sanft
             float s = cam.orthographicSize / 8f;
@@ -124,6 +132,15 @@ namespace SeedClicker
                 sr.color = c;
             }
         }
+        void UpdatePunch()
+        {
+            if (bloomFx == null || adjust == null) return;
+            if (bloomBase <= 0f) { bloomBase = bloomFx.intensity.value; exposureBase = adjust.postExposure.value; }
+            punch = Mathf.MoveTowards(punch, 0f, Time.unscaledDeltaTime * 4f);
+            bloomFx.intensity.value = bloomBase + punch * 2.2f;
+            adjust.postExposure.value = exposureBase + punch * 0.45f;
+        }
+
         /// <summary>Abend: warmes Orange-Rosa ueber allem, die Sonnenstrahlen werden golden; nachts wieder neutral.</summary>
         void UpdateTimeOfDay()
         {

@@ -4,7 +4,7 @@
 - [ ] Startbeet erweitern: weitere Bereiche/Zaun-Ausbau mit Holz oder Münzen freischalten (Fläche ist aktuell fest).
 - [ ] Waffen: Munition/Nachladen? Bessere Waffen-Icons.
 - [ ] Zombies laufen nicht um Zäune herum, sondern schlagen sich durch – evtl. Wegfindung, Tore im Zaun, Zaun reparieren.
-- [ ] Topfpflanzen: Auswahl, welche aus dem Lager aufgestellt wird (aktuell die älteste).
+- [ ] Blumentöpfe selbst bauen (aktuell 8 feste Töpfe).
 - [ ] Zombies: Arme nach vorn (IK-Ziele der Figur verschieben), eigene Zombie-Grafik statt umgefärbter Bauer, Umfall-Animation beim Besiegen.
 - [ ] Mehr Pflanzen-Grafiken: aktuell nur Mais/Weizen/Rübe als Arten, die Katalog-Pflanzen unterscheiden sich nur durch Farbe/Werte.
 - [ ] Balancing 100 Tipps pro Pflanze vs. Wellentempo (Auto-Welle alle 60 s ist nur zum Testen).

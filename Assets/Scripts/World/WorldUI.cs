@@ -102,33 +102,18 @@ namespace SeedClicker
         void BuildToolbar()
         {
             var bar = Panel(safe, "Toolbar", new Color(0.12f, 0.1f, 0.08f, 0.5f));
-            bar.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(1030, 270));
+            bar.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(840, 270));
             var row = UIKit.HRow(bar.transform, "Row", 14, TextAnchor.MiddleCenter, new RectOffset(20, 20, 16, 16));
             row.GetComponent<RectTransform>().Stretch();
             AddSlot(row.transform, WorldTool.Axe, Icon("sk_Tree_0"), "Fällen");
             AddSlot(row.transform, WorldTool.Field, Icon("hh_hoe_icon"), "Felder");
             AddSlot(row.transform, WorldTool.Plant, Icon("hh_corn_seedbag"), "Pflanzen");
             AddSlot(row.transform, WorldTool.Fence, Icon("sk_Fence_11"), "Zaun");
-            var potIcon = AddSlot(row.transform, WorldTool.Pot, WorldBuilder.PotSprite, "Töpfe");
-            // Topf-Symbol mit Pflanze darin und Anzahl im Lager
-            var leaf = UIKit.Rect(potIcon.transform.parent, "PotPlant").gameObject.AddComponent<Image>();
-            leaf.sprite = Icon("hh_corn_5"); leaf.preserveAspect = true; leaf.raycastTarget = false;
-            leaf.rectTransform.Stretch(40, 40, 18, 64);
-            leaf.transform.SetSiblingIndex(potIcon.transform.GetSiblingIndex());
-            potIcon.rectTransform.Stretch(34, 34, 18, 70);
-            var badge = Panel(potIcon.transform.parent, "Badge", new Color(0.85f, 0.35f, 0.25f));
-            badge.raycastTarget = false;
-            badge.rectTransform.Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(4, 4), new Vector2(64, 56));
-            potCountText = UIKit.Txt(badge.transform, "0", 34, Color.white, TextAnchor.MiddleCenter, true, true);
-            potCountText.rectTransform.Stretch();
-            potBadge = badge.gameObject;
 
             hintText = UIKit.Txt(safe, "", 32, Color.white, TextAnchor.MiddleCenter, true, true);
             hintText.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 312), new Vector2(-60, 80));
         }
 
-        Text potCountText;
-        GameObject potBadge;
 
         Sprite Icon(string name) => art != null ? art.Get(name) : null;
 
@@ -183,9 +168,7 @@ namespace SeedClicker
                 case WorldTool.Fence:
                     return "Wische, um Zäune zu ziehen (" + (wbi != null ? wbi.FenceCost : 1) + " Holz pro Stück) – sie halten Zombies auf";
                 default:
-                    int n = wbi != null ? wbi.Save.potStock.Count : 0;
-                    return n > 0 ? "Tippe irgendwo auf die Karte, um eine Topfpflanze aufzustellen (" + n + " im Lager)"
-                                 : "Keine Topfpflanze im Lager – tippe eine reife Pflanze auf dem Feld an";
+                    return "Reife Pflanzen antippen und in einen Blumentopf setzen";
             }
         }
 

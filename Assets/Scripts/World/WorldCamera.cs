@@ -142,6 +142,7 @@ namespace SeedClicker
             if (wb.IsPlantGrowing(c)) { wb.TapPlant(c); consumed = true; return; }
             // Nachts: Tipp auf einen Zombie = Schuss mit der gewaehlten Waffe
             if (NightWave.I != null && NightWave.I.TryShoot(w)) { consumed = true; return; }
+            if (wb.Placing) return;   // Topf waehlen: erst beim Loslassen (so kann man dabei auch die Karte schieben)
             if (wb.PlantAt(c) != null || wb.PotAt(w) != null) return;   // fertige Pflanze / Topf -> Info beim Loslassen
             if (Tool == WorldTool.Field || Tool == WorldTool.Fence || (Tool == WorldTool.Plant && wb.HasField(c)))
             {
@@ -168,6 +169,12 @@ namespace SeedClicker
             if (wb == null) return;
             if (wb.HitWorkbench(w)) { wb.TapWorkbench(); return; }
             var cell = WorldBuilder.CellAt(w);
+            if (wb.Placing)
+            {
+                if (wb.PlantAt(cell) == wb.Carrying) wb.CancelPlacing();
+                else wb.TryPlaceAt(w);
+                return;
+            }
             var pot = wb.PotAt(w);
             if (pot != null && Tool != WorldTool.Axe) { wb.TapPot(pot); return; }
             if (wb.PlantAt(cell) != null && Tool != WorldTool.Axe) { wb.TapPlant(cell); return; }
@@ -178,7 +185,7 @@ namespace SeedClicker
                 else if (wb.PlantAt(cell) != null) wb.TapPlant(cell);
                 return;
             }
-            if (Tool == WorldTool.Pot) wb.PlacePotFromStock(w);
+
         }
 
         /// <summary>Wischen: Felder anlegen, Zaeune ziehen (Zaun-Werkzeug) bzw. leere Felder bepflanzen (Pflanzen-Werkzeug).</summary>

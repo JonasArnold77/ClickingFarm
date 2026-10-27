@@ -34,9 +34,8 @@ namespace SeedClicker
             BuildWeaponBar();
             if (wb == null) return;
             wb.PotTapped += OpenPotInfo;
-            wb.PotStockChanged += RefreshPots;
+            BuildJuice();
             wb.EmptyFieldTapped += c => OpenPlantPicker();
-            wb.PlantTapped += OpenPlantInfo;
             wb.BookTapped += OpenPlantBook;
             wb.InventoryChanged += RefreshGoal;
             if (nw != null)
@@ -46,7 +45,6 @@ namespace SeedClicker
                 nw.WaveEnded += OpenWaveResult;
             }
             RefreshGoal();
-            RefreshPots();
             if (!wb.Save.starterChosen) OpenStarterChoice();
         }
 
@@ -246,6 +244,7 @@ namespace SeedClicker
 
         void UpdatePlantsUI(float dt)
         {
+            UpdateJuice(dt);
             if (nw == null || waveText == null) return;
             UpdateWeaponBar(dt);
             if (nw.Evening)
@@ -356,19 +355,6 @@ namespace SeedClicker
             card.anchorMin = card.anchorMax = new Vector2(0.5f, 1); card.pivot = new Vector2(0.5f, 1); card.anchoredPosition = new Vector2(0, -130);
             var stats = Label(panel, $"Schaden {g.Damage:0.0} · alle {g.Cooldown:0.00} s · Reichweite {g.Range:0.0}", 32, InkSoft, TextAnchor.MiddleCenter);
             stats.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, p.Grown ? 290 : 160), new Vector2(-40, 50));
-            if (p.Grown)
-            {
-                var potBtn = Btn(panel, "In Topf setzen (" + wb.PotCost + " Holz)", Accent, () =>
-                {
-                    if (!wb.PotPlant(p)) return;
-                    CloseModal();
-                    SelectTool(WorldTool.Pot);
-                    hintText.text = "Tippe irgendwo auf die Karte, um " + def.name + " aufzustellen – nur Topfpflanzen verteidigen!";
-                }, 40);
-                potBtn.GetComponent<RectTransform>().Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 160), new Vector2(640, 110));
-                potBtn.interactable = wb.Wood >= wb.PotCost;
-                if (!potBtn.interactable) potBtn.GetComponentInChildren<Text>().text = "Topf: " + wb.PotCost + " Holz nötig (fälle Bäume)";
-            }
             bool armed = false;
             Button dig = null;
             dig = Btn(panel, "Ausgraben", new Color(0.7f, 0.5f, 0.3f), () =>
@@ -390,17 +376,14 @@ namespace SeedClicker
             card.anchorMin = card.anchorMax = new Vector2(0.5f, 1); card.pivot = new Vector2(0.5f, 1); card.anchoredPosition = new Vector2(0, -130);
             var stats = Label(panel, $"Schaden {g.Damage:0.0} · alle {g.Cooldown:0.00} s · Reichweite {g.Range:0.0}", 32, InkSoft, TextAnchor.MiddleCenter);
             stats.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 160), new Vector2(-40, 50));
-            var back = Btn(panel, "Einsammeln (zurück ins Lager)", new Color(0.7f, 0.5f, 0.3f), () => { wb.PickUpPot(p); CloseModal(); SelectTool(WorldTool.Pot); }, 38);
+            bool armed = false;
+            Button back = null;
+            back = Btn(panel, "Pflanze entfernen", new Color(0.7f, 0.5f, 0.3f), () =>
+            {
+                if (!armed) { armed = true; back.GetComponentInChildren<Text>().text = "Wirklich? Die Pflanze ist dann weg"; return; }
+                wb.ClearPot(p); CloseModal();
+            }, 38);
             back.GetComponent<RectTransform>().Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(640, 110));
-        }
-
-        void RefreshPots()
-        {
-            if (wb == null || potCountText == null) return;
-            int n = wb.Save.potStock.Count;
-            potCountText.text = n.ToString();
-            potBadge.SetActive(n > 0);
-            if (WorldCamera.Tool == WorldTool.Pot) hintText.text = ToolHint(WorldTool.Pot);
         }
 
         void OpenPlantBook()
