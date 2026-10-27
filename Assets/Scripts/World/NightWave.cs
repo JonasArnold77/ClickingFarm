@@ -420,7 +420,8 @@ namespace SeedClicker
                 {
                     // Pixel-Zombie: Bild je Richtung, Tempo der Animation passt zur Laufgeschwindigkeit
                     var face = (dir + side * 0.5f).normalized;
-                    float fps = 7f * Mathf.Clamp(m.Speed / 0.85f, 0.6f, 1.6f) * (fence != null ? 0.5f : 1f);
+                    // feste, zuegige Schrittfolge; nur Eis (verlangsamt) bremst sie mit
+                    float fps = 12f * (m.Speed / Mathf.Max(0.01f, m.def.speed)) * (fence != null ? 0.6f : 1f);
                     m.animT += dt * fps;
                     m.sr.sprite = m.walk[DirIndex(face) * 8 + ((int)m.animT % 8)];
                     float bash = fence != null ? Mathf.Max(0, Mathf.Sin(m.bashT / 0.55f * Mathf.PI * 2f)) : 0f;
