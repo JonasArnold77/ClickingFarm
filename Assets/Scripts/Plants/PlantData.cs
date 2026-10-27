@@ -11,7 +11,7 @@ namespace SeedClicker
     [Serializable] public class MonsterDefW { public string id, name, art, tint, weakTo; public float hp, speed, damage, scale, weight; public int firstWave; }
     [Serializable] public class WaveDef
     {
-        public bool autoWave; public float firstWaveDelay, dayDuration, eveningDuration, testEveningDuration, spawnInterval, hpGrowthPerWave, houseHp, tapDamage;
+        public bool autoWave; public float firstWaveDelay, dayDuration, eveningDuration, nightDuration, testEveningDuration, spawnInterval, hpGrowthPerWave, houseHp, tapDamage;
         public int baseCount, countPerWave, woodLossOnDefeat;
     }
 

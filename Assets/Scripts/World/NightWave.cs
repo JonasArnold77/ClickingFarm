@@ -52,6 +52,7 @@ namespace SeedClicker
         public float Countdown { get; private set; }      // Zeit bis zum Abend
         public bool Evening { get; private set; }
         public float EveningLeft { get; private set; }    // Zeit bis die Zombies kommen
+        public float NightLeft { get; private set; }      // Zeit bis zum Morgen
         public float NightAmount { get; private set; }
         public float DuskAmount { get; private set; }
         public int MonstersLeft => monsters.Count + toSpawn;
@@ -114,6 +115,7 @@ namespace SeedClicker
             spawnT = 1.5f;
             HouseHp = B.waves.houseHp;
             cooldowns.Clear();
+            NightLeft = B.waves.nightDuration > 0 ? B.waves.nightDuration : 60f;
             result = new WaveResult { wave = WaveNumber };
             Sfx.Play("sleep", 0.8f);
             WaveStarted?.Invoke(WaveNumber);
@@ -181,7 +183,15 @@ namespace SeedClicker
             monsters.RemoveAll(m => m.dead);
             shots.RemoveAll(s => s.done);
             if (HouseHp <= 0f) { EndWave(false); return; }
-            if (toSpawn == 0 && monsters.Count == 0) EndWave(true);
+            if (toSpawn == 0 && monsters.Count == 0) { EndWave(true); return; }
+            // Morgengrauen: die Nacht ist vorbei, uebrige Zombies zerfallen im ersten Licht
+            NightLeft -= dt;
+            if (NightLeft <= 0f)
+            {
+                foreach (var m in monsters) if (!m.dead) { Particles.I?.Burst(m.pos + new Vector2(0, 0.4f), "square", new Color(0.55f, 0.5f, 0.45f, 0.8f), 10, 1.5f, 1f, 0.2f, -0.5f, 1.5f); Poof(m, true); }
+                toSpawn = 0;
+                EndWave(true);
+            }
         }
 
         void UpdateLight()

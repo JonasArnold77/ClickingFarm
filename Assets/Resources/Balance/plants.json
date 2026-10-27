@@ -72,6 +72,7 @@
     "firstWaveDelay": 300,
     "dayDuration": 300,
     "eveningDuration": 15,
+    "nightDuration": 60,
     "testEveningDuration": 6,
     "baseCount": 4,
     "countPerWave": 2,
