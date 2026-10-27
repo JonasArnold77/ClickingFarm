@@ -254,7 +254,7 @@ namespace SeedClicker
             }
             else if (nw.Active)
             {
-                waveText.text = "Welle " + nw.WaveNumber + "\nZombies übrig: " + nw.MonstersLeft;
+                waveText.text = "Welle " + nw.WaveNumber + " – Morgen in " + Mathf.CeilToInt(Mathf.Max(0, nw.NightLeft)) + " s\nZombies übrig: " + nw.MonstersLeft;
                 houseBar.gameObject.SetActive(true);
                 UIKit.SetBar(houseFill, nw.HouseHp / Mathf.Max(1, nw.HouseHpMax));
             }
