@@ -69,8 +69,8 @@
 
   "waves": {
     "autoWave": true,
-    "firstWaveDelay": 20,
-    "dayDuration": 60,
+    "firstWaveDelay": 300,
+    "dayDuration": 300,
     "eveningDuration": 15,
     "testEveningDuration": 6,
     "baseCount": 4,
