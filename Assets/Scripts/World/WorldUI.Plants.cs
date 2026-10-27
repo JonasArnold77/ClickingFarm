@@ -31,17 +31,22 @@ namespace SeedClicker
             nw = NightWave.I;
             BuildWaveHud();
             BuildGoalHud();
+            BuildWeaponBar();
             if (wb == null) return;
+            wb.PotTapped += OpenPotInfo;
+            wb.PotStockChanged += RefreshPots;
             wb.EmptyFieldTapped += c => OpenPlantPicker();
             wb.PlantTapped += OpenPlantInfo;
             wb.BookTapped += OpenPlantBook;
             wb.InventoryChanged += RefreshGoal;
             if (nw != null)
             {
-                nw.WaveStarted += n => { CloseModal(); Banner("Die Nacht bricht herein", "Welle " + n + " – verteidige den Hof!"); };
+                nw.EveningStarted += d => Banner("Der Abend dämmert …", "In " + Mathf.CeilToInt(d) + " s kommen die Zombies – mach dich bereit!");
+                nw.WaveStarted += n => { CloseModal(); Banner("Die Nacht bricht herein", "Welle " + n + " – tippe auf Zombies, um zu schießen!"); };
                 nw.WaveEnded += OpenWaveResult;
             }
             RefreshGoal();
+            RefreshPots();
             if (!wb.Save.starterChosen) OpenStarterChoice();
         }
 
@@ -242,7 +247,13 @@ namespace SeedClicker
         void UpdatePlantsUI(float dt)
         {
             if (nw == null || waveText == null) return;
-            if (nw.Active)
+            UpdateWeaponBar(dt);
+            if (nw.Evening)
+            {
+                houseBar.gameObject.SetActive(false);
+                waveText.text = "Abend – Welle " + nw.WaveNumber + "\nZombies in " + Mathf.CeilToInt(Mathf.Max(0, nw.EveningLeft)) + " s";
+            }
+            else if (nw.Active)
             {
                 waveText.text = "Welle " + nw.WaveNumber + "\nZombies übrig: " + nw.MonstersLeft;
                 houseBar.gameObject.SetActive(true);
@@ -252,7 +263,7 @@ namespace SeedClicker
             {
                 houseBar.gameObject.SetActive(false);
                 bool auto = PlantBalance.I.waves.autoWave && wb != null && wb.Save.starterChosen;
-                waveText.text = "Welle " + nw.WaveNumber + (auto ? "\nkommt in " + Mathf.CeilToInt(Mathf.Max(0, nw.Countdown)) + " s" : "\n–");
+                waveText.text = "Welle " + nw.WaveNumber + (auto ? "\nAbend in " + Mathf.CeilToInt(Mathf.Max(0, nw.Countdown)) + " s" : "\n–");
             }
         }
 
@@ -344,7 +355,20 @@ namespace SeedClicker
             var card = PlantCard(panel, def, new Vector2(700, 640), false, false, null, 32);
             card.anchorMin = card.anchorMax = new Vector2(0.5f, 1); card.pivot = new Vector2(0.5f, 1); card.anchoredPosition = new Vector2(0, -130);
             var stats = Label(panel, $"Schaden {g.Damage:0.0} · alle {g.Cooldown:0.00} s · Reichweite {g.Range:0.0}", 32, InkSoft, TextAnchor.MiddleCenter);
-            stats.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 160), new Vector2(-40, 50));
+            stats.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, p.Grown ? 290 : 160), new Vector2(-40, 50));
+            if (p.Grown)
+            {
+                var potBtn = Btn(panel, "In Topf setzen (" + wb.PotCost + " Holz)", Accent, () =>
+                {
+                    if (!wb.PotPlant(p)) return;
+                    CloseModal();
+                    SelectTool(WorldTool.Pot);
+                    hintText.text = "Tippe irgendwo auf die Karte, um " + def.name + " aufzustellen – nur Topfpflanzen verteidigen!";
+                }, 40);
+                potBtn.GetComponent<RectTransform>().Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 160), new Vector2(640, 110));
+                potBtn.interactable = wb.Wood >= wb.PotCost;
+                if (!potBtn.interactable) potBtn.GetComponentInChildren<Text>().text = "Topf: " + wb.PotCost + " Holz nötig (fälle Bäume)";
+            }
             bool armed = false;
             Button dig = null;
             dig = Btn(panel, "Ausgraben", new Color(0.7f, 0.5f, 0.3f), () =>
@@ -353,6 +377,30 @@ namespace SeedClicker
                 wb.Unplant(p); CloseModal();
             });
             dig.GetComponent<RectTransform>().Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(640, 110));
+        }
+
+        void OpenPotInfo(PotState p)
+        {
+            var def = PlantBalance.I.Plant(p.type);
+            if (def == null) return;
+            var g = def.Genome;
+            OpenModal(out var panel, 380, 300);
+            Header(panel, def.name + " im Topf");
+            var card = PlantCard(panel, def, new Vector2(700, 640), false, false, null, 32);
+            card.anchorMin = card.anchorMax = new Vector2(0.5f, 1); card.pivot = new Vector2(0.5f, 1); card.anchoredPosition = new Vector2(0, -130);
+            var stats = Label(panel, $"Schaden {g.Damage:0.0} · alle {g.Cooldown:0.00} s · Reichweite {g.Range:0.0}", 32, InkSoft, TextAnchor.MiddleCenter);
+            stats.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 160), new Vector2(-40, 50));
+            var back = Btn(panel, "Einsammeln (zurück ins Lager)", new Color(0.7f, 0.5f, 0.3f), () => { wb.PickUpPot(p); CloseModal(); SelectTool(WorldTool.Pot); }, 38);
+            back.GetComponent<RectTransform>().Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(640, 110));
+        }
+
+        void RefreshPots()
+        {
+            if (wb == null || potCountText == null) return;
+            int n = wb.Save.potStock.Count;
+            potCountText.text = n.ToString();
+            potBadge.SetActive(n > 0);
+            if (WorldCamera.Tool == WorldTool.Pot) hintText.text = ToolHint(WorldTool.Pot);
         }
 
         void OpenPlantBook()
@@ -391,6 +439,8 @@ namespace SeedClicker
             Header(panel, r.victory ? "Nacht überstanden!" : "Der Hof wurde überrannt");
             string txt = $"Besiegte Zombies: {r.kills}";
             if (!r.victory) txt += $"\nVerlorenes Holz: {r.woodLost}";
+            foreach (var w in r.weapons) txt += "\nNeue Waffe: " + w.name + "!";
+            if (r.weapons.Count > 0) { Banner("Neue Waffe: " + r.weapons[0].name, r.weapons[0].desc); }
             var t = Label(panel, txt, 40, Ink, TextAnchor.UpperCenter);
             t.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -130), new Vector2(-80, 120));
             if (r.unlocked.Count > 0)

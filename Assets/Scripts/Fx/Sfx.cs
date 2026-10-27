@@ -57,6 +57,15 @@ namespace SeedClicker
             clips["crunch"] = Tone(0.09f, (t, p) => (Noise() * 0.55f * Env(p, 0.001f, 1.6f) + Sin(Lerp(190, 70, p) * t) * 0.7f * Env(p, 0.003f, 0.7f) + Sin(2400 * t) * 0.25f * Env(p, 0.0005f, 2.5f)), 0.65f);
             clips["tick"] = Tone(0.18f, (t, p) => (Sin(1760 * t) + Sin(2640 * t) * 0.5f) * Env(p, 0.002f, 0.6f), 0.35f);
             clips["groan"] = Tone(0.85f, (t, p) => (Sin(Lerp(105, 78, p) * t) * 0.55f + Sin(Lerp(212, 150, p) * t) * 0.25f + LowNoise(0.15f) * 0.3f) * Env(p, 0.18f, 1.1f) * (0.7f + 0.3f * Sin(5.5f * t)), 0.5f);
+            // Waffen
+            clips["shot"] = Tone(0.16f, (t, p) => (Noise() * 0.9f * Env(p, 0.001f, 2.2f) + Sin(Lerp(160, 55, p) * t) * 0.8f * Env(p, 0.002f, 1.2f)), 0.6f);
+            clips["shotgun"] = Tone(0.42f, (t, p) => (Noise() * 0.85f * Env(p, 0.001f, 1.3f) + LowNoise(0.12f) * 0.7f * Env(p, 0.01f, 0.9f) + Sin(Lerp(120, 40, p) * t) * 0.9f * Env(p, 0.002f, 1.1f)), 0.65f);
+            clips["bow"] = Tone(0.32f, (t, p) => (Sin(Lerp(330, 210, p) * t) * 0.7f + Sin(Lerp(660, 420, p) * t) * 0.2f) * Env(p, 0.003f, 1.4f) + Noise() * 0.35f * Env(p, 0.001f, 4f), 0.5f);
+            clips["launch"] = Tone(0.28f, (t, p) => (Sin(Lerp(95, 60, p) * t) * 0.9f + Noise() * 0.4f * Env(p, 0.001f, 3f)) * Env(p, 0.004f, 1.2f), 0.6f);
+            clips["boom"] = Tone(1.1f, (t, p) => (LowNoise(0.08f) * 1.1f + Noise() * 0.5f * Env(p, 0.001f, 3f) + Sin(Lerp(70, 30, p) * t) * 0.9f) * Env(p, 0.003f, 0.8f), 0.75f);
+            clips["dry"] = Tone(0.05f, (t, p) => (Sin(2600 * t) * 0.4f + Noise() * 0.3f) * Env(p, 0.001f, 2f), 0.3f);
+            // Abendglocke: warnt vor der Nacht
+            clips["bell"] = Tone(1.6f, (t, p) => (Sin(523 * t) * 0.55f + Sin(1046 * t) * 0.25f + Sin(1569 * t) * 0.12f + Sin(784 * t) * 0.18f) * Env(p, 0.002f, 0.6f), 0.5f);
             clips["bug"] = Arp(new[] { 1568f, 2093f, 1568f, 2349f }, 0.04f, 0.3f);
         }
 

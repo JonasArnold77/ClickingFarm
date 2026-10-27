@@ -16,6 +16,8 @@ namespace SeedClicker
         readonly List<(SpriteRenderer sr, float baseA, float phase)> rays = new List<(SpriteRenderer, float, float)>();
         Transform rayRoot;
         Camera cam;
+        ColorAdjustments adjust;
+        WhiteBalance balance;
 
         void Start()
         {
@@ -38,10 +40,13 @@ namespace SeedClicker
             tone.mode.Override(TonemappingMode.Neutral);
 
             var wb = profile.Add<WhiteBalance>(true);
+            balance = wb;
             wb.temperature.Override(9f);
             wb.tint.Override(-4f);
 
             var ca = profile.Add<ColorAdjustments>(true);
+            adjust = ca;
+            ca.colorFilter.Override(Color.white);
             ca.postExposure.Override(0.12f);
             ca.contrast.Override(10f);
             ca.saturation.Override(14f);
@@ -106,6 +111,7 @@ namespace SeedClicker
 
         void Update()
         {
+            UpdateTimeOfDay();
             if (cam == null || rayRoot == null) return;
             // Strahlen passen sich der Zoomstufe an und atmen sanft
             float s = cam.orthographicSize / 8f;
@@ -117,6 +123,16 @@ namespace SeedClicker
                 c.a = baseA * (0.55f + 0.45f * Mathf.Sin(t * 0.35f + phase));
                 sr.color = c;
             }
+        }
+        /// <summary>Abend: warmes Orange-Rosa ueber allem, die Sonnenstrahlen werden golden; nachts wieder neutral.</summary>
+        void UpdateTimeOfDay()
+        {
+            var nw = NightWave.I;
+            if (nw == null || adjust == null) return;
+            float dusk = nw.DuskAmount * (1f - nw.NightAmount);
+            adjust.colorFilter.value = Color.Lerp(Color.white, new Color(1f, 0.78f, 0.62f), dusk);
+            balance.temperature.value = Mathf.Lerp(9f, 30f, dusk);
+            foreach (var (sr, _, _) in rays) if (sr != null) { var c = Color.Lerp(Color.white, new Color(1f, 0.6f, 0.35f), dusk); c.a = sr.color.a; sr.color = c; }
         }
     }
 }

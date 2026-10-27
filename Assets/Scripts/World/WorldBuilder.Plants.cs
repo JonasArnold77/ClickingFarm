@@ -259,7 +259,7 @@ namespace SeedClicker
                 Sfx.Play("levelup", 1.05f, 0.8f);
                 Haptics.Tap(60);
                 WorldCamera.I?.Shake(0.12f);
-                Floater?.Invoke(pos + new Vector2(0, 1.2f), g.name + " ist bereit!", g.ElementColor);
+                Floater?.Invoke(pos + new Vector2(0, 1.2f), g.name + " ist reif – antippen zum Eintopfen!", g.ElementColor);
                 PlantGrown?.Invoke(p);
                 combo = 0;
             }

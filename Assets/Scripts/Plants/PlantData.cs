@@ -11,9 +11,20 @@ namespace SeedClicker
     [Serializable] public class MonsterDefW { public string id, name, art, tint, weakTo; public float hp, speed, damage, scale, weight; public int firstWave; }
     [Serializable] public class WaveDef
     {
-        public bool autoWave; public float firstWaveDelay, dayDuration, spawnInterval, hpGrowthPerWave, houseHp, tapDamage;
+        public bool autoWave; public float firstWaveDelay, dayDuration, eveningDuration, testEveningDuration, spawnInterval, hpGrowthPerWave, houseHp, tapDamage;
         public int baseCount, countPerWave, woodLossOnDefeat;
     }
+
+    /// <summary>Waffe des Spielers (Tipp auf einen Zombie schiesst). kind: bullet, pellet, arrow, grenade.</summary>
+    [Serializable]
+    public class WeaponDef
+    {
+        public string id, name, kind, desc; public int unlockWave, pellets = 1, pierce;
+        public float damage, cooldown, speed, spread, radius, range, damagePerWave;
+    }
+
+    /// <summary>Bauen mit Holz: Zaeune und Blumentoepfe.</summary>
+    [Serializable] public class BuildDef { public int fenceWood, fenceHp, potWood; }
 
     /// <summary>Eine Angriffspflanze im Katalog: feste Eigenschaften, wird nach einer Welle freigeschaltet.</summary>
     [Serializable]
@@ -48,6 +59,15 @@ namespace SeedClicker
         public CatalogDef[] catalog;
         public MonsterDefW[] monsters;
         public WaveDef waves;
+        public WeaponDef[] weapons;
+        public BuildDef build;
+
+        public WeaponDef Weapon(string id)
+        {
+            if (weapons == null || weapons.Length == 0) return null;
+            foreach (var w in weapons) if (w.id == id) return w;
+            return weapons[0];
+        }
 
         static PlantBalance inst;
         public static PlantBalance I
@@ -168,6 +188,19 @@ namespace SeedClicker
             }
         }
     }
+
+    /// <summary>Eine ausgewachsene Pflanze im Blumentopf, frei auf der Karte aufgestellt (verteidigt den Hof).</summary>
+    [Serializable]
+    public class PotState
+    {
+        public float x, y;
+        public string type;
+        public Vector2 Pos => new Vector2(x, y);
+        public PlantGenome Genome { get { var c = PlantBalance.I.Plant(type); return c != null ? c.Genome : PlantBalance.I.catalog[0].Genome; } }
+    }
+
+    /// <summary>Ein Zaunstueck auf einer Rasterzelle (Spielstand).</summary>
+    [Serializable] public class FenceState { public int x, y; public float hp; }
 
     /// <summary>Eine gepflanzte Angriffspflanze auf einem Feld (Spielstand).</summary>
     [Serializable]

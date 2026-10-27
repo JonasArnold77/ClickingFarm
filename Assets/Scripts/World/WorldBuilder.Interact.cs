@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace SeedClicker
 {
-    public enum WorldTool { Axe, Field, Plant }
+    public enum WorldTool { Axe, Field, Plant, Fence, Pot }
 
     [Serializable] public struct Cell { public int x, y; public Cell(int x, int y) { this.x = x; this.y = y; } }
 
@@ -22,6 +22,11 @@ namespace SeedClicker
         public string selectedPlant = "";
         public bool starterChosen;
         public int wave;   // ueberstandene Wellen
+        // Verteidigung: Topfpflanzen (im Lager und aufgestellt), Zaeune, gewaehlte Waffe
+        public List<string> potStock = new List<string>();
+        public List<PotState> pots = new List<PotState>();
+        public List<FenceState> fences = new List<FenceState>();
+        public string weapon = "pistole";
 
         const string Key = "seedclicker_world_v2";   // v2: kleineres Feldraster, Pflanzen-Katalog
         public static WorldSave Load()
@@ -273,7 +278,16 @@ namespace SeedClicker
         }
 
         /// <summary>Markiert die Zelle unter dem Finger (gruen = geht, rot = geht nicht).</summary>
-        public void ShowCellCursor(Cell c)
+        /// <summary>Markiert eine Zaun-Zelle (groberes Raster).</summary>
+        public void ShowFenceCursor(Cell c)
+        {
+            ShowCellCursor(CellAt(FenceCenter(c)), CanPlaceFence(c) || HasFence(c));
+            cellCursor.transform.position = FenceCenter(c);
+            var s = cellCursor.sprite;
+            if (s != null) cellCursor.transform.localScale = Vector3.one * (FenceSize / s.bounds.size.x);
+        }
+
+        public void ShowCellCursor(Cell c, bool? canPlace = null)
         {
             if (cellCursor == null)
             {
@@ -285,7 +299,7 @@ namespace SeedClicker
             var s = cellCursor.sprite;
             if (s != null) cellCursor.transform.localScale = Vector3.one * (CellSize / s.bounds.size.x);
             cellCursor.transform.position = CellCenter(c);
-            bool ok = CanPlaceField(c) || fields.ContainsKey(c);
+            bool ok = canPlace ?? (CanPlaceField(c) || fields.ContainsKey(c));
             cellCursor.color = ok ? new Color(0.75f, 1f, 0.7f, 0.55f) : new Color(1f, 0.5f, 0.45f, 0.55f);
             cellCursor.enabled = true;
             cursorT = 0.6f;

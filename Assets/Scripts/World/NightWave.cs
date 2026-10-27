@@ -6,15 +6,21 @@ using UnityEngine.Rendering.Universal;
 
 namespace SeedClicker
 {
-    public class WaveResult { public int wave; public bool victory; public int kills; public int woodLost; public List<CatalogDef> unlocked = new List<CatalogDef>(); }
+    public class WaveResult
+    {
+        public int wave; public bool victory; public int kills; public int woodLost;
+        public List<CatalogDef> unlocked = new List<CatalogDef>();
+        public List<WeaponDef> weapons = new List<WeaponDef>();
+    }
 
     /// <summary>
-    /// Nachtwellen: Zombies schlurfen aus dem Wald heran und wollen zum Haus.
-    /// Ausgewachsene Angriffspflanzen schiessen je nach Erbgut (Flaeche, Distanz, Projektil, Wirkung, Zusatzeffekt).
+    /// Tag -> Abend (Warnung) -> Nacht: Zombies schlurfen aus dem Wald heran und wollen zum Haus.
+    /// Topfpflanzen schiessen je nach Eigenschaften (Flaeche, Distanz, Projektil, Wirkung, Zusatzeffekt),
+    /// der Spieler schiesst mit seiner Waffe (Tipp auf einen Zombie), Zaeune halten Zombies auf.
     /// Jede ueberstandene Welle schaltet neue Pflanzenarten frei (siehe plants.json -> catalog.unlockWave).
     /// Zum Testen startet automatisch eine Welle (siehe plants.json -> waves.autoWave).
     /// </summary>
-    public class NightWave : MonoBehaviour
+    public partial class NightWave : MonoBehaviour
     {
         public static NightWave I { get; private set; }
 
@@ -28,6 +34,7 @@ namespace SeedClicker
             public float slowT, slowAmt, burnT, burnDps, poisonT, poisonDps; public int poisonStacks;
             public Vector2 knock;
             public bool dead;
+            public float bashT;   // schlaegt gerade auf einen Zaun ein
             public float Speed => def.speed * (slowT > 0 ? 1f - slowAmt : 1f);
         }
 
@@ -40,12 +47,16 @@ namespace SeedClicker
 
         public bool Active { get; private set; }
         public int WaveNumber => (wb != null ? wb.Save.wave : 0) + 1;
-        public float Countdown { get; private set; }
+        public float Countdown { get; private set; }      // Zeit bis zum Abend
+        public bool Evening { get; private set; }
+        public float EveningLeft { get; private set; }    // Zeit bis die Zombies kommen
         public float NightAmount { get; private set; }
+        public float DuskAmount { get; private set; }
         public int MonstersLeft => monsters.Count + toSpawn;
         public float HouseHp { get; private set; }
         public float HouseHpMax => B.waves.houseHp;
 
+        public event Action<float> EveningStarted;
         public event Action<int> WaveStarted;
         public event Action<WaveResult> WaveEnded;
 
@@ -54,7 +65,7 @@ namespace SeedClicker
         readonly List<Monster> monsters = new List<Monster>();
         readonly List<Shot> shots = new List<Shot>();
         readonly List<(SpriteRenderer sr, float t)> beams = new List<(SpriteRenderer, float)>();
-        readonly Dictionary<PlantedState, float> cooldowns = new Dictionary<PlantedState, float>();
+        readonly Dictionary<PotState, float> cooldowns = new Dictionary<PotState, float>();
         int toSpawn; float spawnT;
         WaveResult result;
         Light2D global; Light2D window;
@@ -73,13 +84,29 @@ namespace SeedClicker
             }
             Countdown = B.waves.firstWaveDelay;
             HouseHp = B.waves.houseHp;
+            BuildShooter();
         }
 
         // ------------------------------------------------------------------ Ablauf
 
+        /// <summary>Test-Knopf: Abend sofort (kurz) beginnen lassen, danach kommt die Welle.</summary>
         public void StartWave()
         {
-            if (Active || wb == null) return;
+            if (Active || Evening || wb == null) return;
+            BeginEvening(B.waves.testEveningDuration > 0 ? B.waves.testEveningDuration : 5f);
+        }
+
+        void BeginEvening(float duration)
+        {
+            Evening = true;
+            EveningLeft = duration;
+            Sfx.Play("bell", 1f, 0.8f);
+            EveningStarted?.Invoke(duration);
+        }
+
+        void BeginNight()
+        {
+            Evening = false;
             Active = true;
             toSpawn = B.waves.baseCount + B.waves.countPerWave * (WaveNumber - 1);
             spawnT = 1.5f;
@@ -98,8 +125,14 @@ namespace SeedClicker
             monsters.Clear();
             foreach (var s in shots) if (s.sr != null) Destroy(s.sr.gameObject);
             shots.Clear();
+            ClearWeaponShots();
             toSpawn = 0;
-            if (victory) { wb.Save.wave++; result.unlocked = wb.UnlockForWave(wb.Save.wave); }
+            if (victory)
+            {
+                wb.Save.wave++;
+                result.unlocked = wb.UnlockForWave(wb.Save.wave);
+                if (B.weapons != null) foreach (var w in B.weapons) if (w.unlockWave == wb.Save.wave) result.weapons.Add(w);
+            }
             else
             {
                 result.woodLost = Mathf.Min(wb.Save.wood, B.waves.woodLossOnDefeat);
@@ -114,16 +147,23 @@ namespace SeedClicker
         {
             float dt = Time.deltaTime;
             NightAmount = Mathf.MoveTowards(NightAmount, Active ? 1f : 0f, dt * 0.5f);
+            DuskAmount = Mathf.MoveTowards(DuskAmount, Active || Evening ? 1f : 0f, dt * 0.35f);
             UpdateLight();
             UpdateBeams(dt);
             if (wb == null) return;
+            UpdateWeapons(dt);
 
             if (!Active)
             {
-                if (B.waves.autoWave && wb.Save.starterChosen)
+                if (Evening)
+                {
+                    EveningLeft -= dt;
+                    if (EveningLeft <= 0f) BeginNight();
+                }
+                else if (B.waves.autoWave && wb.Save.starterChosen)
                 {
                     Countdown -= dt;
-                    if (Countdown <= 0f) StartWave();
+                    if (Countdown <= 0f) BeginEvening(B.waves.eveningDuration > 0 ? B.waves.eveningDuration : 12f);
                 }
                 return;
             }
@@ -144,13 +184,17 @@ namespace SeedClicker
 
         void UpdateLight()
         {
-            float n = NightAmount;
+            // Tag -> warmer, tief stehender Abend (orange-rosa) -> kuehle blaue Nacht
+            float n = NightAmount, d = DuskAmount;
             if (global != null)
             {
-                global.color = Color.Lerp(new Color(1f, 0.97f, 0.9f), new Color(0.48f, 0.55f, 0.85f), n);
-                global.intensity = Mathf.Lerp(1f, 0.55f, n);
+                var day = new Color(1f, 0.97f, 0.9f);
+                var dusk = new Color(1f, 0.55f, 0.38f);
+                var night = new Color(0.48f, 0.55f, 0.85f);
+                global.color = Color.Lerp(Color.Lerp(day, dusk, d), night, n);
+                global.intensity = Mathf.Lerp(Mathf.Lerp(1f, 0.74f, d), 0.55f, n);
             }
-            if (window != null) window.intensity = n * 1.3f;
+            if (window != null) window.intensity = Mathf.Max(n * 1.3f, d * 0.6f);
         }
 
         // ------------------------------------------------------------------ Monster
@@ -312,10 +356,19 @@ namespace SeedClicker
                     Poof(m, true);
                     continue;
                 }
-                // leicht schlaengelnd auf das Haus zu, Rueckstoss klingt ab
+                // leicht schlaengelnd auf das Haus zu, Rueckstoss klingt ab; ein Zaun im Weg wird zerschlagen
                 var dir = to / dist;
                 var side = new Vector2(-dir.y, dir.x) * Mathf.Sin(m.hop * 0.7f) * 0.35f;
-                m.pos += (dir + side).normalized * m.Speed * dt + m.knock * dt;
+                var step = (dir + side).normalized * m.Speed * dt;
+                var fence = wb.FenceAt(m.pos + (dir + side).normalized * 0.18f);
+                if (fence != null)
+                {
+                    m.bashT += dt;
+                    wb.HitFence(fence, m.def.damage * 0.4f * dt);
+                    m.pos += m.knock * dt;
+                    if (m.bashT > 0.55f) { m.bashT = 0f; Sfx.Play("chop", 0.6f + (float)rnd.NextDouble() * 0.2f, 0.35f); }
+                }
+                else { m.bashT = 0f; m.pos += step + m.knock * dt; }
                 m.knock = Vector2.MoveTowards(m.knock, Vector2.zero, dt * 6f);
                 Color c = Color.white;
                 if (m.slowT > 0) c = new Color(0.7f, 0.88f, 1f);
@@ -325,10 +378,11 @@ namespace SeedClicker
                 {
                     // Zombie: schwerfaelliges Schwanken statt Huepfen, Animation zeigt in Laufrichtung
                     m.hop += dt * (2.2f + m.Speed * 1.5f);
-                    m.root.position = m.pos + new Vector2(0, Mathf.Abs(Mathf.Sin(m.hop)) * 0.025f);
-                    m.root.localRotation = Quaternion.Euler(0, 0, Mathf.Sin(m.hop * 0.5f) * 7f - dir.x * 7f);
+                    float bash = fence != null ? Mathf.Max(0, Mathf.Sin(m.bashT / 0.55f * Mathf.PI * 2f)) : 0f;   // Ausholen und Zuschlagen
+                    m.root.position = m.pos + new Vector2(0, Mathf.Abs(Mathf.Sin(m.hop)) * 0.025f) + dir * bash * 0.08f;
+                    m.root.localRotation = Quaternion.Euler(0, 0, Mathf.Sin(m.hop * 0.5f) * 7f - dir.x * (7f + bash * 10f));
                     m.root.localScale = new Vector3(1 + m.hitFlash * 0.12f, 1 - m.hitFlash * 0.08f, 1);
-                    if (m.anim != null) { m.anim.SetFloat("DirX", dir.x); m.anim.SetFloat("DirY", dir.y); m.anim.SetFloat("Speed", 1f); }
+                    if (m.anim != null) { m.anim.SetFloat("DirX", dir.x); m.anim.SetFloat("DirY", dir.y); m.anim.SetFloat("Speed", fence != null ? 0f : 1f); }
                     m.group.sortingOrder = WorldBuilder.Order(m.pos.y) + 1;
                     for (int i = 0; i < m.parts.Length; i++)
                         if (m.parts[i] != null) m.parts[i].color = Color.Lerp(Color.Lerp(m.partCols[i], m.partCols[i] * c, 0.5f), new Color(1f, 0.35f, 0.3f), m.hitFlash);
@@ -366,15 +420,14 @@ namespace SeedClicker
 
         void UpdatePlantsFire(float dt)
         {
-            foreach (var p in wb.Planted)
+            foreach (var p in wb.Pots)
             {
-                if (!p.Grown) continue;
                 var g = p.Genome;
                 float cd = cooldowns.TryGetValue(p, out var v) ? v : (float)rnd.NextDouble() * g.Cooldown;
                 cd -= dt;
                 if (cd <= 0f)
                 {
-                    var muzzle = wb.PlantMuzzle(p);
+                    var muzzle = wb.PotMuzzle(p);
                     var target = Nearest(muzzle, g.Range);
                     if (target != null) { Fire(p, muzzle, target); cd = g.Cooldown; }
                     else cd = 0.15f;
@@ -383,10 +436,10 @@ namespace SeedClicker
             }
         }
 
-        void Fire(PlantedState plant, Vector2 muzzle, Monster target)
+        void Fire(PotState plant, Vector2 muzzle, Monster target)
         {
             var g = plant.Genome;
-            wb.KickPlant(plant);
+            wb.KickPot(plant);
             var proj = B.Option(PlantAttr.Projectile, g.projectile.id);
             // Zielauswahl nach Flaechenmuster
             var targets = new List<Monster> { target };
@@ -601,24 +654,5 @@ namespace SeedClicker
             }
         }
 
-        // ------------------------------------------------------------------ Spieler
-
-        /// <summary>Monster direkt antippen (kleiner Schaden). Gibt true zurueck, wenn eines getroffen wurde.</summary>
-        public bool TapMonster(Vector2 world)
-        {
-            if (!Active) return false;
-            Monster best = null; float bd = 0.75f * 0.75f;
-            foreach (var m in monsters)
-            {
-                if (m.dead) continue;
-                float d = (m.pos + new Vector2(0, 0.35f) - world).sqrMagnitude;
-                if (d < bd) { bd = d; best = m; }
-            }
-            if (best == null) return false;
-            Damage(best, B.waves.tapDamage * (1 + 0.15f * (WaveNumber - 1)), null);
-            Sfx.Play("chop", 1.3f, 0.6f);
-            Haptics.Tap(10);
-            return true;
-        }
     }
 }

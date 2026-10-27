@@ -71,6 +71,8 @@
     "autoWave": true,
     "firstWaveDelay": 20,
     "dayDuration": 60,
+    "eveningDuration": 15,
+    "testEveningDuration": 6,
     "baseCount": 4,
     "countPerWave": 2,
     "spawnInterval": 1.1,
@@ -78,5 +80,14 @@
     "houseHp": 100,
     "tapDamage": 1.5,
     "woodLossOnDefeat": 5
-  }
+  },
+
+  "weapons": [
+    { "id": "pistole",       "name": "Pistole",       "kind": "bullet",  "desc": "schnell, ein Treffer",            "unlockWave": 0, "damage": 3,   "cooldown": 0.28, "speed": 24, "pellets": 1, "spread": 0,  "pierce": 0, "radius": 0,   "range": 9,  "damagePerWave": 0.12 },
+    { "id": "schrotflinte",  "name": "Schrotflinte",  "kind": "pellet",  "desc": "Streuschuss, stark aus der Nähe", "unlockWave": 2, "damage": 2,   "cooldown": 0.85, "speed": 19, "pellets": 7, "spread": 28, "pierce": 0, "radius": 0,   "range": 5,  "damagePerWave": 0.12 },
+    { "id": "bogen",         "name": "Pfeil & Bogen", "kind": "arrow",   "desc": "durchbohrt mehrere Zombies",      "unlockWave": 3, "damage": 6,   "cooldown": 0.6,  "speed": 15, "pellets": 1, "spread": 0,  "pierce": 3, "radius": 0,   "range": 11, "damagePerWave": 0.12 },
+    { "id": "granatwerfer",  "name": "Granatwerfer",  "kind": "grenade", "desc": "Explosion trifft alle im Umkreis", "unlockWave": 5, "damage": 12,  "cooldown": 1.6,  "speed": 8,  "pellets": 1, "spread": 0,  "pierce": 0, "radius": 1.4, "range": 10, "damagePerWave": 0.12 }
+  ],
+
+  "build": { "fenceWood": 1, "fenceHp": 10, "potWood": 2 }
 }

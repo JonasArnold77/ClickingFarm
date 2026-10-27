@@ -102,33 +102,52 @@ namespace SeedClicker
         void BuildToolbar()
         {
             var bar = Panel(safe, "Toolbar", new Color(0.12f, 0.1f, 0.08f, 0.5f));
-            bar.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(800, 290));
-            var row = UIKit.HRow(bar.transform, "Row", 40, TextAnchor.MiddleCenter, new RectOffset(30, 30, 20, 20));
+            bar.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(1030, 270));
+            var row = UIKit.HRow(bar.transform, "Row", 14, TextAnchor.MiddleCenter, new RectOffset(20, 20, 16, 16));
             row.GetComponent<RectTransform>().Stretch();
-            AddSlot(row.transform, WorldTool.Axe, "sk_Tree_0", "Bäume fällen");
-            AddSlot(row.transform, WorldTool.Field, "hh_hoe_icon", "Felder");
-            AddSlot(row.transform, WorldTool.Plant, "hh_corn_seedbag", "Pflanzen");
+            AddSlot(row.transform, WorldTool.Axe, Icon("sk_Tree_0"), "Fällen");
+            AddSlot(row.transform, WorldTool.Field, Icon("hh_hoe_icon"), "Felder");
+            AddSlot(row.transform, WorldTool.Plant, Icon("hh_corn_seedbag"), "Pflanzen");
+            AddSlot(row.transform, WorldTool.Fence, Icon("sk_Fence_11"), "Zaun");
+            var potIcon = AddSlot(row.transform, WorldTool.Pot, WorldBuilder.PotSprite, "Töpfe");
+            // Topf-Symbol mit Pflanze darin und Anzahl im Lager
+            var leaf = UIKit.Rect(potIcon.transform.parent, "PotPlant").gameObject.AddComponent<Image>();
+            leaf.sprite = Icon("hh_corn_5"); leaf.preserveAspect = true; leaf.raycastTarget = false;
+            leaf.rectTransform.Stretch(40, 40, 18, 64);
+            leaf.transform.SetSiblingIndex(potIcon.transform.GetSiblingIndex());
+            potIcon.rectTransform.Stretch(34, 34, 18, 70);
+            var badge = Panel(potIcon.transform.parent, "Badge", new Color(0.85f, 0.35f, 0.25f));
+            badge.raycastTarget = false;
+            badge.rectTransform.Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(4, 4), new Vector2(64, 56));
+            potCountText = UIKit.Txt(badge.transform, "0", 34, Color.white, TextAnchor.MiddleCenter, true, true);
+            potCountText.rectTransform.Stretch();
+            potBadge = badge.gameObject;
 
             hintText = UIKit.Txt(safe, "", 32, Color.white, TextAnchor.MiddleCenter, true, true);
-            hintText.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 335), new Vector2(-60, 80));
+            hintText.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 312), new Vector2(-60, 80));
         }
 
-        void AddSlot(Transform parent, WorldTool tool, string iconName, string label)
+        Text potCountText;
+        GameObject potBadge;
+
+        Sprite Icon(string name) => art != null ? art.Get(name) : null;
+
+        Image AddSlot(Transform parent, WorldTool tool, Sprite iconSprite, string label)
         {
             var holder = UIKit.Rect(parent, "Slot_" + tool);
-            holder.LE(200, 250);
+            holder.LE(182, 236);
             var slot = UIKit.Rect(holder, "Frame").gameObject.AddComponent<Image>();
             slot.sprite = art != null ? art.Get("hh_slot") : null;
-            slot.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(190, 190));
+            slot.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(170, 170));
             var icon = UIKit.Rect(slot.transform, "Icon").gameObject.AddComponent<Image>();
-            icon.sprite = art != null ? art.Get(iconName) : null; icon.preserveAspect = true; icon.raycastTarget = false;
-            icon.rectTransform.Stretch(26, 26, 22, 34);
-            var t = UIKit.Txt(holder, label, 32, Color.white, TextAnchor.MiddleCenter, true, true);
-            t.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 0), new Vector2(40, 50));
+            icon.sprite = iconSprite; icon.preserveAspect = true; icon.raycastTarget = false;
+            icon.rectTransform.Stretch(24, 24, 20, 30);
+            var t = UIKit.Txt(holder, label, 30, Color.white, TextAnchor.MiddleCenter, true, true);
+            t.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 0), new Vector2(40, 48));
             t.horizontalOverflow = HorizontalWrapMode.Overflow;
+            if (tool == WorldTool.Plant) plantSlotIcon = icon;
             var b = slot.gameObject.AddComponent<Button>();
             b.transition = Selectable.Transition.None;
-            if (tool == WorldTool.Plant) plantSlotIcon = icon;
             b.onClick.AddListener(() =>
             {
                 bool again = WorldCamera.Tool == tool;
@@ -137,6 +156,7 @@ namespace SeedClicker
             });
             slot.gameObject.AddComponent<Juicy>();
             slots.Add((slot, slot.rectTransform, tool));
+            return icon;
         }
 
         void SelectTool(WorldTool tool)
@@ -147,11 +167,26 @@ namespace SeedClicker
                 bool sel = t == tool;
                 slot.sprite = art != null ? art.Get(sel ? "hh_slot_selected" : "hh_slot") : null;
                 slot.color = sel ? new Color(1f, 0.95f, 0.75f) : new Color(1, 1, 1, 0.85f);
-                rt.sizeDelta = sel ? new Vector2(205, 205) : new Vector2(180, 180);
+                rt.sizeDelta = sel ? new Vector2(182, 182) : new Vector2(158, 158);
             }
-            hintText.text = tool == WorldTool.Axe ? "Tippe oft auf einen Baum, um ihn zu fällen"
-                : tool == WorldTool.Field ? "Tippe oder wische über die Wiese, um Felder anzulegen"
-                : "Tippe auf ein Feld zum Einsetzen – dann ~100× auf die Pflanze tippen, bis sie reif ist";
+            hintText.text = ToolHint(tool);
+        }
+
+        string ToolHint(WorldTool tool)
+        {
+            var wbi = WorldBuilder.I;
+            switch (tool)
+            {
+                case WorldTool.Axe: return "Tippe oft auf einen Baum, um ihn zu fällen (Zäune abbauen geht auch)";
+                case WorldTool.Field: return "Tippe oder wische über die Wiese, um Felder anzulegen";
+                case WorldTool.Plant: return "Tippe auf ein Feld zum Einsetzen – dann ~100× auf die Pflanze tippen";
+                case WorldTool.Fence:
+                    return "Wische, um Zäune zu ziehen (" + (wbi != null ? wbi.FenceCost : 1) + " Holz pro Stück) – sie halten Zombies auf";
+                default:
+                    int n = wbi != null ? wbi.Save.potStock.Count : 0;
+                    return n > 0 ? "Tippe irgendwo auf die Karte, um eine Topfpflanze aufzustellen (" + n + " im Lager)"
+                                 : "Keine Topfpflanze im Lager – tippe eine reife Pflanze auf dem Feld an";
+            }
         }
 
         void SpawnFloater(Vector2 world, string text, Color col)

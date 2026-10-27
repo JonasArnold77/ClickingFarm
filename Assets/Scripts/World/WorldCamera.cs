@@ -125,9 +125,10 @@ namespace SeedClicker
             var c = WorldBuilder.CellAt(w);
             // Wachsende Pflanze: sofort beim Druecken reagieren – das macht das Klicken knackig
             if (wb.IsPlantGrowing(c)) { wb.TapPlant(c); consumed = true; return; }
-            if (NightWave.I != null && NightWave.I.Active && NightWave.I.TapMonster(w)) { consumed = true; return; }
-            if (wb.PlantAt(c) != null) return;   // fertige Pflanze -> Info beim Loslassen
-            if (Tool == WorldTool.Field || (Tool == WorldTool.Plant && wb.HasField(c)))
+            // Nachts: Tipp auf einen Zombie = Schuss mit der gewaehlten Waffe
+            if (NightWave.I != null && NightWave.I.TryShoot(w)) { consumed = true; return; }
+            if (wb.PlantAt(c) != null || wb.PotAt(w) != null) return;   // fertige Pflanze / Topf -> Info beim Loslassen
+            if (Tool == WorldTool.Field || Tool == WorldTool.Fence || (Tool == WorldTool.Plant && wb.HasField(c)))
             {
                 painting = true; Paint(screen);
             }
@@ -152,22 +153,29 @@ namespace SeedClicker
             if (wb == null) return;
             if (wb.HitWorkbench(w)) { wb.TapWorkbench(); return; }
             var cell = WorldBuilder.CellAt(w);
+            var pot = wb.PotAt(w);
+            if (pot != null && Tool != WorldTool.Axe) { wb.TapPot(pot); return; }
             if (wb.PlantAt(cell) != null && Tool != WorldTool.Axe) { wb.TapPlant(cell); return; }
             if (Tool == WorldTool.Axe)
             {
-                if (!wb.TryChop(w) && wb.PlantAt(cell) != null) wb.TapPlant(cell);
+                if (wb.TryChop(w) || wb.TryRemoveFence(w)) return;
+                if (pot != null) wb.TapPot(pot);
+                else if (wb.PlantAt(cell) != null) wb.TapPlant(cell);
+                return;
             }
+            if (Tool == WorldTool.Pot) wb.PlacePotFromStock(w);
         }
 
-        /// <summary>Wischen: Felder anlegen (Feld-Werkzeug) bzw. leere Felder bepflanzen (Pflanzen-Werkzeug).</summary>
+        /// <summary>Wischen: Felder anlegen, Zaeune ziehen (Zaun-Werkzeug) bzw. leere Felder bepflanzen (Pflanzen-Werkzeug).</summary>
         void Paint(Vector2 screen)
         {
             var wb = WorldBuilder.I;
             if (wb == null) return;
-            var c = WorldBuilder.CellAt(World(screen));
+            var c = Tool == WorldTool.Fence ? WorldBuilder.FenceCellAt(World(screen)) : WorldBuilder.CellAt(World(screen));
             if (hasLastCell && c.x == lastCell.x && c.y == lastCell.y) return;
             hasLastCell = true; lastCell = c;
             if (Tool == WorldTool.Field) { wb.ShowCellCursor(c); wb.PlaceField(c, true); return; }
+            if (Tool == WorldTool.Fence) { wb.ShowFenceCursor(c); wb.PlaceFence(c, true); return; }
             if (Tool == WorldTool.Plant && wb.HasField(c) && wb.PlantAt(c) == null)
             {
                 var sel = wb.Save.selectedPlant;
