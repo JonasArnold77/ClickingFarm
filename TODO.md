@@ -1,7 +1,8 @@
 # TODO.md – offene Punkte
 
 ## Als Nächstes
-- [ ] Waffen: echte Waffen-Grafik in der Hand des Bauern (aktuell schießt er aus der Hand), Munition/Nachladen?
+- [ ] Startbeet erweitern: weitere Bereiche/Zaun-Ausbau mit Holz oder Münzen freischalten (Fläche ist aktuell fest).
+- [ ] Waffen: Munition/Nachladen? Bessere Waffen-Icons.
 - [ ] Zombies laufen nicht um Zäune herum, sondern schlagen sich durch – evtl. Wegfindung, Tore im Zaun, Zaun reparieren.
 - [ ] Topfpflanzen: Auswahl, welche aus dem Lager aufgestellt wird (aktuell die älteste).
 - [ ] Zombies: Arme nach vorn (IK-Ziele der Figur verschieben), eigene Zombie-Grafik statt umgefärbter Bauer, Umfall-Animation beim Besiegen.

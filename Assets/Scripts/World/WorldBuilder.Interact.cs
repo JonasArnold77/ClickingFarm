@@ -27,6 +27,7 @@ namespace SeedClicker
         public List<PotState> pots = new List<PotState>();
         public List<FenceState> fences = new List<FenceState>();
         public string weapon = "pistole";
+        public bool enclosureBuilt;   // Zaun ums Startbeet wurde gesetzt
 
         const string Key = "seedclicker_world_v2";   // v2: kleineres Feldraster, Pflanzen-Katalog
         public static WorldSave Load()
@@ -220,6 +221,7 @@ namespace SeedClicker
         {
             if (fields.ContainsKey(c)) return false;
             var center = CellCenter(c);
+            if (!InFarmArea(center)) return false;                            // nur im eingezaeunten Beet
             float hc = CellSize / 2f;
             foreach (var corner in new[] { new Vector2(-hc, -hc), new Vector2(hc, -hc), new Vector2(-hc, hc), new Vector2(hc, hc) })
             {
@@ -244,6 +246,12 @@ namespace SeedClicker
         /// <summary>Legt ein Feld an (Rasterzelle). Gibt false zurueck, wenn der Platz nicht geht.</summary>
         public bool PlaceField(Cell c, bool fx, bool persist = true)
         {
+            if (fx && !InFarmArea(CellCenter(c)) && noWoodT <= 0f)
+            {
+                Floater?.Invoke(CellCenter(c) + new Vector2(0, 0.5f), "Felder nur innerhalb des Zauns", new Color(1f, 0.85f, 0.6f));
+                Sfx.Play("error", 1.1f, 0.4f);
+                noWoodT = 1.2f;
+            }
             if (!CanPlaceField(c)) return false;
             var center = CellCenter(c);
             // Blumen, Gras, Pilze, Buesche in der Zelle wegraeumen

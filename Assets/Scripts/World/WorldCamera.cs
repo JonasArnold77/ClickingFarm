@@ -17,6 +17,8 @@ namespace SeedClicker
         Camera cam;
         Vector3 basePos;
         float shake;
+        float punch, punchApplied;       // kurzer Zoom-Stoss (Klick-Wucht)
+        Vector2 kick, kickVel;           // gerichteter Ruck, federt zurueck
 
         // Zeigerzustand
         bool down, overUI, panning, painting;
@@ -38,18 +40,31 @@ namespace SeedClicker
             cam.clearFlags = CameraClearFlags.SolidColor;
             Input.simulateMouseWithTouches = false;
             cam.orthographicSize = Mathf.Clamp(4.4f / Mathf.Max(0.3f, cam.aspect), MinSize, MaxSize);
-            basePos = new Vector3(WorldBuilder.HousePos.x, WorldBuilder.HousePos.y - 0.3f, -10);
+            basePos = new Vector3(WorldBuilder.HousePos.x - 0.8f, WorldBuilder.HousePos.y - 1.9f, -10);   // Haus und eingezaeuntes Startbeet im Blick
         }
 
         public void Shake(float amount) => shake = Mathf.Max(shake, amount);
+        /// <summary>Kurzer Zoom-Stoss nach innen (Anteil der Bildgroesse, z. B. 0.02).</summary>
+        public void Punch(float amount) => punch = Mathf.Max(punch, amount);
+        /// <summary>Gerichteter Ruck der Kamera, federt elastisch zurueck.</summary>
+        public void Kick(Vector2 dir) => kickVel += dir;
 
         void LateUpdate()
         {
             if (Input.touchCount > 0) Touches();
             else Mouse();
             Clamp();
-            shake = Mathf.MoveTowards(shake, 0f, Time.deltaTime * 0.5f);
-            cam.transform.position = basePos + (shake > 0 ? (Vector3)(Random.insideUnitCircle * shake) : Vector3.zero);
+            float dt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
+            shake = Mathf.MoveTowards(shake, 0f, dt * 0.5f);
+            // Zoom-Stoss: vorherigen Anteil herausrechnen, abklingen lassen, neu anwenden
+            cam.orthographicSize /= 1f - punchApplied;
+            punch = Mathf.MoveTowards(punch, 0f, dt * 0.25f) * Mathf.Pow(0.0005f, dt);
+            punchApplied = punch;
+            cam.orthographicSize *= 1f - punchApplied;
+            // Ruck als gedaempfte Feder
+            kickVel += (-kick * 900f - kickVel * 28f) * dt;
+            kick += kickVel * dt;
+            cam.transform.position = basePos + (Vector3)kick + (shake > 0 ? (Vector3)(Random.insideUnitCircle * shake) : Vector3.zero);
         }
 
         Vector2 World(Vector2 screen) => cam.ScreenToWorldPoint(new Vector3(screen.x, screen.y, 10));

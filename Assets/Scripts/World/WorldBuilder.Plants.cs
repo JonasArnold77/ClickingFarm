@@ -7,17 +7,39 @@ namespace SeedClicker
 {
     /// <summary>
     /// Angriffspflanzen auf den Feldern: Art waehlen, einsetzen, mit ~100 Tipps gross ziehen.
-    /// Jeder Tipp soll sich "crunchy" anfuehlen: Stauchen, Kruemel, Funken, Knack-Sound mit steigender
-    /// Tonhoehe, Vibration, Mini-Wackler, pulsierender Fortschrittsbalken, Combo bei schnellem Tippen,
-    /// Meilensteine bei 25/50/75 % und ein grosses Finale.
+    /// Jeder Tipp soll Wucht haben: Treffer-Stopp, weisser Blitz, Feder-Stauchen, Bodenwelle, Erdbrocken,
+    /// Knack + tiefer Schlag, Zoom-Stoss und Kamera-Ruck, Combo bei schnellem Tippen (Pflanze glueht auf),
+    /// Meilensteine bei 25/50/75 % mit kurzem Stillstand und ein grosses Finale.
+    /// Pflanzen werden mit eigenem Shader (Normal-Maps) plastisch schattiert und ragen ueber ihr Feld hinaus.
     /// Ausserdem das Pflanzenbuch (Stumpf neben dem Haus) mit allen freigeschalteten Arten.
     /// </summary>
     public partial class WorldBuilder
     {
         class PlantView
         {
-            public Transform root; public SpriteRenderer sr, glow, barBack, barFill; public Light2D light;
-            public float squash, pop = 1f, tilt, barPunch, barShow; public int stage = -1;
+            public Transform root, body; public SpriteRenderer sr, glow, shadow, barBack, barFill; public Light2D light;
+            public Material mat;
+            public float pop = 1f, barPunch, barShow;
+            public float sy, syVel, tilt, tiltVel, freeze, flash, size = -1f, heat;   // Feder (Stauchen), Kippen, Treffer-Stopp, Blitz
+            public int stage = -1;
+        }
+
+        struct Shock { public SpriteRenderer sr; public float t, dur, w; }
+        readonly List<Shock> shocks = new List<Shock>();
+        static Sprite ringSprite;
+        static Material plantMat;
+
+        /// <summary>Gemeinsames Pflanzen-Material (plastische Schattierung ueber die Normal-Maps).</summary>
+        public static Material PlantMaterialShared
+        {
+            get
+            {
+                if (plantMat != null) return plantMat;
+                var sh = Shader.Find("SeedClicker/PlantLit2D");
+                if (sh == null || !sh.isSupported) return null;
+                plantMat = new Material(sh) { name = "PlantLit" };
+                return plantMat;
+            }
         }
 
         readonly Dictionary<Cell, PlantView> plantViews = new Dictionary<Cell, PlantView>();
@@ -160,111 +182,215 @@ namespace SeedClicker
             var g = p.Genome;
             var root = new GameObject("Plant_" + p.type).transform;
             root.SetParent(objects, false);
-            root.position = CellCenterOf(c) + new Vector2(0, -CellSize * 0.32f);
+            root.position = CellCenterOf(c) + new Vector2(0, -CellSize * 0.3f);
+            var shadow = WorldSprite(root, "Shadow", MistSprite, -31350);
+            shadow.color = new Color(0.05f, 0.04f, 0.02f, 0.42f);
             var glow = WorldSprite(root, "Glow", MistSprite, -31400);
-            glow.transform.localPosition = new Vector3(0, CellSize * 0.25f, 0);
-            glow.transform.localScale = new Vector3(CellSize * 1.4f, CellSize * 0.8f, 1);
-            var sr = WorldSprite(root, "Body", null, Order(root.position.y));
+            glow.transform.localPosition = new Vector3(0, CellSize * 0.45f, 0);
+            var body = new GameObject("Body").transform;   // Feder-Knoten: stauchen/kippen um den Fusspunkt
+            body.SetParent(root, false);
+            var sr = WorldSprite(body, "Sprite", null, Order(root.position.y));
+            Material mat = null;
+            if (PlantMaterialShared != null) { mat = new Material(PlantMaterialShared); sr.sharedMaterial = mat; }
             var barBack = WorldSprite(transform, "BarBack", Art.Get("white"), 31000);
             var barFill = WorldSprite(transform, "BarFill", Art.Get("white"), 31001);
             barBack.color = new Color(0.12f, 0.08f, 0.05f, 0.75f);
             var light = root.gameObject.AddComponent<Light2D>();
             light.lightType = Light2D.LightType.Point;
-            light.pointLightOuterRadius = 1.2f; light.pointLightInnerRadius = 0.05f;
+            light.pointLightOuterRadius = 1.4f; light.pointLightInnerRadius = 0.05f;
             light.color = g.ElementColor; light.intensity = 0f;
-            var v = new PlantView { root = root, sr = sr, glow = glow, light = light, barBack = barBack, barFill = barFill, pop = fx ? 0f : 1f };
+            var v = new PlantView { root = root, body = body, sr = sr, shadow = shadow, glow = glow, light = light, mat = mat, barBack = barBack, barFill = barFill, pop = fx ? 0f : 1f };
             plantViews[c] = v;
-            UpdatePlantSprite(p, v);
+            UpdatePlantSprite(p, v, true);
         }
 
-        void UpdatePlantSprite(PlantedState p, PlantView v)
+        /// <summary>Breite der Pflanze: waechst mit jedem Tipp und darf ueber das Feld hinausragen.</summary>
+        float PlantWidth(PlantedState p)
+        {
+            var sp = PlantBalance.I.Species(p.Genome.species);
+            float f = p.growth / (float)Mathf.Max(1, PlantBalance.I.growTaps);
+            return CellSize * (p.Grown ? 1.5f : Mathf.Lerp(0.85f, 1.3f, f)) * sp.scale;
+        }
+
+        void UpdatePlantSprite(PlantedState p, PlantView v, bool snap = false)
         {
             var g = p.Genome;
             var sp = PlantBalance.I.Species(g.species);
             float f = p.growth / (float)Mathf.Max(1, PlantBalance.I.growTaps);
             int stage = p.Grown ? 2 : f >= 0.5f ? 1 : 0;
-            // Groesse waechst stufenlos mit jedem Tipp mit
-            float width = CellSize * (p.Grown ? 1.1f : Mathf.Lerp(0.8f, 1.0f, f)) * sp.scale;
             var sprite = art.Get(sp.art + sp.stages[Mathf.Clamp(stage, 0, sp.stages.Length - 1)]);
             if (stage != v.stage) { v.stage = stage; v.sr.sprite = sprite; }
+            if (snap || v.size < 0f) v.size = PlantWidth(p);
             if (sprite != null)
             {
-                float s = width / Mathf.Max(0.01f, sprite.bounds.size.x);
+                float s = v.size / Mathf.Max(0.01f, sprite.bounds.size.x);
                 v.sr.transform.localScale = new Vector3(s, s, 1);
                 v.sr.transform.localPosition = new Vector3(0, -sprite.bounds.min.y * s, 0);
             }
+            v.shadow.transform.localScale = new Vector3(v.size * 1.15f, v.size * 0.32f, 1);
+            v.glow.transform.localScale = new Vector3(v.size * 1.6f, v.size * 1.2f, 1);
             // leichter Farbstich der Wirkung, damit man die Arten unterscheidet
-            var col = g.ElementColor;
-            v.sr.color = Color.Lerp(Color.white, col, 0.18f);
-            v.glow.color = new Color(col.r, col.g, col.b, p.Grown ? 0.35f : 0f);
+            v.sr.color = Color.Lerp(Color.white, g.ElementColor, 0.15f);
         }
 
-        /// <summary>Tipp auf eine Pflanze: waechst ein Stueck (Klick-Wachstum) oder zeigt Infos, wenn sie fertig ist.</summary>
+        /// <summary>Tipp auf eine Pflanze: waechst ein Stueck (Klick-Wachstum) oder zeigt Infos, wenn sie fertig ist.
+        /// Das ist die Hauptmechanik – jeder Tipp soll Wucht haben: Treffer-Stopp, Blitz, Federn, Bodenwelle,
+        /// Erdbrocken, Zoom-Stoss, tiefer Schlag im Sound.</summary>
         public bool TapPlant(Cell c)
         {
             var p = PlantAt(c);
             if (p == null || !plantViews.TryGetValue(c, out var v)) return false;
-            if (p.Grown) { v.squash = 0.6f; Sfx.Play("pop", 1.3f, 0.6f); PlantTapped?.Invoke(p); return true; }
+            if (p.Grown) { v.sy = -0.12f; v.flash = 0.4f; Sfx.Play("pop", 1.3f, 0.6f); PlantTapped?.Invoke(p); return true; }
 
             // Combo: schnelles Tippen macht es lauter, heller, spritziger
             float now = Time.unscaledTime;
             combo = now - lastTapTime <= PlantBalance.I.comboWindow ? combo + 1 : 1;
             lastTapTime = now;
             float heat = Mathf.Clamp01(combo / 30f);
+            v.heat = Mathf.Max(v.heat, heat);
 
             p.growth++;
             int taps = PlantBalance.I.growTaps;
             float progress = p.growth / (float)taps;
             var g = p.Genome;
-            var pos = CellCenterOf(c);
+            var basePos = (Vector2)v.root.position;
+            var top = basePos + new Vector2(0, v.size * 0.75f);
             var P = Particles.I;
 
-            v.squash = 1f;
-            v.tilt = UnityEngine.Random.Range(-1f, 1f);
+            // Koerper: hart stauchen, kurz einfrieren, weiss aufblitzen, zur Seite kippen
+            v.sy = -0.26f - heat * 0.1f;
+            v.syVel = 0f;
+            v.freeze = 0.045f;
+            v.flash = 0.85f;
+            v.tiltVel += UnityEngine.Random.Range(-1f, 1f) * (60f + heat * 60f);
             v.barPunch = 1f;
             v.barShow = 2.5f;
-            // Kruemel und Blaetter
-            P?.Burst(pos + new Vector2(0, -0.05f), "square", new Color(0.42f, 0.28f, 0.16f), 3 + (int)(heat * 3), 1.5f + heat * 0.6f, 0.4f, 0.26f, 9f, 1.5f);
-            P?.Burst(pos + new Vector2(0, 0.15f), "leaf", new Color(0.55f, 0.85f, 0.35f), 1 + (int)(heat * 2), 1.4f, 0.55f, 0.2f, 3f, 1f);
-            P?.Spawn(pos + new Vector2(UnityEngine.Random.Range(-0.15f, 0.15f), 0.35f), "spark", Color.Lerp(Color.white, g.ElementColor, 0.6f), new Vector3(0, 1.1f, 0), 0.3f, 0.45f + heat * 0.35f, 0f, 0f);
-            if (heat > 0.5f && combo % 4 == 0) P?.Ring(pos, new Color(1f, 1f, 1f, 0.15f + heat * 0.2f), 0.3f + heat * 0.2f, 0.2f);
-            // Knack + Ton, der mit dem Fortschritt und der Combo steigt
-            Sfx.Play("crunch", UnityEngine.Random.Range(0.9f, 1.1f), 0.9f);
-            Sfx.Play("grow", 0.8f + progress * 0.7f + heat * 0.3f, 0.45f);
-            if (combo % 10 == 0) Sfx.Play("tick", 1f + heat * 0.5f, 0.7f);
-            if (combo % 25 == 0) { Floater?.Invoke(pos + new Vector2(0, 0.8f), "Combo ×" + combo, new Color(1f, 0.85f, 0.4f)); }
-            Haptics.Tap(heat > 0.5f ? 14 : 8);
-            WorldCamera.I?.Shake(0.012f + heat * 0.015f);
 
-            // Meilensteine
+            // Bodenwelle und Erdbrocken (dunkel + hell), Blaetter oben, Funke am Treffpunkt
+            Shockwave(basePos, v.size * (1.1f + heat * 0.5f), 0.22f, new Color(1f, 0.95f, 0.8f, 0.55f + heat * 0.25f));
+            int clods = 5 + (int)(heat * 6);
+            P?.Burst(basePos + new Vector2(0, 0.03f), "square", new Color(0.36f, 0.24f, 0.14f), clods, 2.2f + heat * 1.2f, 0.45f, 0.1f, 13f, 3.2f);
+            P?.Burst(basePos + new Vector2(0, 0.03f), "square", new Color(0.62f, 0.46f, 0.3f), 2 + (int)(heat * 3), 1.8f + heat, 0.4f, 0.07f, 13f, 2.6f);
+            P?.Burst(top, "leaf", new Color(0.55f, 0.85f, 0.35f), 1 + (int)(heat * 3), 1.6f + heat, 0.7f, 0.16f, 2.5f, 1.2f);
+            P?.Spawn(top + new Vector2(UnityEngine.Random.Range(-0.1f, 0.1f), -0.1f), "spark", new Color(1f, 1f, 0.9f), Vector3.zero, 0.09f, 0.55f + heat * 0.3f, 0f, 0f);
+            P?.Burst(top, "spark", Color.Lerp(Color.white, g.ElementColor, 0.6f), 2 + (int)(heat * 4), 2.6f + heat * 2f, 0.3f, 0.22f, 0f, 0.8f);
+
+            // Sound: Knack + tiefer Schlag + steigender Wachs-Ton
+            Sfx.Play("crunch", UnityEngine.Random.Range(0.85f, 1.15f), 1f);
+            Sfx.Play("thump", UnityEngine.Random.Range(0.9f, 1.1f) + heat * 0.15f, 0.9f);
+            Sfx.Play("grow", 0.8f + progress * 0.7f + heat * 0.3f, 0.4f);
+            if (combo % 10 == 0) Sfx.Play("tick", 1f + heat * 0.5f, 0.7f);
+            if (combo % 25 == 0) { Floater?.Invoke(top + new Vector2(0, 0.5f), "Combo ×" + combo, new Color(1f, 0.85f, 0.4f)); }
+            Haptics.Tap(12 + (int)(heat * 12));
+            WorldCamera.I?.Punch(0.012f + heat * 0.012f);
+            WorldCamera.I?.Kick(Vector2.down * (0.7f + heat * 0.8f));
+            WorldCamera.I?.Shake(0.008f + heat * 0.012f);
+
+            // Meilensteine: kurzer Stillstand der ganzen Welt, grosse Welle
             foreach (var m in PlantBalance.I.growMilestones)
                 if (p.growth == m)
                 {
-                    v.pop = 0.4f;
-                    P?.Burst(pos + new Vector2(0, 0.3f), "star", new Color(1f, 0.95f, 0.6f), 10, 2.2f, 0.6f, 0.35f, 1f, 1f);
-                    P?.Ring(pos, Color.white, 0.6f, 0.35f);
-                    Sfx.Play("unlock", 0.9f + m / 100f, 0.7f);
-                    Haptics.Tap(30);
-                    WorldCamera.I?.Shake(0.05f);
-                    Floater?.Invoke(pos + new Vector2(0, 1.1f), m + " %", new Color(0.8f, 1f, 0.6f));
+                    v.pop = 0.5f;
+                    v.sy = -0.4f;
+                    HitStop(0.07f);
+                    Shockwave(basePos, v.size * 2.6f, 0.4f, Color.white);
+                    P?.Burst(top, "star", new Color(1f, 0.95f, 0.6f), 14, 3f, 0.7f, 0.3f, 1f, 1f);
+                    Sfx.Play("unlock", 0.9f + m / 100f, 0.8f);
+                    Haptics.Tap(40);
+                    WorldCamera.I?.Shake(0.06f);
+                    WorldCamera.I?.Punch(0.035f);
+                    Floater?.Invoke(top + new Vector2(0, 0.6f), m + " %", new Color(0.8f, 1f, 0.6f));
                 }
 
             UpdatePlantSprite(p, v);
             if (p.Grown)
             {
                 v.pop = 0f;
-                P?.Burst(pos + new Vector2(0, 0.4f), "star", g.ElementColor, 22, 3.2f, 0.8f, 0.45f, 1f, 1f);
-                P?.Burst(pos, "leaf", new Color(0.55f, 0.85f, 0.35f), 14, 3f, 0.8f, 0.3f, 3f, 1f);
-                P?.Ring(pos, Color.white, 1.4f, 0.45f);
-                Sfx.Play("levelup", 1.05f, 0.8f);
-                Haptics.Tap(60);
-                WorldCamera.I?.Shake(0.12f);
-                Floater?.Invoke(pos + new Vector2(0, 1.2f), g.name + " ist reif – antippen zum Eintopfen!", g.ElementColor);
+                v.flash = 1f;
+                HitStop(0.12f);
+                Shockwave(basePos, v.size * 3.5f, 0.55f, Color.white);
+                Shockwave(basePos, v.size * 2.2f, 0.35f, g.ElementColor);
+                P?.Burst(top, "star", g.ElementColor, 26, 3.6f, 0.9f, 0.4f, 1f, 1f);
+                P?.Burst(basePos, "leaf", new Color(0.55f, 0.85f, 0.35f), 16, 3.2f, 0.9f, 0.25f, 3f, 1.5f);
+                Sfx.Play("levelup", 1.05f, 0.9f);
+                Sfx.Play("thump", 0.7f, 1f);
+                Haptics.Tap(70);
+                WorldCamera.I?.Shake(0.14f);
+                WorldCamera.I?.Punch(0.06f);
+                Floater?.Invoke(top + new Vector2(0, 0.7f), g.name + " ist reif – antippen zum Eintopfen!", g.ElementColor);
                 PlantGrown?.Invoke(p);
                 combo = 0;
             }
             save.Save();
             return true;
+        }
+
+        /// <summary>Kurzer Stillstand der Welt (Treffer-Gefuehl bei grossen Momenten).</summary>
+        void HitStop(float seconds)
+        {
+            if (hitStopping) return;
+            StartCoroutine(HitStopRoutine(seconds));
+        }
+        bool hitStopping;
+        System.Collections.IEnumerator HitStopRoutine(float seconds)
+        {
+            hitStopping = true;
+            float old = Time.timeScale;
+            Time.timeScale = 0.02f;
+            yield return new WaitForSecondsRealtime(seconds);
+            Time.timeScale = old <= 0.02f ? 1f : old;
+            hitStopping = false;
+        }
+
+        /// <summary>Flache Bodenwelle (Ellipse in Draufsicht), die schnell auseinanderlaeuft.</summary>
+        void Shockwave(Vector2 at, float width, float dur, Color col)
+        {
+            var sr = new GameObject("Shock").AddComponent<SpriteRenderer>();
+            sr.transform.SetParent(transform, false);
+            sr.transform.position = at;
+            sr.sprite = RingSprite;
+            sr.color = col;
+            sr.sortingOrder = -31340;
+            shocks.Add(new Shock { sr = sr, t = 0f, dur = dur, w = width });
+        }
+
+        void UpdateShocks(float dt)
+        {
+            for (int i = shocks.Count - 1; i >= 0; i--)
+            {
+                var s = shocks[i];
+                s.t += dt;
+                float k = Mathf.Clamp01(s.t / s.dur);
+                if (k >= 1f || s.sr == null) { if (s.sr != null) Destroy(s.sr.gameObject); shocks.RemoveAt(i); continue; }
+                float e = 1f - Mathf.Pow(1f - k, 3f);
+                float w = Mathf.Lerp(s.w * 0.25f, s.w, e);
+                s.sr.transform.localScale = new Vector3(w, w * 0.42f, 1);
+                var c = s.sr.color; c.a = Mathf.Min(c.a, (1f - k) * 0.9f); s.sr.color = c;
+                shocks[i] = s;
+            }
+        }
+
+        static Sprite RingSprite
+        {
+            get
+            {
+                if (ringSprite != null) return ringSprite;
+                const int n = 128;
+                var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                var px = new Color[n * n];
+                for (int y = 0; y < n; y++)
+                    for (int x = 0; x < n; x++)
+                    {
+                        float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(n / 2f, n / 2f)) / (n / 2f);
+                        float a = Mathf.Clamp01(1f - Mathf.Abs(d - 0.86f) / 0.12f);
+                        a = a * a * (3f - 2f * a);
+                        a += Mathf.Clamp01(1f - d) * 0.12f;   // leichte Fuellung
+                        px[y * n + x] = new Color(1, 1, 1, Mathf.Clamp01(a));
+                    }
+                tex.SetPixels(px); tex.Apply();
+                ringSprite = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), n);
+                return ringSprite;
+            }
         }
 
         public bool IsPlantGrowing(Cell c) { var p = PlantAt(c); return p != null && !p.Grown; }
@@ -286,29 +412,42 @@ namespace SeedClicker
         void UpdatePlants(float dt)
         {
             float t = Time.time;
+            float udt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);   // Klick-Gefuehl laeuft auch im Treffer-Stopp
             float nightAmt = NightWave.I != null ? NightWave.I.NightAmount : 0f;
             if (Time.unscaledTime - lastTapTime > PlantBalance.I.comboWindow * 2f) combo = 0;
+            UpdateShocks(udt);
             foreach (var p in save.planted)
             {
                 var c = new Cell(p.x, p.y);
                 if (!plantViews.TryGetValue(c, out var v)) continue;
-                v.squash = Mathf.MoveTowards(v.squash, 0, dt * 5f);
-                v.pop = Mathf.MoveTowards(v.pop, 1f, dt * 3f);
-                v.barPunch = Mathf.MoveTowards(v.barPunch, 0, dt * 6f);
-                v.barShow -= dt;
-                float sq = Mathf.Sin(v.squash * Mathf.PI * 2f) * v.squash * 0.3f;
-                float pop = 1 + 2.70158f * Mathf.Pow(v.pop - 1, 3) + 1.70158f * Mathf.Pow(v.pop - 1, 2);
-                float sway = Mathf.Sin(t * 1.6f + p.x * 0.7f + p.y) * 1.2f;
-                v.root.localScale = new Vector3((1 + sq * 0.9f) * pop, (1 - sq) * pop, 1);
-                v.root.localRotation = Quaternion.Euler(0, 0, sway + v.tilt * v.squash * 9f);
-                var g = p.Genome;
-                if (p.Grown)
+                v.pop = Mathf.MoveTowards(v.pop, 1f, udt * 3f);
+                v.barPunch = Mathf.MoveTowards(v.barPunch, 0, udt * 6f);
+                v.flash = Mathf.MoveTowards(v.flash, 0f, udt * 9f);
+                v.heat = Mathf.MoveTowards(v.heat, Time.unscaledTime - lastTapTime < 0.5f ? v.heat : 0f, udt * 1.5f);
+                v.barShow -= udt;
+                // Groesse pumpt schnell auf den neuen Wert
+                float target = PlantWidth(p);
+                if (Mathf.Abs(v.size - target) > 0.001f) { v.size = Mathf.Lerp(v.size, target, udt * 16f); UpdatePlantSprite(p, v); }
+                // Feder: nach dem Treffer-Stopp elastisch zurueckschwingen
+                if (v.freeze > 0f) v.freeze -= udt;
+                else
                 {
-                    var col = g.ElementColor;
-                    v.glow.color = new Color(col.r, col.g, col.b, 0.22f + 0.1f * Mathf.Sin(t * 2f + p.x) + nightAmt * 0.2f);
-                    v.light.intensity = nightAmt * (0.9f + 0.2f * Mathf.Sin(t * 3f + p.y));
+                    v.syVel += (-v.sy * 700f - v.syVel * 15f) * udt;
+                    v.sy += v.syVel * udt;
+                    v.tiltVel += (-v.tilt * 300f - v.tiltVel * 12f) * udt;
+                    v.tilt += v.tiltVel * udt;
                 }
-                else v.light.intensity = 0f;
+                float pop = 1 + 2.70158f * Mathf.Pow(v.pop - 1, 3) + 1.70158f * Mathf.Pow(v.pop - 1, 2);
+                float sway = Mathf.Sin(t * 1.6f + p.x * 0.7f + p.y) * 1.5f;
+                v.body.localScale = new Vector3((1f - v.sy * 0.75f) * pop, (1f + v.sy) * pop, 1);
+                v.body.localRotation = Quaternion.Euler(0, 0, sway + v.tilt);
+                v.shadow.color = new Color(0.05f, 0.04f, 0.02f, 0.42f * (1f + v.sy * 0.8f));
+                if (v.mat != null) v.mat.SetFloat("_Flash", v.flash);
+                var g = p.Genome;
+                var col = g.ElementColor;
+                float glowA = p.Grown ? 0.22f + 0.1f * Mathf.Sin(t * 2f + p.x) + nightAmt * 0.2f : v.heat * 0.45f;
+                v.glow.color = new Color(col.r, col.g, col.b, glowA);
+                v.light.intensity = p.Grown ? nightAmt * (0.9f + 0.2f * Mathf.Sin(t * 3f + p.y)) : v.heat * 0.8f;
 
                 // Fortschrittsbalken ueber der Pflanze (waehrend des Wachsens)
                 bool showBar = !p.Grown && (v.barShow > 0f || p.growth > 0);
@@ -316,11 +455,11 @@ namespace SeedClicker
                 if (showBar)
                 {
                     float f = p.growth / (float)PlantBalance.I.growTaps;
-                    var top = CellCenterOf(c) + new Vector2(0, CellSize * 1.15f);
-                    float w = CellSize * 0.85f, h = 0.06f * (1 + v.barPunch * 0.6f);
+                    var top = (Vector2)v.root.position + new Vector2(0, v.size * 1.25f + 0.1f);
+                    float w = CellSize * 0.85f, h = 0.06f * (1 + v.barPunch * 0.8f);
                     v.barBack.transform.position = top; v.barBack.transform.localScale = new Vector3(w + 0.04f, h + 0.04f, 1);
                     v.barFill.transform.position = top + new Vector2(-w * 0.5f * (1 - f), 0); v.barFill.transform.localScale = new Vector3(w * f, h, 1);
-                    v.barFill.color = Color.Lerp(new Color(0.55f, 0.85f, 0.35f), new Color(1f, 0.85f, 0.35f), f) * (1 + v.barPunch * 0.4f);
+                    v.barFill.color = Color.Lerp(new Color(0.55f, 0.85f, 0.35f), new Color(1f, 0.85f, 0.35f), f) * (1 + v.barPunch * 0.5f);
                 }
             }
 
@@ -334,6 +473,6 @@ namespace SeedClicker
 
         public Vector2 PlantMuzzle(PlantedState p) => CellCenterOf(new Cell(p.x, p.y)) + new Vector2(0, CellSize * 0.5f);
 
-        public void KickPlant(PlantedState p) { if (plantViews.TryGetValue(new Cell(p.x, p.y), out var v)) v.squash = Mathf.Max(v.squash, 0.5f); }
+        public void KickPlant(PlantedState p) { if (plantViews.TryGetValue(new Cell(p.x, p.y), out var v)) v.sy = Mathf.Min(v.sy, -0.12f); }
     }
 }

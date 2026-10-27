@@ -31,9 +31,40 @@ namespace SeedClicker
         public int FenceCost => Build.fenceWood;
         public int PotCost => Build.potWood;
 
+        // ------------------------------------------------------------------ Eingezaeuntes Startbeet
+
+        /// <summary>Innenflaeche des Startbeets (Welteinheiten). Felder gehen anfangs nur hier.</summary>
+        public static readonly Rect StartArea = new Rect(-4.5f, -0.9f, 3.6f, 2.7f);
+
+        /// <summary>Darf an dieser Stelle ein Feld liegen? (Spaeter: weitere Bereiche freischalten.)</summary>
+        public static bool InFarmArea(Vector2 p) => StartArea.Contains(p);
+
+        /// <summary>Beim ersten Start: Zaun rund um das Startbeet, oben ein Tor Richtung Haus.</summary>
+        void BuildEnclosure()
+        {
+            var a = FenceCellAt(StartArea.min + new Vector2(0.01f, 0.01f));
+            var b = FenceCellAt(StartArea.max - new Vector2(0.01f, 0.01f));
+            int x0 = a.x - 1, x1 = b.x + 1, y0 = a.y - 1, y1 = b.y + 1;
+            int gate = b.x;   // Tor oben rechts, zum Haus hin
+            for (int x = x0; x <= x1; x++)
+                for (int y = y0; y <= y1; y++)
+                {
+                    if (x != x0 && x != x1 && y != y0 && y != y1) continue;
+                    if (y == y1 && x == gate) continue;
+                    var c = new Cell(x, y);
+                    if (fenceViews.ContainsKey(c)) continue;
+                    var st = new FenceState { x = x, y = y, hp = Build.fenceHp };
+                    save.fences.Add(st);
+                    PlaceFence(c, false, st);
+                }
+            save.enclosureBuilt = true;
+            save.Save();
+        }
+
         void LoadDefense()
         {
             foreach (var f in save.fences) PlaceFence(new Cell(f.x, f.y), false, f);
+            if (!save.enclosureBuilt) BuildEnclosure();
             foreach (var p in save.pots) CreatePotView(p, false);
         }
 
@@ -335,11 +366,12 @@ namespace SeedClicker
             plant.sprite = ps;
             if (ps != null)
             {
-                float s = 0.62f * sp.scale / Mathf.Max(0.01f, ps.bounds.size.x);
+                float s = 0.8f * sp.scale / Mathf.Max(0.01f, ps.bounds.size.x);
                 plant.transform.localScale = new Vector3(s, s, 1);
                 plant.transform.localPosition = new Vector3(0, 0.26f - ps.bounds.min.y * s, 0);
             }
-            plant.color = Color.Lerp(Color.white, g.ElementColor, 0.18f);
+            plant.color = Color.Lerp(Color.white, g.ElementColor, 0.15f);
+            if (PlantMaterialShared != null) plant.sharedMaterial = PlantMaterialShared;
             plant.sortingOrder = order - 1;   // Stiel verschwindet hinter dem Topfrand
 
             var pot = new GameObject("Pot").AddComponent<SpriteRenderer>();

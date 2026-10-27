@@ -187,6 +187,13 @@ namespace SeedClicker
             sr.sortingOrder = -31000;
         }
 
+        /// <summary>Liegt p im eingezaeunten Startbeet oder so knapp darunter, dass ein Baum es verdecken wuerde?</summary>
+        static bool NearStartArea(Vector2 p, float below, float side)
+        {
+            var a = StartArea;
+            return p.x > a.xMin - side && p.x < a.xMax + side && p.y > a.yMin - below && p.y < a.yMax + 1.2f;
+        }
+
         void Reserve(Vector2 p, float r) { occupied.Add(p); occupiedR.Add(r); }
 
         bool Free(Vector2 p, float r)
@@ -255,6 +262,7 @@ namespace SeedClicker
                 bool big = R() < 0.6f;
                 float r = big ? 1.35f : 0.95f;
                 if (!Free(p, r)) continue;
+                if (NearStartArea(p, 3.6f, 1.4f)) continue;   // Startbeet frei halten (auch keine Krone davor)
                 int occ = occupied.Count;
                 Reserve(p, r);
                 treePos.Add(p);
@@ -283,7 +291,7 @@ namespace SeedClicker
             for (int i = 0; i < 40; i++)
             {
                 var p = RandomPoint(1f);
-                if ((p - HousePos).magnitude < 3f || !OnBareGrass(p, 0.7f) || !Free(p, 0.4f)) continue;
+                if ((p - HousePos).magnitude < 3f || !OnBareGrass(p, 0.7f) || !Free(p, 0.4f) || NearStartArea(p, 0.6f, 0.6f)) continue;
                 Reserve(p, 0.4f);
                 float roll = R();
                 if (roll < 0.35f) Place("sk_Stones", p, 0.6f + R() * 0.3f, R() < 0.5f, 0.04f);

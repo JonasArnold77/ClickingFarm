@@ -84,7 +84,7 @@ namespace SeedClicker
             }
             Countdown = B.waves.firstWaveDelay;
             HouseHp = B.waves.houseHp;
-            BuildShooter();
+            BuildWeaponFx();
         }
 
         // ------------------------------------------------------------------ Ablauf

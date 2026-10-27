@@ -1,32 +1,32 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace SeedClicker
 {
     /// <summary>
-    /// Waffen des Spielers: Der Bauer steht vor dem Haus und schiesst auf den Zombie, den man antippt.
-    /// Pistole (schnell), Schrotflinte (Streuschuss), Pfeil &amp; Bogen (durchbohrt), Granatwerfer (Explosion).
-    /// Werte in plants.json -> weapons; neue Waffen werden mit den Wellen freigeschaltet.
+    /// Waffen des Spielers. Es gibt keine eigene Spielfigur: Man zielt mit dem Finger, die Schuesse kommen
+    /// "von oben" (vom Himmel bzw. vom Bildrand) auf die angetippte Stelle.
+    /// Pistole: sofortiger Treffer mit Leuchtspur. Schrotflinte: Streuung um den Zielpunkt.
+    /// Pfeil &amp; Bogen: Pfeil faellt vom Himmel und trifft mehrere nah beieinander, bleibt kurz stecken.
+    /// Granatwerfer: Granate pfeift herab und explodiert. Werte in plants.json -> weapons.
     /// </summary>
     public partial class NightWave
     {
         class WShot
         {
             public WeaponDef w; public SpriteRenderer sr, shadow;
-            public Vector2 pos, vel, from, to; public float dmg, life, t, flight, arc, traveled; public int pierce;
-            public HashSet<Monster> hit = new HashSet<Monster>();
-            public bool done;
+            public Vector2 from, to; public float dmg, t, flight; public bool done;
         }
 
-        readonly List<WShot> wshots = new List<WShot>();
-        Transform shooter; Animator shooterAnim; SortingGroup shooterGroup;
-        Vector2 aimDir = Vector2.down;
-        float weaponCd, recoil, flashT;
-        Light2D muzzleLight;
+        class Fx { public SpriteRenderer sr; public float t, dur, s0, s1; }
 
-        public Vector2 ShooterPos => WorldBuilder.HousePos + new Vector2(0.95f, -1.35f);
+        readonly List<WShot> wshots = new List<WShot>();
+        readonly List<Fx> fxs = new List<Fx>();
+        float weaponCd, flashT;
+        Light2D flashLight;
+        static Sprite reticle;
+
         public WeaponDef Weapon => B.Weapon(wb != null ? wb.Save.weapon : "pistole");
         public bool IsWeaponUnlocked(WeaponDef w) => w != null && wb != null && wb.Save.wave >= w.unlockWave;
         /// <summary>0 = bereit, 1 = gerade geschossen (fuer die Anzeige).</summary>
@@ -41,39 +41,26 @@ namespace SeedClicker
             Sfx.Play(w.kind == "arrow" ? "bow" : "dry", 1.4f, 0.4f);
         }
 
-        void BuildShooter()
+        void BuildWeaponFx()
         {
-            var prefab = WorldArtSet.I != null ? WorldArtSet.I.zombiePrefab : null;
-            shooter = new GameObject("Bauer").transform;
-            shooter.SetParent(transform, false);
-            shooter.position = ShooterPos;
-            if (prefab != null)
-            {
-                var rig = new GameObject("Rig").transform;
-                rig.SetParent(shooter, false);
-                rig.localScale = Vector3.one * (1.05f / ZombieNativeHeight);
-                var z = Instantiate(prefab, rig, false);
-                z.name = "Farmer";
-                shooterAnim = z.GetComponentInChildren<Animator>();
-                if (shooterAnim != null) shooterAnim.gameObject.AddComponent<ZombieAnimEvents>();
-            }
-            shooterGroup = shooter.gameObject.AddComponent<SortingGroup>();
-            shooterGroup.sortingOrder = WorldBuilder.Order(ShooterPos.y);
-            var sh = new GameObject("Shadow").AddComponent<SpriteRenderer>();
-            sh.transform.SetParent(shooter, false);
-            sh.sprite = WorldBuilder.Mist; sh.color = new Color(0, 0, 0, 0.3f);
-            sh.transform.localScale = new Vector3(0.6f, 0.18f, 1);
-            sh.sortingOrder = -1;
-            muzzleLight = new GameObject("MuzzleLight").AddComponent<Light2D>();
-            muzzleLight.transform.SetParent(transform, false);
-            muzzleLight.lightType = Light2D.LightType.Point;
-            muzzleLight.pointLightOuterRadius = 2.2f; muzzleLight.pointLightInnerRadius = 0.1f;
-            muzzleLight.color = new Color(1f, 0.8f, 0.45f); muzzleLight.intensity = 0f;
+            flashLight = new GameObject("ImpactLight").AddComponent<Light2D>();
+            flashLight.transform.SetParent(transform, false);
+            flashLight.lightType = Light2D.LightType.Point;
+            flashLight.pointLightOuterRadius = 2f; flashLight.pointLightInnerRadius = 0.1f;
+            flashLight.color = new Color(1f, 0.8f, 0.45f); flashLight.intensity = 0f;
         }
 
-        Vector2 Muzzle => (Vector2)ShooterPos + new Vector2(0, 0.55f) + aimDir * 0.3f;
+        /// <summary>Punkt am oberen Bildrand, von dem ein Schuss auf die Stelle herabkommt (leicht perspektivisch).</summary>
+        Vector2 SkyPoint(Vector2 impact)
+        {
+            var cam = Camera.main;
+            if (cam == null) return impact + new Vector2(0, 8f);
+            Vector2 c = cam.transform.position;
+            float top = c.y + cam.orthographicSize + 0.8f;
+            return new Vector2(impact.x + (impact.x - c.x) * 0.25f + Random.Range(-0.5f, 0.5f), top);
+        }
 
-        /// <summary>Tipp nachts: trifft der Finger einen Zombie, schiesst der Bauer darauf. true = Tipp verbraucht.</summary>
+        /// <summary>Tipp nachts: trifft der Finger einen Zombie, wird geschossen. true = Tipp verbraucht.</summary>
         public bool TryShoot(Vector2 world)
         {
             if (!Active || wb == null) return false;
@@ -92,157 +79,170 @@ namespace SeedClicker
             return true;
         }
 
+        Vector2 Center(Monster m) => m.pos + new Vector2(0, 0.45f);
+
         void Shoot(WeaponDef w, Monster target)
         {
-            var aim = target.pos + new Vector2(0, 0.45f);
-            aimDir = (aim - ((Vector2)ShooterPos + new Vector2(0, 0.55f))).normalized;
-            var from = Muzzle;
-            var dir = (aim - from).normalized;
             float dmg = w.damage * (1f + w.damagePerWave * (WaveNumber - 1));
             weaponCd = w.cooldown;
-            recoil = 1f;
-            float speed = Mathf.Max(1f, w.speed);
+            var aim = Center(target);
+            AddFx(Reticle, aim, 0.16f, 0.75f, 0.45f, new Color(1f, 1f, 1f, 0.9f));
             switch (w.kind)
             {
                 case "pellet":
-                    for (int i = 0; i < Mathf.Max(1, w.pellets); i++)
                     {
-                        float ang = Random.Range(-w.spread * 0.5f, w.spread * 0.5f);
-                        var d = (Vector2)(Quaternion.Euler(0, 0, ang) * dir);
-                        AddShot(w, from, d * speed * Random.Range(0.85f, 1.1f), dmg, new Vector2(0.2f, 0.06f), new Color(1f, 0.9f, 0.55f), WhiteSprite);
+                        float r = 0.25f + w.spread / 60f;
+                        for (int i = 0; i < Mathf.Max(1, w.pellets); i++)
+                        {
+                            var p = aim + Random.insideUnitCircle * r;
+                            Beam(SkyPoint(p), p, new Color(1f, 0.85f, 0.5f));
+                            Particles.I?.Burst(p, "square", new Color(0.55f, 0.45f, 0.32f), 2, 1.6f, 0.35f, 0.07f, 8f, 1.5f);
+                            var hit = NearestTo(p, 0.36f);
+                            if (hit != null) { hit.knock += (hit.pos - aim).normalized * 0.3f + Vector2.up * 0.4f; Damage(hit, dmg, null); }
+                        }
+                        ImpactFx(aim, 1.3f);
+                        Sfx.Play("shotgun", Random.Range(0.92f, 1.05f), 0.9f);
+                        WorldCamera.I?.Shake(0.07f);
+                        WorldCamera.I?.Punch(0.018f);
+                        Haptics.Tap(30);
+                        break;
                     }
-                    Sfx.Play("shotgun", Random.Range(0.92f, 1.05f), 0.9f);
-                    WorldCamera.I?.Shake(0.08f);
-                    Haptics.Tap(30);
-                    MuzzleFlash(from, dir, 1.4f);
-                    break;
                 case "arrow":
-                    AddShot(w, from, dir * speed, dmg, Vector2.one * 0.75f, Color.white, WeaponArt.Arrow);
+                    Launch(w, aim + Random.insideUnitCircle * 0.05f, dmg, 0.22f, WeaponArt.Arrow, 0.75f);
                     Sfx.Play("bow", Random.Range(0.95f, 1.08f), 0.8f);
-                    WorldCamera.I?.Shake(0.015f);
-                    Haptics.Tap(12);
+                    Haptics.Tap(10);
                     break;
                 case "grenade":
                     {
-                        var s = AddShot(w, from, Vector2.zero, dmg, Vector2.one * 0.3f, Color.white, WeaponArt.Grenade);
-                        s.from = from; s.to = target.pos + target.pos.normalized * 0f;
-                        float dist = (s.to - from).magnitude;
-                        s.flight = Mathf.Max(0.35f, dist / speed);
-                        s.arc = 0.7f + dist * 0.18f;
-                        s.life = s.flight + 0.1f;
+                        var s = Launch(w, target.pos, dmg, 0.55f, WeaponArt.Grenade, 0.34f);
                         s.shadow = new GameObject("GrenadeShadow").AddComponent<SpriteRenderer>();
                         s.shadow.transform.SetParent(transform, false);
-                        s.shadow.sprite = WorldBuilder.Mist; s.shadow.color = new Color(0, 0, 0, 0.35f);
+                        s.shadow.transform.position = target.pos;
+                        s.shadow.sprite = WorldBuilder.Mist; s.shadow.color = new Color(0, 0, 0, 0f);
                         s.shadow.sortingOrder = 29990;
+                        AddFx(Reticle, target.pos, s.flight, 0.9f, 0.5f, new Color(1f, 0.5f, 0.35f, 0.9f));
                         Sfx.Play("launch", Random.Range(0.95f, 1.05f), 0.9f);
-                        WorldCamera.I?.Shake(0.04f);
-                        Haptics.Tap(20);
-                        MuzzleFlash(from, dir, 0.9f);
+                        Haptics.Tap(18);
                         break;
                     }
                 default:
-                    AddShot(w, from, dir * speed, dmg, new Vector2(0.34f, 0.07f), new Color(1f, 0.95f, 0.65f), WhiteSprite);
-                    Sfx.Play("shot", Random.Range(0.95f, 1.1f), 0.8f);
-                    WorldCamera.I?.Shake(0.03f);
-                    Haptics.Tap(15);
-                    MuzzleFlash(from, dir, 1f);
-                    break;
+                    {
+                        // Pistole: sofortiger Treffer, Leuchtspur von oben
+                        var p = aim + Random.insideUnitCircle * 0.06f;
+                        Beam(SkyPoint(p), p, new Color(1f, 0.92f, 0.6f));
+                        target.knock += Vector2.up * 0.25f;
+                        Damage(target, dmg, null);
+                        ImpactFx(p, 1f);
+                        Sfx.Play("shot", Random.Range(0.95f, 1.1f), 0.8f);
+                        WorldCamera.I?.Shake(0.03f);
+                        WorldCamera.I?.Punch(0.008f);
+                        Haptics.Tap(15);
+                        break;
+                    }
             }
         }
 
-        static Sprite whiteSprite;
-        static Sprite WhiteSprite
+        Monster NearestTo(Vector2 p, float r)
         {
-            get
+            Monster best = null; float bd = r * r;
+            foreach (var m in monsters)
             {
-                if (whiteSprite != null) return whiteSprite;
-                var t = new Texture2D(4, 4); var p = new Color[16]; for (int i = 0; i < 16; i++) p[i] = Color.white; t.SetPixels(p); t.Apply();
-                whiteSprite = Sprite.Create(t, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4);
-                return whiteSprite;
+                if (m.dead) continue;
+                float d = (Center(m) - p).sqrMagnitude;
+                if (d < bd) { bd = d; best = m; }
             }
+            return best;
         }
 
-        WShot AddShot(WeaponDef w, Vector2 from, Vector2 vel, float dmg, Vector2 size, Color col, Sprite sprite)
+        WShot Launch(WeaponDef w, Vector2 to, float dmg, float flight, Sprite sprite, float size)
         {
             var sr = new GameObject("WShot_" + w.id).AddComponent<SpriteRenderer>();
             sr.transform.SetParent(transform, false);
-            sr.sprite = sprite; sr.color = col;
-            sr.transform.localScale = new Vector3(size.x, size.y, 1);
-            sr.transform.position = from;
+            sr.sprite = sprite;
+            sr.transform.localScale = Vector3.one * size;
             sr.sortingOrder = 30005;
-            float speed = Mathf.Max(1f, vel.magnitude);
-            var s = new WShot { w = w, sr = sr, pos = from, vel = vel, dmg = dmg, pierce = w.pierce, life = w.range > 0 ? w.range / speed : 1.5f };
+            var from = SkyPoint(to);
+            sr.transform.position = from;
+            var s = new WShot { w = w, sr = sr, from = from, to = to, dmg = dmg, flight = flight };
             wshots.Add(s);
             return s;
         }
 
-        void MuzzleFlash(Vector2 at, Vector2 dir, float size)
+        void ImpactFx(Vector2 at, float size)
         {
-            Particles.I?.Burst(at, "spark", new Color(1f, 0.85f, 0.45f), (int)(4 * size), 3f * size, 0.12f, 0.35f * size, 0f, 0f);
-            Particles.I?.Spawn(at + dir * 0.1f, "spark", new Color(1f, 0.95f, 0.7f), (Vector3)dir * 0.5f, 0.08f, 0.6f * size, 0.2f, 0f, 0f);
-            Particles.I?.Spawn(at, "square", new Color(0.7f, 0.7f, 0.68f, 0.5f), (Vector3)(dir * 0.6f + Vector2.up * 0.4f), 0.6f, 0.15f * size, 0.35f * size, 0f, 0f);
-            muzzleLight.transform.position = at;
-            muzzleLight.intensity = 1.6f * size;
+            Particles.I?.Burst(at, "spark", new Color(1f, 0.85f, 0.45f), (int)(5 * size), 3f * size, 0.18f, 0.22f * size, 0f, 0.5f);
+            Particles.I?.Spawn(at, "spark", new Color(1f, 1f, 0.9f), Vector3.zero, 0.07f, 0.7f * size, 0.1f, 0f, 0f);
+            Particles.I?.Burst(at, "square", new Color(0.5f, 0.62f, 0.4f), (int)(3 * size), 2.2f, 0.35f, 0.09f, 7f, 1.5f);
+            flashLight.transform.position = at;
+            flashLight.intensity = 1.4f * size;
             flashT = 0.07f;
+        }
+
+        void AddFx(Sprite sprite, Vector2 at, float dur, float s0, float s1, Color col)
+        {
+            var sr = new GameObject("Fx").AddComponent<SpriteRenderer>();
+            sr.transform.SetParent(transform, false);
+            sr.transform.position = at;
+            sr.sprite = sprite; sr.color = col;
+            sr.sortingOrder = 30010;
+            sr.transform.localScale = Vector3.one * s0;
+            fxs.Add(new Fx { sr = sr, dur = dur, s0 = s0, s1 = s1 });
         }
 
         void UpdateWeapons(float dt)
         {
             weaponCd = Mathf.Max(0f, weaponCd - dt);
-            recoil = Mathf.MoveTowards(recoil, 0f, dt * 6f);
-            if (flashT > 0f) { flashT -= dt; if (flashT <= 0f && muzzleLight != null) muzzleLight.intensity = 0f; }
-            if (shooter != null)
+            if (flashT > 0f) { flashT -= dt; if (flashT <= 0f && flashLight != null) flashLight.intensity = 0f; }
+
+            for (int i = fxs.Count - 1; i >= 0; i--)
             {
-                // tagsueber schaut der Bauer nach vorn, nachts zum Ziel; Rueckstoss beim Schuss
-                if (!Active) aimDir = Vector2.Lerp(aimDir, Vector2.down, dt * 2f).normalized;
-                shooter.position = ShooterPos - aimDir * recoil * 0.07f;
-                if (shooterAnim != null) { shooterAnim.SetFloat("DirX", aimDir.x); shooterAnim.SetFloat("DirY", aimDir.y); shooterAnim.SetFloat("Speed", 0f); }
+                var f = fxs[i];
+                f.t += dt;
+                float k = Mathf.Clamp01(f.t / f.dur);
+                if (k >= 1f || f.sr == null) { if (f.sr != null) Destroy(f.sr.gameObject); fxs.RemoveAt(i); continue; }
+                f.sr.transform.localScale = Vector3.one * Mathf.Lerp(f.s0, f.s1, 1f - (1f - k) * (1f - k));
+                var c = f.sr.color; c.a = Mathf.Min(c.a, 1f - k * k); f.sr.color = c;
             }
 
             foreach (var s in wshots)
             {
                 if (s.done) continue;
-                s.life -= dt;
-                if (s.w.kind == "grenade")
+                s.t += dt;
+                float k = Mathf.Clamp01(s.t / s.flight);
+                float e = k * k;   // beschleunigt nach unten
+                var pos = Vector2.Lerp(s.from, s.to, e);
+                s.sr.transform.position = pos;
+                var dir = s.to - s.from;
+                if (s.w.kind == "arrow") s.sr.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
+                else
                 {
-                    s.t += dt;
-                    float k = Mathf.Clamp01(s.t / s.flight);
-                    var ground = Vector2.Lerp(s.from, s.to, k);
-                    float h = 4f * s.arc * k * (1 - k);
-                    s.pos = ground + new Vector2(0, h);
-                    s.sr.transform.position = s.pos;
-                    s.sr.transform.rotation = Quaternion.Euler(0, 0, -k * 720f);
-                    s.shadow.transform.position = ground;
-                    float ss = 0.32f - h * 0.08f;
-                    s.shadow.transform.localScale = new Vector3(ss, ss * 0.4f, 1);
-                    if (Random.value < dt * 25) Particles.I?.Spawn(s.pos, "square", new Color(0.75f, 0.75f, 0.72f, 0.5f), Vector3.zero, 0.4f, 0.08f, 0.2f, 0f, 0f);
-                    if (k >= 1f) { Explode(s.to, s.w.radius, s.dmg); Finish(s); }
-                    continue;
+                    s.sr.transform.rotation = Quaternion.Euler(0, 0, k * 540f);
+                    if (s.shadow != null)
+                    {
+                        float ss = Mathf.Lerp(0.1f, 0.42f, k);
+                        s.shadow.transform.localScale = new Vector3(ss, ss * 0.4f, 1);
+                        s.shadow.color = new Color(0, 0, 0, 0.45f * k);
+                    }
+                    if (Random.value < dt * 30) Particles.I?.Spawn(pos, "square", new Color(0.75f, 0.75f, 0.72f, 0.5f), Vector3.zero, 0.4f, 0.08f, 0.2f, 0f, 0f);
                 }
-                if (s.life <= 0f) { Finish(s); continue; }
-                var step = s.vel * dt;
-                s.pos += step;
-                s.traveled += step.magnitude;
-                s.sr.transform.position = s.pos;
-                if (s.vel.sqrMagnitude > 0.01f) s.sr.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(s.vel.y, s.vel.x) * Mathf.Rad2Deg);
-                if (s.w.kind == "arrow") s.vel += Vector2.down * dt * 0.6f;   // leichter Bogen
-                else if (Random.value < dt * 40) Particles.I?.Spawn(s.pos, "spark", new Color(1f, 0.8f, 0.45f, 0.7f), Vector3.zero, 0.12f, 0.12f, 0f, 0f, 0f);   // Leuchtspur
-                foreach (var m in monsters)
-                {
-                    if (m.dead || s.hit.Contains(m)) continue;
-                    if (((m.pos + new Vector2(0, 0.4f)) - s.pos).sqrMagnitude > 0.32f * 0.32f) continue;
-                    s.hit.Add(m);
-                    float dmg = s.dmg;
-                    if (s.w.kind == "pellet") dmg *= Mathf.Lerp(1f, 0.4f, Mathf.Clamp01(s.traveled / Mathf.Max(1f, s.w.range)));   // aus der Naehe am staerksten
-                    m.knock += s.vel.normalized * (s.w.kind == "pellet" ? 0.5f : 0.25f);
-                    Particles.I?.Burst(s.pos, "square", new Color(0.45f, 0.6f, 0.35f), 4, 2.5f, 0.35f, 0.12f, 6f, 1f);
-                    Damage(m, dmg, null);
-                    if (s.pierce > 0) { s.pierce--; continue; }
-                    Finish(s);
-                    break;
-                }
+                if (k < 1f) continue;
+                if (s.w.kind == "grenade") { Explode(s.to, s.w.radius, s.dmg); Finish(s); continue; }
+
+                // Pfeil: trifft alle nahe beieinander (bis 1 + Durchschlag) und bleibt kurz stecken
+                var targets = new List<Monster>();
+                foreach (var m in monsters) if (!m.dead && (Center(m) - s.to).sqrMagnitude < 0.5f * 0.5f) targets.Add(m);
+                targets.Sort((a, b) => (Center(a) - s.to).sqrMagnitude.CompareTo((Center(b) - s.to).sqrMagnitude));
+                for (int i = 0; i < targets.Count && i <= s.w.pierce; i++) { targets[i].knock += dir.normalized * 0.3f; Damage(targets[i], s.dmg, null); }
+                ImpactFx(s.to, 0.7f);
+                Sfx.Play("chop", 1.3f, 0.6f);
+                WorldCamera.I?.Shake(0.02f);
+                WorldCamera.I?.Punch(0.006f);
+                s.done = true;
+                AddFx(s.sr.sprite, s.to, 0.9f, 0.75f, 0.75f, Color.white);
+                fxs[fxs.Count - 1].sr.transform.rotation = s.sr.transform.rotation;
+                Destroy(s.sr.gameObject);
             }
-            wshots.RemoveAll(s => s.done);
+            wshots.RemoveAll(x => x.done);
         }
 
         void Finish(WShot s)
@@ -260,9 +260,10 @@ namespace SeedClicker
             P?.Burst(at + new Vector2(0, 0.2f), "square", new Color(1f, 0.55f, 0.2f), 14, 4f, 0.5f, 0.3f, 3f, 1.5f);
             P?.Burst(at, "square", new Color(0.35f, 0.32f, 0.3f, 0.8f), 12, 1.8f, 1.1f, 0.35f, -0.6f, 1.2f);   // Rauch steigt auf
             P?.Burst(at, "square", new Color(0.4f, 0.28f, 0.18f), 10, 3.5f, 0.6f, 0.18f, 8f, 2f);           // Erdbrocken
-            muzzleLight.transform.position = at; muzzleLight.intensity = 3f; flashT = 0.15f;
+            flashLight.transform.position = at; flashLight.intensity = 3f; flashT = 0.15f;
             Sfx.Play("boom", Random.Range(0.9f, 1.05f), 1f);
             WorldCamera.I?.Shake(0.2f);
+            WorldCamera.I?.Punch(0.04f);
             Haptics.Tap(45);
             foreach (var m in monsters)
             {
@@ -278,6 +279,31 @@ namespace SeedClicker
         {
             foreach (var s in wshots) Finish(s);
             wshots.Clear();
+        }
+
+        /// <summary>Fadenkreuz, das beim Schuss kurz an der Zielstelle aufblitzt.</summary>
+        static Sprite Reticle
+        {
+            get
+            {
+                if (reticle != null) return reticle;
+                const int n = 96;
+                var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                var px = new Color[n * n];
+                for (int y = 0; y < n; y++)
+                    for (int x = 0; x < n; x++)
+                    {
+                        float dx = x + 0.5f - n / 2f, dy = y + 0.5f - n / 2f;
+                        float d = Mathf.Sqrt(dx * dx + dy * dy);
+                        float a = Mathf.Clamp01(1f - Mathf.Abs(d - 30f) / 2.5f);
+                        bool tick = (Mathf.Abs(dx) < 2.5f || Mathf.Abs(dy) < 2.5f) && d > 18f && d < 44f;
+                        if (tick) a = 1f;
+                        px[y * n + x] = new Color(1, 1, 1, a);
+                    }
+                tex.SetPixels(px); tex.Apply();
+                reticle = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), n);
+                return reticle;
+            }
         }
     }
 
