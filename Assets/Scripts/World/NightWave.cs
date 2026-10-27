@@ -30,6 +30,8 @@ namespace SeedClicker
             public Transform root; public SpriteRenderer sr; public Transform eyes;
             // Zombie-Figur (geriggt, animiert); sr ist dann null
             public Animator anim; public SpriteRenderer[] parts; public Color[] partCols; public SortingGroup group;
+            // Pixel-Zombie mit Laufanimation in 8 Richtungen (Assets/Characters)
+            public Sprite[] walk; public float animT; public Color tint = Color.white;
             public Vector2 pos; public float hp, maxHp, hop, hitFlash;
             public float slowT, slowAmt, burnT, burnDps, poisonT, poisonDps; public int poisonStacks;
             public Vector2 knock;
@@ -256,7 +258,18 @@ namespace SeedClicker
             var root = new GameObject("Monster_" + def.id).transform;
             root.SetParent(transform, false);
             float hp0 = def.hp * (1 + B.waves.hpGrowthPerWave * (wave - 1));
-            var zprefab = WorldArtSet.I != null ? WorldArtSet.I.zombiePrefab : null;
+            var zart = WorldArtSet.I;
+            if (zart != null && zart.HasZombieWalk)
+            {
+                var zm = BuildPixelZombie(def, root, zart.zombieWalk);
+                zm.pos = p; zm.hp = zm.maxHp = hp0; zm.hop = (float)rnd.NextDouble() * 6; zm.animT = (float)rnd.NextDouble() * 8f;
+                root.position = p;
+                monsters.Add(zm);
+                Particles.I?.Burst(p, "square", new Color(0.35f, 0.26f, 0.18f), 10, 2.2f, 0.5f, 0.3f, 6f, 2f);
+                if (rnd.NextDouble() < 0.5) Sfx.Play("groan", 0.8f + (float)rnd.NextDouble() * 0.4f, 0.45f);
+                return;
+            }
+            var zprefab = zart != null ? zart.zombiePrefab : null;
             if (zprefab != null)
             {
                 var zm = BuildZombie(def, root, zprefab);
@@ -294,6 +307,35 @@ namespace SeedClicker
             root.position = p;
             monsters.Add(m);
             Particles.I?.Burst(p, "leaf", new Color(0.4f, 0.6f, 0.3f), 8, 2.5f, 0.5f, 0.6f, 4f, 1.5f);
+        }
+
+        const float PixelZombieHeight = 1.25f;   // Figurhoehe der Pixel-Frames (160 px bei 128 px/Einheit)
+
+        /// <summary>Zombie aus den Pixel-Frames: Laufanimation in 8 Richtungen, Schatten, leichte Faerbung je Art.</summary>
+        Monster BuildPixelZombie(MonsterDefW def, Transform root, Sprite[] walk)
+        {
+            var shadow = new GameObject("Shadow").AddComponent<SpriteRenderer>();
+            shadow.transform.SetParent(root, false);
+            shadow.sprite = WorldBuilder.Mist; shadow.color = new Color(0, 0, 0, 0.35f);
+            shadow.transform.localScale = new Vector3(0.55f * def.scale, 0.17f * def.scale, 1);
+            shadow.sortingOrder = -31300;
+            var sr = new GameObject("Body").AddComponent<SpriteRenderer>();
+            sr.transform.SetParent(root, false);
+            sr.sprite = walk[0];
+            sr.transform.localScale = Vector3.one * (def.scale / PixelZombieHeight);
+            var tint = Color.white;
+            if (!string.IsNullOrEmpty(def.tint) && ColorUtility.TryParseHtmlString(def.tint, out var tc)) tint = Color.Lerp(Color.white, tc, 0.3f);
+            var eyes = new GameObject("Eyes").transform;
+            eyes.SetParent(root, false);
+            return new Monster { def = def, root = root, sr = sr, eyes = eyes, walk = walk, tint = tint };
+        }
+
+        /// <summary>Richtung -> Index in der Frame-Liste (S, SO, O, NO, N, NW, W, SW).</summary>
+        static int DirIndex(Vector2 d)
+        {
+            float ang = Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg;   // Osten = 0, Norden = 90
+            int k = Mathf.RoundToInt(ang / 45f);                   // -4..4
+            return ((2 + k) % 8 + 8) % 8;
         }
 
         const float ZombieNativeHeight = 3.5f;   // Hoehe der Happy-Harvest-Figur in Welteinheiten (unskaliert)
@@ -374,7 +416,21 @@ namespace SeedClicker
                 if (m.slowT > 0) c = new Color(0.7f, 0.88f, 1f);
                 if (m.burnT > 0) c = new Color(1f, 0.75f, 0.55f);
                 if (m.poisonT > 0) c = Color.Lerp(c, new Color(0.8f, 0.65f, 1f), 0.6f);
-                if (m.group != null)
+                if (m.walk != null)
+                {
+                    // Pixel-Zombie: Bild je Richtung, Tempo der Animation passt zur Laufgeschwindigkeit
+                    var face = (dir + side * 0.5f).normalized;
+                    float fps = 7f * Mathf.Clamp(m.Speed / 0.85f, 0.6f, 1.6f) * (fence != null ? 0.5f : 1f);
+                    m.animT += dt * fps;
+                    m.sr.sprite = m.walk[DirIndex(face) * 8 + ((int)m.animT % 8)];
+                    float bash = fence != null ? Mathf.Max(0, Mathf.Sin(m.bashT / 0.55f * Mathf.PI * 2f)) : 0f;
+                    m.root.position = m.pos + dir * bash * 0.1f;
+                    m.root.localScale = new Vector3(1 + m.hitFlash * 0.15f, 1 - m.hitFlash * 0.1f, 1);
+                    m.sr.sortingOrder = WorldBuilder.Order(m.pos.y) + 1;
+                    m.sr.color = Color.Lerp(Color.Lerp(m.tint, m.tint * c, 0.6f), new Color(1f, 0.35f, 0.3f), m.hitFlash);
+                    if (rnd.NextDouble() < dt * 0.08) Sfx.Play("groan", 0.75f + (float)rnd.NextDouble() * 0.4f, 0.35f);
+                }
+                else if (m.group != null)
                 {
                     // Zombie: schwerfaelliges Schwanken statt Huepfen, Animation zeigt in Laufrichtung
                     m.hop += dt * (2.2f + m.Speed * 1.5f);

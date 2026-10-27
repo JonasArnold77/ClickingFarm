@@ -1,0 +1,119 @@
+{
+  "group_id": "c3d47cfb-ad59-42e6-bada-f4908ad5f065",
+  "states": [
+    {
+      "character": {
+        "id": "7fce6f2c-091f-4959-9ad4-105fb0360e22",
+        "name": "Idle",
+        "prompt": "Ich m\u00f6chte ein Zombie mit bl\u00e4ulich blasser Haut und scharfen Z\u00e4hnen",
+        "size": {
+          "width": 192,
+          "height": 192
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-10-27T17:27:58.528862+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {
+          "Scary_Walk": {
+            "north": [
+              "Idle/animations/Scary_Walk/north/frame_000.png",
+              "Idle/animations/Scary_Walk/north/frame_001.png",
+              "Idle/animations/Scary_Walk/north/frame_002.png",
+              "Idle/animations/Scary_Walk/north/frame_003.png",
+              "Idle/animations/Scary_Walk/north/frame_004.png",
+              "Idle/animations/Scary_Walk/north/frame_005.png",
+              "Idle/animations/Scary_Walk/north/frame_006.png",
+              "Idle/animations/Scary_Walk/north/frame_007.png"
+            ],
+            "north-east": [
+              "Idle/animations/Scary_Walk/north-east/frame_000.png",
+              "Idle/animations/Scary_Walk/north-east/frame_001.png",
+              "Idle/animations/Scary_Walk/north-east/frame_002.png",
+              "Idle/animations/Scary_Walk/north-east/frame_003.png",
+              "Idle/animations/Scary_Walk/north-east/frame_004.png",
+              "Idle/animations/Scary_Walk/north-east/frame_005.png",
+              "Idle/animations/Scary_Walk/north-east/frame_006.png",
+              "Idle/animations/Scary_Walk/north-east/frame_007.png"
+            ],
+            "east": [
+              "Idle/animations/Scary_Walk/east/frame_000.png",
+              "Idle/animations/Scary_Walk/east/frame_001.png",
+              "Idle/animations/Scary_Walk/east/frame_002.png",
+              "Idle/animations/Scary_Walk/east/frame_003.png",
+              "Idle/animations/Scary_Walk/east/frame_004.png",
+              "Idle/animations/Scary_Walk/east/frame_005.png",
+              "Idle/animations/Scary_Walk/east/frame_006.png",
+              "Idle/animations/Scary_Walk/east/frame_007.png"
+            ],
+            "west": [
+              "Idle/animations/Scary_Walk/west/frame_000.png",
+              "Idle/animations/Scary_Walk/west/frame_001.png",
+              "Idle/animations/Scary_Walk/west/frame_002.png",
+              "Idle/animations/Scary_Walk/west/frame_003.png",
+              "Idle/animations/Scary_Walk/west/frame_004.png",
+              "Idle/animations/Scary_Walk/west/frame_005.png",
+              "Idle/animations/Scary_Walk/west/frame_006.png",
+              "Idle/animations/Scary_Walk/west/frame_007.png"
+            ],
+            "south-west": [
+              "Idle/animations/Scary_Walk/south-west/frame_000.png",
+              "Idle/animations/Scary_Walk/south-west/frame_001.png",
+              "Idle/animations/Scary_Walk/south-west/frame_002.png",
+              "Idle/animations/Scary_Walk/south-west/frame_003.png",
+              "Idle/animations/Scary_Walk/south-west/frame_004.png",
+              "Idle/animations/Scary_Walk/south-west/frame_005.png",
+              "Idle/animations/Scary_Walk/south-west/frame_006.png",
+              "Idle/animations/Scary_Walk/south-west/frame_007.png"
+            ],
+            "south-east": [
+              "Idle/animations/Scary_Walk/south-east/frame_000.png",
+              "Idle/animations/Scary_Walk/south-east/frame_001.png",
+              "Idle/animations/Scary_Walk/south-east/frame_002.png",
+              "Idle/animations/Scary_Walk/south-east/frame_003.png",
+              "Idle/animations/Scary_Walk/south-east/frame_004.png",
+              "Idle/animations/Scary_Walk/south-east/frame_005.png",
+              "Idle/animations/Scary_Walk/south-east/frame_006.png",
+              "Idle/animations/Scary_Walk/south-east/frame_007.png"
+            ],
+            "south": [
+              "Idle/animations/Scary_Walk/south/frame_000.png",
+              "Idle/animations/Scary_Walk/south/frame_001.png",
+              "Idle/animations/Scary_Walk/south/frame_002.png",
+              "Idle/animations/Scary_Walk/south/frame_003.png",
+              "Idle/animations/Scary_Walk/south/frame_004.png",
+              "Idle/animations/Scary_Walk/south/frame_005.png",
+              "Idle/animations/Scary_Walk/south/frame_006.png",
+              "Idle/animations/Scary_Walk/south/frame_007.png"
+            ],
+            "north-west": [
+              "Idle/animations/Scary_Walk/north-west/frame_000.png",
+              "Idle/animations/Scary_Walk/north-west/frame_001.png",
+              "Idle/animations/Scary_Walk/north-west/frame_002.png",
+              "Idle/animations/Scary_Walk/north-west/frame_003.png",
+              "Idle/animations/Scary_Walk/north-west/frame_004.png",
+              "Idle/animations/Scary_Walk/north-west/frame_005.png",
+              "Idle/animations/Scary_Walk/north-west/frame_006.png",
+              "Idle/animations/Scary_Walk/north-west/frame_007.png"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-10-27T20:16:50.460027"
+}

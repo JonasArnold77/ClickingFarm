@@ -21,6 +21,20 @@ namespace SeedClicker
         public List<Entry> sprites = new List<Entry>();
         [Tooltip("Geriggte Figur (Happy Harvest Prefab_character_base), wird fuer die Zombies benutzt")]
         public GameObject zombiePrefab;
+        [Tooltip("Zombie-Laufanimation (Assets/Characters): 8 Richtungen x 8 Bilder, Reihenfolge S, SO, O, NO, N, NW, W, SW")]
+        public Sprite[] zombieWalk;
+        [Tooltip("Zombie im Stand, je Richtung ein Bild (gleiche Reihenfolge)")]
+        public Sprite[] zombieIdle;
+
+        public bool HasZombieWalk
+        {
+            get
+            {
+                if (zombieWalk == null || zombieWalk.Length < 64) return false;
+                foreach (var s in zombieWalk) if (s == null) return false;
+                return true;
+            }
+        }
 
         static WorldArtSet inst;
         Dictionary<string, Sprite> lookup;
