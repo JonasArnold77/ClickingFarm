@@ -182,7 +182,7 @@ namespace SeedClicker
             var g = p.Genome;
             var root = new GameObject("Plant_" + p.type).transform;
             root.SetParent(objects, false);
-            root.position = CellCenterOf(c) + new Vector2(0, -CellSize * 0.3f);
+            root.position = CellCenterOf(c) + new Vector2(0, -CellSize * 0.38f);
             var shadow = WorldSprite(root, "Shadow", MistSprite, -31350);
             shadow.color = new Color(0.05f, 0.04f, 0.02f, 0.42f);
             var glow = WorldSprite(root, "Glow", MistSprite, -31400);
@@ -204,12 +204,20 @@ namespace SeedClicker
             UpdatePlantSprite(p, v, true);
         }
 
-        /// <summary>Breite der Pflanze: waechst mit jedem Tipp und darf ueber das Feld hinausragen.</summary>
+        /// <summary>Breite der Pflanze: waechst mit jedem Tipp, bleibt aber innerhalb des Feldes
+        /// (nur nach oben darf sie hinausragen).</summary>
         float PlantWidth(PlantedState p)
         {
             var sp = PlantBalance.I.Species(p.Genome.species);
             float f = p.growth / (float)Mathf.Max(1, PlantBalance.I.growTaps);
-            return CellSize * (p.Grown ? 1.5f : Mathf.Lerp(0.85f, 1.3f, f)) * sp.scale;
+            return Mathf.Min(CellSize * 0.95f, CellSize * (p.Grown ? 1f : Mathf.Lerp(0.6f, 0.92f, f)) * sp.scale);
+        }
+
+        /// <summary>Streckung nach oben: je reifer, desto hoeher schiesst die Pflanze ueber ihr Feld.</summary>
+        float PlantStretch(PlantedState p)
+        {
+            float f = p.growth / (float)Mathf.Max(1, PlantBalance.I.growTaps);
+            return p.Grown ? 1.35f : Mathf.Lerp(1f, 1.25f, f);
         }
 
         void UpdatePlantSprite(PlantedState p, PlantView v, bool snap = false)
@@ -224,10 +232,11 @@ namespace SeedClicker
             if (sprite != null)
             {
                 float s = v.size / Mathf.Max(0.01f, sprite.bounds.size.x);
-                v.sr.transform.localScale = new Vector3(s, s, 1);
-                v.sr.transform.localPosition = new Vector3(0, -sprite.bounds.min.y * s, 0);
+                float sy = s * PlantStretch(p);
+                v.sr.transform.localScale = new Vector3(s, sy, 1);
+                v.sr.transform.localPosition = new Vector3(0, -sprite.bounds.min.y * sy, 0);
             }
-            v.shadow.transform.localScale = new Vector3(v.size * 1.15f, v.size * 0.32f, 1);
+            v.shadow.transform.localScale = new Vector3(v.size * 1.0f, v.size * 0.3f, 1);
             v.glow.transform.localScale = new Vector3(v.size * 1.6f, v.size * 1.2f, 1);
             // leichter Farbstich der Wirkung, damit man die Arten unterscheidet
             v.sr.color = Color.Lerp(Color.white, g.ElementColor, 0.15f);
@@ -254,7 +263,7 @@ namespace SeedClicker
             float progress = p.growth / (float)taps;
             var g = p.Genome;
             var basePos = (Vector2)v.root.position;
-            var top = basePos + new Vector2(0, v.size * 0.75f);
+            var top = basePos + new Vector2(0, (v.sr.bounds.max.y - basePos.y) * 0.75f);
             var P = Particles.I;
 
             // Koerper: hart stauchen, kurz einfrieren, weiss aufblitzen, zur Seite kippen
@@ -262,7 +271,7 @@ namespace SeedClicker
             v.syVel = 0f;
             v.freeze = 0.045f;
             v.flash = 0.85f;
-            v.tiltVel += UnityEngine.Random.Range(-1f, 1f) * (60f + heat * 60f);
+            v.tiltVel += UnityEngine.Random.Range(-1f, 1f) * (35f + heat * 35f);
             v.barPunch = 1f;
             v.barShow = 2.5f;
 
@@ -438,7 +447,7 @@ namespace SeedClicker
                     v.tilt += v.tiltVel * udt;
                 }
                 float pop = 1 + 2.70158f * Mathf.Pow(v.pop - 1, 3) + 1.70158f * Mathf.Pow(v.pop - 1, 2);
-                float sway = Mathf.Sin(t * 1.6f + p.x * 0.7f + p.y) * 1.5f;
+                float sway = Mathf.Sin(t * 1.6f + p.x * 0.7f + p.y) * 1f;
                 v.body.localScale = new Vector3((1f - v.sy * 0.75f) * pop, (1f + v.sy) * pop, 1);
                 v.body.localRotation = Quaternion.Euler(0, 0, sway + v.tilt);
                 v.shadow.color = new Color(0.05f, 0.04f, 0.02f, 0.42f * (1f + v.sy * 0.8f));
@@ -455,7 +464,7 @@ namespace SeedClicker
                 if (showBar)
                 {
                     float f = p.growth / (float)PlantBalance.I.growTaps;
-                    var top = (Vector2)v.root.position + new Vector2(0, v.size * 1.25f + 0.1f);
+                    var top = new Vector2(v.root.position.x, v.sr.bounds.max.y + 0.1f);
                     float w = CellSize * 0.85f, h = 0.06f * (1 + v.barPunch * 0.8f);
                     v.barBack.transform.position = top; v.barBack.transform.localScale = new Vector3(w + 0.04f, h + 0.04f, 1);
                     v.barFill.transform.position = top + new Vector2(-w * 0.5f * (1 - f), 0); v.barFill.transform.localScale = new Vector3(w * f, h, 1);
