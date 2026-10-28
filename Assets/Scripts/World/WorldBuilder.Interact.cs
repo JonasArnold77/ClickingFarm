@@ -67,7 +67,7 @@ namespace SeedClicker
         readonly Dictionary<Cell, SpriteRenderer> fields = new Dictionary<Cell, SpriteRenderer>();
         readonly List<(Transform t, float k)> popping = new List<(Transform, float)>();
         readonly HashSet<Transform> fieldPop = new HashSet<Transform>();
-        class FieldFx { public SpriteRenderer field, overlay; public float shake, flash; }
+        class FieldFx { public SpriteRenderer field, overlay; public float shake, flash, s, sv; }   // s/sv: Feder fuer Gross-Klein
         readonly Dictionary<Cell, FieldFx> fieldFx = new Dictionary<Cell, FieldFx>();
 
         /// <summary>Feld unter der Pflanze bebt kurz und blinkt hell auf (bei jedem Wachstums-Tipp).</summary>
@@ -86,6 +86,7 @@ namespace SeedClicker
             }
             fx.shake = Mathf.Max(fx.shake, amount);
             fx.flash = Mathf.Max(fx.flash, amount);
+            fx.sv += 5.5f * amount;   // Stoss: Feld schwillt an und federt wieder zurueck
         }
 
         void UpdateFieldFx(float dt)
@@ -94,17 +95,20 @@ namespace SeedClicker
             {
                 var fx = kv.Value;
                 if (fx.field == null) continue;
-                if (fx.shake <= 0f && fx.flash <= 0f) { fx.overlay.enabled = false; continue; }
+                bool springing = Mathf.Abs(fx.s) > 0.0005f || Mathf.Abs(fx.sv) > 0.005f;
+                if (fx.shake <= 0f && fx.flash <= 0f && !springing) { fx.overlay.enabled = false; continue; }
                 fx.shake = Mathf.MoveTowards(fx.shake, 0f, dt * 5f);
                 fx.flash = Mathf.MoveTowards(fx.flash, 0f, dt * 6f);
+                // Feder: gross werden, ueber das Ziel hinaus wieder klein, ausschwingen
+                fx.sv += (-fx.s * 520f - fx.sv * 13f) * dt;
+                fx.s += fx.sv * dt;
                 var center = CellCenter(kv.Key);
-                // Beben: schnelles Zittern, das abklingt, dazu ein kleiner Stoss in der Groesse
+                // Beben: schnelles Zittern, das abklingt
                 fx.field.transform.position = center + UnityEngine.Random.insideUnitCircle * fx.shake * CellSize * 0.09f;
-                if (!fieldPop.Contains(fx.field.transform) || fx.shake > 0f)
-                    fx.field.transform.localScale = Vector3.one * CellSize * (1f + fx.shake * 0.07f);
+                fx.field.transform.localScale = Vector3.one * CellSize * Mathf.Max(0.6f, 1f + fx.s);
                 fx.overlay.enabled = true;
                 fx.overlay.color = new Color(1f, 0.97f, 0.85f, fx.flash * 0.55f);
-                if (fx.shake <= 0f) { fx.field.transform.position = center; fx.field.transform.localScale = Vector3.one * CellSize; }
+                if (fx.shake <= 0f && !springing) { fx.s = fx.sv = 0f; fx.field.transform.position = center; fx.field.transform.localScale = Vector3.one * CellSize; }
             }
         }
         WorldSave save = new WorldSave();
