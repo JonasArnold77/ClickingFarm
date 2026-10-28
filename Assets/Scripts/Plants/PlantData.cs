@@ -7,7 +7,9 @@ namespace SeedClicker
     // ------------------------------------------------------------------ Balancing (Resources/Balance/plants.json)
 
     [Serializable] public class OptionDef { public string id, name, desc, color; public float speed, damage, cooldown, homing; }
-    [Serializable] public class SpeciesDef { public string id, name, art; public int[] stages; public float scale; }
+    /// <summary>Lage eines "Kopfes" (Gesicht) auf dem reifen Pflanzen-Sprite: x/y relativ (0..1), s = Kopfbreite relativ zur Spritebreite.</summary>
+    [Serializable] public class HeadDef { public float x, y, s; }
+    [Serializable] public class SpeciesDef { public string id, name, art; public int[] stages; public float scale; public HeadDef[] heads; }
     [Serializable] public class MonsterDefW { public string id, name, art, tint, weakTo; public float hp, speed, damage, scale, weight; public int firstWave; }
     [Serializable] public class WaveDef
     {

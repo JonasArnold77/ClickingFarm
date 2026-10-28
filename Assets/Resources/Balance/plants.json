@@ -40,9 +40,12 @@
     { "id": "multishot", "name": "Mehrfachschuss","desc": "Zusätzliche Geschosse" }
   ],
   "species": [
-    { "id": "corn",   "name": "mais",    "art": "hh_corn_",   "stages": [1, 3, 5], "scale": 1.05 },
-    { "id": "wheat",  "name": "weizen",  "art": "hh_wheat_",  "stages": [1, 3, 5], "scale": 1.05 },
-    { "id": "carrot", "name": "rübe",   "art": "hh_carrot_", "stages": [0, 2, 3], "scale": 1.5 }
+    { "id": "corn",   "name": "mais",    "art": "hh_corn_",   "stages": [1, 3, 5], "scale": 1.05,
+      "heads": [ { "x": 0.18, "y": 0.79, "s": 0.27 }, { "x": 0.5, "y": 0.75, "s": 0.27 }, { "x": 0.82, "y": 0.79, "s": 0.27 } ] },
+    { "id": "wheat",  "name": "weizen",  "art": "hh_wheat_",  "stages": [1, 3, 5], "scale": 1.05,
+      "heads": [ { "x": 0.18, "y": 0.74, "s": 0.27 }, { "x": 0.5, "y": 0.72, "s": 0.27 }, { "x": 0.82, "y": 0.74, "s": 0.27 } ] },
+    { "id": "carrot", "name": "rübe",   "art": "hh_carrot_", "stages": [0, 2, 3], "scale": 1.5,
+      "heads": [ { "x": 0.5, "y": 0.42, "s": 0.5 } ] }
   ],
 
   "catalog": [

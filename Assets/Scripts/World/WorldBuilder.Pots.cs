@@ -17,6 +17,7 @@ namespace SeedClicker
         {
             public PotState st; public Transform root; public SpriteRenderer pot, plant, glow, marker; public Light2D light;
             public float squash, pop = 1f, hidePlant;
+            public PlantCreature creature;
         }
 
         class Flyer
@@ -137,7 +138,7 @@ namespace SeedClicker
         }
 
         public Vector2 PotMuzzle(PotState p) => p.Pos + new Vector2(0, 0.6f);
-        public void KickPot(PotState p) { var v = potViews.Find(x => x.st == p); if (v != null) v.squash = Mathf.Max(v.squash, 0.5f); }
+        public void KickPot(PotState p) { var v = potViews.Find(x => x.st == p); if (v != null) { v.squash = Mathf.Max(v.squash, 0.5f); v.creature?.Shoot(); } }
 
         // ------------------------------------------------------------------ Platzieren
 
@@ -322,7 +323,7 @@ namespace SeedClicker
         {
             bool has = !string.IsNullOrEmpty(v.st.type) && PlantBalance.I.Plant(v.st.type) != null;
             v.plant.enabled = has;
-            if (!has) { v.light.intensity = 0f; return; }
+            if (!has) { v.light.intensity = 0f; if (v.creature != null) { Destroy(v.creature.gameObject); v.creature = null; } return; }
             var g = v.st.Genome;
             var sp = PlantBalance.I.Species(g.species);
             var ps = art.Get(sp.art + sp.stages[sp.stages.Length - 1]);
@@ -336,6 +337,8 @@ namespace SeedClicker
             }
             v.plant.color = Color.Lerp(Color.white, g.ElementColor, 0.15f);
             v.light.color = g.ElementColor;
+            if (v.creature != null) Destroy(v.creature.gameObject);
+            v.creature = PlantCreature.Attach(v.plant, g, false);
         }
 
         void UpdatePots(float dt)

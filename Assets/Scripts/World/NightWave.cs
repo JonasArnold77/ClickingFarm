@@ -471,6 +471,14 @@ namespace SeedClicker
             }
         }
 
+        /// <summary>Position des naechsten Zombies (fuer die Blicke der Pflanzen).</summary>
+        public bool NearestMonsterPos(Vector2 p, float range, out Vector2 pos)
+        {
+            var m = Nearest(p, range);
+            pos = m != null ? m.pos + new Vector2(0, 0.45f) : p;
+            return m != null;
+        }
+
         Monster Nearest(Vector2 p, float range, HashSet<Monster> exclude = null)
         {
             Monster best = null; float bd = range * range;

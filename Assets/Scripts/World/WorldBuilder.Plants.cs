@@ -24,6 +24,7 @@ namespace SeedClicker
             public float readyAt, nextHop, lift;   // reif: erst nach readyAt antippbar; Huepfer als Hinweis; angehoben beim Platzieren
             public bool readyShown = true;
             public SpriteRenderer marker;   // Pfeil, wenn die Pflanze ein Ziel zum Zusammenfuehren ist
+            public PlantCreature creature;  // Gesichter, sobald die Pflanze reif ist
             public int stage = -1;
         }
 
@@ -248,6 +249,7 @@ namespace SeedClicker
             int stage = p.Grown ? 2 : f >= 0.5f ? 1 : 0;
             var sprite = art.Get(sp.art + sp.stages[Mathf.Clamp(stage, 0, sp.stages.Length - 1)]);
             if (stage != v.stage) { v.stage = stage; v.sr.sprite = sprite; }
+            if (p.Grown && v.creature == null && v.sr.sprite != null) v.creature = PlantCreature.Attach(v.sr, g, false);
             if (snap || v.size < 0f) v.size = PlantWidth(p);
             if (sprite != null)
             {
@@ -271,6 +273,7 @@ namespace SeedClicker
             if (p == null || !plantViews.TryGetValue(new Cell(p.x, p.y), out var v)) return false;
             if (p.Grown)
             {
+                v.creature?.Poke();
                 if (Time.unscaledTime < v.readyAt)
                 {
                     // noch gesperrt: nur ein dumpfes Wackeln
@@ -367,6 +370,7 @@ namespace SeedClicker
             v.flash = 1f;
             v.sy = 0.45f;
             v.readyAt = Time.unscaledTime + ReadyDelay;
+            v.creature?.Wake();   // die Pflanze erwacht
             v.readyShown = false;
             StartCoroutine(RipeSlowMo());
             Pillar(basePos, v.size * 1.6f, g.ElementColor);
