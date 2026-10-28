@@ -25,6 +25,7 @@ namespace SeedClicker
             BuildCanvas();
             BuildWood();
             BuildToolbar();
+            BuildSeasonButton();
             if (WorldBuilder.I != null)
             {
                 WorldBuilder.I.Floater += (w, txt, col) => SpawnFloater(w, txt, col);
@@ -97,6 +98,28 @@ namespace SeedClicker
             icon.rectTransform.Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(70, 0), new Vector2(100, 70));
             woodText = UIKit.Txt(p.transform, "0", 58, Color.white, TextAnchor.MiddleLeft, true, true);
             woodText.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0.5f), new Vector2(135, 0), new Vector2(-145, 0));
+        }
+
+        /// <summary>Knopf oben neben dem Holz: Jahreszeit wechseln (Sommer -> Herbst -> Winter).</summary>
+        void BuildSeasonButton()
+        {
+            var wbi = WorldBuilder.I;
+            if (wbi == null) return;
+            var p = Panel(safe, "Season", new Color(0.12f, 0.1f, 0.08f, 0.55f));
+            p.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(340, -28), new Vector2(250, 110));
+            var t = UIKit.Txt(p.transform, "", 40, Color.white, TextAnchor.MiddleCenter, true, true);
+            t.rectTransform.Stretch(10, 10, 6, 6);
+            void Refresh(Season s)
+            {
+                t.text = WorldBuilder.SeasonName(s);
+                t.color = s == Season.Herbst ? new Color(1f, 0.75f, 0.35f) : s == Season.Winter ? new Color(0.8f, 0.92f, 1f) : new Color(1f, 0.97f, 0.7f);
+            }
+            Refresh(wbi.Season);
+            wbi.SeasonChanged += s => { Refresh(s); Banner(WorldBuilder.SeasonName(s), s == Season.Winter ? "Schnee liegt über dem Hof" : s == Season.Herbst ? "Das Laub färbt sich" : "Alles grünt und blüht"); };
+            var b = p.gameObject.AddComponent<Button>();
+            b.transition = Selectable.Transition.None;
+            b.onClick.AddListener(() => { Sfx.Play("click"); wbi.NextSeason(); });
+            p.gameObject.AddComponent<Juicy>();
         }
 
         void BuildToolbar()

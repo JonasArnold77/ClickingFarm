@@ -28,6 +28,7 @@ namespace SeedClicker
         public List<FenceState> fences = new List<FenceState>();
         public string weapon = "pistole";
         public bool enclosureBuilt;   // Zaun ums Startbeet wurde gesetzt
+        public int season;            // 0 Sommer, 1 Herbst, 2 Winter
         public bool potSlots;         // feste Blumentoepfe wurden angelegt
 
         const string Key = "seedclicker_world_v2";   // v2: kleineres Feldraster, Pflanzen-Katalog

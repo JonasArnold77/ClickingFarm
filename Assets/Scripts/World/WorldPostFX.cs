@@ -148,7 +148,11 @@ namespace SeedClicker
             if (nw == null || adjust == null) return;
             float dusk = nw.DuskAmount * (1f - nw.NightAmount);
             adjust.colorFilter.value = Color.Lerp(Color.white, new Color(1f, 0.78f, 0.62f), dusk);
-            balance.temperature.value = Mathf.Lerp(9f, 30f, dusk);
+            // Jahreszeit: Herbst waermer und satter, Winter kuehl und etwas blasser
+            var wbs = WorldBuilder.I;
+            float au = wbs != null ? wbs.AutumnAmount : 0f, wi = wbs != null ? wbs.WinterAmount : 0f;
+            balance.temperature.value = Mathf.Lerp(9f + au * 10f - wi * 22f, 30f, dusk);
+            adjust.saturation.value = 14f + au * 8f - wi * 14f;
             foreach (var (sr, _, _) in rays) if (sr != null) { var c = Color.Lerp(Color.white, new Color(1f, 0.6f, 0.35f), dusk); c.a = sr.color.a; sr.color = c; }
         }
     }

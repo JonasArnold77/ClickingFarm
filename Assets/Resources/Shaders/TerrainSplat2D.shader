@@ -85,6 +85,7 @@ Shader "SeedClicker/TerrainSplat2D"
             HLSLPROGRAM
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/2D/Include/Core2D.hlsl"
+            #include "SeasonCommon.hlsl"
 
             #pragma vertex vert
             #pragma fragment frag
@@ -154,6 +155,7 @@ Shader "SeedClicker/TerrainSplat2D"
                 half3 col;
                 TERRAIN_BLEND(i.posWS, i.uv, col)
                 col *= i.color.rgb;
+                col = ApplySeason(col, i.posWS, 0.3h, 0.0h);
                 // Klippenrand: ausserhalb des Plateaus durchsichtig (dahinter liegt der Abgrund)
                 half pl = SAMPLE_TEXTURE2D(_Plateau, sampler_Plateau, i.uv).r;
                 half en = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, i.posWS * 1.7).r - 0.5h;
@@ -175,6 +177,7 @@ Shader "SeedClicker/TerrainSplat2D"
 
             HLSLPROGRAM
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "SeasonCommon.hlsl"
 
             #pragma vertex vert
             #pragma fragment frag

@@ -54,6 +54,7 @@ namespace SeedClicker
             LoadWorldSave();
             LoadPlants();
             LoadDefense();
+            InitSeason();
         }
 
         // ------------------------------------------------------------------ Wege
@@ -347,6 +348,7 @@ namespace SeedClicker
             UpdatePlants(Time.deltaTime);
             UpdateFences(Time.deltaTime);
             UpdatePots(Time.deltaTime);
+            UpdateSeason(Time.deltaTime);
             ambientT -= Time.deltaTime;
             if (ambientT > 0 || Particles.I == null) return;
             ambientT = 0.2f;
