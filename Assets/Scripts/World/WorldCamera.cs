@@ -127,10 +127,12 @@ namespace SeedClicker
         // ------------------------------------------------------------------ Werkzeuglogik
 
         bool consumed;   // Druck wurde schon verarbeitet (z. B. Wachstums-Tipp)
+        PlantedState dragCand;   // reife Pflanze unter dem Finger: kann gezogen werden
+        bool draggingPlant;
 
         void PointerDown(Vector2 screen, int id)
         {
-            down = true; panning = false; painting = false; hasLastCell = false; consumed = false;
+            down = true; panning = false; painting = false; hasLastCell = false; consumed = false; dragCand = null; draggingPlant = false;
             downScreen = lastScreen = screen;
             overUI = OverUI(id);
             if (overUI) return;
@@ -142,6 +144,9 @@ namespace SeedClicker
             if (wb.IsPlantGrowing(c)) { wb.TapPlant(c); consumed = true; return; }
             // Nachts: Tipp auf einen Zombie = Schuss mit der gewaehlten Waffe
             if (NightWave.I != null && NightWave.I.TryShoot(w)) { consumed = true; return; }
+            // reife Pflanze: kann mit dem Finger auf einen Topf oder eine gleiche Pflanze gezogen werden
+            var under = wb.PlantAt(c);
+            if (under != null && wb.IsReady(under) && (!wb.Placing || wb.Carrying == under)) { dragCand = under; return; }
             if (wb.Placing) return;   // Topf waehlen: erst beim Loslassen (so kann man dabei auch die Karte schieben)
             if (wb.PlantAt(c) != null || wb.PotAt(w) != null) return;   // fertige Pflanze / Topf -> Info beim Loslassen
             if (Tool == WorldTool.Field || Tool == WorldTool.Fence || (Tool == WorldTool.Plant && wb.HasField(c)))
@@ -154,6 +159,14 @@ namespace SeedClicker
         {
             if (overUI || consumed) return;
             if (painting) { Paint(screen); return; }
+            if (dragCand != null)
+            {
+                var wbd = WorldBuilder.I;
+                float dpiD = Screen.dpi > 0 ? Screen.dpi : 160f;
+                if (!draggingPlant && Vector2.Distance(screen, downScreen) > dpiD * 0.06f)
+                    draggingPlant = wbd != null && wbd.BeginDrag(dragCand, World(screen));
+                if (draggingPlant) { wbd.DragTo(World(screen)); lastScreen = screen; return; }
+            }
             float dpi = Screen.dpi > 0 ? Screen.dpi : 160f;
             if (!panning && Vector2.Distance(screen, downScreen) > dpi * 0.08f) panning = true;
             if (panning) PanBy(screen - lastScreen);
@@ -163,6 +176,8 @@ namespace SeedClicker
         void PointerUp(Vector2 screen)
         {
             down = false;
+            if (draggingPlant) { draggingPlant = false; dragCand = null; WorldBuilder.I?.Drop(World(screen)); return; }
+            dragCand = null;
             if (overUI || panning || painting || consumed) { painting = false; return; }
             var w = World(screen);
             var wb = WorldBuilder.I;

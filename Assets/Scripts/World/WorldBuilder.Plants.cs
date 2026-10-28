@@ -23,6 +23,7 @@ namespace SeedClicker
             public float sy, syVel, tilt, tiltVel, freeze, flash, size = -1f, heat;   // Feder (Stauchen), Kippen, Treffer-Stopp, Blitz
             public float readyAt, nextHop, lift;   // reif: erst nach readyAt antippbar; Huepfer als Hinweis; angehoben beim Platzieren
             public bool readyShown = true;
+            public SpriteRenderer marker;   // Pfeil, wenn die Pflanze ein Ziel zum Zusammenfuehren ist
             public int stage = -1;
         }
 
@@ -70,8 +71,19 @@ namespace SeedClicker
 
         public PlantedState PlantAt(Cell c)
         {
-            foreach (var p in save.planted) if (p.x == c.x && p.y == c.y) return p;
+            foreach (var p in save.planted) if (p.Covers(c)) return p;   // grosse Pflanzen belegen mehrere Felder
             return null;
+        }
+
+        /// <summary>Fusspunkt einer Pflanze: Mitte ihrer Flaeche, knapp ueber dem unteren Feldrand.</summary>
+        public static Vector2 PlantBase(PlantedState p) => new Vector2((p.x + p.W * 0.5f) * CellSize, p.y * CellSize + CellSize * 0.12f);
+
+        /// <summary>Alle Felder, die eine Pflanze belegt.</summary>
+        public static List<Cell> PlantCells(PlantedState p)
+        {
+            var list = new List<Cell>();
+            for (int dx = 0; dx < p.W; dx++) for (int dy = 0; dy < p.H; dy++) list.Add(new Cell(p.x + dx, p.y + dy));
+            return list;
         }
 
         public void NotifyInventory() { save.Save(); InventoryChanged?.Invoke(); }
@@ -189,7 +201,7 @@ namespace SeedClicker
             var g = p.Genome;
             var root = new GameObject("Plant_" + p.type).transform;
             root.SetParent(objects, false);
-            root.position = CellCenterOf(c) + new Vector2(0, -CellSize * 0.38f);
+            root.position = PlantBase(p);
             var shadow = WorldSprite(root, "Shadow", MistSprite, -31350);
             shadow.color = new Color(0.05f, 0.04f, 0.02f, 0.42f);
             var glow = WorldSprite(root, "Glow", MistSprite, -31400);
@@ -217,14 +229,15 @@ namespace SeedClicker
         {
             var sp = PlantBalance.I.Species(p.Genome.species);
             float f = p.growth / (float)Mathf.Max(1, PlantBalance.I.growTaps);
-            return Mathf.Min(CellSize * 0.95f, CellSize * (p.Grown ? 1f : Mathf.Lerp(0.6f, 0.92f, f)) * sp.scale);
+            if (p.Grown) return CellSize * 0.95f * p.W;   // so breit wie ihre Felder
+            return Mathf.Min(CellSize * 0.95f, CellSize * Mathf.Lerp(0.6f, 0.92f, f) * sp.scale);
         }
 
         /// <summary>Streckung nach oben: je reifer, desto hoeher schiesst die Pflanze ueber ihr Feld.</summary>
         float PlantStretch(PlantedState p)
         {
             float f = p.growth / (float)Mathf.Max(1, PlantBalance.I.growTaps);
-            return p.Grown ? 1.35f : Mathf.Lerp(1f, 1.25f, f);
+            return p.Grown ? 1.35f * PlantBalance.I.LevelSize(p.Lv) * (p.H > 1 ? 1.15f : 1f) / (p.W > 1 ? 1.1f : 1f) : Mathf.Lerp(1f, 1.25f, f);
         }
 
         void UpdatePlantSprite(PlantedState p, PlantView v, bool snap = false)
@@ -255,7 +268,7 @@ namespace SeedClicker
         public bool TapPlant(Cell c)
         {
             var p = PlantAt(c);
-            if (p == null || !plantViews.TryGetValue(c, out var v)) return false;
+            if (p == null || !plantViews.TryGetValue(new Cell(p.x, p.y), out var v)) return false;
             if (p.Grown)
             {
                 if (Time.unscaledTime < v.readyAt)
@@ -294,7 +307,7 @@ namespace SeedClicker
             v.barShow = 2.5f;
 
             // Das Feld selbst bebt und blinkt auf
-            PunchField(c, 0.8f + heat * 0.4f);
+            foreach (var fc in PlantCells(p)) PunchField(fc, 0.8f + heat * 0.4f);
 
             // Bodenwelle und Erdbrocken (dunkel + hell), Blaetter oben, Funke am Treffpunkt
             Shockwave(basePos, v.size * (1.1f + heat * 0.5f), 0.22f, new Color(1f, 0.95f, 0.8f, 0.55f + heat * 0.25f));
@@ -578,6 +591,7 @@ namespace SeedClicker
             float nightAmt = NightWave.I != null ? NightWave.I.NightAmount : 0f;
             if (Time.unscaledTime - lastTapTime > PlantBalance.I.comboWindow * 2f) combo = 0;
             UpdateShocks(udt);
+            UpdateMerge(udt);
             foreach (var p in save.planted)
             {
                 var c = new Cell(p.x, p.y);
@@ -604,6 +618,11 @@ namespace SeedClicker
                 float sway = Mathf.Sin(t * 1.6f + p.x * 0.7f + p.y) * 1f;
                 v.lift = Mathf.MoveTowards(v.lift, carrying == p ? 0.18f + Mathf.Sin(Time.unscaledTime * 6f) * 0.04f : 0f, udt * 2f);
                 v.body.localPosition = new Vector3(0, v.lift, 0);
+                var home = PlantBase(p);
+                var want = dragging && carrying == p ? dragPos + new Vector2(0, -0.25f) : home;
+                v.root.position = Vector2.Lerp(v.root.position, want, Mathf.Clamp01(udt * (dragging && carrying == p ? 30f : 14f)));
+                v.sr.sortingOrder = dragging && carrying == p ? 31150 : Order(v.root.position.y);
+                UpdateMergeMarker(p, v);
                 v.body.localScale = new Vector3((1f - v.sy * 0.75f) * pop, (1f + v.sy) * pop, 1);
                 v.body.localRotation = Quaternion.Euler(0, 0, sway + v.tilt);
                 v.shadow.color = new Color(0.05f, 0.04f, 0.02f, 0.42f * (1f + v.sy * 0.8f));
@@ -636,7 +655,7 @@ namespace SeedClicker
             }
         }
 
-        public Vector2 PlantMuzzle(PlantedState p) => CellCenterOf(new Cell(p.x, p.y)) + new Vector2(0, CellSize * 0.5f);
+        public Vector2 PlantMuzzle(PlantedState p) => PlantBase(p) + new Vector2(0, CellSize * 0.9f);
 
         public void KickPlant(PlantedState p) { if (plantViews.TryGetValue(new Cell(p.x, p.y), out var v)) v.sy = Mathf.Min(v.sy, -0.12f); }
     }

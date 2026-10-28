@@ -90,5 +90,13 @@
     { "id": "granatwerfer",  "name": "Granatwerfer",  "kind": "grenade", "desc": "Explosion trifft alle im Umkreis", "unlockWave": 5, "damage": 12,  "cooldown": 1.6,  "speed": 8,  "pellets": 1, "spread": 0,  "pierce": 0, "radius": 1.4, "range": 10, "damagePerWave": 0.12 }
   ],
 
-  "build": { "fenceWood": 1, "fenceHp": 10, "potWood": 2 }
+  "build": { "fenceWood": 1, "fenceHp": 10, "potWood": 2 },
+
+  "levels": { "damage": 0.6, "range": 0.3, "speed": 0.12, "size": 0.08 },
+  "mergeSizes": [
+    { "minLevel": 1,  "w": 1, "h": 1 },
+    { "minLevel": 3,  "w": 2, "h": 1 },
+    { "minLevel": 6,  "w": 2, "h": 2 },
+    { "minLevel": 10, "w": 3, "h": 2 }
+  ]
 }

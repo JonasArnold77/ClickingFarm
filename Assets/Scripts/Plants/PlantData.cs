@@ -23,6 +23,11 @@ namespace SeedClicker
         public float damage, cooldown, speed, spread, radius, range, damagePerWave;
     }
 
+    /// <summary>Staerke pro Stufe (Pflanzen zusammenfuehren): Zuwachs je zusaetzlicher Stufe.</summary>
+    [Serializable] public class LevelDef { public float damage = 0.6f, range = 0.3f, speed = 0.12f, size = 0.08f; }
+    /// <summary>Ab welcher Stufe eine Pflanze wie viele Felder braucht (Breite x Hoehe).</summary>
+    [Serializable] public class MergeSizeDef { public int minLevel = 1, w = 1, h = 1; }
+
     /// <summary>Bauen mit Holz: Zaeune und Blumentoepfe.</summary>
     [Serializable] public class BuildDef { public int fenceWood, fenceHp, potWood; }
 
@@ -61,6 +66,24 @@ namespace SeedClicker
         public WaveDef waves;
         public WeaponDef[] weapons;
         public BuildDef build;
+        public LevelDef levels;
+        public MergeSizeDef[] mergeSizes;
+
+        LevelDef L => levels ?? (levels = new LevelDef());
+        public float LevelDamage(int lv) => 1f + L.damage * (Mathf.Max(1, lv) - 1);
+        public float LevelRange(int lv) => L.range * (Mathf.Max(1, lv) - 1);
+        public float LevelCooldown(int lv) => 1f / (1f + L.speed * (Mathf.Max(1, lv) - 1));
+        public float LevelSize(int lv) => 1f + L.size * Mathf.Min(8, Mathf.Max(1, lv) - 1);
+
+        /// <summary>Flaechenbedarf (in Feldern) fuer eine Stufe.</summary>
+        public Vector2Int Footprint(int lv)
+        {
+            var best = new Vector2Int(1, 1); int bestMin = 0;
+            if (mergeSizes != null)
+                foreach (var m in mergeSizes)
+                    if (lv >= m.minLevel && m.minLevel >= bestMin) { bestMin = m.minLevel; best = new Vector2Int(Mathf.Max(1, m.w), Mathf.Max(1, m.h)); }
+            return best;
+        }
 
         public WeaponDef Weapon(string id)
         {
@@ -195,6 +218,8 @@ namespace SeedClicker
     {
         public float x, y;
         public string type;
+        public int level;   // Stufe der Pflanze im Topf (0/1 = Grundstufe)
+        public int Lv => Mathf.Max(1, level);
         public Vector2 Pos => new Vector2(x, y);
         public PlantGenome Genome { get { var c = PlantBalance.I.Plant(type); return c != null ? c.Genome : PlantBalance.I.catalog[0].Genome; } }
     }
@@ -209,6 +234,11 @@ namespace SeedClicker
         public int x, y;          // Feldzelle
         public string type;       // Katalog-Id
         public int growth;        // Tipps bisher
+        public int level, w, h;   // Stufe (Zusammenfuehren) und Flaechenbedarf in Feldern (0 = 1)
+        public int Lv => Mathf.Max(1, level);
+        public int W => Mathf.Max(1, w);
+        public int H => Mathf.Max(1, h);
+        public bool Covers(Cell c) => c.x >= x && c.x < x + W && c.y >= y && c.y < y + H;
         public bool Grown => growth >= PlantBalance.I.growTaps;
         public PlantGenome Genome { get { var c = PlantBalance.I.Plant(type); return c != null ? c.Genome : PlantBalance.I.catalog[0].Genome; } }
     }

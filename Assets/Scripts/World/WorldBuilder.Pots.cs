@@ -19,7 +19,11 @@ namespace SeedClicker
             public float squash, pop = 1f, hidePlant;
         }
 
-        class Flyer { public SpriteRenderer sr; public SpriteRenderer shadow; public Vector2 from, to; public float t, dur, s0, s1; public PotView target; public PlantGenome g; }
+        class Flyer
+        {
+            public SpriteRenderer sr; public SpriteRenderer shadow; public Vector2 from, to; public float t, dur, s0, s1; public PotView target; public PlantGenome g;
+            public PlantedState mergeTarget; public Cell oldAnchor; public int newLevel;   // Zusammenfuehren
+        }
 
         readonly List<PotView> potViews = new List<PotView>();
         readonly List<Flyer> flyers = new List<Flyer>();
@@ -124,6 +128,7 @@ namespace SeedClicker
         public void ClearPot(PotState p)
         {
             p.type = "";
+            p.level = 0;
             var v = potViews.Find(x => x.st == p);
             if (v != null) RefreshPotView(v);
             Particles.I?.Burst(p.Pos + new Vector2(0, 0.4f), "leaf", new Color(0.55f, 0.85f, 0.35f), 10, 2.5f, 0.6f, 0.25f, 3f, 1.5f);
@@ -139,9 +144,9 @@ namespace SeedClicker
         /// <summary>Reife Pflanze aufnehmen: freie Toepfe leuchten auf.</summary>
         public void StartPlacing(PlantedState p)
         {
-            if (!AnyFreePot())
+            if (!AnyFreePot() && !AnyMergeTargetFor(p))
             {
-                Floater?.Invoke(CellCenter(new Cell(p.x, p.y)) + new Vector2(0, 1.2f), "Alle Blumentöpfe sind belegt", new Color(1f, 0.7f, 0.6f));
+                Floater?.Invoke(PlantBase(p) + new Vector2(0, 1.2f), "Alle Blumentöpfe sind belegt", new Color(1f, 0.7f, 0.6f));
                 Sfx.Play("error", 1f, 0.5f);
                 return;
             }
@@ -150,13 +155,17 @@ namespace SeedClicker
             Sfx.Play("grow", 1.4f, 0.6f);
             Haptics.Tap(20);
             if (plantViews.TryGetValue(new Cell(p.x, p.y), out var v)) { v.sy = 0.3f; v.flash = 0.6f; }
-            PlacingChanged?.Invoke("Tippe auf einen leuchtenden Blumentopf, um " + p.Genome.name + " dorthin zu setzen");
+            PlacingChanged?.Invoke(AnyMergeTargetFor(p)
+                ? "In einen Blumentopf setzen – oder auf eine gleiche Pflanze ziehen, dann wird sie stärker"
+                : "Tippe auf einen leuchtenden Blumentopf, um " + p.Genome.name + " dorthin zu setzen");
         }
 
         public void CancelPlacing()
         {
             if (carrying == null) return;
             carrying = null;
+            dragging = false;
+            hoverTarget = null;
             Sfx.Play("pop", 0.6f, 0.5f);
             PlacingChanged?.Invoke(null);
         }
@@ -165,7 +174,11 @@ namespace SeedClicker
         public bool TryPlaceAt(Vector2 w)
         {
             if (carrying == null) return false;
+            // gleiche Pflanze auf dem Feld -> zusammenfuehren
+            var tp = PlantAt(CellAt(w));
+            if (IsMergeTarget(tp)) return MergeInto(tp);
             var pot = PotAt(w);
+            if (pot != null && !string.IsNullOrEmpty(pot.type) && pot.type == carrying.type) { MergeIntoPot(pot); return true; }
             if (pot == null || !string.IsNullOrEmpty(pot.type))
             {
                 if (pot != null) Floater?.Invoke(pot.Pos + new Vector2(0, 0.9f), "Dieser Topf ist schon belegt", new Color(1f, 0.7f, 0.6f));
@@ -193,6 +206,7 @@ namespace SeedClicker
             RemovePlantView(c);
             save.planted.Remove(p);
             pot.type = p.type;
+            pot.level = p.Lv;
             var v = potViews.Find(x => x.st == pot);
             if (v != null) { RefreshPotView(v); v.hidePlant = 1f; }
             save.Save();
@@ -237,8 +251,10 @@ namespace SeedClicker
                 // Landung im Topf: Wucht!
                 Destroy(f.sr.gameObject); Destroy(f.shadow.gameObject);
                 flyers.RemoveAt(i);
+                if (f.mergeTarget != null) { LandMerge(f); continue; }
                 var at = f.to + new Vector2(0, -0.5f);
-                if (f.target != null) { f.target.hidePlant = 0f; f.target.squash = 1f; f.target.pop = 0.3f; }
+                if (f.target != null) { f.target.hidePlant = 0f; f.target.squash = 1f; f.target.pop = 0.3f; RefreshPotView(f.target); }
+                if (f.newLevel > 1) Floater?.Invoke(at + new Vector2(0, 1.7f), f.g.name + " Stufe " + f.newLevel + "!", new Color(1f, 0.9f, 0.4f));
                 Shockwave(at, 2.2f, 0.4f, Color.white);
                 Shockwave(at, 1.3f, 0.3f, f.g.ElementColor);
                 Particles.I?.Burst(at + new Vector2(0, 0.5f), "star", f.g.ElementColor, 16, 3f, 0.7f, 0.3f, 1f, 1f);
@@ -313,7 +329,7 @@ namespace SeedClicker
             v.plant.sprite = ps;
             if (ps != null)
             {
-                float s = 0.6f / Mathf.Max(0.01f, ps.bounds.size.x);
+                float s = 0.6f / Mathf.Max(0.01f, ps.bounds.size.x) * PlantBalance.I.LevelSize(v.st.Lv);
                 float sy = s * 1.3f;
                 v.plant.transform.localScale = new Vector3(s, sy, 1);
                 v.plant.transform.localPosition = new Vector3(0, 0.3f - ps.bounds.min.y * sy, 0);
@@ -332,7 +348,7 @@ namespace SeedClicker
             foreach (var v in potViews)
             {
                 bool has = !string.IsNullOrEmpty(v.st.type);
-                bool target = carrying != null && !has;   // freier Topf beim Platzieren: leuchtet und huepft
+                bool target = carrying != null && (!has || v.st.type == carrying.type);   // freier oder gleicher Topf: leuchtet und huepft
                 v.squash = Mathf.MoveTowards(v.squash, 0, udt * 5f);
                 v.pop = Mathf.MoveTowards(v.pop, 1f, udt * 3f);
                 float sq = Mathf.Sin(v.squash * Mathf.PI * 2f) * v.squash * 0.25f;

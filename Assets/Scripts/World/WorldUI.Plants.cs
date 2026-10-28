@@ -371,10 +371,11 @@ namespace SeedClicker
             if (def == null) return;
             var g = def.Genome;
             OpenModal(out var panel, 380, 300);
-            Header(panel, def.name + " im Topf");
+            Header(panel, def.name + (p.Lv > 1 ? " · Stufe " + p.Lv : " im Topf"));
             var card = PlantCard(panel, def, new Vector2(700, 640), false, false, null, 32);
             card.anchorMin = card.anchorMax = new Vector2(0.5f, 1); card.pivot = new Vector2(0.5f, 1); card.anchoredPosition = new Vector2(0, -130);
-            var stats = Label(panel, $"Schaden {g.Damage:0.0} · alle {g.Cooldown:0.00} s · Reichweite {g.Range:0.0}", 32, InkSoft, TextAnchor.MiddleCenter);
+            var B = PlantBalance.I;
+            var stats = Label(panel, $"Schaden {g.Damage * B.LevelDamage(p.Lv):0.0} · alle {g.Cooldown * B.LevelCooldown(p.Lv):0.00} s · Reichweite {g.Range + B.LevelRange(p.Lv):0.0}", 32, InkSoft, TextAnchor.MiddleCenter);
             stats.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 160), new Vector2(-40, 50));
             bool armed = false;
             Button back = null;

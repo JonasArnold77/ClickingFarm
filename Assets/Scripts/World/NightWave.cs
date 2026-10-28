@@ -491,13 +491,14 @@ namespace SeedClicker
             {
                 if (string.IsNullOrEmpty(p.type)) continue;   // leerer Topf
                 var g = p.Genome;
-                float cd = cooldowns.TryGetValue(p, out var v) ? v : (float)rnd.NextDouble() * g.Cooldown;
+                float gcd = g.Cooldown * B.LevelCooldown(p.Lv), grange = g.Range + B.LevelRange(p.Lv);
+                float cd = cooldowns.TryGetValue(p, out var v) ? v : (float)rnd.NextDouble() * gcd;
                 cd -= dt;
                 if (cd <= 0f)
                 {
                     var muzzle = wb.PotMuzzle(p);
-                    var target = Nearest(muzzle, g.Range);
-                    if (target != null) { Fire(p, muzzle, target); cd = g.Cooldown; }
+                    var target = Nearest(muzzle, grange);
+                    if (target != null) { Fire(p, muzzle, target); cd = gcd; }
                     else cd = 0.15f;
                 }
                 cooldowns[p] = cd;
@@ -526,7 +527,7 @@ namespace SeedClicker
             }
             if (g.effect.id == "multishot") { extra += g.effect.level >= 4 ? 2 : 1; if (fan == 0) fan = 10f; }
 
-            float dmg = g.Damage;
+            float dmg = g.Damage * B.LevelDamage(plant.Lv);   // zusammengefuehrte Pflanzen treffen haerter
             var col = g.ElementColor;
             if (proj != null && proj.id == "beam")
             {
