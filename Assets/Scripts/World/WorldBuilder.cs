@@ -43,7 +43,7 @@ namespace SeedClicker
             objects.SetParent(transform, false);
             BuildPaths();
             BuildMask();
-            BuildTerrain();
+            if (art != null && art.useTilemapGround) BuildTileGround(); else BuildTerrain();
             BuildPlateauMask();
             if (art == null) { Debug.LogError("Resources/WorldArt.asset fehlt"); return; }
             BuildMountain();

@@ -19,6 +19,8 @@ namespace SeedClicker
         [Tooltip("Klippen-Atlas (Skyden Mountain Tiles, 256 px pro Kachel)")]
         public Texture2D mountainAtlas;
         public List<Entry> sprites = new List<Entry>();
+        [Tooltip("Vergleich: Boden als Unity-Tilemap aus den Skyden-Bodenkacheln statt frei gemaltem Boden")]
+        public bool useTilemapGround;
         [Tooltip("Geriggte Figur (Happy Harvest Prefab_character_base), wird fuer die Zombies benutzt")]
         public GameObject zombiePrefab;
         [Tooltip("Zombie-Laufanimation (Assets/Characters): 8 Richtungen x 8 Bilder, Reihenfolge S, SO, O, NO, N, NW, W, SW")]
