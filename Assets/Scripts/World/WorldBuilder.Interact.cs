@@ -67,6 +67,46 @@ namespace SeedClicker
         readonly Dictionary<Cell, SpriteRenderer> fields = new Dictionary<Cell, SpriteRenderer>();
         readonly List<(Transform t, float k)> popping = new List<(Transform, float)>();
         readonly HashSet<Transform> fieldPop = new HashSet<Transform>();
+        class FieldFx { public SpriteRenderer field, overlay; public float shake, flash; }
+        readonly Dictionary<Cell, FieldFx> fieldFx = new Dictionary<Cell, FieldFx>();
+
+        /// <summary>Feld unter der Pflanze bebt kurz und blinkt hell auf (bei jedem Wachstums-Tipp).</summary>
+        public void PunchField(Cell c, float amount)
+        {
+            if (!fields.TryGetValue(c, out var sr) || sr == null) return;
+            if (!fieldFx.TryGetValue(c, out var fx))
+            {
+                var ov = new GameObject("FieldFlash").AddComponent<SpriteRenderer>();
+                ov.transform.SetParent(sr.transform, false);
+                ov.sprite = Art.Get("white");
+                ov.sortingOrder = sr.sortingOrder + 1;
+                if (ov.sprite != null) ov.transform.localScale = Vector3.one * (1f / ov.sprite.bounds.size.x) * 0.98f;
+                fx = new FieldFx { field = sr, overlay = ov };
+                fieldFx[c] = fx;
+            }
+            fx.shake = Mathf.Max(fx.shake, amount);
+            fx.flash = Mathf.Max(fx.flash, amount);
+        }
+
+        void UpdateFieldFx(float dt)
+        {
+            foreach (var kv in fieldFx)
+            {
+                var fx = kv.Value;
+                if (fx.field == null) continue;
+                if (fx.shake <= 0f && fx.flash <= 0f) { fx.overlay.enabled = false; continue; }
+                fx.shake = Mathf.MoveTowards(fx.shake, 0f, dt * 5f);
+                fx.flash = Mathf.MoveTowards(fx.flash, 0f, dt * 6f);
+                var center = CellCenter(kv.Key);
+                // Beben: schnelles Zittern, das abklingt, dazu ein kleiner Stoss in der Groesse
+                fx.field.transform.position = center + UnityEngine.Random.insideUnitCircle * fx.shake * CellSize * 0.09f;
+                if (!fieldPop.Contains(fx.field.transform) || fx.shake > 0f)
+                    fx.field.transform.localScale = Vector3.one * CellSize * (1f + fx.shake * 0.07f);
+                fx.overlay.enabled = true;
+                fx.overlay.color = new Color(1f, 0.97f, 0.85f, fx.flash * 0.55f);
+                if (fx.shake <= 0f) { fx.field.transform.position = center; fx.field.transform.localScale = Vector3.one * CellSize; }
+            }
+        }
         WorldSave save = new WorldSave();
         public WorldSave Save => save;
         SpriteRenderer hpBack, hpFill, cellCursor;
@@ -371,6 +411,8 @@ namespace SeedClicker
                 popping[i] = (tr, k);
                 if (k >= 1f) { tr.localScale = target; popping.RemoveAt(i); }
             }
+
+            UpdateFieldFx(Mathf.Min(Time.unscaledDeltaTime, 0.05f));
 
             // Lebensbalken ueber dem Baum, der gerade bearbeitet wird
             UpdateHpBar(dt);

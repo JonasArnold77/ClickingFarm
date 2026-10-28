@@ -293,6 +293,9 @@ namespace SeedClicker
             v.barPunch = 1f;
             v.barShow = 2.5f;
 
+            // Das Feld selbst bebt und blinkt auf
+            PunchField(c, 0.8f + heat * 0.4f);
+
             // Bodenwelle und Erdbrocken (dunkel + hell), Blaetter oben, Funke am Treffpunkt
             Shockwave(basePos, v.size * (1.1f + heat * 0.5f), 0.22f, new Color(1f, 0.95f, 0.8f, 0.55f + heat * 0.25f));
             int clods = 5 + (int)(heat * 6);
