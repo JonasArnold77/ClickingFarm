@@ -593,6 +593,7 @@ namespace SeedClicker
         {
             { "glutmais", "funkenmais" }, { "frostmais", "funkenmais" }, { "sonnenmais", "donnermais" },
             { "frostweizen", "glutweizen" }, { "moosweizen", "funkenweizen" },
+            { "feuerruebe", "sumpfruebe" }, { "eisruebe", "moderruebe" }, { "goldruebe", "seuchenruebe" },
             { "dornenweizen", "aschenweizen" }, { "kristallweizen", "flammenweizen" },
         };
         static string Renamed(string id) => id != null && RenamedPlants.TryGetValue(id, out var n) ? n : id;

@@ -45,6 +45,8 @@ namespace SeedClicker
             public SpriteRenderer sr; public Vector2 pos, vel; public Monster target; public PlantGenome src;
             public float speed, damage, homing, life; public int pierce; public HashSet<Monster> hit = new HashSet<Monster>();
             public bool fireball; public float power = 1f; public SpriteRenderer core;
+            public SpriteRenderer hi; public List<SpriteRenderer> flames;   // 3D-Feuerball: Glanzpunkt, lodernde Flammen
+            public bool gas;   // Giftspucke: zerplatzt zu einer Giftwolke
             // Bogenwurf (Feuerweizen): nach oben gespuckt, faellt wie eine Granate aufs Ziel
             public bool lob; public Vector2 from, to; public float t, flight, arc; public SpriteRenderer shadow;
             public bool done;
@@ -133,6 +135,8 @@ namespace SeedClicker
             foreach (var s in shots) { if (s.sr != null) Destroy(s.sr.gameObject); if (s.shadow != null) Destroy(s.shadow.gameObject); }
             shots.Clear();
             ClearWeaponShots();
+            foreach (var c in gasClouds) foreach (var p in c.puffs) if (p != null) Destroy(p.gameObject);
+            gasClouds.Clear();
             toSpawn = 0;
             if (victory)
             {
@@ -157,6 +161,7 @@ namespace SeedClicker
             DuskAmount = Mathf.MoveTowards(DuskAmount, Active || Evening ? 1f : 0f, dt * 0.35f);
             UpdateLight();
             UpdateBeams(dt);
+            UpdateGas(dt);
             if (wb == null) return;
             UpdateWeapons(dt);
 
@@ -556,6 +561,7 @@ namespace SeedClicker
                 return;
             }
             int tier = B.Tier(plant.Lv);
+            if (proj != null && proj.id == "gas") wb.SpitPlant(plant);
             if (proj != null && proj.id == "fireball") { wb.SpitPlant(plant); Sfx.Play("pop", 0.7f, 0.8f); Sfx.Play("launch", 0.75f + rnd.Next(0, 10) * 0.01f, 0.55f + tier * 0.08f); Particles.I?.Burst(muzzle, "spark", new Color(1f, 0.6f, 0.2f), 6 + tier * 2, 2.5f, 0.3f, 0.12f, 0f, 1f); }
             foreach (var t in targets) LaunchShot(g, proj, muzzle, t, 0f, dmg, tier);
             for (int i = 0; i < extra; i++)
@@ -569,6 +575,7 @@ namespace SeedClicker
         void LaunchShot(PlantGenome g, OptionDef proj, Vector2 from, Monster target, float angle, float dmg, int tier = 1)
         {
             if (proj.id == "fireball") { LaunchFireball(g, proj, from, target, angle, dmg, tier); return; }
+            if (proj.id == "gas") { LaunchGas(g, proj, from, target, angle, dmg, tier); return; }
             var sr = new GameObject("Shot").AddComponent<SpriteRenderer>();
             sr.transform.SetParent(transform, false);
             sr.sprite = WorldBuilder.Mist;
@@ -602,6 +609,7 @@ namespace SeedClicker
                 s.sr.transform.position = s.pos;
                 if (s.vel.sqrMagnitude > 0.01f) s.sr.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(s.vel.y, s.vel.x) * Mathf.Rad2Deg);
                 if (s.fireball) FireballTrail(s, dt);
+                else if (s.gas) { s.sr.transform.localScale = new Vector3(0.3f + 0.04f * s.power, 0.26f + 0.04f * s.power, 1) * (1f + Mathf.Sin(Time.time * 25f) * 0.08f); if (rnd.NextDouble() < dt * 25) Particles.I?.Spawn(s.pos, "square", new Color(0.55f, 0.95f, 0.3f), Vector3.down * 0.3f, 0.5f, 0.05f, 0.02f, 3f); }
                 else if (rnd.NextDouble() < dt * 30) Particles.I?.Spawn(s.pos, "spark", s.src.ElementColor, Vector3.zero, 0.3f, 0.5f, 0f, 0f);
                 // Treffer
                 foreach (var m in monsters)
@@ -611,6 +619,7 @@ namespace SeedClicker
                     s.hit.Add(m);
                     Hit(m, s.damage, s.src, s.pos);
                     if (s.fireball) FireballBlast(s, m);
+                    if (s.gas) SpawnGas(s.pos, s.power, s.damage, s.src);
                     if (s.pierce > 0) { s.pierce--; s.damage *= 0.85f; continue; }
                     s.done = true; Destroy(s.sr.gameObject);
                     break;
@@ -663,18 +672,40 @@ namespace SeedClicker
         void LaunchFireball(PlantGenome g, OptionDef proj, Vector2 from, Monster target, float angle, float dmg, int tier)
         {
             float size = 0.42f + 0.13f * (tier - 1);
+            // aussen: gluehender Hof
             var sr = new GameObject("Fireball").AddComponent<SpriteRenderer>();
             sr.transform.SetParent(transform, false);
             sr.sprite = WorldBuilder.Mist;
-            sr.color = new Color(2.4f, 0.95f, 0.25f, 1f);
+            sr.color = new Color(2.2f, 0.75f, 0.18f, 0.6f);
             sr.transform.localScale = Vector3.one * size;
             sr.sortingOrder = 30000;
-            var core = new GameObject("Core").AddComponent<SpriteRenderer>();
+            // innen: schattierte, glutfluessige Kugel (dreht sich), dazu ein fester Glanzpunkt
+            var core = new GameObject("Orb").AddComponent<SpriteRenderer>();
             core.transform.SetParent(sr.transform, false);
-            core.sprite = WorldBuilder.Mist;
-            core.color = new Color(3f, 2.4f, 1.2f, 1f);
-            core.transform.localScale = Vector3.one * 0.45f;
-            core.sortingOrder = 30001;
+            core.sprite = FireOrb;
+            core.color = new Color(1.7f, 1.35f, 1.1f, 1f);
+            core.transform.localScale = Vector3.one * 0.7f;
+            core.sortingOrder = 30003;
+            var hi = new GameObject("Highlight").AddComponent<SpriteRenderer>();
+            hi.transform.SetParent(sr.transform, false);
+            hi.sprite = WorldBuilder.Mist;
+            hi.color = new Color(3f, 2.8f, 2.2f, 0.9f);
+            hi.transform.localPosition = new Vector3(-0.11f, 0.12f, 0);
+            hi.transform.localScale = new Vector3(0.24f, 0.16f, 1);
+            hi.transform.localRotation = Quaternion.Euler(0, 0, 35f);
+            hi.sortingOrder = 30004;
+            // lodernde Flammenzungen rundherum (hinten und vorne)
+            var flames = new List<SpriteRenderer>();
+            int nf = 7 + tier;
+            for (int i = 0; i < nf; i++)
+            {
+                var f = new GameObject("Flame").AddComponent<SpriteRenderer>();
+                f.transform.SetParent(sr.transform, false);
+                f.sprite = PlantCreature.Get("flame");
+                f.color = i % 3 == 0 ? new Color(2.6f, 1.6f, 0.5f, 0.95f) : new Color(2.4f, 0.8f, 0.2f, 0.9f);
+                f.sortingOrder = i % 3 == 0 ? 30005 : 30002;
+                flames.Add(f);
+            }
             // Ziel vorhalten: dort, wo der Zombie bei der Landung ungefaehr sein wird
             float dist0 = (target.pos - from).magnitude;
             float flight = 0.75f + dist0 * 0.09f;
@@ -685,7 +716,7 @@ namespace SeedClicker
             shadow.sprite = WorldBuilder.Mist;
             shadow.color = new Color(0, 0, 0, 0f);
             shadow.sortingOrder = 29990;
-            shots.Add(new Shot { sr = sr, core = core, pos = from, vel = Vector2.up, target = target, src = g, damage = dmg * (1f + 0.15f * (tier - 1)),
+            shots.Add(new Shot { sr = sr, core = core, hi = hi, flames = flames, pos = from, vel = Vector2.up, target = target, src = g, damage = dmg * (1f + 0.15f * (tier - 1)),
                 life = flight + 0.5f, fireball = true, power = tier, lob = true, from = from, to = lead, flight = flight, arc = 1.4f + dist0 * 0.22f, shadow = shadow });
             sr.transform.position = from;
             sr.transform.localScale = Vector3.one * size * 0.3f;   // waechst aus dem Maul heraus
@@ -710,8 +741,8 @@ namespace SeedClicker
                 s.shadow.transform.localScale = new Vector3(ss, ss * 0.4f, 1);
                 s.shadow.color = new Color(0.1f, 0.02f, 0f, 0.15f + k * 0.35f);
             }
+            FireballTrail(s, dt);
             if (s.t < 0.12f) s.sr.transform.localScale = Vector3.one * (0.42f + 0.13f * (s.power - 1)) * Mathf.Lerp(0.3f, 1f, s.t / 0.12f);
-            else FireballTrail(s, dt);
             if (k < 1f) return;
             // Einschlag: naechster Zombie bekommt den vollen Treffer, die Explosion den Rest
             Monster hit = null; float bd = 0.6f * 0.6f;
@@ -725,12 +756,147 @@ namespace SeedClicker
             if (s.shadow != null) Destroy(s.shadow.gameObject);
         }
 
+        // ------------------------------------------------------------------ Giftspucke (Giftruebe)
+
+        class GasCloud { public Vector2 pos; public float r, t, dur, dps, tick; public PlantGenome src; public List<SpriteRenderer> puffs = new List<SpriteRenderer>(); }
+        readonly List<GasCloud> gasClouds = new List<GasCloud>();
+
+        void LaunchGas(PlantGenome g, OptionDef proj, Vector2 from, Monster target, float angle, float dmg, int tier)
+        {
+            var sr = new GameObject("GasGlob").AddComponent<SpriteRenderer>();
+            sr.transform.SetParent(transform, false);
+            sr.sprite = WorldBuilder.Mist;
+            sr.color = new Color(0.8f, 1.6f, 0.45f, 1f);
+            sr.sortingOrder = 30000;
+            var dir = ((target.pos + new Vector2(0, 0.35f)) - from).normalized;
+            dir = Quaternion.Euler(0, 0, angle) * dir;
+            float speed = proj.speed;
+            shots.Add(new Shot { sr = sr, pos = from, vel = dir * speed, target = target, src = g, speed = speed, damage = dmg, homing = proj.homing, life = 3f, gas = true, power = tier });
+            sr.transform.position = from;
+            Sfx.Play("pop", 0.55f, 0.7f);
+        }
+
+        /// <summary>Giftwolke: bleibt eine Weile stehen, vergiftet und bremst alle darin.</summary>
+        void SpawnGas(Vector2 at, float power, float dmg, PlantGenome g)
+        {
+            var c = new GasCloud { pos = at, r = 0.55f + 0.15f * power, dur = 2f + 0.6f * power, dps = dmg * (0.45f + 0.1f * power), src = g };
+            for (int i = 0; i < 4 + (int)power; i++)
+            {
+                var p = new GameObject("GasPuff").AddComponent<SpriteRenderer>();
+                p.transform.SetParent(transform, false);
+                p.sprite = WorldBuilder.Mist;
+                p.color = i % 2 == 0 ? new Color(0.55f, 1.25f, 0.3f, 0f) : new Color(0.7f, 0.35f, 0.95f, 0f);
+                p.sortingOrder = 29995;
+                c.puffs.Add(p);
+            }
+            gasClouds.Add(c);
+            Particles.I?.Burst(at, "square", new Color(0.55f, 0.95f, 0.3f), 12, 2.8f, 0.5f, 0.06f, 4f, 1.2f);
+            Particles.I?.Ring(at, new Color(0.6f, 1f, 0.4f, 0.8f), c.r * 1.6f, 0.3f);
+            Sfx.Play("dig", 0.6f, 0.6f);
+        }
+
+        void UpdateGas(float dt)
+        {
+            float tt = Time.time;
+            for (int i = gasClouds.Count - 1; i >= 0; i--)
+            {
+                var c = gasClouds[i];
+                c.t += dt;
+                float k = c.t / c.dur;
+                float a = k < 0.15f ? k / 0.15f : k > 0.75f ? (1f - k) / 0.25f : 1f;
+                for (int j = 0; j < c.puffs.Count; j++)
+                {
+                    var p = c.puffs[j];
+                    float ph = tt * 0.9f + j * 1.7f;
+                    p.transform.position = c.pos + new Vector2(Mathf.Cos(ph) * c.r * 0.45f, Mathf.Sin(ph * 1.3f) * c.r * 0.22f + 0.15f);
+                    float s = c.r * (1.4f + 0.2f * Mathf.Sin(ph * 2f));
+                    p.transform.localScale = new Vector3(s, s * 0.65f, 1);
+                    var col = p.color; col.a = a * 0.7f; p.color = col;
+                }
+                if (Particles.I != null && rnd.NextDouble() < dt * 6) Particles.I.Spawn(c.pos + UnityEngine.Random.insideUnitCircle * c.r * 0.7f, "ring", new Color(0.7f, 1f, 0.45f, 0.8f), new Vector3(0, 0.2f, 0), 0.6f, 0.03f, 0.07f, -0.1f);
+                c.tick -= dt;
+                if (c.tick <= 0f)
+                {
+                    c.tick = 0.25f;
+                    foreach (var m in monsters)
+                    {
+                        if (m.dead || (m.pos - c.pos).magnitude > c.r) continue;
+                        Damage(m, c.dps * 0.25f, c.src, silent: true);
+                        AddPoison(m, c.dps * 0.15f, 1);
+                        m.slowT = Mathf.Max(m.slowT, 0.4f); m.slowAmt = Mathf.Max(m.slowAmt, 0.3f);
+                        m.hitFlash = Mathf.Max(m.hitFlash, 0.25f);
+                    }
+                }
+                if (k >= 1f) { foreach (var p in c.puffs) if (p != null) Destroy(p.gameObject); gasClouds.RemoveAt(i); }
+            }
+        }
+
+        static Sprite fireOrb;
+        /// <summary>Kugel mit Licht von oben links, glutfluessiger Oberflaeche (Rauschen) und dunklerem Rand.</summary>
+        static Sprite FireOrb
+        {
+            get
+            {
+                if (fireOrb != null) return fireOrb;
+                const int n = 128;
+                var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                var px = new Color[n * n];
+                var L = new Vector3(-0.5f, 0.6f, 0.62f).normalized;
+                for (int y = 0; y < n; y++)
+                    for (int x = 0; x < n; x++)
+                    {
+                        float u = (x + 0.5f) / n * 2f - 1f, v = (y + 0.5f) / n * 2f - 1f;
+                        float r2 = u * u + v * v;
+                        if (r2 >= 1f) { px[y * n + x] = Color.clear; continue; }
+                        var nrm = new Vector3(u, v, Mathf.Sqrt(1f - r2));
+                        // Oberflaeche: Rauschen auf der Kugel -> Glutflecken und dunklere Krusten
+                        float nz = Mathf.PerlinNoise(nrm.x * 2.6f + 10f, nrm.y * 2.6f + nrm.z * 1.3f) * 0.65f
+                                 + Mathf.PerlinNoise(nrm.x * 6f + 3f, nrm.y * 6f + 7f) * 0.35f;
+                        float lit = Mathf.Clamp01(Vector3.Dot(nrm, L) * 0.65f + 0.45f);
+                        float rim = Mathf.Pow(1f - nrm.z, 2f);
+                        var hot = new Color(1f, 0.92f, 0.55f);
+                        var mid = new Color(1f, 0.55f, 0.12f);
+                        var crust = new Color(0.55f, 0.13f, 0.04f);
+                        var c = nz > 0.55f ? Color.Lerp(mid, hot, (nz - 0.55f) / 0.45f) : Color.Lerp(crust, mid, nz / 0.55f);
+                        c *= 0.35f + lit * 0.9f;
+                        c = Color.Lerp(c, new Color(1f, 0.45f, 0.1f), rim * 0.5f);   // gluehender Rand (Rueckstreuung)
+                        c.a = Mathf.Clamp01((1f - Mathf.Sqrt(r2)) * 40f);
+                        px[y * n + x] = c;
+                    }
+                tex.SetPixels(px); tex.Apply();
+                fireOrb = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), n);
+                return fireOrb;
+            }
+        }
+
         void FireballTrail(Shot s, float dt)
         {
-            // pulsierender Kern und dichter Flammenschweif mit Rauch
-            float fl = 1f + Mathf.Sin(Time.time * 30f) * 0.08f;
+            // pulsierender Hof, rollende Kugel, lodernde Flammenzungen nach hinten, dazu Schweif und Rauch
+            float tt = Time.time;
+            float fl = 1f + Mathf.Sin(tt * 30f) * 0.06f;
             s.sr.transform.localScale = Vector3.one * (0.42f + 0.13f * (s.power - 1)) * fl;
             var back = -s.vel.normalized;
+            if (s.core != null) s.core.transform.localRotation = Quaternion.Euler(0, 0, -tt * 400f);
+            if (s.flames != null)
+            {
+                float backAng = Mathf.Atan2(back.y, back.x) * Mathf.Rad2Deg;
+                for (int i = 0; i < s.flames.Count; i++)
+                {
+                    var f = s.flames[i];
+                    if (f == null) continue;
+                    // hintere Flammen lang (Fahrtwind), vordere kurz und zuengelnd
+                    float spread = (i / (float)(s.flames.Count - 1) - 0.5f) * 2f;          // -1..1
+                    bool front = i % 3 == 0;
+                    float ang = front ? backAng + 180f + spread * 140f : backAng + spread * 75f;
+                    float lick = Mathf.Sin(tt * (17f + i * 3.1f) + i * 1.7f);
+                    float len = front ? 0.45f + 0.12f * lick : 0.75f + 0.25f * lick + (1f - Mathf.Abs(spread)) * 0.45f;
+                    var dir = new Vector2(Mathf.Cos(ang * Mathf.Deg2Rad), Mathf.Sin(ang * Mathf.Deg2Rad));
+                    f.transform.localPosition = dir * 0.26f;
+                    f.transform.localRotation = Quaternion.Euler(0, 0, ang - 90f + lick * 8f);
+                    f.transform.localScale = new Vector3(0.42f * (1.1f - Mathf.Abs(lick) * 0.2f), len, 1);
+                    f.flipX = lick > 0.3f;
+                }
+            }
             int n = Mathf.FloorToInt(dt * (40f + s.power * 12f) + (float)rnd.NextDouble());
             for (int i = 0; i < n; i++)
             {

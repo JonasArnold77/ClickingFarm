@@ -16,7 +16,7 @@ namespace SeedClicker
     /// </summary>
     public class PlantCreature : MonoBehaviour
     {
-        class Eye { public Transform root, iris; public SpriteRenderer sclera, irisSr, pupil, hi; }
+        class Eye { public Transform root, iris; public SpriteRenderer sclera, irisSr, pupil, hi; public float openMul = 1f; }
         class Head
         {
             public Transform root, mouth, browL, browR;
@@ -27,7 +27,8 @@ namespace SeedClicker
 
         SpriteRenderer body;
         PlantGenome g;
-        string character = "";   // "spark": hibbeliger Blitzmais
+        string character = "";   // "fire" Feuerweizen, "spark" hibbeliger Blitzmais, "toxic" grantige Giftruebe
+        bool custom;              // Art mit eigenem Charakter (eigene Mutationen statt Hoerner/Dornen)
         bool single;   // Weizen: eine breite Aehre mit Zweigen
         string style;
         readonly List<Head> heads = new List<Head>();
@@ -54,7 +55,8 @@ namespace SeedClicker
             c.style = g.projectile.id;
             c.Tier = Mathf.Clamp(tier, 1, 4);
             c.single = PlantForms.IsSingle(sp);
-            c.character = string.IsNullOrEmpty(sp.character) ? "fire" : sp.character;
+            c.character = sp.character ?? "";
+            c.custom = !string.IsNullOrEmpty(c.character);
             foreach (var h in sp.heads) c.BuildHead(h);
             c.BuildMutation();
             c.blinkT = Random.Range(1f, 4f);
@@ -84,6 +86,8 @@ namespace SeedClicker
                 if (Tier >= 3) mouth = "fangs";                       // ab Mutation 3: Reisszaehne
                 else if (Tier == 2 && mouth == "smile") mouth = "o";
                 if (single && character == "spark") mouth = Tier >= 3 ? "fangs" : "buck";   // Hasenzaehne-Grinsen
+                if (character == "toxic") mouth = Tier >= 3 ? "fangs" : "smirk";           // schiefes, hinterlistiges Grinsen
+                if (character == "toxic") head.eyes[1].openMul = 0.42f;                      // kneift ein Auge zusammen
                 head.mouthKey = mouth;
                 head.mouthSr = Part(head.root, "Mouth", Get(mouth), new Vector2(0, -0.26f), MouthSize(mouth));
                 head.mouth = head.mouthSr.transform;
@@ -99,10 +103,11 @@ namespace SeedClicker
                 if (single && character == "spark" && Tier == 1) tilt = -14f;   // hochgezogen, aufgedreht
                 head.browL.localRotation = Quaternion.Euler(0, 0, -tilt);
                 head.browR.localRotation = Quaternion.Euler(0, 0, tilt);
-                if (style == "spore" && Tier == 1) { hidden.Add(head.browLSr); hidden.Add(head.browRSr); }
+                if (style == "spore" && Tier == 1 && character != "toxic") { hidden.Add(head.browLSr); hidden.Add(head.browRSr); }
+                if (character == "toxic") { head.browL.localRotation = Quaternion.Euler(0, 0, 12f); head.browR.localRotation = Quaternion.Euler(0, 0, 26f + Tier * 4f); }   // eine Braue misstrauisch hoch
             }
             // Hoerner ab Mutation 2, groesser und dunkler mit jeder Stufe (nicht beim Feuerweizen, der hat eigene Mutationen)
-            if (Tier >= 2 && !single)
+            if (Tier >= 2 && !custom)
             {
                 float hs = 0.36f + (Tier - 2) * 0.1f;
                 var hornCol = Tier == 2 ? new Color(0.62f, 0.5f, 0.38f) : Tier == 3 ? new Color(0.45f, 0.3f, 0.28f) : new Color(0.22f, 0.1f, 0.14f);
@@ -190,7 +195,7 @@ namespace SeedClicker
             float open = 1f;
             if (blink > 0f) open = 0.12f;
             if (pokeT > 0f) open = 0.08f;
-            if (style == "spore" && Tier == 1) open *= 0.62f;           // verschlafen
+            if (style == "spore" && Tier == 1 && character != "toxic") open *= 0.62f;           // verschlafen
             if (shootT > 0f) open = Mathf.Max(open, 1.15f);
             float wakeE = 1 + 2.70158f * Mathf.Pow(wake - 1, 3) + 1.70158f * Mathf.Pow(wake - 1, 2);
 
@@ -214,7 +219,7 @@ namespace SeedClicker
                 h.root.localScale = Vector3.one * hs * wakeE;
                 foreach (var e in h.eyes)
                 {
-                    e.root.localScale = new Vector3(e.root.localScale.x, Mathf.MoveTowards(e.root.localScale.y, e.root.localScale.x * open, dt * 12f), 1);
+                    e.root.localScale = new Vector3(e.root.localScale.x, Mathf.MoveTowards(e.root.localScale.y, e.root.localScale.x * open * e.openMul, dt * 12f), 1);
                     e.iris.localPosition = look * 0.18f;
                 }
                 if (h.mouth != null)
@@ -335,6 +340,7 @@ namespace SeedClicker
 
         void UpdateElement(float dt, float bw, int order)
         {
+            if (character == "toxic") { UpdateCarrot(dt, bw, order); return; }
             if (single && character == "spark") { UpdateCorn(dt, bw, order); return; }
             if (single) { UpdateWheat(dt, bw, order); return; }
             if (Tier < 2 || heads.Count == 0) return;
@@ -761,11 +767,145 @@ namespace SeedClicker
             Particles.I.Spawn(at, "spark", new Color(1f, 0.95f, 0.5f), Random.insideUnitCircle * 1.6f, 0.15f, 0.05f + Tier * 0.012f, 0f, 0f);
         }
 
-        static float MouthSize(string m) => m == "buck" ? 0.46f : m == "grin" ? 0.42f : m == "fangs" ? 0.46f : m == "smile" ? 0.32f : 0.2f;
+        // ------------------------------------------------------------------ Giftruebe
+        // Charakter: grantig, hinterlistig, schielt mit zusammengekniffenem Auge, schiefes Grinsen, sabbert Gift.
+        // Grundform "Giftruebe": Gift tropft aus dem Mund.
+        // Mutation 1 "Brodelruebe": blubbernde Giftpfuetze um sie herum, Blasen steigen auf.
+        // Mutation 2 "Sumpfruebe": Tentakel winden sich aus dem Boden, Giftnebel kriecht am Boden.
+        // Mutation 3 "Seuchenfuerst": Krone aus giftig leuchtenden Pilzen, dichter Nebel, gluehende Augen.
+
+        readonly List<SpriteRenderer> tentacles = new List<SpriteRenderer>(), fog = new List<SpriteRenderer>();
+        SpriteRenderer puddle;
+        float droolT;
+
+        void BuildCarrot()
+        {
+            baseTint = PlantBalance.MutationTint(g, Tier);
+            wheatRoot = new GameObject("Carrot").transform;
+            wheatRoot.SetParent(transform, false);
+            if (Tier >= 2)
+            {
+                puddle = Part(wheatRoot, "Puddle", Get("puddle"), Vector2.zero, 1f);
+                puddle.color = Tier >= 4 ? new Color(0.75f, 1.3f, 0.6f, 1f) : new Color(1f, 1f, 1f, 0.95f);
+            }
+            if (Tier >= 3)
+            {
+                int nt = Tier >= 4 ? 5 : 4;
+                for (int i = 0; i < nt; i++) { var t = Part(wheatRoot, "Tentacle", Get("tentacle"), Vector2.zero, 1f); t.color = new Color(0.55f, 0.35f, 0.7f); tentacles.Add(t); }
+                int nf = Tier >= 4 ? 5 : 3;
+                for (int i = 0; i < nf; i++) { var f = Part(wheatRoot, "Fog", WorldBuilder.Mist, Vector2.zero, 1f); f.color = new Color(0.55f, 0.9f, 0.35f, 0.3f); fog.Add(f); }
+            }
+            if (Tier >= 4 && heads.Count > 0 && WorldArtSet.I != null)
+            {
+                string[] ms = { "sk_Mushroom_1", "sk_Mushroom_3", "sk_Mushroom_0" };
+                for (int i = 0; i < 3; i++)
+                {
+                    var spr = WorldArtSet.I.Get(ms[i]);
+                    if (spr == null) continue;
+                    float sc = (i == 1 ? 0.5f : 0.36f) / Mathf.Max(0.01f, spr.bounds.size.x);
+                    var m = Part(heads[0].root, "Crown", spr, new Vector2((i - 1) * 0.32f, 0.42f + (i == 1 ? 0.1f : 0f)), sc * 1.3f);
+                    m.color = new Color(0.8f, 1.6f, 0.55f, 1f);
+                    m.transform.localRotation = Quaternion.Euler(0, 0, (i - 1) * -15f);
+                    crown.Add(m);
+                }
+            }
+            if (Tier >= 2)
+            {
+                var lg = new GameObject("ElementLight");
+                lg.transform.SetParent(transform, false);
+                elemLight = lg.AddComponent<Light2D>();
+                elemLight.lightType = Light2D.LightType.Point;
+                elemLight.color = new Color(0.55f, 1f, 0.35f);
+                elemLight.pointLightOuterRadius = 0.8f + Tier * 0.35f;
+                elemLight.pointLightInnerRadius = 0.05f;
+            }
+        }
+
+        void UpdateCarrot(float dt, float bw, int order)
+        {
+            if (wheatRoot == null || body.sprite == null) return;
+            float t = Time.time;
+            var ps = body.transform.localScale;
+            var b = body.sprite.bounds;
+            float bodyH = b.size.y * Mathf.Abs(ps.y);
+            Vector2 root = new Vector2(b.center.x * ps.x, b.min.y * Mathf.Abs(ps.y) + bodyH * 0.12f);
+
+            if (puddle != null)
+            {
+                puddle.transform.localPosition = root;
+                float pw = bw * (1.2f + Tier * 0.18f) * (1f + Mathf.Sin(t * 1.3f) * 0.03f);
+                puddle.transform.localScale = new Vector3(pw, pw * 0.42f, 1);
+                puddle.sortingOrder = order - 2;
+            }
+            for (int i = 0; i < tentacles.Count; i++)
+            {
+                var te = tentacles[i];
+                float side = i % 2 == 0 ? -1f : 1f;
+                float k = (i / 2) / Mathf.Max(1f, tentacles.Count / 2f);
+                var p = root + new Vector2(side * bw * (0.22f + k * 0.12f), bodyH * 0.02f);
+                float rot = -side * (25f + k * 25f) + Mathf.Sin(t * 2.2f + i * 1.9f) * 18f;   // winden sich
+                float ts = bodyH * (0.32f + (Tier - 3) * 0.08f) * (0.85f + 0.15f * Mathf.Sin(t * 1.7f + i));
+                // Sprite-Mitte liegt in der Bildmitte: um die halbe Laenge nach oben schieben, damit er am Boden ansetzt
+                te.transform.localPosition = p + (Vector2)(Quaternion.Euler(0, 0, rot) * Vector2.up) * ts * 0.5f;
+                te.transform.localRotation = Quaternion.Euler(0, 0, rot);
+                te.transform.localScale = new Vector3(ts * 0.5f, ts, 1);
+                te.flipX = side > 0f;
+                te.sortingOrder = i >= 2 ? order + 1 : order - 1;
+            }
+            for (int i = 0; i < fog.Count; i++)
+            {
+                var f = fog[i];
+                float ph = t * 0.4f + i * 2.1f;
+                f.transform.localPosition = root + new Vector2(Mathf.Sin(ph) * bw * 0.7f, Mathf.Cos(ph * 0.7f) * bodyH * 0.06f);
+                float fs = bw * (1.3f + (Tier - 3) * 0.5f) * (0.9f + 0.1f * Mathf.Sin(ph * 2f));
+                f.transform.localScale = new Vector3(fs, fs * 0.38f, 1);
+                var c = f.color; c.a = 0.22f + 0.08f * Mathf.Sin(ph * 1.6f) + (Tier - 3) * 0.08f; f.color = c;
+                f.sortingOrder = order + 5;
+            }
+            foreach (var cr in crown)
+            {
+                float pulse = 0.5f + 0.5f * Mathf.Sin(t * 3f + cr.transform.localPosition.x * 5f);
+                cr.color = new Color(0.8f + pulse * 0.3f, 1.4f + pulse * 0.6f, 0.5f, 1f);
+                cr.sortingOrder = order + 3;   // vor dem Blattwerk
+            }
+            if (Tier >= 4)
+            {
+                float pulse = 0.5f + 0.5f * Mathf.Sin(t * 2.4f);
+                body.color = Color.Lerp(baseTint, new Color(0.9f, 1.35f, 0.75f), pulse * 0.35f);
+            }
+            if (elemLight != null)
+            {
+                elemLight.transform.localPosition = root + new Vector2(0, bodyH * 0.3f);
+                float nightK = 0.5f + (NightWave.I != null ? NightWave.I.NightAmount : 0f);
+                elemLight.intensity = (0.5f + 0.2f * Mathf.Sin(t * 2f)) * nightK * (Tier - 1) * 0.5f;
+            }
+
+            if (Particles.I == null) return;
+            // sabbert Gift
+            droolT -= dt;
+            if (droolT <= 0f && heads.Count > 0 && heads[0].mouth != null)
+            {
+                droolT = Random.Range(0.4f, 1.2f) / Mathf.Max(1, Tier - 1);
+                Vector2 m = heads[0].mouth.position + new Vector3(Random.Range(0.02f, 0.06f), -0.02f, 0);
+                Particles.I.Spawn(m, "square", new Color(0.55f, 0.95f, 0.3f), new Vector3(0, -0.05f, 0), 0.8f, 0.035f, 0.02f, 2.5f);
+            }
+            // Blasen aus der Pfuetze
+            elemT -= dt;
+            if (Tier >= 2 && elemT <= 0f)
+            {
+                elemT = Random.Range(0.12f, 0.35f) / (Tier - 1);
+                var wp = (Vector2)transform.TransformPoint(root + new Vector2(Random.Range(-0.5f, 0.5f) * bw * (1.2f + Tier * 0.18f), Random.Range(-0.1f, 0.1f) * bw));
+                Particles.I.Spawn(wp, "ring", new Color(0.7f, 1f, 0.45f, 0.9f), new Vector3(0, 0.25f, 0), 0.7f, 0.03f, 0.08f, -0.1f);
+                if (Tier >= 3 && Random.value < 0.4f) Particles.I.Spawn(wp, "square", new Color(0.6f, 0.35f, 0.8f, 0.5f), new Vector3(Random.Range(-0.1f, 0.1f), 0.35f, 0), 1.3f, 0.05f, 0.16f, -0.05f);
+            }
+        }
+
+        static float MouthSize(string m) => m == "smirk" ? 0.4f : m == "buck" ? 0.46f : m == "grin" ? 0.42f : m == "fangs" ? 0.46f : m == "smile" ? 0.32f : 0.2f;
 
         /// <summary>Mutationsteile am Fuss: Dornenranken (ab 2) und lodernde Aura (ab 4).</summary>
         void BuildMutation()
         {
+            if (character == "toxic") { BuildCarrot(); return; }
             if (single && character == "spark") { BuildCorn(); return; }
             if (single) { BuildWheat(); return; }
             if (Tier < 2) return;
@@ -781,11 +921,13 @@ namespace SeedClicker
 
         // ------------------------------------------------------------------ Gemalte Gesichtsteile
 
-        static Sprite Get(string key)
+        internal static Sprite Get(string key)
         {
             if (sprites.TryGetValue(key, out var s) && s != null) return s;
             int n = key == "brow" || key == "lash" ? 64 : key == "bramble" ? 192 : key == "horn" || key == "shard" ? 48 : key == "cloud" ? 160 : 96;
-            int h = key == "brow" || key == "lash" ? 24 : key == "grin" || key == "smile" || key == "fangs" || key == "buck" ? 56 : key == "bramble" || key == "cloud" ? 96 : 96;
+            if (key == "tentacle") n = 48;
+            if (key == "puddle") n = 160;
+            int h = key == "brow" || key == "lash" ? 24 : key == "grin" || key == "smile" || key == "fangs" || key == "buck" || key == "smirk" ? 56 : key == "bramble" || key == "cloud" ? 96 : key == "puddle" ? 64 : 96;
             var tex = new Texture2D(n, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
             var px = new Color[n * h];
             var ink = new Color(0.16f, 0.1f, 0.08f, 1f);
@@ -796,6 +938,45 @@ namespace SeedClicker
                     Color c = Color.clear;
                     switch (key)
                     {
+                        case "smirk":
+                            {
+                                // schiefes Grinsen: links hoch, rechts runter, mit Mundwinkel
+                                float curve = -0.15f - 0.55f * (1f - u * u) + u * 0.35f;
+                                float th = 0.16f + Mathf.Max(0f, -u) * 0.12f;
+                                if (Mathf.Abs(v - curve - 0.3f) < th && Mathf.Abs(u) < 0.9f) c = ink;
+                                if (u > 0.7f && u < 0.9f && v > curve + 0.3f && v < curve + 0.62f) c = ink;   // Mundwinkel
+                                break;
+                            }
+                        case "tentacle":
+                            {
+                                // geschwungener, spitz zulaufender Tentakel mit Saugnaepfen
+                                float t2 = (v + 1f) * 0.5f;
+                                float cx2 = Mathf.Sin(t2 * 4.2f) * 0.35f * t2;
+                                float half = 0.5f * (1f - t2 * 0.92f);
+                                float dx = Mathf.Abs(u - cx2);
+                                if (dx < half && t2 < 0.98f)
+                                {
+                                    c = Color.Lerp(new Color(0.75f, 0.75f, 0.75f), Color.white, (u - cx2) / half * 0.5f + 0.5f);
+                                    if (Mathf.Repeat(t2 * 9f, 1f) < 0.25f && (u - cx2) > half * 0.2f) c = new Color(1f, 0.92f, 0.95f);   // Saugnaepfe
+                                    c.a = Mathf.Clamp01((half - dx) * 30f);
+                                }
+                                break;
+                            }
+                        case "puddle":
+                            {
+                                // Giftpfuetze: welliger Rand, Glanzflecken
+                                float ang = Mathf.Atan2(v, u);
+                                float rr = 0.85f + 0.08f * Mathf.Sin(ang * 5f) + 0.05f * Mathf.Sin(ang * 9f + 1f);
+                                float d = Mathf.Sqrt(u * u + v * v);
+                                if (d < rr)
+                                {
+                                    c = Color.Lerp(new Color(0.35f, 0.75f, 0.25f), new Color(0.6f, 1f, 0.4f), Mathf.Clamp01(1f - d / rr));
+                                    if (d > rr - 0.1f) c = new Color(0.22f, 0.5f, 0.18f);
+                                    if (Mathf.Sqrt((u + 0.3f) * (u + 0.3f) + (v - 0.3f) * (v - 0.3f) * 3f) < 0.12f) c = new Color(0.9f, 1f, 0.85f);
+                                    c.a = Mathf.Clamp01((rr - d) * 20f) * 0.92f;
+                                }
+                                break;
+                            }
                         case "buck":
                             {
                                 // breites Grinsen mit zwei grossen Hasenzaehnen

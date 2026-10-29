@@ -94,6 +94,12 @@ namespace SeedClicker
         {
             var el = g.ElementColor;
             var spc = I.Species(g.species);
+            if (spc != null && spc.character == "toxic")
+            {
+                // Giftruebe: wird kraenklich gruen, dann violett geadert
+                return tier <= 1 ? Color.Lerp(Color.white, el, 0.06f)
+                     : tier == 2 ? new Color(0.93f, 1.04f, 0.86f) : tier == 3 ? new Color(0.9f, 0.86f, 1.02f) : new Color(0.82f, 0.98f, 0.78f);
+            }
             if (PlantForms.IsSingle(spc) && spc.character == "spark")
             {
                 // Blitzmais: wird mit jeder Mutation heller, die Koerner leuchten wie Gluehbirnen
