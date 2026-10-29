@@ -728,6 +728,10 @@ namespace SeedClicker
             if (shot.fxBall != null)
             {
                 shot.fxTrail = WorldFx.Attach("fireTrail", sr.transform, 0.22f + 0.04f * (tier - 1), 30002);
+                // Rauch des Schweifs ueber Feuerball und Kern legen
+                if (shot.fxTrail != null)
+                    foreach (var pr in shot.fxTrail.GetComponentsInChildren<ParticleSystemRenderer>(true))
+                        if (pr.gameObject.name.Contains("Smoke")) pr.sortingOrder = 30040;
                 core.enabled = false; hi.enabled = false;
                 foreach (var f in flames) f.enabled = false;
                 sr.color = new Color(2.2f, 0.75f, 0.18f, 0.3f);
