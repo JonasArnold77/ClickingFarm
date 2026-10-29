@@ -77,6 +77,9 @@ namespace SeedClicker
         }
 
         /// <summary>Fusspunkt einer Pflanze: Mitte ihrer Flaeche, knapp ueber dem unteren Feldrand.</summary>
+        /// <summary>Wie weit eine Pflanze ins Feld darueber ragen darf (Anteil einer Feldhoehe).</summary>
+        public const float MaxOverhang = 0.17f;
+
         public static Vector2 PlantBase(PlantedState p) => new Vector2((p.x + p.W * 0.5f) * CellSize, p.y * CellSize + CellSize * 0.12f);
 
         /// <summary>Alle Felder, die eine Pflanze belegt.</summary>
@@ -257,6 +260,13 @@ namespace SeedClicker
             {
                 float s = v.size / Mathf.Max(0.01f, PlantForms.RefWidth(sp, sprite));
                 float sy = s * PlantStretch(p);
+                // Grenze: hoechstens 17 % ins Feld darueber, nicht breiter als das eigene Feld
+                float top = (p.y + p.H) * CellSize + CellSize * MaxOverhang;
+                float maxH = top - PlantBase(p).y;
+                float h = sprite.bounds.size.y * sy;
+                if (h > maxH) { float k = maxH / h; s *= k; sy *= k; }
+                float wX = sprite.bounds.size.x * s * PlantForms.Widen(sp);
+                if (wX > CellSize * 0.95f * p.W) { float k = CellSize * 0.95f * p.W / wX; s *= k; sy *= k; }
                 v.sr.transform.localScale = new Vector3(s * PlantForms.Widen(sp), sy, 1);
                 v.sr.transform.localPosition = new Vector3(0, -sprite.bounds.min.y * sy, 0);
             }
@@ -598,6 +608,7 @@ namespace SeedClicker
         void LoadPlants()
         {
             MigratePlantIds();
+            foreach (var q in save.planted) { q.w = 1; q.h = 1; }   // Pflanzen belegen nur noch ein Feld
             if (save.starterChosen && !string.IsNullOrEmpty(save.selectedPlant) && !save.unlocked.Contains(save.selectedPlant)) save.unlocked.Add(save.selectedPlant);
             UnlockForWave(save.wave);
             for (int i = save.planted.Count - 1; i >= 0; i--)
