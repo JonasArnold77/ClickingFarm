@@ -144,11 +144,11 @@ namespace SeedClicker
             if (wb.IsPlantGrowing(c)) { wb.TapPlant(c); consumed = true; return; }
             // Nachts: Tipp auf einen Zombie = Schuss mit der gewaehlten Waffe
             if (NightWave.I != null && NightWave.I.TryShoot(w)) { consumed = true; return; }
-            // reife Pflanze: kann mit dem Finger auf einen Topf oder eine gleiche Pflanze gezogen werden
+            // reife Pflanze: kann mit dem Finger auf eine gleiche Pflanze gezogen werden
             var under = wb.PlantAt(c);
             if (under != null && wb.IsReady(under) && (!wb.Placing || wb.Carrying == under)) { dragCand = under; return; }
-            if (wb.Placing) return;   // Topf waehlen: erst beim Loslassen (so kann man dabei auch die Karte schieben)
-            if (wb.PlantAt(c) != null || wb.PotAt(w) != null) return;   // fertige Pflanze / Topf -> Info beim Loslassen
+            if (wb.Placing) return;   // Ziel waehlen: erst beim Loslassen (so kann man dabei auch die Karte schieben)
+            if (wb.PlantAt(c) != null) return;   // fertige Pflanze -> beim Loslassen
             if (Tool == WorldTool.Field || Tool == WorldTool.Fence || (Tool == WorldTool.Plant && wb.HasField(c)))
             {
                 painting = true; Paint(screen);
@@ -190,14 +190,12 @@ namespace SeedClicker
                 else wb.TryPlaceAt(w);
                 return;
             }
-            var pot = wb.PotAt(w);
-            if (pot != null && Tool != WorldTool.Axe) { wb.TapPot(pot); return; }
+
             if (wb.PlantAt(cell) != null && Tool != WorldTool.Axe) { wb.TapPlant(cell); return; }
             if (Tool == WorldTool.Axe)
             {
                 if (wb.TryChop(w) || wb.TryRemoveFence(w)) return;
-                if (pot != null) wb.TapPot(pot);
-                else if (wb.PlantAt(cell) != null) wb.TapPlant(cell);
+                if (wb.PlantAt(cell) != null) wb.TapPlant(cell);
                 return;
             }
 

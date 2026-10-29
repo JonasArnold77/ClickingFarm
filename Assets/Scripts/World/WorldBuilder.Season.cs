@@ -9,7 +9,7 @@ namespace SeedClicker
     /// Jahreszeiten: Sommer, Herbst, Winter – frei umschaltbar (Knopf oben). Boden und Natur werden im Shader
     /// umgefaerbt (Resources/Shaders/SeasonCommon.hlsl): im Herbst goldenes bis rostrotes Laub (Nadelbaeume bleiben
     /// gruen), im Winter Schnee und Reif. Dazu fallen Blaetter bzw. Schneeflocken, das Licht wird waermer/kuehler.
-    /// Pflanzen, Zombies, Toepfe und Zaeune bleiben unveraendert.
+    /// Pflanzen, Zombies und Zaeune bleiben unveraendert.
     /// </summary>
     public partial class WorldBuilder
     {

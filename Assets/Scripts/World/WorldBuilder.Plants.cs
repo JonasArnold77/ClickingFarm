@@ -511,7 +511,7 @@ namespace SeedClicker
                 Sfx.Play("tick", 1.5f, 0.8f);
                 Sfx.Play("note", 2f, 0.4f);
                 Haptics.Tap(25);
-                Floater?.Invoke(top + new Vector2(0, 0.5f), "Antippen zum Platzieren!", new Color(1f, 0.95f, 0.6f));
+                Floater?.Invoke(top + new Vector2(0, 0.5f), "Bereit zur Verteidigung!", new Color(1f, 0.95f, 0.6f));
                 v.nextHop = now + 1.6f;
             }
             // als Hinweis regelmaessig ein kleiner Huepfer mit Glitzer
@@ -601,8 +601,6 @@ namespace SeedClicker
             for (int i = 0; i < save.unlocked.Count; i++) save.unlocked[i] = Renamed(save.unlocked[i]);
             save.selectedPlant = Renamed(save.selectedPlant);
             foreach (var p in save.planted) p.type = Renamed(p.type);
-            foreach (var p in save.pots) p.type = Renamed(p.type);
-            for (int i = 0; i < save.potStock.Count; i++) save.potStock[i] = Renamed(save.potStock[i]);
         }
 
         void LoadPlants()
@@ -692,6 +690,14 @@ namespace SeedClicker
 
         public Vector2 PlantMuzzle(PlantedState p) => PlantBase(p) + new Vector2(0, CellSize * 0.9f);
 
-        public void KickPlant(PlantedState p) { if (plantViews.TryGetValue(new Cell(p.x, p.y), out var v)) v.sy = Mathf.Min(v.sy, -0.12f); }
+        /// <summary>Spucken: Pflanze streckt sich ruckartig nach oben, Mund auf (Feuerball nach oben).</summary>
+        public void SpitPlant(PlantedState p)
+        {
+            if (!plantViews.TryGetValue(new Cell(p.x, p.y), out var v)) return;
+            v.sy = -0.2f; v.syVel = 9f; v.flash = 0.35f;
+            v.creature?.Shoot();
+        }
+
+        public void KickPlant(PlantedState p) { if (plantViews.TryGetValue(new Cell(p.x, p.y), out var v)) { v.sy = Mathf.Min(v.sy, -0.12f); v.creature?.Shoot(); } }
     }
 }

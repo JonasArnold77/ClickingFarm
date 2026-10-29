@@ -54,7 +54,7 @@ namespace SeedClicker
         {
             foreach (var f in save.fences) PlaceFence(new Cell(f.x, f.y), false, f);
             if (!save.enclosureBuilt) BuildEnclosure();
-            LoadPots();
+
         }
 
         bool PayWood(int n, Vector2 at)
@@ -88,7 +88,6 @@ namespace SeedClicker
                 if (fields.ContainsKey(CellAt(center + o))) return false;   // nicht auf Felder
             if (Inside(center) < 0.3f) return false;
             if (Mathf.Abs(center.x) > MapW / 2f - 0.5f || Mathf.Abs(center.y) > MapH / 2f - 0.5f) return false;
-            foreach (var p in save.pots) if ((p.Pos - center).sqrMagnitude < 0.6f * 0.6f) return false;
             for (int i = 0; i < occupied.Count; i++)
             {
                 if (occupiedR[i] <= 0f || IsDecorOcc(i)) continue;

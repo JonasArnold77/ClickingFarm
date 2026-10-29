@@ -347,7 +347,7 @@ namespace SeedClicker
             UpdateInteract(Time.deltaTime);
             UpdatePlants(Time.deltaTime);
             UpdateFences(Time.deltaTime);
-            UpdatePots(Time.deltaTime);
+            UpdateCarry(Time.deltaTime);
             UpdateSeason(Time.deltaTime);
             ambientT -= Time.deltaTime;
             if (ambientT > 0 || Particles.I == null) return;

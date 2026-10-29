@@ -37,7 +37,7 @@ namespace SeedClicker
             {
                 flashA = 0.75f;
                 comboAlpha = 0f;
-                Banner(p.Genome.name + " ist reif!", "Gleich antippen und in einen Blumentopf setzen");
+                Banner(p.Genome.name + " ist reif!", "Sie verteidigt jetzt den Hof – zieh gleiche Pflanzen zusammen, um sie zu verstärken");
             };
             wb.PlacingChanged += h => hintText.text = h ?? ToolHint(WorldCamera.Tool);
         }

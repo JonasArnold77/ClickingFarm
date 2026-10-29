@@ -15,7 +15,7 @@ namespace SeedClicker
 
     /// <summary>
     /// Tag -> Abend (Warnung) -> Nacht: Zombies schlurfen aus dem Wald heran und wollen zum Haus.
-    /// Topfpflanzen schiessen je nach Eigenschaften (Flaeche, Distanz, Projektil, Wirkung, Zusatzeffekt),
+    /// Reife Pflanzen auf den Feldern schiessen je nach Eigenschaften (Flaeche, Distanz, Projektil, Wirkung, Zusatzeffekt),
     /// der Spieler schiesst mit seiner Waffe (Tipp auf einen Zombie), Zaeune halten Zombies auf.
     /// Jede ueberstandene Welle schaltet neue Pflanzenarten frei (siehe plants.json -> catalog.unlockWave).
     /// Zum Testen startet automatisch eine Welle (siehe plants.json -> waves.autoWave).
@@ -45,6 +45,8 @@ namespace SeedClicker
             public SpriteRenderer sr; public Vector2 pos, vel; public Monster target; public PlantGenome src;
             public float speed, damage, homing, life; public int pierce; public HashSet<Monster> hit = new HashSet<Monster>();
             public bool fireball; public float power = 1f; public SpriteRenderer core;
+            // Bogenwurf (Feuerweizen): nach oben gespuckt, faellt wie eine Granate aufs Ziel
+            public bool lob; public Vector2 from, to; public float t, flight, arc; public SpriteRenderer shadow;
             public bool done;
         }
 
@@ -69,7 +71,7 @@ namespace SeedClicker
         readonly List<Monster> monsters = new List<Monster>();
         readonly List<Shot> shots = new List<Shot>();
         readonly List<(SpriteRenderer sr, float t)> beams = new List<(SpriteRenderer, float)>();
-        readonly Dictionary<PotState, float> cooldowns = new Dictionary<PotState, float>();
+        readonly Dictionary<PlantedState, float> cooldowns = new Dictionary<PlantedState, float>();
         int toSpawn; float spawnT;
         WaveResult result;
         Light2D global; Light2D window;
@@ -128,7 +130,7 @@ namespace SeedClicker
             result.victory = victory;
             foreach (var m in monsters) Poof(m, false);
             monsters.Clear();
-            foreach (var s in shots) if (s.sr != null) Destroy(s.sr.gameObject);
+            foreach (var s in shots) { if (s.sr != null) Destroy(s.sr.gameObject); if (s.shadow != null) Destroy(s.shadow.gameObject); }
             shots.Clear();
             ClearWeaponShots();
             toSpawn = 0;
@@ -496,16 +498,16 @@ namespace SeedClicker
 
         void UpdatePlantsFire(float dt)
         {
-            foreach (var p in wb.Pots)
+            foreach (var p in wb.Planted)
             {
-                if (string.IsNullOrEmpty(p.type)) continue;   // leerer Topf
+                if (!p.Grown) continue;   // nur reife Pflanzen verteidigen
                 var g = p.Genome;
                 float gcd = g.Cooldown * B.LevelCooldown(p.Lv), grange = g.Range + B.LevelRange(p.Lv);
                 float cd = cooldowns.TryGetValue(p, out var v) ? v : (float)rnd.NextDouble() * gcd;
                 cd -= dt;
                 if (cd <= 0f)
                 {
-                    var muzzle = wb.PotMuzzle(p);
+                    var muzzle = wb.PlantMuzzle(p);
                     var target = Nearest(muzzle, grange);
                     if (target != null) { Fire(p, muzzle, target); cd = gcd; }
                     else cd = 0.15f;
@@ -514,10 +516,10 @@ namespace SeedClicker
             }
         }
 
-        void Fire(PotState plant, Vector2 muzzle, Monster target)
+        void Fire(PlantedState plant, Vector2 muzzle, Monster target)
         {
             var g = plant.Genome;
-            wb.KickPot(plant);
+            wb.KickPlant(plant);
             var proj = B.Option(PlantAttr.Projectile, g.projectile.id);
             // Zielauswahl nach Flaechenmuster
             var targets = new List<Monster> { target };
@@ -546,7 +548,7 @@ namespace SeedClicker
                 return;
             }
             int tier = B.Tier(plant.Lv);
-            if (proj != null && proj.id == "fireball") { Sfx.Play("launch", 0.75f + rnd.Next(0, 10) * 0.01f, 0.55f + tier * 0.08f); Particles.I?.Burst(muzzle, "spark", new Color(1f, 0.6f, 0.2f), 6 + tier * 2, 2.5f, 0.3f, 0.12f, 0f, 1f); }
+            if (proj != null && proj.id == "fireball") { wb.SpitPlant(plant); Sfx.Play("pop", 0.7f, 0.8f); Sfx.Play("launch", 0.75f + rnd.Next(0, 10) * 0.01f, 0.55f + tier * 0.08f); Particles.I?.Burst(muzzle, "spark", new Color(1f, 0.6f, 0.2f), 6 + tier * 2, 2.5f, 0.3f, 0.12f, 0f, 1f); }
             foreach (var t in targets) LaunchShot(g, proj, muzzle, t, 0f, dmg, tier);
             for (int i = 0; i < extra; i++)
             {
@@ -580,6 +582,7 @@ namespace SeedClicker
             foreach (var s in shots)
             {
                 if (s.done) continue;
+                if (s.lob) { UpdateLob(s, dt); continue; }
                 s.life -= dt;
                 if (s.life <= 0) { s.done = true; Destroy(s.sr.gameObject); continue; }
                 if (s.target != null && !s.target.dead && s.homing > 0)
@@ -664,12 +667,54 @@ namespace SeedClicker
             core.color = new Color(3f, 2.4f, 1.2f, 1f);
             core.transform.localScale = Vector3.one * 0.45f;
             core.sortingOrder = 30001;
-            var dir = ((target.pos + new Vector2(0, 0.35f)) - from).normalized;
-            dir = Quaternion.Euler(0, 0, angle) * dir;
-            float speed = proj.speed * (1f + 0.05f * (tier - 1));
-            shots.Add(new Shot { sr = sr, core = core, pos = from, vel = dir * speed, target = target, src = g, speed = speed, damage = dmg * (1f + 0.15f * (tier - 1)),
-                homing = proj.homing, pierce = 0, life = 3.5f, fireball = true, power = tier });
+            // Ziel vorhalten: dort, wo der Zombie bei der Landung ungefaehr sein wird
+            float dist0 = (target.pos - from).magnitude;
+            float flight = 0.75f + dist0 * 0.09f;
+            var lead = target.pos + (HouseTarget - target.pos).normalized * target.Speed * flight * 0.8f;
+            if (angle != 0f) lead += (Vector2)(Quaternion.Euler(0, 0, 90f) * (lead - from).normalized) * Mathf.Sign(angle) * (0.5f + Mathf.Abs(angle) / 30f);
+            var shadow = new GameObject("FireballShadow").AddComponent<SpriteRenderer>();
+            shadow.transform.SetParent(transform, false);
+            shadow.sprite = WorldBuilder.Mist;
+            shadow.color = new Color(0, 0, 0, 0f);
+            shadow.sortingOrder = 29990;
+            shots.Add(new Shot { sr = sr, core = core, pos = from, vel = Vector2.up, target = target, src = g, damage = dmg * (1f + 0.15f * (tier - 1)),
+                life = flight + 0.5f, fireball = true, power = tier, lob = true, from = from, to = lead, flight = flight, arc = 1.4f + dist0 * 0.22f, shadow = shadow });
             sr.transform.position = from;
+            sr.transform.localScale = Vector3.one * size * 0.3f;   // waechst aus dem Maul heraus
+        }
+
+        /// <summary>Bogenflug: steil aus dem Maul nach oben, dann im hohen Bogen herab; Schatten zeigt die Landestelle.</summary>
+        void UpdateLob(Shot s, float dt)
+        {
+            s.t += dt;
+            float k = Mathf.Clamp01(s.t / s.flight);
+            // Hoehe: schnell hoch, laenger oben, dann faellt er beschleunigt (wie geworfen)
+            float h = 4f * s.arc * k * (1f - k);
+            var ground = Vector2.Lerp(s.from, s.to, k * k * (3f - 2f * k) * 0.35f + k * 0.65f);
+            var prev = s.pos;
+            s.pos = ground + new Vector2(0, h);
+            s.vel = (s.pos - prev) / Mathf.Max(0.0001f, dt);
+            s.sr.transform.position = s.pos;
+            if (s.shadow != null)
+            {
+                s.shadow.transform.position = Vector2.Lerp(s.from, s.to, k);
+                float ss = 0.2f + k * 0.35f + s.power * 0.04f;
+                s.shadow.transform.localScale = new Vector3(ss, ss * 0.4f, 1);
+                s.shadow.color = new Color(0.1f, 0.02f, 0f, 0.15f + k * 0.35f);
+            }
+            if (s.t < 0.12f) s.sr.transform.localScale = Vector3.one * (0.42f + 0.13f * (s.power - 1)) * Mathf.Lerp(0.3f, 1f, s.t / 0.12f);
+            else FireballTrail(s, dt);
+            if (k < 1f) return;
+            // Einschlag: naechster Zombie bekommt den vollen Treffer, die Explosion den Rest
+            Monster hit = null; float bd = 0.6f * 0.6f;
+            foreach (var m in monsters) { if (m.dead) continue; float d = (m.pos - s.to).sqrMagnitude; if (d < bd) { bd = d; hit = m; } }
+            s.pos = s.to;
+            if (hit != null) Hit(hit, s.damage, s.src, s.to);
+            FireballBlast(s, hit);
+            Particles.I?.Burst(s.to, "square", new Color(0.35f, 0.22f, 0.12f), 10, 3f, 0.6f, 0.1f, 9f, 2f);   // Erdbrocken
+            s.done = true;
+            Destroy(s.sr.gameObject);
+            if (s.shadow != null) Destroy(s.shadow.gameObject);
         }
 
         void FireballTrail(Shot s, float dt)
@@ -703,12 +748,12 @@ namespace SeedClicker
             WorldCamera.I?.Shake(0.04f + s.power * 0.015f);
             foreach (var o in monsters)
             {
-                if (o == hit || o.dead || (o.pos - hit.pos).magnitude > r) continue;
+                if (o == hit || o.dead || (o.pos - at).magnitude > r) continue;
                 Damage(o, s.damage * 0.55f, s.src);
                 ApplyElement(o, s.src, s.damage * 0.55f);
                 o.knock += (o.pos - at).normalized * 0.5f;
             }
-            hit.knock += s.vel.normalized * (0.4f + s.power * 0.1f);
+            if (hit != null) hit.knock += (hit.pos - at).normalized * (0.4f + s.power * 0.1f) + Vector2.up * 0.2f;
         }
 
         void ApplyElement(Monster m, PlantGenome g, float dmg)

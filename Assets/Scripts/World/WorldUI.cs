@@ -191,7 +191,7 @@ namespace SeedClicker
                 case WorldTool.Fence:
                     return "Wische, um Zäune zu ziehen (" + (wbi != null ? wbi.FenceCost : 1) + " Holz pro Stück) – sie halten Zombies auf";
                 default:
-                    return "Reife Pflanzen antippen und in einen Blumentopf setzen";
+                    return "Reife Pflanzen auf gleiche ziehen, um sie zu verstärken";
             }
         }
 

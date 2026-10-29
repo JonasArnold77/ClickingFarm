@@ -249,18 +249,6 @@ namespace SeedClicker
         }
     }
 
-    /// <summary>Eine ausgewachsene Pflanze im Blumentopf, frei auf der Karte aufgestellt (verteidigt den Hof).</summary>
-    [Serializable]
-    public class PotState
-    {
-        public float x, y;
-        public string type;
-        public int level;   // Stufe der Pflanze im Topf (0/1 = Grundstufe)
-        public int Lv => Mathf.Max(1, level);
-        public Vector2 Pos => new Vector2(x, y);
-        public PlantGenome Genome { get { var c = PlantBalance.I.Plant(type); return c != null ? c.Genome : PlantBalance.I.catalog[0].Genome; } }
-    }
-
     /// <summary>Ein Zaunstueck auf einer Rasterzelle (Spielstand).</summary>
     [Serializable] public class FenceState { public int x, y; public float hp; }
 

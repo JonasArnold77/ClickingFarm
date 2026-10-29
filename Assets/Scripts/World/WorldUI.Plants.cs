@@ -33,7 +33,6 @@ namespace SeedClicker
             BuildGoalHud();
             BuildWeaponBar();
             if (wb == null) return;
-            wb.PotTapped += OpenPotInfo;
             BuildJuice();
             wb.EmptyFieldTapped += c => OpenPlantPicker();
             wb.BookTapped += OpenPlantBook;
@@ -363,28 +362,6 @@ namespace SeedClicker
                 wb.Unplant(p); CloseModal();
             });
             dig.GetComponent<RectTransform>().Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(640, 110));
-        }
-
-        void OpenPotInfo(PotState p)
-        {
-            var def = PlantBalance.I.Plant(p.type);
-            if (def == null) return;
-            var g = def.Genome;
-            OpenModal(out var panel, 380, 300);
-            Header(panel, def.name + (p.Lv > 1 ? " · Stufe " + p.Lv : " im Topf"));
-            var card = PlantCard(panel, def, new Vector2(700, 640), false, false, null, 32);
-            card.anchorMin = card.anchorMax = new Vector2(0.5f, 1); card.pivot = new Vector2(0.5f, 1); card.anchoredPosition = new Vector2(0, -130);
-            var B = PlantBalance.I;
-            var stats = Label(panel, $"Schaden {g.Damage * B.LevelDamage(p.Lv):0.0} · alle {g.Cooldown * B.LevelCooldown(p.Lv):0.00} s · Reichweite {g.Range + B.LevelRange(p.Lv):0.0}", 32, InkSoft, TextAnchor.MiddleCenter);
-            stats.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 160), new Vector2(-40, 50));
-            bool armed = false;
-            Button back = null;
-            back = Btn(panel, "Pflanze entfernen", new Color(0.7f, 0.5f, 0.3f), () =>
-            {
-                if (!armed) { armed = true; back.GetComponentInChildren<Text>().text = "Wirklich? Die Pflanze ist dann weg"; return; }
-                wb.ClearPot(p); CloseModal();
-            }, 38);
-            back.GetComponent<RectTransform>().Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(640, 110));
         }
 
         void OpenPlantBook()

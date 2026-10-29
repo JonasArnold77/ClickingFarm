@@ -8,7 +8,6 @@ namespace SeedClicker
     /// auf eine gleiche Pflanze gezogen. Die Stufen addieren sich, die Pflanze wird groesser und staerker.
     /// Ab bestimmten Stufen braucht sie mehr Felder (plants.json -> mergeSizes); beim Ziehen werden die
     /// benoetigten Felder gruen (frei) bzw. rot (belegt / kein Feld) eingefaerbt.
-    /// Auch auf eine Topfpflanze gleicher Art kann man ziehen.
     /// </summary>
     public partial class WorldBuilder
     {
@@ -33,7 +32,6 @@ namespace SeedClicker
         bool AnyMergeTargetFor(PlantedState p)
         {
             foreach (var q in save.planted) if (q != p && q.Grown && q.type == p.type) return true;
-            foreach (var pot in save.pots) if (pot.type == p.type) return true;
             return false;
         }
 
@@ -56,7 +54,7 @@ namespace SeedClicker
             hoverTarget = IsMergeTarget(t) ? t : null;
         }
 
-        /// <summary>Finger loslassen: Topf / gleiche Pflanze unter dem Finger -> ablegen, sonst zurueck.</summary>
+        /// <summary>Finger loslassen: gleiche Pflanze unter dem Finger -> ablegen, sonst zurueck.</summary>
         public void Drop(Vector2 w)
         {
             dragging = false;
@@ -130,18 +128,6 @@ namespace SeedClicker
             f.mergeTarget = target; f.oldAnchor = oldAnchor; f.newLevel = lv; f.oldLevel = oldLv;
             save.Save();
             return true;
-        }
-
-        void MergeIntoPot(PotState pot)
-        {
-            var p = carrying;
-            int lv = pot.Lv + p.Lv;
-            int oldLv = pot.Lv;
-            pot.level = lv;
-            var v = potViews.Find(x => x.st == pot);
-            var f = LaunchCarried(pot.Pos + new Vector2(0, 0.55f), 0.85f);
-            f.target = v; f.newLevel = lv; f.oldLevel = oldLv;
-            save.Save();
         }
 
         /// <summary>Getragene Pflanze vom Feld nehmen und als Flieger zum Ziel schicken.</summary>
