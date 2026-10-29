@@ -540,6 +540,14 @@ namespace SeedClicker
 
             float dmg = g.Damage * B.LevelDamage(plant.Lv);   // zusammengefuehrte Pflanzen treffen haerter
             var col = g.ElementColor;
+            if (proj != null && proj.id == "bolt")
+            {
+                int tierB = B.Tier(plant.Lv);
+                wb.KickPlant(plant);
+                foreach (var t in targets) LightningStrike(g, muzzle, t, dmg, tierB);
+                for (int i = 0; i < extra; i++) { var t = Nearest(muzzle, g.Range, new HashSet<Monster>(targets)); if (t == null) break; targets.Add(t); LightningStrike(g, muzzle, t, dmg * 0.8f, tierB); }
+                return;
+            }
             if (proj != null && proj.id == "beam")
             {
                 foreach (var t in targets) { Beam(muzzle, t.pos + new Vector2(0, 0.35f), col); Hit(t, dmg, g, null); }
@@ -647,7 +655,7 @@ namespace SeedClicker
                 foreach (var o in monsters) if (o != m && !o.dead && (o.pos - m.pos).magnitude < r) { Damage(o, dmg * 0.6f, g); ApplyElement(o, g, dmg * 0.6f); }
             }
             if (g.pattern.id == "chain") Chain(m, g, dmg * 0.7f, 1 + g.pattern.level / 2);
-            if (g.element.id == "lightning") Chain(m, g, dmg * 0.5f, 1 + g.element.level / 2);
+            if (g.element.id == "lightning" && g.projectile.id != "bolt") Chain(m, g, dmg * 0.5f, 1 + g.element.level / 2);
         }
 
         // ------------------------------------------------------------------ Feuerball (Feuerweizen)
@@ -818,6 +826,69 @@ namespace SeedClicker
                 Sfx.Play("break", 1.4f, 0.6f);
             }
             if (m.root != null) Destroy(m.root.gameObject);
+        }
+
+        // ------------------------------------------------------------------ Kettenblitz (Blitzmais)
+
+        /// <summary>Zickzack-Blitz aus dem Maul (Donnerkoenig: vom Himmel) auf den Zombie, springt dann weiter.</summary>
+        void LightningStrike(PlantGenome g, Vector2 muzzle, Monster target, float dmg, int tier)
+        {
+            var hitP = target.pos + new Vector2(0, 0.4f);
+            var from = tier >= 4 ? hitP + new Vector2(UnityEngine.Random.Range(-0.6f, 0.6f), 6f) : muzzle;
+            float w = 0.06f + tier * 0.025f;
+            ZigBolt(from, hitP, w, tier >= 4 ? 9 : 6);
+            Hit(target, dmg, g, hitP);
+            // springt auf weitere Zombies ueber, jeder Sprung etwas schwaecher
+            var ex = new HashSet<Monster> { target };
+            var cur = target;
+            int jumps = 1 + tier + (g.pattern.id == "chain" ? g.pattern.level / 2 : 0);
+            float jd = dmg * 0.75f;
+            for (int j = 0; j < jumps; j++)
+            {
+                var next = Nearest(cur.pos, 2.2f + tier * 0.3f, ex);
+                if (next == null) break;
+                ex.Add(next);
+                ZigBolt(cur.pos + new Vector2(0, 0.4f), next.pos + new Vector2(0, 0.4f), w * 0.8f, 4);
+                Damage(next, jd, g);
+                next.slowT = Mathf.Max(next.slowT, 0.25f); next.slowAmt = Mathf.Max(next.slowAmt, 0.6f);   // kurz gelaehmt
+                cur = next; jd *= 0.8f;
+            }
+            Particles.I?.Burst(hitP, "spark", new Color(1f, 0.95f, 0.55f), 10 + tier * 3, 4f, 0.25f, 0.18f, 0f, 1f);
+            Particles.I?.Ring(hitP, new Color(1f, 1f, 0.8f, 0.9f), 0.6f + tier * 0.2f, 0.2f);
+            if (flashLight != null) { flashLight.transform.position = hitP; flashLight.color = new Color(1f, 0.95f, 0.6f); flashLight.intensity = 1.5f + tier * 0.6f; flashT = 0.09f; }
+            Sfx.Play("zap", UnityEngine.Random.Range(0.9f, 1.15f), 0.55f + tier * 0.08f);
+            if (tier >= 4) { Sfx.Play("boom", 0.7f, 0.6f); WorldPostFX.Punch(0.4f); }
+            WorldCamera.I?.Shake(0.025f + tier * 0.015f);
+        }
+
+        /// <summary>Gezackter Blitz aus mehreren hellen Segmenten mit Leuchthof.</summary>
+        void ZigBolt(Vector2 a, Vector2 b, float width, int segs)
+        {
+            var d = b - a;
+            var n = new Vector2(-d.y, d.x).normalized;
+            var prev = a;
+            for (int i = 1; i <= segs; i++)
+            {
+                float k = i / (float)segs;
+                var p = i == segs ? b : a + d * k + n * UnityEngine.Random.Range(-0.5f, 0.5f) * Mathf.Min(1.4f, d.magnitude * 0.35f);
+                BeamW(prev, p, new Color(1f, 1f, 0.85f), width, 0.12f, 30003);
+                BeamW(prev, p, new Color(1f, 0.9f, 0.35f, 0.4f), width * 2.2f, 0.16f, 30002);
+                prev = p;
+            }
+        }
+
+        void BeamW(Vector2 a, Vector2 b, Color col, float width, float life, int order)
+        {
+            var sr = new GameObject("Bolt").AddComponent<SpriteRenderer>();
+            sr.transform.SetParent(transform, false);
+            sr.sprite = White;
+            var d = b - a;
+            sr.transform.position = (a + b) / 2f;
+            sr.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg);
+            sr.transform.localScale = new Vector3(d.magnitude + width * 0.5f, width, 1);
+            sr.color = col;
+            sr.sortingOrder = order;
+            beams.Add((sr, life));
         }
 
         void Beam(Vector2 a, Vector2 b, Color col)

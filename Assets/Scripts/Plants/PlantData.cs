@@ -16,6 +16,7 @@ namespace SeedClicker
         public string form;              // "single": eine breite Aehre mit Zweigen (Weizen)
         public float widen = 1f;         // Breiten-Faktor des Koerpers bei "single"
         public string[] mutationNames;   // Namen der 4 Formen (Grundform, Mutation 1-3)
+        public string character;         // Charakter bei "single": "fire" (Feuerweizen), "spark" (Blitzmais)
     }
     [Serializable] public class MonsterDefW { public string id, name, art, tint, weakTo; public float hp, speed, damage, scale, weight; public int firstWave; }
     [Serializable] public class WaveDef
@@ -92,7 +93,14 @@ namespace SeedClicker
         public static Color MutationTint(PlantGenome g, int tier)
         {
             var el = g.ElementColor;
-            if (PlantForms.IsSingle(I.Species(g.species)))
+            var spc = I.Species(g.species);
+            if (PlantForms.IsSingle(spc) && spc.character == "spark")
+            {
+                // Blitzmais: wird mit jeder Mutation heller, die Koerner leuchten wie Gluehbirnen
+                return tier <= 1 ? Color.Lerp(Color.white, el, 0.06f)
+                     : tier == 2 ? new Color(1f, 1f, 0.86f) : tier == 3 ? new Color(1.04f, 1.02f, 0.8f) : new Color(1.08f, 1.05f, 0.74f);
+            }
+            if (PlantForms.IsSingle(spc))
             {
                 // Feuerweizen glueht mit jeder Mutation mehr von innen statt dunkler zu werden
                 return tier <= 1 ? Color.Lerp(Color.white, el, 0.1f)

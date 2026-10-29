@@ -22,11 +22,12 @@ namespace SeedClicker
             public Transform root, mouth, browL, browR;
             public SpriteRenderer mouthSr, browLSr, browRSr;
             public List<Eye> eyes = new List<Eye>();
-            public Vector2 local; public float size;
+            public Vector2 local; public float size; public string mouthKey = "o";
         }
 
         SpriteRenderer body;
         PlantGenome g;
+        string character = "";   // "spark": hibbeliger Blitzmais
         bool single;   // Weizen: eine breite Aehre mit Zweigen
         string style;
         readonly List<Head> heads = new List<Head>();
@@ -53,6 +54,7 @@ namespace SeedClicker
             c.style = g.projectile.id;
             c.Tier = Mathf.Clamp(tier, 1, 4);
             c.single = PlantForms.IsSingle(sp);
+            c.character = string.IsNullOrEmpty(sp.character) ? "fire" : sp.character;
             foreach (var h in sp.heads) c.BuildHead(h);
             c.BuildMutation();
             c.blinkT = Random.Range(1f, 4f);
@@ -75,12 +77,15 @@ namespace SeedClicker
             else
             {
                 float eyeSize = style == "petal" ? 0.42f : 0.36f;
-                head.eyes.Add(MakeEye(head.root, new Vector2(-0.22f, 0.08f), eyeSize, col));
-                head.eyes.Add(MakeEye(head.root, new Vector2(0.22f, 0.08f), eyeSize, col));
+                bool spark = single && character == "spark";   // Blitzmais: ein Kulleraugen grosser als das andere
+                head.eyes.Add(MakeEye(head.root, new Vector2(-0.23f, 0.08f), spark ? eyeSize * 1.3f : eyeSize, col));
+                head.eyes.Add(MakeEye(head.root, new Vector2(0.23f, spark ? 0.04f : 0.08f), spark ? eyeSize * 0.85f : eyeSize, col));
                 string mouth = style == "thorn" ? "grin" : style == "spore" ? "puff" : style == "petal" ? "smile" : "o";
                 if (Tier >= 3) mouth = "fangs";                       // ab Mutation 3: Reisszaehne
                 else if (Tier == 2 && mouth == "smile") mouth = "o";
-                head.mouthSr = Part(head.root, "Mouth", Get(mouth), new Vector2(0, -0.24f), MouthSize(mouth));
+                if (single && character == "spark") mouth = Tier >= 3 ? "fangs" : "buck";   // Hasenzaehne-Grinsen
+                head.mouthKey = mouth;
+                head.mouthSr = Part(head.root, "Mouth", Get(mouth), new Vector2(0, -0.26f), MouthSize(mouth));
                 head.mouth = head.mouthSr.transform;
                 // Brauen / Wimpern
                 var brow = style == "petal" && Tier == 1 ? Get("lash") : Get("brow");
@@ -91,6 +96,7 @@ namespace SeedClicker
                 head.browL = head.browLSr.transform; head.browR = head.browRSr.transform;
                 float tilt = style == "thorn" ? 24f : style == "seed" ? 12f : style == "spore" ? -8f : 0f;
                 if (Tier >= 2) tilt = Mathf.Max(tilt, 16f + Tier * 6f);   // je Mutation boeser
+                if (single && character == "spark" && Tier == 1) tilt = -14f;   // hochgezogen, aufgedreht
                 head.browL.localRotation = Quaternion.Euler(0, 0, -tilt);
                 head.browR.localRotation = Quaternion.Euler(0, 0, tilt);
                 if (style == "spore" && Tier == 1) { hidden.Add(head.browLSr); hidden.Add(head.browRSr); }
@@ -214,7 +220,7 @@ namespace SeedClicker
                 if (h.mouth != null)
                 {
                     float m = shootT > 0f ? 1.6f : pokeT > 0f ? 1.3f : 1f;
-                    float baseS = MouthSize(h.mouthSr.sprite == Get("fangs") ? "fangs" : h.mouthSr.sprite == Get("grin") ? "grin" : h.mouthSr.sprite == Get("smile") ? "smile" : "o");
+                    float baseS = MouthSize(h.mouthKey);
                     h.mouth.localScale = new Vector3(baseS * (shootT > 0f ? 1.2f : 1f), baseS * m, 1);
                 }
             }
@@ -329,6 +335,7 @@ namespace SeedClicker
 
         void UpdateElement(float dt, float bw, int order)
         {
+            if (single && character == "spark") { UpdateCorn(dt, bw, order); return; }
             if (single) { UpdateWheat(dt, bw, order); return; }
             if (Tier < 2 || heads.Count == 0) return;
             if (elemParts.Count == 0 && elemLight == null) BuildElement();
@@ -566,11 +573,200 @@ namespace SeedClicker
                 new Vector3(Random.Range(-0.2f, 0.2f), Random.Range(0.6f, 1.3f), 0), 0.7f, 0.06f + Tier * 0.015f, 0f, -0.3f);
         }
 
-        static float MouthSize(string m) => m == "grin" ? 0.42f : m == "fangs" ? 0.46f : m == "smile" ? 0.32f : 0.2f;
+        // ------------------------------------------------------------------ Blitzmais
+        // Charakter: hibbelig, unter Strom, Hasenzaehne, ungleiche Kulleraugen, zappelt staendig.
+        // Grundform "Funkenkolben": breiter Kolben, zwei Blattarme, ab und zu springt ein Funke.
+        // Mutation 1 "Spannungskolben": Koerner leuchten wie Gluehbirnen, Lichtboegen zwischen Armen und Kopf.
+        // Mutation 2 "Sturmkolben": Gewitterwolke ueber dem Kopf schlaegt Mini-Blitze, vier Arme.
+        // Mutation 3 "Donnerkoenig": Blitzkrone, kreisender Kugelblitz, schwarze Sturmwolke; seine Blitze kommen vom Himmel.
+
+        readonly List<SpriteRenderer> arcs = new List<SpriteRenderer>();
+        SpriteRenderer cloud, ballLight, cloudBolt;
+        float arcT, cloudBoltT;
+
+        static readonly Color BoltHdr = new Color(2.2f, 2.1f, 0.9f, 1f);
+
+        void BuildCorn()
+        {
+            var sp = PlantBalance.I.Species(g.species);
+            var full = WorldArtSet.I != null ? WorldArtSet.I.Get(sp.art + sp.stages[sp.stages.Length - 1]) : null;
+            baseTint = PlantBalance.MutationTint(g, Tier);
+            wheatRoot = new GameObject("Corn").transform;
+            wheatRoot.SetParent(transform, false);
+            int nb = Tier >= 3 ? 4 : 2;
+            for (int i = 0; i < nb; i++)
+            {
+                float side = i % 2 == 0 ? -1f : 1f;
+                bool upper = i >= 2;
+                var br = new Branch
+                {
+                    side = side, ang = upper ? 58f : 34f, h = upper ? 0.42f : 0.2f, scale = upper ? 0.6f : 0.8f,
+                    sr = Part(wheatRoot, "Arm", PlantForms.Third(full, side < 0 ? 0 : 2), Vector2.zero, 1f)
+                };
+                br.sr.color = baseTint;
+                branches.Add(br);
+            }
+            // Lichtboegen: Grundform 1 (zuckt selten), ab Mutation 1 einer je Arm
+            int na = Tier >= 2 ? nb : 1;
+            for (int i = 0; i < na; i++) { var a = Part(wheatRoot, "Arc", Get("bolt"), Vector2.zero, 1f); a.color = BoltHdr; arcs.Add(a); }
+            if (Tier >= 3)
+            {
+                cloud = Part(wheatRoot, "Cloud", Get("cloud"), Vector2.zero, 1f);
+                cloud.color = Tier >= 4 ? new Color(0.45f, 0.45f, 0.55f, 0.95f) : new Color(0.85f, 0.85f, 0.92f, 0.95f);
+                cloudBolt = Part(wheatRoot, "CloudBolt", Get("bolt"), Vector2.zero, 1f);
+                cloudBolt.color = BoltHdr;
+            }
+            if (Tier >= 4)
+            {
+                ballLight = Part(wheatRoot, "BallLightning", WorldBuilder.Mist, Vector2.zero, 1f);
+                ballLight.color = new Color(1.6f, 1.8f, 2.6f, 1f);
+                if (heads.Count > 0)
+                    for (int i = 0; i < 3; i++)
+                    {
+                        var c = Part(heads[0].root, "Crown", Get("bolt"), new Vector2((i - 1) * 0.28f, 0.66f + (i == 1 ? 0.1f : 0f)), i == 1 ? 0.46f : 0.34f);
+                        c.color = BoltHdr;
+                        c.transform.localRotation = Quaternion.Euler(0, 0, (i - 1) * -18f);
+                        crown.Add(c);
+                    }
+            }
+            var lg = new GameObject("ElementLight");
+            lg.transform.SetParent(transform, false);
+            elemLight = lg.AddComponent<Light2D>();
+            elemLight.lightType = Light2D.LightType.Point;
+            elemLight.color = new Color(1f, 0.95f, 0.55f);
+            elemLight.pointLightOuterRadius = 0.8f + Tier * 0.4f;
+            elemLight.pointLightInnerRadius = 0.05f;
+        }
+
+        /// <summary>Zickzack-Sprite zwischen zwei Punkten (lokal) aufspannen.</summary>
+        static void Span(SpriteRenderer sr, Vector2 a, Vector2 b, float width)
+        {
+            var d = b - a;
+            sr.transform.localPosition = (a + b) * 0.5f;
+            sr.transform.localRotation = Quaternion.Euler(0, 0, Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg - 90f);
+            sr.transform.localScale = new Vector3(width, Mathf.Max(0.01f, d.magnitude), 1);
+        }
+
+        void UpdateCorn(float dt, float bw, int order)
+        {
+            if (wheatRoot == null || body.sprite == null) return;
+            float t = Time.time;
+            var sp = PlantBalance.I.Species(g.species);
+            var ps = body.transform.localScale;
+            var b = body.sprite.bounds;
+            float bodyH = b.size.y * Mathf.Abs(ps.y);
+            float s = Mathf.Abs(ps.x) / PlantForms.Widen(sp);
+            Vector2 root = new Vector2(b.center.x * ps.x, b.min.y * Mathf.Abs(ps.y));
+            float energy = 0.6f + Tier * 0.4f;
+
+            // zappelt staendig: Kopf zittert, Pupillen hibbeln
+            foreach (var h in heads)
+            {
+                h.root.localPosition += (Vector3)(Random.insideUnitCircle * bw * 0.012f * energy);
+                foreach (var e in h.eyes) e.iris.localPosition += (Vector3)(Random.insideUnitCircle * 0.03f);
+            }
+
+            // Arme: wackeln nervoes
+            var tips = new List<Vector2>();
+            foreach (var br in branches)
+            {
+                if (br.sr == null || br.sr.sprite == null) continue;
+                var p = root + new Vector2(br.side * bw * 0.12f, bodyH * br.h);
+                float rot = -br.side * (br.ang + Mathf.Sin(t * 7f * energy + br.h * 9f) * (4f + Tier * 2f));
+                br.sr.transform.localPosition = p;
+                br.sr.transform.localRotation = Quaternion.Euler(0, 0, rot);
+                br.sr.transform.localScale = new Vector3(s * br.scale, Mathf.Abs(ps.y) * br.scale, 1);
+                br.sr.sortingOrder = order - 1;
+                float len = br.sr.sprite.bounds.size.y * Mathf.Abs(ps.y) * br.scale;
+                tips.Add(p + (Vector2)(Quaternion.Euler(0, 0, rot) * Vector2.up) * len * 0.8f);
+            }
+
+            // Kopfmitte (lokal)
+            Vector2 headP = heads.Count > 0 ? (Vector2)heads[0].root.localPosition : root + new Vector2(0, bodyH * 0.75f);
+            float headR = heads.Count > 0 ? heads[0].size * bw * 0.45f : bw * 0.3f;
+
+            // Lichtboegen zwischen Armspitzen und Kopf
+            arcT -= dt;
+            bool rearc = arcT <= 0f;
+            if (rearc) arcT = Random.Range(0.04f, 0.12f) / Tier;
+            for (int i = 0; i < arcs.Count; i++)
+            {
+                var a = arcs[i];
+                if (rearc)
+                {
+                    bool on = Tier >= 2 || Random.value < 0.25f;
+                    if (on) hidden.Remove(a); else hidden.Add(a);
+                    a.enabled = on;
+                    if (on && tips.Count > 0)
+                    {
+                        var tip = tips[i % tips.Count];
+                        var tgt = headP + Random.insideUnitCircle * headR;
+                        Span(a, tip, tgt, bw * (0.18f + Tier * 0.04f));
+                        a.flipX = Random.value < 0.5f;
+                    }
+                }
+                a.sortingOrder = order + 6;
+            }
+
+            // Gluehbirnen-Koerner
+            if (Tier >= 2)
+            {
+                float pulse = 0.5f + 0.5f * Mathf.Sin(t * 9f) * Mathf.Sin(t * 3.7f);
+                body.color = Color.Lerp(baseTint, new Color(1.55f, 1.5f, 0.75f), (0.2f + pulse * 0.5f) * (Tier - 1) * 0.5f);
+            }
+
+            // Gewitterwolke mit Mini-Blitzen
+            if (cloud != null)
+            {
+                var cp = headP + new Vector2(Mathf.Sin(t * 0.8f) * bw * 0.1f, headR + bw * (0.55f + (Tier - 3) * 0.1f));
+                cloud.transform.localPosition = cp;
+                float cs = bw * (Tier >= 4 ? 1.9f : 1.5f);
+                cloud.transform.localScale = new Vector3(cs, cs * 0.6f, 1);
+                cloud.sortingOrder = order + 7;
+                cloudBoltT -= dt;
+                if (cloudBoltT <= 0f) { cloudBoltT = Random.Range(0.15f, 0.9f) / (Tier - 2); hidden.Remove(cloudBolt); cloudBolt.enabled = true; Span(cloudBolt, cp + new Vector2(Random.Range(-0.3f, 0.3f) * cs, -cs * 0.15f), headP + Random.insideUnitCircle * headR, bw * 0.3f); }
+                else if (cloudBoltT < 0.6f) { hidden.Add(cloudBolt); cloudBolt.enabled = false; }
+                cloudBolt.sortingOrder = order + 6;
+            }
+
+            // Kugelblitz kreist
+            if (ballLight != null)
+            {
+                float a = t * 2.6f;
+                var c = root + new Vector2(0, bodyH * 0.5f);
+                float sn = Mathf.Sin(a);
+                ballLight.transform.localPosition = c + new Vector2(Mathf.Cos(a) * (bw * 0.9f + 0.1f), sn * bodyH * 0.25f);
+                float bs = bw * (0.28f + 0.05f * Mathf.Sin(t * 20f));
+                ballLight.transform.localScale = Vector3.one * bs;
+                ballLight.sortingOrder = sn > 0f ? order - 2 : order + 6;
+            }
+            foreach (var cr in crown)
+            {
+                cr.sortingOrder = order - 1;
+                var cc = cr.color; cc.a = Random.value < 0.15f ? 0.4f : 1f; cr.color = cc;
+            }
+
+            if (elemLight != null)
+            {
+                elemLight.transform.localPosition = headP;
+                float nightK = 0.5f + (NightWave.I != null ? NightWave.I.NightAmount : 0f);
+                elemLight.intensity = (rearc && Random.value < 0.5f ? 1.4f : 0.35f) * nightK * (0.5f + Tier * 0.25f);
+            }
+
+            // Funken
+            elemT -= dt;
+            if (elemT > 0f || Particles.I == null) return;
+            elemT = Random.Range(0.08f, 0.25f) / Tier;
+            var at = (Vector2)transform.TransformPoint(tips.Count > 0 ? tips[Random.Range(0, tips.Count)] : headP);
+            Particles.I.Spawn(at, "spark", new Color(1f, 0.95f, 0.5f), Random.insideUnitCircle * 1.6f, 0.15f, 0.05f + Tier * 0.012f, 0f, 0f);
+        }
+
+        static float MouthSize(string m) => m == "buck" ? 0.46f : m == "grin" ? 0.42f : m == "fangs" ? 0.46f : m == "smile" ? 0.32f : 0.2f;
 
         /// <summary>Mutationsteile am Fuss: Dornenranken (ab 2) und lodernde Aura (ab 4).</summary>
         void BuildMutation()
         {
+            if (single && character == "spark") { BuildCorn(); return; }
             if (single) { BuildWheat(); return; }
             if (Tier < 2) return;
             baseRoot = new GameObject("Mutation").transform;
@@ -588,8 +784,8 @@ namespace SeedClicker
         static Sprite Get(string key)
         {
             if (sprites.TryGetValue(key, out var s) && s != null) return s;
-            int n = key == "brow" || key == "lash" ? 64 : key == "bramble" ? 192 : key == "horn" || key == "shard" ? 48 : 96;
-            int h = key == "brow" || key == "lash" ? 24 : key == "grin" || key == "smile" || key == "fangs" ? 56 : key == "bramble" ? 96 : 96;
+            int n = key == "brow" || key == "lash" ? 64 : key == "bramble" ? 192 : key == "horn" || key == "shard" ? 48 : key == "cloud" ? 160 : 96;
+            int h = key == "brow" || key == "lash" ? 24 : key == "grin" || key == "smile" || key == "fangs" || key == "buck" ? 56 : key == "bramble" || key == "cloud" ? 96 : 96;
             var tex = new Texture2D(n, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
             var px = new Color[n * h];
             var ink = new Color(0.16f, 0.1f, 0.08f, 1f);
@@ -600,6 +796,34 @@ namespace SeedClicker
                     Color c = Color.clear;
                     switch (key)
                     {
+                        case "buck":
+                            {
+                                // breites Grinsen mit zwei grossen Hasenzaehnen
+                                float top = 0.55f, bottom = 0.55f - 1.35f * (1f - u * u);
+                                if (v < top && v > bottom)
+                                {
+                                    c = new Color(0.25f, 0.05f, 0.06f);
+                                    if (v < bottom + 0.35f && u * u < 0.35f) c = new Color(0.85f, 0.35f, 0.38f);   // Zunge
+                                    if (v > top - 0.75f && Mathf.Abs(u) < 0.3f && Mathf.Abs(u) > 0.025f) c = new Color(1f, 0.98f, 0.9f);   // Zaehne
+                                    if (top - v < 0.09f || v - bottom < 0.09f || (Mathf.Abs(u) < 0.025f && v > top - 0.75f)) c = ink;
+                                    c.a = 1f;
+                                }
+                                break;
+                            }
+                        case "cloud":
+                            {
+                                // Gewitterwolke: Puffs, oben hell, unten dunkel
+                                float[] cx = { -0.55f, -0.15f, 0.25f, 0.6f, 0.05f }, cy = { -0.15f, 0.15f, 0.2f, -0.1f, -0.3f }, cr = { 0.38f, 0.5f, 0.45f, 0.35f, 0.42f };
+                                float a = 0f;
+                                for (int k = 0; k < 5; k++)
+                                {
+                                    float d = Mathf.Sqrt((u - cx[k]) * (u - cx[k]) + (v - cy[k]) * (v - cy[k]) * 1.6f);
+                                    a = Mathf.Max(a, Mathf.Clamp01((cr[k] - d) * 14f));
+                                }
+                                if (v < -0.45f) a *= Mathf.Clamp01((v + 0.62f) * 8f);
+                                if (a > 0f) { c = Color.Lerp(new Color(0.42f, 0.42f, 0.5f), new Color(0.95f, 0.95f, 1f), Mathf.Clamp01(v * 0.8f + 0.55f)); c.a = a; }
+                                break;
+                            }
                         case "flame":
                             {
                                 // Flammenzunge: unten breit, oben spitz, wellig, heller Kern

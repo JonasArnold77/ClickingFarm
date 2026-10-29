@@ -591,7 +591,8 @@ namespace SeedClicker
         /// <summary>Umbenannte Pflanzenarten (Weizen wurde Feuer, Glutmais wurde Frostmais).</summary>
         static readonly Dictionary<string, string> RenamedPlants = new Dictionary<string, string>
         {
-            { "glutmais", "frostmais" }, { "frostweizen", "glutweizen" }, { "moosweizen", "funkenweizen" },
+            { "glutmais", "funkenmais" }, { "frostmais", "funkenmais" }, { "sonnenmais", "donnermais" },
+            { "frostweizen", "glutweizen" }, { "moosweizen", "funkenweizen" },
             { "dornenweizen", "aschenweizen" }, { "kristallweizen", "flammenweizen" },
         };
         static string Renamed(string id) => id != null && RenamedPlants.TryGetValue(id, out var n) ? n : id;
