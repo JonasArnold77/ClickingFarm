@@ -293,9 +293,9 @@ namespace SeedClicker
                     Sfx.Play("dry", 0.7f, 0.4f);
                     return true;
                 }
-                if (carrying == p) CancelPlacing(); else StartPlacing(p);
-                return true;
+                if (carrying == p) { CancelPlacing(); return true; }
             }
+            bool leveling = p.Grown;   // reife Pflanze: Klicks bringen sie eine Stufe hoeher
 
             // Combo: schnelles Tippen macht es lauter, heller, spritziger
             float now = Time.unscaledTime;
@@ -304,9 +304,9 @@ namespace SeedClicker
             float heat = Mathf.Clamp01(combo / 30f);
             v.heat = Mathf.Max(v.heat, heat);
 
-            p.growth++;
-            int taps = PlantBalance.I.growTaps;
-            float progress = p.growth / (float)taps;
+            int taps = leveling ? Mathf.Max(1, PlantBalance.I.levelTaps) : PlantBalance.I.growTaps;
+            if (leveling) p.xp++; else p.growth++;
+            float progress = (leveling ? p.xp : p.growth) / (float)taps;
             var g = p.Genome;
             var basePos = (Vector2)v.root.position;
             var top = basePos + new Vector2(0, (v.sr.bounds.max.y - basePos.y) * 0.75f);
@@ -350,6 +350,14 @@ namespace SeedClicker
             WorldCamera.I?.Kick(Vector2.down * (0.7f + heat * 0.8f));
             WorldCamera.I?.Shake(0.008f + heat * 0.012f);
 
+            if (leveling)
+            {
+                if (p.xp >= taps) LevelUp(p, v, basePos, top);
+                else UpdatePlantSprite(p, v);
+                save.Save();
+                return true;
+            }
+
             // Meilensteine: kurzer Stillstand der ganzen Welt, grosse Welle
             foreach (var m in PlantBalance.I.growMilestones)
                 if (p.growth == m)
@@ -370,6 +378,41 @@ namespace SeedClicker
             if (p.Grown) Ripe(p, v, basePos, top);
             save.Save();
             return true;
+        }
+
+        /// <summary>40 Klicks auf eine reife Pflanze: eine Stufe hoeher (groesser, staerker), an den Schwellen Mutation.</summary>
+        void LevelUp(PlantedState p, PlantView v, Vector2 basePos, Vector2 top)
+        {
+            var g = p.Genome;
+            int oldTier = PlantBalance.I.Tier(p.Lv);
+            p.level = p.Lv + 1;
+            p.xp = 0;
+            int tier = PlantBalance.I.Tier(p.Lv);
+            UpdatePlantSprite(p, v);   // baut bei neuer Mutation auch das Lebewesen neu
+            v.pop = 0.2f; v.sy = 0.4f; v.flash = 1f;
+            foreach (var fc in PlantCells(p)) PunchField(fc, 1.3f);
+            if (tier > oldTier)
+            {
+                Mutated(basePos, g, tier, 1f);
+                v.creature?.Wake();
+            }
+            else
+            {
+                HitStop(0.06f);
+                Shockwave(basePos, v.size * 3.2f, 0.45f, Color.white);
+                Shockwave(basePos, v.size * 2f, 0.32f, g.ElementColor);
+                Burst(top, v.size * 2.6f, 0.22f, Color.white);
+                WorldFx.Play("magicPoof", top, 0.17f);
+                Particles.I?.Burst(top, "star", g.ElementColor, 18, 3.2f, 0.8f, 0.3f, 1f, 1.5f);
+                Sfx.Play("levelup", 1.1f + Mathf.Min(p.Lv, 12) * 0.02f, 0.85f);
+                Sfx.Play("thump", 0.75f, 1f);
+                Haptics.Tap(60);
+                WorldCamera.I?.Shake(0.08f);
+                WorldCamera.I?.Punch(0.045f);
+                WorldPostFX.Punch(0.8f);
+                Floater?.Invoke(top + new Vector2(0, 0.7f), g.name + " Stufe " + p.Lv + "!", new Color(1f, 0.9f, 0.4f));
+            }
+            combo = 0;
         }
 
         /// <summary>Die Pflanze ist reif: der groesste Moment des Spiels. Stillstand, Zeitlupe, Lichtsaeule,
@@ -512,7 +555,7 @@ namespace SeedClicker
                 Sfx.Play("tick", 1.5f, 0.8f);
                 Sfx.Play("note", 2f, 0.4f);
                 Haptics.Tap(25);
-                Floater?.Invoke(top + new Vector2(0, 0.5f), "Bereit zur Verteidigung!", new Color(1f, 0.95f, 0.6f));
+                Floater?.Invoke(top + new Vector2(0, 0.5f), "Bereit! Weiterklicken macht sie stärker", new Color(1f, 0.95f, 0.6f));
                 v.nextHop = now + 1.6f;
             }
             // als Hinweis regelmaessig ein kleiner Huepfer mit Glitzer
@@ -609,6 +652,7 @@ namespace SeedClicker
         void LoadPlants()
         {
             MigratePlantIds();
+            if (!save.plantsCleared) { save.planted.Clear(); save.plantsCleared = true; save.Save(); }
             foreach (var q in save.planted) { q.w = 1; q.h = 1; }   // Pflanzen belegen nur noch ein Feld
             if (save.starterChosen && !string.IsNullOrEmpty(save.selectedPlant) && !save.unlocked.Contains(save.selectedPlant)) save.unlocked.Add(save.selectedPlant);
             UnlockForWave(save.wave);
@@ -670,16 +714,17 @@ namespace SeedClicker
                 v.light.intensity = p.Grown ? nightAmt * (0.9f + 0.2f * Mathf.Sin(t * 3f + p.y)) : v.heat * 0.8f;
 
                 // Fortschrittsbalken ueber der Pflanze (waehrend des Wachsens)
-                bool showBar = !p.Grown && (v.barShow > 0f || p.growth > 0);
+                bool showBar = !p.Grown ? (v.barShow > 0f || p.growth > 0) : (v.barShow > 0f || p.xp > 0) && Time.unscaledTime >= v.readyAt;
                 v.barBack.enabled = v.barFill.enabled = showBar;
                 if (showBar)
                 {
-                    float f = p.growth / (float)PlantBalance.I.growTaps;
+                    float f = p.Grown ? p.xp / (float)Mathf.Max(1, PlantBalance.I.levelTaps) : p.growth / (float)PlantBalance.I.growTaps;
                     var top = new Vector2(v.root.position.x, v.sr.bounds.max.y + 0.1f);
                     float w = CellSize * 0.85f, h = 0.06f * (1 + v.barPunch * 0.8f);
                     v.barBack.transform.position = top; v.barBack.transform.localScale = new Vector3(w + 0.04f, h + 0.04f, 1);
                     v.barFill.transform.position = top + new Vector2(-w * 0.5f * (1 - f), 0); v.barFill.transform.localScale = new Vector3(w * f, h, 1);
-                    v.barFill.color = Color.Lerp(new Color(0.55f, 0.85f, 0.35f), new Color(1f, 0.85f, 0.35f), f) * (1 + v.barPunch * 0.5f);
+                    v.barFill.color = (p.Grown ? Color.Lerp(new Color(0.75f, 0.45f, 1f), new Color(1f, 0.55f, 0.85f), f)   // Stufen-Balken violett
+                                               : Color.Lerp(new Color(0.55f, 0.85f, 0.35f), new Color(1f, 0.85f, 0.35f), f)) * (1 + v.barPunch * 0.5f);
                 }
             }
 

@@ -37,7 +37,7 @@ namespace SeedClicker
             {
                 flashA = 0.75f;
                 comboAlpha = 0f;
-                Banner(p.Genome.name + " ist reif!", "Sie verteidigt jetzt den Hof – zieh gleiche Pflanzen zusammen, um sie zu verstärken");
+                Banner(p.Genome.name + " ist reif!", "Sie verteidigt jetzt den Hof – alle " + PlantBalance.I.levelTaps + " Klicks steigt sie eine Stufe auf");
             };
             wb.PlacingChanged += h => hintText.text = h ?? ToolHint(WorldCamera.Tool);
         }

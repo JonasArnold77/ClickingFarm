@@ -68,6 +68,7 @@ namespace SeedClicker
     {
         public float baseDamage, baseCooldown, damagePerLevel, rangeBase, rangePerLevel, comboWindow;
         public int growTaps, maxLevel;
+        public int levelTaps = 40;   // Klicks auf eine reife Pflanze bis zur naechsten Stufe
         public int[] growMilestones;
         public OptionDef[] patterns, projectiles, elements, effects;
         public SpeciesDef[] species;
@@ -273,7 +274,8 @@ namespace SeedClicker
         public int x, y;          // Feldzelle
         public string type;       // Katalog-Id
         public int growth;        // Tipps bisher
-        public int level, w, h;   // Stufe (Zusammenfuehren) und Flaechenbedarf in Feldern (0 = 1)
+        public int level, w, h;   // Stufe (Klicken / Zusammenfuehren) und Flaechenbedarf in Feldern (0 = 1)
+        public int xp;            // Klicks seit der letzten Stufe (reife Pflanze)
         public int Lv => Mathf.Max(1, level);
         public int W => Mathf.Max(1, w);
         public int H => Mathf.Max(1, h);

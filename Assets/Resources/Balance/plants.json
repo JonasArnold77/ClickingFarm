@@ -3,6 +3,7 @@
   "baseCooldown": 1.1,
   "damagePerLevel": 0.12,
   "growTaps": 100,
+  "levelTaps": 40,
   "growMilestones": [25, 50, 75],
   "comboWindow": 0.4,
   "maxLevel": 5,

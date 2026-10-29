@@ -129,10 +129,11 @@ namespace SeedClicker
         bool consumed;   // Druck wurde schon verarbeitet (z. B. Wachstums-Tipp)
         PlantedState dragCand;   // reife Pflanze unter dem Finger: kann gezogen werden
         bool draggingPlant;
+        bool tappedReady;   // dieser Druck hat schon einen Level-Klick ausgeloest
 
         void PointerDown(Vector2 screen, int id)
         {
-            down = true; panning = false; painting = false; hasLastCell = false; consumed = false; dragCand = null; draggingPlant = false;
+            down = true; panning = false; painting = false; hasLastCell = false; consumed = false; dragCand = null; draggingPlant = false; tappedReady = false;
             downScreen = lastScreen = screen;
             overUI = OverUI(id);
             if (overUI) return;
@@ -146,7 +147,12 @@ namespace SeedClicker
             if (NightWave.I != null && NightWave.I.TryShoot(w)) { consumed = true; return; }
             // reife Pflanze: kann mit dem Finger auf eine gleiche Pflanze gezogen werden
             var under = wb.PlantAt(c);
-            if (under != null && wb.IsReady(under) && (!wb.Placing || wb.Carrying == under)) { dragCand = under; return; }
+            if (under != null && wb.IsReady(under) && (!wb.Placing || wb.Carrying == under))
+            {
+                dragCand = under;
+                if (!wb.Placing) { wb.TapPlant(c); tappedReady = true; }   // Klick levelt sofort
+                return;
+            }
             if (wb.Placing) return;   // Ziel waehlen: erst beim Loslassen (so kann man dabei auch die Karte schieben)
             if (wb.PlantAt(c) != null) return;   // fertige Pflanze -> beim Loslassen
             if (Tool == WorldTool.Field || Tool == WorldTool.Fence || (Tool == WorldTool.Plant && wb.HasField(c)))
@@ -178,6 +184,7 @@ namespace SeedClicker
             down = false;
             if (draggingPlant) { draggingPlant = false; dragCand = null; WorldBuilder.I?.Drop(World(screen)); return; }
             dragCand = null;
+            if (tappedReady) { tappedReady = false; return; }
             if (overUI || panning || painting || consumed) { painting = false; return; }
             var w = World(screen);
             var wb = WorldBuilder.I;

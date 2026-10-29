@@ -27,6 +27,7 @@ namespace SeedClicker
         public string weapon = "pistole";
         public bool enclosureBuilt;   // Zaun ums Startbeet wurde gesetzt
         public int season;            // 0 Sommer, 1 Herbst, 2 Winter
+        public bool plantsCleared;    // einmaliges Loeschen aller Pflanzen (Umstellung auf Leveln durch Klicken)
 
         const string Key = "seedclicker_world_v2";   // v2: kleineres Feldraster, Pflanzen-Katalog
         public static WorldSave Load()
