@@ -36,7 +36,11 @@ namespace SeedClicker
         static readonly Dictionary<string, Sprite> sprites = new Dictionary<string, Sprite>();
 
         /// <summary>Gesichter an ein Pflanzen-Sprite haengen.</summary>
-        public static PlantCreature Attach(SpriteRenderer body, PlantGenome g, bool wakeUp)
+        public int Tier { get; private set; } = 1;
+        Transform baseRoot; SpriteRenderer aura, bramble;
+        readonly List<SpriteRenderer> behind = new List<SpriteRenderer>();
+
+        public static PlantCreature Attach(SpriteRenderer body, PlantGenome g, bool wakeUp, int tier = 1)
         {
             var sp = PlantBalance.I.Species(g.species);
             if (sp == null || sp.heads == null || sp.heads.Length == 0 || body.sprite == null) return null;
@@ -45,7 +49,9 @@ namespace SeedClicker
             var c = go.AddComponent<PlantCreature>();
             c.body = body; c.g = g;
             c.style = g.projectile.id;
+            c.Tier = Mathf.Clamp(tier, 1, 4);
             foreach (var h in sp.heads) c.BuildHead(h);
+            c.BuildMutation();
             c.blinkT = Random.Range(1f, 4f);
             c.wake = wakeUp ? 0f : 1f;
             c.LateUpdate();
@@ -69,19 +75,36 @@ namespace SeedClicker
                 head.eyes.Add(MakeEye(head.root, new Vector2(-0.22f, 0.08f), eyeSize, col));
                 head.eyes.Add(MakeEye(head.root, new Vector2(0.22f, 0.08f), eyeSize, col));
                 string mouth = style == "thorn" ? "grin" : style == "spore" ? "puff" : style == "petal" ? "smile" : "o";
-                head.mouthSr = Part(head.root, "Mouth", Get(mouth), new Vector2(0, -0.24f), mouth == "grin" ? 0.42f : mouth == "smile" ? 0.32f : 0.2f);
+                if (Tier >= 3) mouth = "fangs";                       // ab Mutation 3: Reisszaehne
+                else if (Tier == 2 && mouth == "smile") mouth = "o";
+                head.mouthSr = Part(head.root, "Mouth", Get(mouth), new Vector2(0, -0.24f), MouthSize(mouth));
                 head.mouth = head.mouthSr.transform;
                 // Brauen / Wimpern
-                var brow = style == "petal" ? Get("lash") : Get("brow");
+                var brow = style == "petal" && Tier == 1 ? Get("lash") : Get("brow");
                 float bs = style == "petal" ? 0.22f : 0.26f;
                 head.browLSr = Part(head.root, "BrowL", brow, new Vector2(-0.22f, 0.36f), bs);
                 head.browRSr = Part(head.root, "BrowR", brow, new Vector2(0.22f, 0.36f), bs);
                 head.browRSr.flipX = true;
                 head.browL = head.browLSr.transform; head.browR = head.browRSr.transform;
                 float tilt = style == "thorn" ? 24f : style == "seed" ? 12f : style == "spore" ? -8f : 0f;
+                if (Tier >= 2) tilt = Mathf.Max(tilt, 16f + Tier * 6f);   // je Mutation boeser
                 head.browL.localRotation = Quaternion.Euler(0, 0, -tilt);
                 head.browR.localRotation = Quaternion.Euler(0, 0, tilt);
-                if (style == "spore") { hidden.Add(head.browLSr); hidden.Add(head.browRSr); }
+                if (style == "spore" && Tier == 1) { hidden.Add(head.browLSr); hidden.Add(head.browRSr); }
+            }
+            // Hoerner ab Mutation 2, groesser und dunkler mit jeder Stufe
+            if (Tier >= 2)
+            {
+                float hs = 0.36f + (Tier - 2) * 0.1f;
+                var hornCol = Tier == 2 ? new Color(0.62f, 0.5f, 0.38f) : Tier == 3 ? new Color(0.45f, 0.3f, 0.28f) : new Color(0.22f, 0.1f, 0.14f);
+                var hl = Part(head.root, "HornL", Get("horn"), new Vector2(-0.3f, 0.5f), hs); hl.color = hornCol;
+                var hr = Part(head.root, "HornR", Get("horn"), new Vector2(0.3f, 0.5f), hs); hr.color = hornCol; hr.flipX = true;
+                hl.transform.localRotation = Quaternion.Euler(0, 0, 18f); hr.transform.localRotation = Quaternion.Euler(0, 0, -18f);
+                if (Tier >= 4)
+                {
+                    var hc = Part(head.root, "HornC", Get("horn"), new Vector2(0f, 0.6f), hs * 0.8f); hc.color = hornCol;
+                }
+                behind.Add(hl); behind.Add(hr);
             }
             heads.Add(head);
         }
@@ -98,6 +121,14 @@ namespace SeedClicker
             bool beam = style == "beam";
             // Zyklopenauge leuchtet (HDR -> Bloom)
             e.irisSr.color = beam ? new Color(irisCol.r * 2.2f, irisCol.g * 2.2f, irisCol.b * 2.2f) : Color.Lerp(irisCol, Color.white, 0.1f);
+            if (Tier >= 3)
+            {
+                // gluehende Augen (HDR -> Bloom), ab Mutation 4 mit dunkler Lederhaut
+                float glow = Tier == 3 ? 2f : 3f;
+                var hot = Color.Lerp(irisCol, new Color(1f, 0.25f, 0.15f), Tier == 4 ? 0.45f : 0.2f);
+                e.irisSr.color = new Color(hot.r * glow, hot.g * glow, hot.b * glow);
+                if (Tier >= 4) e.sclera.color = new Color(0.25f, 0.15f, 0.18f);
+            }
             e.pupil = Part(e.iris, "Pupil", Get("pupil"), Vector2.zero, beam ? 0.22f : 0.34f);
             e.hi = Part(e.iris, "Hi", Get("hi"), new Vector2(0.1f, 0.12f), 0.16f);
             return e;
@@ -150,7 +181,7 @@ namespace SeedClicker
             float open = 1f;
             if (blink > 0f) open = 0.12f;
             if (pokeT > 0f) open = 0.08f;
-            if (style == "spore") open *= 0.62f;           // verschlafen
+            if (style == "spore" && Tier == 1) open *= 0.62f;           // verschlafen
             if (shootT > 0f) open = Mathf.Max(open, 1.15f);
             float wakeE = 1 + 2.70158f * Mathf.Pow(wake - 1, 3) + 1.70158f * Mathf.Pow(wake - 1, 2);
 
@@ -180,13 +211,32 @@ namespace SeedClicker
                 if (h.mouth != null)
                 {
                     float m = shootT > 0f ? 1.6f : pokeT > 0f ? 1.3f : 1f;
-                    float baseS = h.mouthSr.sprite == Get("grin") ? 0.42f : h.mouthSr.sprite == Get("smile") ? 0.32f : 0.2f;
+                    float baseS = MouthSize(h.mouthSr.sprite == Get("fangs") ? "fangs" : h.mouthSr.sprite == Get("grin") ? "grin" : h.mouthSr.sprite == Get("smile") ? "smile" : "o");
                     h.mouth.localScale = new Vector3(baseS * (shootT > 0f ? 1.2f : 1f), baseS * m, 1);
                 }
             }
 
-            // Wirkung als kleine Partikel am Kopf
-            fxT -= dt;
+            // Mutation: Ranken am Fuss, Aura pulsiert
+            if (baseRoot != null)
+            {
+                var b = body.sprite.bounds;
+                baseRoot.localPosition = new Vector3(b.center.x * ps.x, b.min.y * Mathf.Abs(ps.y), 0);
+                baseRoot.localScale = Vector3.one * bw;
+                if (bramble != null) bramble.sortingOrder = order + 1;
+                if (aura != null)
+                {
+                    aura.sortingOrder = order - 1;
+                    float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * 4f);
+                    var ac = g.ElementColor;
+                    aura.color = new Color(ac.r * 1.6f, ac.g * 1.6f, ac.b * 1.6f, 0.35f + pulse * 0.25f);
+                    aura.transform.localScale = new Vector3(1.6f + pulse * 0.15f, 2.4f + pulse * 0.25f, 1);
+                    aura.transform.localPosition = new Vector3(0, b.size.y * Mathf.Abs(ps.y) / bw * 0.5f, 0);
+                }
+            }
+            foreach (var sr in behind) if (sr != null) sr.sortingOrder = order + 1;
+
+            // Wirkung als kleine Partikel am Kopf (je Mutation haeufiger)
+            fxT -= dt * Tier;
             if (fxT <= 0f && heads.Count > 0 && Particles.I != null)
             {
                 fxT = Random.Range(0.35f, 0.9f);
@@ -204,13 +254,29 @@ namespace SeedClicker
             }
         }
 
+        static float MouthSize(string m) => m == "grin" ? 0.42f : m == "fangs" ? 0.46f : m == "smile" ? 0.32f : 0.2f;
+
+        /// <summary>Mutationsteile am Fuss: Dornenranken (ab 2) und lodernde Aura (ab 4).</summary>
+        void BuildMutation()
+        {
+            if (Tier < 2) return;
+            baseRoot = new GameObject("Mutation").transform;
+            baseRoot.SetParent(transform, false);
+            bramble = Part(baseRoot, "Bramble", Get("bramble"), new Vector2(0, 0.12f), Tier == 2 ? 1.0f : Tier == 3 ? 1.15f : 1.35f);
+            bramble.color = Tier == 2 ? new Color(0.3f, 0.36f, 0.16f) : Tier == 3 ? new Color(0.32f, 0.2f, 0.2f) : new Color(0.24f, 0.1f, 0.16f);
+            if (Tier >= 4)
+            {
+                aura = Part(baseRoot, "Aura", WorldBuilder.Mist, Vector2.zero, 1f);
+            }
+        }
+
         // ------------------------------------------------------------------ Gemalte Gesichtsteile
 
         static Sprite Get(string key)
         {
             if (sprites.TryGetValue(key, out var s) && s != null) return s;
-            int n = key == "brow" || key == "lash" ? 64 : 96;
-            int h = key == "brow" || key == "lash" ? 24 : key == "grin" || key == "smile" ? 56 : 96;
+            int n = key == "brow" || key == "lash" ? 64 : key == "bramble" ? 192 : key == "horn" ? 48 : 96;
+            int h = key == "brow" || key == "lash" ? 24 : key == "grin" || key == "smile" || key == "fangs" ? 56 : key == "bramble" ? 96 : 96;
             var tex = new Texture2D(n, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
             var px = new Color[n * h];
             var ink = new Color(0.16f, 0.1f, 0.08f, 1f);
@@ -221,6 +287,60 @@ namespace SeedClicker
                     Color c = Color.clear;
                     switch (key)
                     {
+                        case "horn":
+                            {
+                                // gebogenes Horn: Spitze oben, nach aussen gekruemmt
+                                float t = (v + 1f) * 0.5f;                         // 0 unten .. 1 oben
+                                float cx = -0.15f + t * t * 0.55f;                  // Kruemmung
+                                float half = 0.55f * (1f - t);
+                                if (Mathf.Abs(u - cx) < half && t < 0.97f)
+                                {
+                                    c = Color.Lerp(Color.white, new Color(0.75f, 0.75f, 0.75f), Mathf.Clamp01((u - cx) / half * 0.5f + 0.5f));
+                                    if (Mathf.Repeat(t * 6f, 1f) < 0.12f && t < 0.8f) c *= 0.8f;   // Rillen
+                                    c.a = Mathf.Clamp01((half - Mathf.Abs(u - cx)) * 12f);
+                                }
+                                break;
+                            }
+                        case "fangs":
+                            {
+                                // aufgerissenes Maul mit langen Reisszaehnen oben und unten
+                                float top = 0.6f, bottom = 0.6f - 1.45f * (1f - u * u);
+                                if (v < top && v > bottom)
+                                {
+                                    c = new Color(0.2f, 0.02f, 0.04f);
+                                    float tooth = Mathf.Abs(Mathf.Repeat(u * 3f + 0.5f, 1f) - 0.5f) * 2f;
+                                    if (v > top - 0.75f * (1f - tooth) * (1f - tooth)) c = new Color(1f, 0.97f, 0.88f);
+                                    if (v < bottom + 0.55f * (1f - tooth) * (1f - tooth) && u * u < 0.6f) c = new Color(1f, 0.97f, 0.88f);
+                                    if (top - v < 0.08f || v - bottom < 0.08f) c = ink;
+                                    c.a = 1f;
+                                }
+                                break;
+                            }
+                        case "bramble":
+                            {
+                                // Dornenranken: mehrere geschwungene Ranken mit Dornen nach aussen
+                                float best = 9f;
+                                for (int k = 0; k < 5; k++)
+                                {
+                                    float ph = k * 1.3f, amp = 0.25f + k * 0.04f;
+                                    float vy = -0.55f + amp * Mathf.Sin(u * (3f + k * 0.7f) + ph) + (k % 2) * 0.25f;
+                                    best = Mathf.Min(best, Mathf.Abs(v - vy) * (1f + Mathf.Abs(u) * 0.6f));
+                                    // Dornen
+                                    float sx = Mathf.Repeat(u * (5f + k) + ph, 1f);
+                                    if (sx < 0.3f)
+                                    {
+                                        float tipH = 0.32f * (1f - sx / 0.3f);
+                                        if (v > vy && v < vy + tipH && Mathf.Abs(u) < 0.95f) best = 0f;
+                                    }
+                                }
+                                float edge = 1f - Mathf.Clamp01(Mathf.Abs(u) - 0.85f) * 6f;
+                                if (best < 0.07f && edge > 0f)
+                                {
+                                    c = Color.Lerp(Color.white, new Color(0.65f, 0.65f, 0.65f), Mathf.Clamp01(best * 10f));
+                                    c.a = Mathf.Clamp01((0.07f - best) * 40f) * edge;
+                                }
+                                break;
+                            }
                         case "sclera":
                             {
                                 float d = Mathf.Sqrt(u * u + v * v);

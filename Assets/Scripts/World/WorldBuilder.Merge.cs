@@ -108,6 +108,7 @@ namespace SeedClicker
         {
             var p = carrying;
             int lv = target.Lv + p.Lv;
+            int oldLv = target.Lv;
             if (!FindFootprint(target, lv, out var anchor, out var cells))
             {
                 var size = PlantBalance.I.Footprint(lv);
@@ -126,7 +127,7 @@ namespace SeedClicker
             target.x = anchor.x; target.y = anchor.y;
             target.w = Mathf.Max(size2.x, target.W); target.h = Mathf.Max(size2.y, target.H);
             var f = LaunchCarried(PlantBase(target) + new Vector2(0, CellSize * 1.2f * target.H), 1f);
-            f.mergeTarget = target; f.oldAnchor = oldAnchor; f.newLevel = lv;
+            f.mergeTarget = target; f.oldAnchor = oldAnchor; f.newLevel = lv; f.oldLevel = oldLv;
             save.Save();
             return true;
         }
@@ -135,10 +136,11 @@ namespace SeedClicker
         {
             var p = carrying;
             int lv = pot.Lv + p.Lv;
+            int oldLv = pot.Lv;
             pot.level = lv;
             var v = potViews.Find(x => x.st == pot);
             var f = LaunchCarried(pot.Pos + new Vector2(0, 0.55f), 0.85f);
-            f.target = v; f.newLevel = lv;
+            f.target = v; f.newLevel = lv; f.oldLevel = oldLv;
             save.Save();
         }
 
@@ -199,7 +201,31 @@ namespace SeedClicker
             WorldCamera.I?.Punch(0.05f);
             WorldPostFX.Punch(0.9f);
             HitStop(0.06f);
-            Floater?.Invoke(at + new Vector2(0, 1.4f), f.g.name + " Stufe " + f.newLevel + "!", new Color(1f, 0.9f, 0.4f));
+            if (PlantBalance.I.Tier(f.newLevel) > PlantBalance.I.Tier(f.oldLevel)) Mutated(at, f.g, PlantBalance.I.Tier(f.newLevel), t.W);
+            else Floater?.Invoke(at + new Vector2(0, 1.4f), f.g.name + " Stufe " + f.newLevel + "!", new Color(1f, 0.9f, 0.4f));
+        }
+
+        static readonly string[] MutationNames = { "", "", "Wilde Form", "Bestie", "Albtraum" };
+
+        /// <summary>Neue Mutationsstufe erreicht: dunkler Blitz, Lichtsaeule, Donner, grosser Schriftzug.</summary>
+        void Mutated(Vector2 at, PlantGenome g, int tier, float width)
+        {
+            var dark = Color.Lerp(g.ElementColor, new Color(0.35f, 0.05f, 0.2f), 0.5f);
+            StartCoroutine(RipeSlowMo());
+            Pillar(at, CellSize * 2.2f * width, dark);
+            Shockwave(at, CellSize * 7f * width, 0.8f, dark);
+            Shockwave(at, CellSize * 4.5f * width, 0.55f, new Color(1f, 0.3f, 0.2f, 0.9f));
+            Burst(at + new Vector2(0, CellSize * 1.5f), CellSize * 5f * width, 0.35f, new Color(1f, 0.4f, 0.3f, 0.9f));
+            Particles.I?.Burst(at + new Vector2(0, 0.6f), "spark", new Color(1f, 0.35f, 0.25f), 30, 4.5f, 0.8f, 0.35f, 0.5f, 2f);
+            Particles.I?.Burst(at, "square", new Color(0.2f, 0.08f, 0.12f), 18, 3.5f, 0.9f, 0.14f, 4f, 3f);
+            Sfx.Play("boom", 0.8f, 0.9f);
+            Sfx.Play("groan", 0.6f, 0.8f);
+            Sfx.Play("levelup", 0.75f, 0.9f);
+            Haptics.Tap(120);
+            WorldCamera.I?.Shake(0.22f);
+            WorldCamera.I?.Punch(0.09f);
+            WorldPostFX.Punch(1.4f);
+            Floater?.Invoke(at + new Vector2(0, 1.8f), "MUTATION " + tier + "/4 – " + MutationNames[Mathf.Clamp(tier, 0, 4)] + "!", new Color(1f, 0.4f, 0.3f));
         }
 
         // ------------------------------------------------------------------ Anzeige

@@ -249,7 +249,9 @@ namespace SeedClicker
             int stage = p.Grown ? 2 : f >= 0.5f ? 1 : 0;
             var sprite = art.Get(sp.art + sp.stages[Mathf.Clamp(stage, 0, sp.stages.Length - 1)]);
             if (stage != v.stage) { v.stage = stage; v.sr.sprite = sprite; }
-            if (p.Grown && v.creature == null && v.sr.sprite != null) v.creature = PlantCreature.Attach(v.sr, g, false);
+            int tier = PlantBalance.I.Tier(p.Lv);
+            if (p.Grown && v.creature != null && v.creature.Tier != tier) { Destroy(v.creature.gameObject); v.creature = null; }
+            if (p.Grown && v.creature == null && v.sr.sprite != null) v.creature = PlantCreature.Attach(v.sr, g, false, tier);
             if (snap || v.size < 0f) v.size = PlantWidth(p);
             if (sprite != null)
             {
@@ -261,7 +263,7 @@ namespace SeedClicker
             v.shadow.transform.localScale = new Vector3(v.size * 1.0f, v.size * 0.3f, 1);
             v.glow.transform.localScale = new Vector3(v.size * 1.6f, v.size * 1.2f, 1);
             // leichter Farbstich der Wirkung, damit man die Arten unterscheidet
-            v.sr.color = Color.Lerp(Color.white, g.ElementColor, 0.15f);
+            v.sr.color = PlantBalance.MutationTint(g, p.Grown ? tier : 1);
         }
 
         /// <summary>Tipp auf eine Pflanze: waechst ein Stueck (Klick-Wachstum) oder zeigt Infos, wenn sie fertig ist.

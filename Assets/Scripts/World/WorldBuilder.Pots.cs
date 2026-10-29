@@ -23,7 +23,7 @@ namespace SeedClicker
         class Flyer
         {
             public SpriteRenderer sr; public SpriteRenderer shadow; public Vector2 from, to; public float t, dur, s0, s1; public PotView target; public PlantGenome g;
-            public PlantedState mergeTarget; public Cell oldAnchor; public int newLevel;   // Zusammenfuehren
+            public PlantedState mergeTarget; public Cell oldAnchor; public int newLevel, oldLevel;   // Zusammenfuehren
         }
 
         readonly List<PotView> potViews = new List<PotView>();
@@ -255,7 +255,8 @@ namespace SeedClicker
                 if (f.mergeTarget != null) { LandMerge(f); continue; }
                 var at = f.to + new Vector2(0, -0.5f);
                 if (f.target != null) { f.target.hidePlant = 0f; f.target.squash = 1f; f.target.pop = 0.3f; RefreshPotView(f.target); }
-                if (f.newLevel > 1) Floater?.Invoke(at + new Vector2(0, 1.7f), f.g.name + " Stufe " + f.newLevel + "!", new Color(1f, 0.9f, 0.4f));
+                if (f.newLevel > 1 && PlantBalance.I.Tier(f.newLevel) > PlantBalance.I.Tier(f.oldLevel)) Mutated(at, f.g, PlantBalance.I.Tier(f.newLevel), 1f);
+                else if (f.newLevel > 1) Floater?.Invoke(at + new Vector2(0, 1.7f), f.g.name + " Stufe " + f.newLevel + "!", new Color(1f, 0.9f, 0.4f));
                 Shockwave(at, 2.2f, 0.4f, Color.white);
                 Shockwave(at, 1.3f, 0.3f, f.g.ElementColor);
                 Particles.I?.Burst(at + new Vector2(0, 0.5f), "star", f.g.ElementColor, 16, 3f, 0.7f, 0.3f, 1f, 1f);
@@ -335,10 +336,11 @@ namespace SeedClicker
                 v.plant.transform.localScale = new Vector3(s, sy, 1);
                 v.plant.transform.localPosition = new Vector3(0, 0.3f - ps.bounds.min.y * sy, 0);
             }
-            v.plant.color = Color.Lerp(Color.white, g.ElementColor, 0.15f);
+            int tier = PlantBalance.I.Tier(v.st.Lv);
+            v.plant.color = PlantBalance.MutationTint(g, tier);
             v.light.color = g.ElementColor;
             if (v.creature != null) Destroy(v.creature.gameObject);
-            v.creature = PlantCreature.Attach(v.plant, g, false);
+            v.creature = PlantCreature.Attach(v.plant, g, false, tier);
         }
 
         void UpdatePots(float dt)

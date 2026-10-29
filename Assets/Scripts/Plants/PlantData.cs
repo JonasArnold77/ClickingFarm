@@ -70,6 +70,28 @@ namespace SeedClicker
         public BuildDef build;
         public LevelDef levels;
         public MergeSizeDef[] mergeSizes;
+        public int[] mutationLevels;   // ab welcher Stufe Mutation 2, 3, 4 beginnt (erste Zahl = Mutation 1)
+
+        /// <summary>Mutationsstufe 1..4 fuer eine Pflanzenstufe.</summary>
+        public int Tier(int lv)
+        {
+            var m = mutationLevels != null && mutationLevels.Length > 0 ? mutationLevels : new[] { 1, 3, 6, 10 };
+            int t = 1;
+            for (int i = 0; i < m.Length; i++) if (lv >= m[i]) t = i + 1;
+            return Mathf.Clamp(t, 1, 4);
+        }
+
+        /// <summary>Koerperfarbe je Mutation: ab Mutation 2 dunkler und in die Farbe der Wirkung getaucht.</summary>
+        public static Color MutationTint(PlantGenome g, int tier)
+        {
+            var el = g.ElementColor;
+            if (tier <= 1) return Color.Lerp(Color.white, el, 0.15f);
+            var dark = Color.Lerp(el, new Color(0.28f, 0.12f, 0.24f), 0.55f);
+            float k = tier == 2 ? 0.22f : tier == 3 ? 0.38f : 0.52f;
+            var c = Color.Lerp(Color.Lerp(Color.white, el, 0.2f), dark, k);
+            c.a = 1f;
+            return c;
+        }
 
         LevelDef L => levels ?? (levels = new LevelDef());
         public float LevelDamage(int lv) => 1f + L.damage * (Mathf.Max(1, lv) - 1);
