@@ -175,6 +175,7 @@ namespace SeedClicker
             var at = PlantBase(t);
             foreach (var c in PlantCells(t)) PunchField(c, 1.3f);
             Shockwave(at, CellSize * 3.5f * t.W, 0.5f, Color.white);
+            WorldFx.Play("magicPoof", at + new Vector2(0, CellSize * 0.6f), 0.2f);
             Shockwave(at, CellSize * 2.2f * t.W, 0.35f, f.g.ElementColor);
             Burst(at + new Vector2(0, CellSize), CellSize * 3f * t.W, 0.22f, Color.white);
             Particles.I?.Burst(at + new Vector2(0, 0.5f), "star", f.g.ElementColor, 22, 3.5f, 0.8f, 0.35f, 1f, 1.5f);
@@ -199,6 +200,8 @@ namespace SeedClicker
             var dark = Color.Lerp(g.ElementColor, new Color(0.35f, 0.05f, 0.2f), 0.5f);
             StartCoroutine(RipeSlowMo());
             Pillar(at, CellSize * 2.2f * width, dark);
+            WorldFx.Play("magicPoof", at + new Vector2(0, CellSize * 0.6f), 0.32f, 30010, new Color(1f, 0.5f, 0.6f, 1f));
+            WorldFx.Play("electrified", at + new Vector2(0, CellSize * 0.5f), 0.25f, 30010, g.ElementColor);
             Shockwave(at, CellSize * 7f * width, 0.8f, dark);
             Shockwave(at, CellSize * 4.5f * width, 0.55f, new Color(1f, 0.3f, 0.2f, 0.9f));
             Burst(at + new Vector2(0, CellSize * 1.5f), CellSize * 5f * width, 0.35f, new Color(1f, 0.4f, 0.3f, 0.9f));

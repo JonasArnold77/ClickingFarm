@@ -13,6 +13,21 @@ namespace SeedClicker
     public class WorldArtSet : ScriptableObject
     {
         [Serializable] public class Entry { public string name; public Sprite sprite; }
+        [Serializable] public class FxEntry { public string name; public GameObject prefab; }
+
+        [Tooltip("Effekte aus Cartoon FX Remaster (JMO): Name -> Prefab, abgespielt ueber WorldFx")]
+        public List<FxEntry> effects = new List<FxEntry>();
+        Dictionary<string, GameObject> fxLookup;
+
+        public GameObject Fx(string name)
+        {
+            if (fxLookup == null)
+            {
+                fxLookup = new Dictionary<string, GameObject>();
+                if (effects != null) foreach (var e in effects) if (e != null && e.prefab != null && !string.IsNullOrEmpty(e.name)) fxLookup[e.name] = e.prefab;
+            }
+            return fxLookup.TryGetValue(name, out var g) ? g : null;
+        }
 
         [Tooltip("Boden-Atlas (256 px pro Kachel, 8x8 Kacheln)")]
         public Texture2D groundAtlas;

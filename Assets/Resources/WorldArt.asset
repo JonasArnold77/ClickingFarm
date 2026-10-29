@@ -244,3 +244,34 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 6e8555b01a82a1955ad48525537a207a, type: 3}
   - {fileID: 21300000, guid: 4a633aa35780e46bfd6b1a59aacadd6d, type: 3}
   - {fileID: 21300000, guid: 7964145f9812765d6c8117c26957bda8, type: 3}
+  effects:
+  - name: explosion
+    prefab: {fileID: 2433282508537954060, guid: 3ef3ae421f71c5c4e97fe12dc2fc6312, type: 3}
+  - name: explosionBig
+    prefab: {fileID: 3157370685969289855, guid: 662372284ddeee54fad3c2462587922e, type: 3}
+  - name: lightningImpact
+    prefab: {fileID: 7849791404790678207, guid: 42913e44bd86c194f80b76492e6fe2fd, type: 3}
+  - name: lightningStrike
+    prefab: {fileID: 13301048646092075, guid: 334ccdade87a4194b9f1855c484967dc, type: 3}
+  - name: electrified
+    prefab: {fileID: 6721007384533448649, guid: 98557619806f23c499c9cdb620a31541, type: 3}
+  - name: smoke
+    prefab: {fileID: 8656522925564163052, guid: e509867be4f82f246a95eca1ee5a2d61, type: 3}
+  - name: hit
+    prefab: {fileID: 2427786012956944610, guid: da0de216ad60c5d46a6b049d61961615, type: 3}
+  - name: sparks
+    prefab: {fileID: 8163684771574148739, guid: 6dc4191059d6c3a4a820270672bbf567, type: 3}
+  - name: poof
+    prefab: {fileID: 395031058680739610, guid: b2f0b8902a31c8a46a1c4bb24ed9ea36, type: 3}
+  - name: magicPoof
+    prefab: {fileID: 9157105887711914197, guid: c4f829cb7dd4b864caf8832ec5b1ee55, type: 3}
+  - name: flame
+    prefab: {fileID: 2421226186157800132, guid: af304c622ca86a045a1280a5154d2bb1, type: 3}
+  - name: fireball
+    prefab: {fileID: 8503596642471129455, guid: ae7fcf8e2f10ecc46b81d336f61a285f, type: 3}
+  - name: fireTrail
+    prefab: {fileID: 7509569068035639639, guid: 34b62790d9d31c64ea200a261b6dba40, type: 3}
+  - name: splash
+    prefab: {fileID: 5531231052371847854, guid: 60c88e966a0f8324da766221921ee65f, type: 3}
+  - name: firework
+    prefab: {fileID: 2060212803351811498, guid: 38b99d63cdad9994b89d14c10a8783ce, type: 3}

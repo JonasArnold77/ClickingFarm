@@ -386,6 +386,7 @@ namespace SeedClicker
             v.readyShown = false;
             StartCoroutine(RipeSlowMo());
             Pillar(basePos, v.size * 1.6f, g.ElementColor);
+            WorldFx.Play("firework", top, 0.2f);
             Shockwave(basePos, v.size * 4.5f, 0.6f, Color.white);
             Shockwave(basePos, v.size * 3f, 0.45f, g.ElementColor);
             Shockwave(basePos, v.size * 6.5f, 0.85f, new Color(1f, 0.95f, 0.7f, 0.6f));

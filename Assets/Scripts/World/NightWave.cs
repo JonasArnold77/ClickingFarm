@@ -47,6 +47,7 @@ namespace SeedClicker
             public bool fireball; public float power = 1f; public SpriteRenderer core;
             public SpriteRenderer hi; public List<SpriteRenderer> flames;   // 3D-Feuerball: Glanzpunkt, lodernde Flammen
             public bool gas;   // Giftspucke: zerplatzt zu einer Giftwolke
+            public GameObject fxBall, fxTrail;   // Cartoon-FX (JMO)
             // Bogenwurf (Feuerweizen): nach oben gespuckt, faellt wie eine Granate aufs Ziel
             public bool lob; public Vector2 from, to; public float t, flight, arc; public SpriteRenderer shadow;
             public bool done;
@@ -135,7 +136,7 @@ namespace SeedClicker
             foreach (var s in shots) { if (s.sr != null) Destroy(s.sr.gameObject); if (s.shadow != null) Destroy(s.shadow.gameObject); }
             shots.Clear();
             ClearWeaponShots();
-            foreach (var c in gasClouds) foreach (var p in c.puffs) if (p != null) Destroy(p.gameObject);
+            foreach (var c in gasClouds) { foreach (var p in c.puffs) if (p != null) Destroy(p.gameObject); WorldFx.Release(c.fx, 2f); }
             gasClouds.Clear();
             toSpawn = 0;
             if (victory)
@@ -720,6 +721,16 @@ namespace SeedClicker
                 life = flight + 0.5f, fireball = true, power = tier, lob = true, from = from, to = lead, flight = flight, arc = 1.4f + dist0 * 0.22f, shadow = shadow });
             sr.transform.position = from;
             sr.transform.localScale = Vector3.one * size * 0.3f;   // waechst aus dem Maul heraus
+            // Cartoon FX: lodernder Feuerball mit Feuerschweif statt der eigenen Kugel
+            var shot = shots[shots.Count - 1];
+            shot.fxBall = WorldFx.Attach("fireball", sr.transform, 0.3f + 0.06f * (tier - 1), 30004);
+            if (shot.fxBall != null)
+            {
+                shot.fxTrail = WorldFx.Attach("fireTrail", sr.transform, 0.22f + 0.04f * (tier - 1), 30002);
+                core.enabled = false; hi.enabled = false;
+                foreach (var f in flames) f.enabled = false;
+                sr.color = new Color(2.2f, 0.75f, 0.18f, 0.3f);
+            }
         }
 
         /// <summary>Bogenflug: steil aus dem Maul nach oben, dann im hohen Bogen herab; Schatten zeigt die Landestelle.</summary>
@@ -752,13 +763,14 @@ namespace SeedClicker
             FireballBlast(s, hit);
             Particles.I?.Burst(s.to, "square", new Color(0.35f, 0.22f, 0.12f), 10, 3f, 0.6f, 0.1f, 9f, 2f);   // Erdbrocken
             s.done = true;
+            WorldFx.Release(s.fxTrail);
             Destroy(s.sr.gameObject);
             if (s.shadow != null) Destroy(s.shadow.gameObject);
         }
 
         // ------------------------------------------------------------------ Giftspucke (Giftruebe)
 
-        class GasCloud { public Vector2 pos; public float r, t, dur, dps, tick; public PlantGenome src; public List<SpriteRenderer> puffs = new List<SpriteRenderer>(); }
+        class GasCloud { public Vector2 pos; public float r, t, dur, dps, tick; public PlantGenome src; public List<SpriteRenderer> puffs = new List<SpriteRenderer>(); public GameObject fx; }
         readonly List<GasCloud> gasClouds = new List<GasCloud>();
 
         void LaunchGas(PlantGenome g, OptionDef proj, Vector2 from, Monster target, float angle, float dmg, int tier)
@@ -790,6 +802,8 @@ namespace SeedClicker
                 c.puffs.Add(p);
             }
             gasClouds.Add(c);
+            WorldFx.Play("splash", at, 0.12f + 0.02f * power, 29996, new Color(0.55f, 1f, 0.3f, 1f));
+            c.fx = WorldFx.Play("smoke", at, 0.16f + 0.03f * power, 29996, new Color(0.6f, 1f, 0.35f, 0.85f), null, c.dur + 3f);
             Particles.I?.Burst(at, "square", new Color(0.55f, 0.95f, 0.3f), 12, 2.8f, 0.5f, 0.06f, 4f, 1.2f);
             Particles.I?.Ring(at, new Color(0.6f, 1f, 0.4f, 0.8f), c.r * 1.6f, 0.3f);
             Sfx.Play("dig", 0.6f, 0.6f);
@@ -827,7 +841,7 @@ namespace SeedClicker
                         m.hitFlash = Mathf.Max(m.hitFlash, 0.25f);
                     }
                 }
-                if (k >= 1f) { foreach (var p in c.puffs) if (p != null) Destroy(p.gameObject); gasClouds.RemoveAt(i); }
+                if (k >= 1f) { foreach (var p in c.puffs) if (p != null) Destroy(p.gameObject); WorldFx.Release(c.fx, 2f); gasClouds.RemoveAt(i); }
             }
         }
 
@@ -897,7 +911,7 @@ namespace SeedClicker
                     f.flipX = lick > 0.3f;
                 }
             }
-            int n = Mathf.FloorToInt(dt * (40f + s.power * 12f) + (float)rnd.NextDouble());
+            int n = Mathf.FloorToInt(dt * (s.fxBall != null ? 10f : 40f + s.power * 12f) + (float)rnd.NextDouble());
             for (int i = 0; i < n; i++)
             {
                 var c = Color.Lerp(new Color(1f, 0.85f, 0.3f), new Color(1f, 0.3f, 0.06f), (float)rnd.NextDouble());
@@ -912,6 +926,7 @@ namespace SeedClicker
         {
             float r = 0.6f + 0.18f * s.power;
             var at = s.pos;
+            WorldFx.Play("explosion", at, 0.16f + 0.035f * s.power);
             Particles.I?.Ring(at, new Color(1f, 0.6f, 0.2f, 0.95f), r * 1.9f, 0.4f);
             Particles.I?.Ring(at, new Color(1f, 0.95f, 0.7f, 0.9f), r * 1.1f, 0.25f);
             Particles.I?.Burst(at, "spark", new Color(1f, 0.7f, 0.25f), 14 + (int)(s.power * 4), 4.5f, 0.4f, 0.3f, 0.5f, 1.2f);
@@ -989,6 +1004,7 @@ namespace SeedClicker
             {
                 Particles.I?.Burst(m.pos + new Vector2(0, 0.3f), "leaf", new Color(0.6f, 0.45f, 0.65f), 12, 3.5f, 0.6f, 0.6f, 3f, 1.5f);
                 Particles.I?.Ring(m.pos + new Vector2(0, 0.3f), Color.white, 1f);
+                WorldFx.Play("poof", m.pos + new Vector2(0, 0.35f), 0.18f, WorldBuilder.Order(m.pos.y) + 5);
                 Sfx.Play("break", 1.4f, 0.6f);
             }
             if (m.root != null) Destroy(m.root.gameObject);
@@ -1019,6 +1035,8 @@ namespace SeedClicker
                 next.slowT = Mathf.Max(next.slowT, 0.25f); next.slowAmt = Mathf.Max(next.slowAmt, 0.6f);   // kurz gelaehmt
                 cur = next; jd *= 0.8f;
             }
+            WorldFx.Play("lightningImpact", hitP, 0.2f + 0.03f * tier);
+            if (tier >= 4) WorldFx.Play("lightningStrike", target.pos, 0.3f);
             Particles.I?.Burst(hitP, "spark", new Color(1f, 0.95f, 0.55f), 10 + tier * 3, 4f, 0.25f, 0.18f, 0f, 1f);
             Particles.I?.Ring(hitP, new Color(1f, 1f, 0.8f, 0.9f), 0.6f + tier * 0.2f, 0.2f);
             if (flashLight != null) { flashLight.transform.position = hitP; flashLight.color = new Color(1f, 0.95f, 0.6f); flashLight.intensity = 1.5f + tier * 0.6f; flashT = 0.09f; }

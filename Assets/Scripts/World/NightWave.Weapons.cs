@@ -170,6 +170,7 @@ namespace SeedClicker
 
         void ImpactFx(Vector2 at, float size)
         {
+            WorldFx.Play(size > 1.1f ? "sparks" : "hit", at, 0.13f * size);
             Particles.I?.Burst(at, "spark", new Color(1f, 0.85f, 0.45f), (int)(5 * size), 3f * size, 0.18f, 0.22f * size, 0f, 0.5f);
             Particles.I?.Spawn(at, "spark", new Color(1f, 1f, 0.9f), Vector3.zero, 0.07f, 0.7f * size, 0.1f, 0f, 0f);
             Particles.I?.Burst(at, "square", new Color(0.5f, 0.62f, 0.4f), (int)(3 * size), 2.2f, 0.35f, 0.09f, 7f, 1.5f);
@@ -255,6 +256,7 @@ namespace SeedClicker
         void Explode(Vector2 at, float radius, float dmg)
         {
             var P = Particles.I;
+            WorldFx.Play("explosionBig", at, 0.26f);
             P?.Ring(at, new Color(1f, 0.8f, 0.45f, 0.95f), radius * 1.8f, 0.4f);
             P?.Burst(at + new Vector2(0, 0.2f), "spark", new Color(1f, 0.75f, 0.35f), 18, 5f, 0.35f, 0.5f, 0f, 1f);
             P?.Burst(at + new Vector2(0, 0.2f), "square", new Color(1f, 0.55f, 0.2f), 14, 4f, 0.5f, 0.3f, 3f, 1.5f);
