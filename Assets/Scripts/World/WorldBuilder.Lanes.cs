@@ -4,8 +4,8 @@ using UnityEngine;
 namespace SeedClicker
 {
     /// <summary>
-    /// Zufallskarte mit Lanes: Vom Waldrand unten (manchmal auch von der Seite) fuehren 3–4 geschwungene Erdpfade
-    /// zum Hof. Dazwischen liegen natuerliche Felseninseln (Felsbrocken auf dunklem Grund), die die Lanes bilden.
+    /// Zufallskarte mit Lanes: Vom Waldrand unten (manchmal auch von der Seite) fuehren 3–4 Erdpfade im Feldraster
+    /// (gerade Abschnitte nach oben und zur Seite) zum Hof. Dazwischen liegen natuerliche Felseninseln (Felsbrocken auf dunklem Grund), die die Lanes bilden.
     /// Nachts tauchen die Zombies am Anfang der Lanes auf und folgen ihnen zum Haus (NightWave).
     /// Alles haengt am Karten-Seed im Spielstand – "Neues Spiel" wuerfelt einen neuen.
     /// </summary>
@@ -16,49 +16,106 @@ namespace SeedClicker
 
         public IReadOnlyList<List<Vector2>> Lanes => lanes;
 
-        /// <summary>Alle Lanes laufen hier zusammen (rechts unterhalb des Startbeets) und fuehren dann zum Vorplatz.</summary>
-        static readonly Vector2 LaneMerge = new Vector2(2.2f, -3.4f);
-        static readonly Vector2[] LaneTrunk = { new Vector2(1.9f, -1.4f), new Vector2(1.5f, 0.6f), new Vector2(1.0f, 2.4f) };
+        /// <summary>Zusammenfluss (rechts unterhalb des Startbeets) und der gemeinsame Weg zum Vorplatz, in Feldzellen.</summary>
+        static readonly Cell MergeCell = new Cell(3, -6);
+        static readonly Cell[] TrunkCorners = { new Cell(3, 1), new Cell(1, 1), new Cell(1, 4) };
 
+        readonly HashSet<Cell> laneCells = new HashSet<Cell>();
+        Sprite laneSprite;
+
+        public bool IsLaneCell(Cell c) => laneCells.Contains(c);
+
+        /// <summary>Lanes im Feldraster: Abschnitte gehen nur gerade nach oben oder zur Seite.</summary>
         void BuildLanes()
         {
             float hw = MapW / 2f, hh = MapH / 2f;
+            int minX = Mathf.CeilToInt((-hw + 1.2f) / CellSize), maxX = Mathf.FloorToInt((hw - 1.2f) / CellSize) - 1;
+            int bottomY = Mathf.FloorToInt((-hh + 0.05f) / CellSize);
             int n = 3 + (R() < 0.5f ? 1 : 0);
             bool sideLane = n == 4 && R() < 0.6f;
             int bottom = sideLane ? 3 : n;
             for (int i = 0; i < n; i++)
             {
-                Vector2 start;
+                Cell start;
                 if (sideLane && i == n - 1)
                 {
-                    float side = R() < 0.5f ? -1f : 1f;
-                    start = new Vector2(side * (hw - 0.2f), -5f - R() * 4f);
+                    bool left = R() < 0.5f;
+                    start = new Cell(left ? minX - 1 : maxX + 1, Mathf.FloorToInt((-5f - R() * 4f) / CellSize));
                 }
                 else
                 {
                     float slot = (i + 0.5f) / bottom;
-                    start = new Vector2(-hw + 2f + slot * (MapW - 4f) + (R() - 0.5f) * 1.6f, -hh + 0.1f);
+                    int x = Mathf.RoundToInt(Mathf.Lerp(minX + 1, maxX - 1, slot) + (R() - 0.5f) * 3f);
+                    start = new Cell(Mathf.Clamp(x, minX, maxX), bottomY);
                 }
-                lanes.Add(MakeLane(start));
+                lanes.Add(MakeLane(start, minX, maxX));
             }
         }
 
-        List<Vector2> MakeLane(Vector2 start)
+        List<Vector2> MakeLane(Cell start, int minX, int maxX)
         {
-            var pts = new List<Vector2>();
-            var d = LaneMerge - start;
-            var nrm = new Vector2(-d.y, d.x).normalized;
-            float amp = 0.9f + R() * 1.3f, freq = 1.2f + R() * 1.4f, ph = R() * 6.28f;
-            int steps = Mathf.Max(4, Mathf.CeilToInt(d.magnitude / 0.7f));
-            for (int s = 0; s <= steps; s++)
+            var cells = new List<Cell> { start };
+            var cur = start;
+            // Seiteneingang: erst ein Stueck nach innen
+            if (start.x < minX || start.x > maxX)
             {
-                float t = s / (float)steps;
-                // schwingt in der Mitte am staerksten, Anfang und Zusammenfluss ruhig
-                float sw = Mathf.Sin(t * Mathf.PI * freq + ph) * amp * Mathf.Sin(t * Mathf.PI);
-                pts.Add(start + d * t + nrm * sw);
+                int dx = start.x < minX ? 1 : -1;
+                for (int k = 0; k < 3 + rnd.Next(3); k++) { cur = new Cell(cur.x + dx, cur.y); cells.Add(cur); }
             }
-            pts.AddRange(LaneTrunk);
+            while (cur.y < MergeCell.y || cur.x != MergeCell.x)
+            {
+                int dy = MergeCell.y - cur.y, dx = MergeCell.x - cur.x;
+                if (dy <= Mathf.Abs(dx) + 1)
+                {
+                    // kurz vor dem Zusammenfluss: erst zur Seite, dann hoch
+                    if (dx != 0) cur = new Cell(cur.x + (dx > 0 ? 1 : -1), cur.y);
+                    else cur = new Cell(cur.x, cur.y + 1);
+                    cells.Add(cur);
+                    continue;
+                }
+                if (R() < 0.35f)
+                {
+                    // seitlicher Abschnitt: meist Richtung Ziel, manchmal weg davon
+                    int dir = R() < 0.7f ? (dx >= 0 ? 1 : -1) : (dx >= 0 ? -1 : 1);
+                    int len = 2 + rnd.Next(4);
+                    for (int k = 0; k < len; k++)
+                    {
+                        int nx = cur.x + dir;
+                        if (nx < minX || nx > maxX) break;
+                        cur = new Cell(nx, cur.y); cells.Add(cur);
+                    }
+                }
+                int up = 2 + rnd.Next(5);
+                for (int k = 0; k < up && cur.y < MergeCell.y; k++) { cur = new Cell(cur.x, cur.y + 1); cells.Add(cur); }
+            }
+            // gemeinsamer Weg zum Vorplatz
+            foreach (var corner in TrunkCorners)
+                while (cur.x != corner.x || cur.y != corner.y)
+                {
+                    if (cur.x != corner.x) cur = new Cell(cur.x + (corner.x > cur.x ? 1 : -1), cur.y);
+                    else cur = new Cell(cur.x, cur.y + (corner.y > cur.y ? 1 : -1));
+                    cells.Add(cur);
+                }
+            var pts = new List<Vector2>();
+            foreach (var c in cells) { laneCells.Add(c); pts.Add(CellCenter(c)); }
             return pts;
+        }
+
+        /// <summary>Die Lanes als Erdkacheln im Feldraster zeichnen (wie die Felder).</summary>
+        void PlaceLaneTiles()
+        {
+            if (laneSprite == null) laneSprite = GroundMaterials.TileSprite(1, 5);
+            if (laneSprite == null) return;
+            foreach (var c in laneCells)
+            {
+                var sr = new GameObject("Lane").AddComponent<SpriteRenderer>();
+                sr.transform.SetParent(objects, false);
+                sr.transform.position = CellCenter(c);
+                sr.transform.localScale = Vector3.one * CellSize * 1.02f;
+                sr.sprite = laneSprite;
+                sr.color = new Color(0.95f, 0.9f, 0.85f);
+                sr.sortingOrder = -32310;
+            }
         }
 
         /// <summary>0..1: wie stark hier eine Felseninsel liegt (zwischen den Lanes, nicht am Hof).</summary>

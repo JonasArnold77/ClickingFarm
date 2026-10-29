@@ -37,7 +37,6 @@ namespace SeedClicker
             public Vector2 knock;
             public bool dead;
             public int lane = -1, wp;   // Lane und naechster Wegpunkt
-            public float bashT;   // schlaegt gerade auf einen Zaun ein
             public float Speed => def.speed * (slowT > 0 ? 1f - slowAmt : 1f);
         }
 
@@ -433,19 +432,11 @@ namespace SeedClicker
                     Poof(m, true);
                     continue;
                 }
-                // leicht schlaengelnd auf das Haus zu, Rueckstoss klingt ab; ein Zaun im Weg wird zerschlagen
+                // die Lane entlang (Zelle fuer Zelle), leicht schwankend, Rueckstoss klingt ab
                 var dir = to.normalized;
-                var side = new Vector2(-dir.y, dir.x) * Mathf.Sin(m.hop * 0.7f) * 0.15f;
+                var side = new Vector2(-dir.y, dir.x) * Mathf.Sin(m.hop * 0.7f) * 0.05f;
                 var step = (dir + side).normalized * m.Speed * dt;
-                var fence = wb.FenceAt(m.pos + (dir + side).normalized * 0.18f);
-                if (fence != null)
-                {
-                    m.bashT += dt;
-                    wb.HitFence(fence, m.def.damage * 0.4f * dt);
-                    m.pos += m.knock * dt;
-                    if (m.bashT > 0.55f) { m.bashT = 0f; Sfx.Play("chop", 0.6f + (float)rnd.NextDouble() * 0.2f, 0.35f); }
-                }
-                else { m.bashT = 0f; m.pos += step + m.knock * dt; }
+                m.pos += step + m.knock * dt;
                 m.knock = Vector2.MoveTowards(m.knock, Vector2.zero, dt * 6f);
                 Color c = Color.white;
                 if (m.slowT > 0) c = new Color(0.7f, 0.88f, 1f);
@@ -456,11 +447,10 @@ namespace SeedClicker
                     // Pixel-Zombie: Bild je Richtung, Tempo der Animation passt zur Laufgeschwindigkeit
                     var face = (dir + side * 0.5f).normalized;
                     // feste, zuegige Schrittfolge; nur Eis (verlangsamt) bremst sie mit
-                    float fps = 12f * (m.Speed / Mathf.Max(0.01f, m.def.speed)) * (fence != null ? 0.6f : 1f);
+                    float fps = 12f * (m.Speed / Mathf.Max(0.01f, m.def.speed));
                     m.animT += dt * fps;
                     m.sr.sprite = m.walk[DirIndex(face) * 8 + ((int)m.animT % 8)];
-                    float bash = fence != null ? Mathf.Max(0, Mathf.Sin(m.bashT / 0.55f * Mathf.PI * 2f)) : 0f;
-                    m.root.position = m.pos + dir * bash * 0.1f;
+                    m.root.position = m.pos;
                     m.root.localScale = new Vector3(1 + m.hitFlash * 0.15f, 1 - m.hitFlash * 0.1f, 1);
                     m.sr.sortingOrder = WorldBuilder.Order(m.pos.y) + 1;
                     m.sr.color = Color.Lerp(Color.Lerp(m.tint, m.tint * c, 0.6f), new Color(1f, 0.35f, 0.3f), m.hitFlash);
@@ -470,11 +460,10 @@ namespace SeedClicker
                 {
                     // Zombie: schwerfaelliges Schwanken statt Huepfen, Animation zeigt in Laufrichtung
                     m.hop += dt * (2.2f + m.Speed * 1.5f);
-                    float bash = fence != null ? Mathf.Max(0, Mathf.Sin(m.bashT / 0.55f * Mathf.PI * 2f)) : 0f;   // Ausholen und Zuschlagen
-                    m.root.position = m.pos + new Vector2(0, Mathf.Abs(Mathf.Sin(m.hop)) * 0.025f) + dir * bash * 0.08f;
-                    m.root.localRotation = Quaternion.Euler(0, 0, Mathf.Sin(m.hop * 0.5f) * 7f - dir.x * (7f + bash * 10f));
+                    m.root.position = m.pos + new Vector2(0, Mathf.Abs(Mathf.Sin(m.hop)) * 0.025f);
+                    m.root.localRotation = Quaternion.Euler(0, 0, Mathf.Sin(m.hop * 0.5f) * 7f - dir.x * 7f);
                     m.root.localScale = new Vector3(1 + m.hitFlash * 0.12f, 1 - m.hitFlash * 0.08f, 1);
-                    if (m.anim != null) { m.anim.SetFloat("DirX", dir.x); m.anim.SetFloat("DirY", dir.y); m.anim.SetFloat("Speed", fence != null ? 0f : 1f); }
+                    if (m.anim != null) { m.anim.SetFloat("DirX", dir.x); m.anim.SetFloat("DirY", dir.y); m.anim.SetFloat("Speed", 1f); }
                     m.group.sortingOrder = WorldBuilder.Order(m.pos.y) + 1;
                     for (int i = 0; i < m.parts.Length; i++)
                         if (m.parts[i] != null) m.parts[i].color = Color.Lerp(Color.Lerp(m.partCols[i], m.partCols[i] * c, 0.5f), new Color(1f, 0.35f, 0.3f), m.hitFlash);

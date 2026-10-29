@@ -125,13 +125,12 @@ namespace SeedClicker
         void BuildToolbar()
         {
             var bar = Panel(safe, "Toolbar", new Color(0.12f, 0.1f, 0.08f, 0.5f));
-            bar.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(840, 270));
+            bar.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(650, 270));
             var row = UIKit.HRow(bar.transform, "Row", 14, TextAnchor.MiddleCenter, new RectOffset(20, 20, 16, 16));
             row.GetComponent<RectTransform>().Stretch();
             AddSlot(row.transform, WorldTool.Axe, Icon("sk_Tree_0"), "Fällen");
             AddSlot(row.transform, WorldTool.Field, Icon("hh_hoe_icon"), "Felder");
             AddSlot(row.transform, WorldTool.Plant, Icon("hh_corn_seedbag"), "Pflanzen");
-            AddSlot(row.transform, WorldTool.Fence, Icon("sk_Fence_11"), "Zaun");
 
             hintText = UIKit.Txt(safe, "", 32, Color.white, TextAnchor.MiddleCenter, true, true);
             hintText.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 312), new Vector2(-60, 80));
@@ -185,11 +184,9 @@ namespace SeedClicker
             var wbi = WorldBuilder.I;
             switch (tool)
             {
-                case WorldTool.Axe: return "Tippe oft auf einen Baum, um ihn zu fällen (Zäune abbauen geht auch)";
+                case WorldTool.Axe: return "Tippe oft auf einen Baum, um ihn zu fällen";
                 case WorldTool.Field: return "Tippe oder wische über die Wiese, um Felder anzulegen";
                 case WorldTool.Plant: return "Tippe auf ein Feld zum Einsetzen – dann ~100× auf die Pflanze tippen";
-                case WorldTool.Fence:
-                    return "Wische, um Zäune zu ziehen (" + (wbi != null ? wbi.FenceCost : 1) + " Holz pro Stück) – sie halten Zombies auf";
                 default:
                     return "Reife Pflanzen auf gleiche ziehen, um sie zu verstärken";
             }

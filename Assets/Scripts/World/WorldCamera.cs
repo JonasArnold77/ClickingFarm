@@ -155,7 +155,7 @@ namespace SeedClicker
             }
             if (wb.Placing) return;   // Ziel waehlen: erst beim Loslassen (so kann man dabei auch die Karte schieben)
             if (wb.PlantAt(c) != null) return;   // fertige Pflanze -> beim Loslassen
-            if (Tool == WorldTool.Field || Tool == WorldTool.Fence || (Tool == WorldTool.Plant && wb.HasField(c)))
+            if (Tool == WorldTool.Field || (Tool == WorldTool.Plant && wb.HasField(c)))
             {
                 painting = true; Paint(screen);
             }
@@ -201,23 +201,22 @@ namespace SeedClicker
             if (wb.PlantAt(cell) != null && Tool != WorldTool.Axe) { wb.TapPlant(cell); return; }
             if (Tool == WorldTool.Axe)
             {
-                if (wb.TryChop(w) || wb.TryRemoveFence(w)) return;
+                if (wb.TryChop(w)) return;
                 if (wb.PlantAt(cell) != null) wb.TapPlant(cell);
                 return;
             }
 
         }
 
-        /// <summary>Wischen: Felder anlegen, Zaeune ziehen (Zaun-Werkzeug) bzw. leere Felder bepflanzen (Pflanzen-Werkzeug).</summary>
+        /// <summary>Wischen: Felder anlegen (Feld-Werkzeug) bzw. leere Felder bepflanzen (Pflanzen-Werkzeug).</summary>
         void Paint(Vector2 screen)
         {
             var wb = WorldBuilder.I;
             if (wb == null) return;
-            var c = Tool == WorldTool.Fence ? WorldBuilder.FenceCellAt(World(screen)) : WorldBuilder.CellAt(World(screen));
+            var c = WorldBuilder.CellAt(World(screen));
             if (hasLastCell && c.x == lastCell.x && c.y == lastCell.y) return;
             hasLastCell = true; lastCell = c;
             if (Tool == WorldTool.Field) { wb.ShowCellCursor(c); wb.PlaceField(c, true); return; }
-            if (Tool == WorldTool.Fence) { wb.ShowFenceCursor(c); wb.PlaceFence(c, true); return; }
             if (Tool == WorldTool.Plant && wb.HasField(c) && wb.PlantAt(c) == null)
             {
                 var sel = wb.Save.selectedPlant;

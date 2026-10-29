@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace SeedClicker
 {
-    public enum WorldTool { Axe, Field, Plant, Fence, Pot }
+    public enum WorldTool { Axe, Field, Plant }
 
     [Serializable] public struct Cell { public int x, y; public Cell(int x, int y) { this.x = x; this.y = y; } }
 
@@ -23,9 +23,7 @@ namespace SeedClicker
         public bool starterChosen;
         public int wave;   // ueberstandene Wellen
         // Verteidigung: Zaeune, gewaehlte Waffe
-        public List<FenceState> fences = new List<FenceState>();
         public string weapon = "pistole";
-        public bool enclosureBuilt;   // Zaun ums Startbeet wurde gesetzt
         public int season;            // 0 Sommer, 1 Herbst, 2 Winter
         public bool plantsCleared;
         public int mapSeed;           // Zufallskarte (Lanes, Felseninseln, Baeume); 0 = noch keine    // einmaliges Loeschen aller Pflanzen (Umstellung auf Leveln durch Klicken)
@@ -292,7 +290,7 @@ namespace SeedClicker
         {
             if (fx && !InFarmArea(CellCenter(c)) && noWoodT <= 0f)
             {
-                Floater?.Invoke(CellCenter(c) + new Vector2(0, 0.5f), "Felder nur innerhalb des Zauns", new Color(1f, 0.85f, 0.6f));
+                Floater?.Invoke(CellCenter(c) + new Vector2(0, 0.5f), "Felder nur im markierten Beet", new Color(1f, 0.85f, 0.6f));
                 Sfx.Play("error", 1.1f, 0.4f);
                 noWoodT = 1.2f;
             }
@@ -330,15 +328,6 @@ namespace SeedClicker
         }
 
         /// <summary>Markiert die Zelle unter dem Finger (gruen = geht, rot = geht nicht).</summary>
-        /// <summary>Markiert eine Zaun-Zelle (groberes Raster).</summary>
-        public void ShowFenceCursor(Cell c)
-        {
-            ShowCellCursor(CellAt(FenceCenter(c)), CanPlaceFence(c) || HasFence(c));
-            cellCursor.transform.position = FenceCenter(c);
-            var s = cellCursor.sprite;
-            if (s != null) cellCursor.transform.localScale = Vector3.one * (FenceSize / s.bounds.size.x);
-        }
-
         public void ShowCellCursor(Cell c, bool? canPlace = null)
         {
             if (cellCursor == null)

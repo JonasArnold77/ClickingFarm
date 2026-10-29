@@ -38,8 +38,6 @@ namespace SeedClicker
     /// <summary>Ab welcher Stufe eine Pflanze wie viele Felder braucht (Breite x Hoehe).</summary>
     [Serializable] public class MergeSizeDef { public int minLevel = 1, w = 1, h = 1; }
 
-    /// <summary>Bauen mit Holz: Zaeune und Blumentoepfe.</summary>
-    [Serializable] public class BuildDef { public int fenceWood, fenceHp, potWood; }
 
     /// <summary>Eine Angriffspflanze im Katalog: feste Eigenschaften, wird nach einer Welle freigeschaltet.</summary>
     [Serializable]
@@ -76,7 +74,6 @@ namespace SeedClicker
         public MonsterDefW[] monsters;
         public WaveDef waves;
         public WeaponDef[] weapons;
-        public BuildDef build;
         public LevelDef levels;
         public MergeSizeDef[] mergeSizes;
         public int[] mutationLevels;   // ab welcher Stufe Mutation 2, 3, 4 beginnt (erste Zahl = Mutation 1)
@@ -265,7 +262,6 @@ namespace SeedClicker
     }
 
     /// <summary>Ein Zaunstueck auf einer Rasterzelle (Spielstand).</summary>
-    [Serializable] public class FenceState { public int x, y; public float hp; }
 
     /// <summary>Eine gepflanzte Angriffspflanze auf einem Feld (Spielstand).</summary>
     [Serializable]

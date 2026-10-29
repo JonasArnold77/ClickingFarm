@@ -57,6 +57,7 @@ namespace SeedClicker
             BuildMountain();
             PlaceHouse();
             PlaceWorkbench();
+            PlaceLaneTiles();
             PlaceRockIslands();
             PlaceNature();
             SetupLight();
@@ -112,7 +113,7 @@ namespace SeedClicker
                 {
                     var w = MaskToWorld(x, y);
                     float edge = (Fbm(w.x * 1.2f, w.y * 1.2f, 3 + salt) - 0.5f) * 0.35f;
-                    float dirt = 1f - Mathf.InverseLerp(0.32f, 0.62f, DistToPath(w) + edge);
+                    float dirt = 0f;   // Lanes werden als Kacheln im Raster gezeichnet (PlaceLaneTiles)
                     // Vorplatz aus Pflaster vor dem Haus, von Erde umrandet
                     var yd = (w - yardC) / new Vector2(2.6f, 1.1f);
                     float stone = 1f - Mathf.InverseLerp(0.85f, 1.0f, yd.magnitude + edge * 0.4f);
@@ -236,7 +237,7 @@ namespace SeedClicker
             // ein paar Happy-Harvest-Props direkt am Haus
             var barrel = HousePos + new Vector2(2.65f, -0.3f);
             PlaceSized("hh_barrel", barrel, 0.7f); Shadow(barrel, 0.75f, 0.22f); Reserve(barrel, 0.4f);
-            var sign = LaneTrunk[1] + new Vector2(0.85f, 0.1f);
+            var sign = CellCenter(new Cell(2, 2)) + new Vector2(0.35f, 0f);
             PlaceSized("hh_sign", sign, 0.95f); Shadow(sign, 0.45f, 0.14f); Reserve(sign, 0.3f);
 
             // warmes Fensterlicht fuer die Nacht vorbereiten
@@ -351,7 +352,6 @@ namespace SeedClicker
             UpdateMountain(Time.deltaTime);
             UpdateInteract(Time.deltaTime);
             UpdatePlants(Time.deltaTime);
-            UpdateFences(Time.deltaTime);
             UpdateCarry(Time.deltaTime);
             UpdateSeason(Time.deltaTime);
             ambientT -= Time.deltaTime;
