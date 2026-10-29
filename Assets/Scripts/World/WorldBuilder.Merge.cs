@@ -225,7 +225,9 @@ namespace SeedClicker
             WorldCamera.I?.Shake(0.22f);
             WorldCamera.I?.Punch(0.09f);
             WorldPostFX.Punch(1.4f);
-            Floater?.Invoke(at + new Vector2(0, 1.8f), "MUTATION " + tier + "/4 – " + MutationNames[Mathf.Clamp(tier, 0, 4)] + "!", new Color(1f, 0.4f, 0.3f));
+            var spn = PlantBalance.I.Species(g.species);
+            string mname = spn != null && spn.mutationNames != null && spn.mutationNames.Length >= tier ? spn.mutationNames[tier - 1] : MutationNames[Mathf.Clamp(tier, 0, 4)];
+            Floater?.Invoke(at + new Vector2(0, 1.8f), "MUTATION " + tier + "/4 – " + mname + "!", new Color(1f, 0.4f, 0.3f));
         }
 
         // ------------------------------------------------------------------ Anzeige

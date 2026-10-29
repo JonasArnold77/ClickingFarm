@@ -44,6 +44,7 @@ namespace SeedClicker
         {
             public SpriteRenderer sr; public Vector2 pos, vel; public Monster target; public PlantGenome src;
             public float speed, damage, homing, life; public int pierce; public HashSet<Monster> hit = new HashSet<Monster>();
+            public bool fireball; public float power = 1f; public SpriteRenderer core;
             public bool done;
         }
 
@@ -544,17 +545,20 @@ namespace SeedClicker
                 Sfx.Play("crit", 1.4f, 0.35f);
                 return;
             }
-            foreach (var t in targets) LaunchShot(g, proj, muzzle, t, 0f, dmg);
+            int tier = B.Tier(plant.Lv);
+            if (proj != null && proj.id == "fireball") { Sfx.Play("launch", 0.75f + rnd.Next(0, 10) * 0.01f, 0.55f + tier * 0.08f); Particles.I?.Burst(muzzle, "spark", new Color(1f, 0.6f, 0.2f), 6 + tier * 2, 2.5f, 0.3f, 0.12f, 0f, 1f); }
+            foreach (var t in targets) LaunchShot(g, proj, muzzle, t, 0f, dmg, tier);
             for (int i = 0; i < extra; i++)
             {
                 float ang = ((i / 2) + 1) * fan * (i % 2 == 0 ? 1 : -1);
-                LaunchShot(g, proj, muzzle, target, ang, dmg * 0.8f);
+                LaunchShot(g, proj, muzzle, target, ang, dmg * 0.8f, tier);
             }
             Sfx.Play("pop", 1.2f + (float)rnd.NextDouble() * 0.3f, 0.45f);
         }
 
-        void LaunchShot(PlantGenome g, OptionDef proj, Vector2 from, Monster target, float angle, float dmg)
+        void LaunchShot(PlantGenome g, OptionDef proj, Vector2 from, Monster target, float angle, float dmg, int tier = 1)
         {
+            if (proj.id == "fireball") { LaunchFireball(g, proj, from, target, angle, dmg, tier); return; }
             var sr = new GameObject("Shot").AddComponent<SpriteRenderer>();
             sr.transform.SetParent(transform, false);
             sr.sprite = WorldBuilder.Mist;
@@ -586,7 +590,8 @@ namespace SeedClicker
                 s.pos += s.vel * dt;
                 s.sr.transform.position = s.pos;
                 if (s.vel.sqrMagnitude > 0.01f) s.sr.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(s.vel.y, s.vel.x) * Mathf.Rad2Deg);
-                if (rnd.NextDouble() < dt * 30) Particles.I?.Spawn(s.pos, "spark", s.src.ElementColor, Vector3.zero, 0.3f, 0.5f, 0f, 0f);
+                if (s.fireball) FireballTrail(s, dt);
+                else if (rnd.NextDouble() < dt * 30) Particles.I?.Spawn(s.pos, "spark", s.src.ElementColor, Vector3.zero, 0.3f, 0.5f, 0f, 0f);
                 // Treffer
                 foreach (var m in monsters)
                 {
@@ -594,6 +599,7 @@ namespace SeedClicker
                     if (((m.pos + new Vector2(0, 0.3f)) - s.pos).sqrMagnitude > 0.35f * 0.35f) continue;
                     s.hit.Add(m);
                     Hit(m, s.damage, s.src, s.pos);
+                    if (s.fireball) FireballBlast(s, m);
                     if (s.pierce > 0) { s.pierce--; s.damage *= 0.85f; continue; }
                     s.done = true; Destroy(s.sr.gameObject);
                     break;
@@ -639,6 +645,70 @@ namespace SeedClicker
             }
             if (g.pattern.id == "chain") Chain(m, g, dmg * 0.7f, 1 + g.pattern.level / 2);
             if (g.element.id == "lightning") Chain(m, g, dmg * 0.5f, 1 + g.element.level / 2);
+        }
+
+        // ------------------------------------------------------------------ Feuerball (Feuerweizen)
+
+        void LaunchFireball(PlantGenome g, OptionDef proj, Vector2 from, Monster target, float angle, float dmg, int tier)
+        {
+            float size = 0.42f + 0.13f * (tier - 1);
+            var sr = new GameObject("Fireball").AddComponent<SpriteRenderer>();
+            sr.transform.SetParent(transform, false);
+            sr.sprite = WorldBuilder.Mist;
+            sr.color = new Color(2.4f, 0.95f, 0.25f, 1f);
+            sr.transform.localScale = Vector3.one * size;
+            sr.sortingOrder = 30000;
+            var core = new GameObject("Core").AddComponent<SpriteRenderer>();
+            core.transform.SetParent(sr.transform, false);
+            core.sprite = WorldBuilder.Mist;
+            core.color = new Color(3f, 2.4f, 1.2f, 1f);
+            core.transform.localScale = Vector3.one * 0.45f;
+            core.sortingOrder = 30001;
+            var dir = ((target.pos + new Vector2(0, 0.35f)) - from).normalized;
+            dir = Quaternion.Euler(0, 0, angle) * dir;
+            float speed = proj.speed * (1f + 0.05f * (tier - 1));
+            shots.Add(new Shot { sr = sr, core = core, pos = from, vel = dir * speed, target = target, src = g, speed = speed, damage = dmg * (1f + 0.15f * (tier - 1)),
+                homing = proj.homing, pierce = 0, life = 3.5f, fireball = true, power = tier });
+            sr.transform.position = from;
+        }
+
+        void FireballTrail(Shot s, float dt)
+        {
+            // pulsierender Kern und dichter Flammenschweif mit Rauch
+            float fl = 1f + Mathf.Sin(Time.time * 30f) * 0.08f;
+            s.sr.transform.localScale = Vector3.one * (0.42f + 0.13f * (s.power - 1)) * fl;
+            var back = -s.vel.normalized;
+            int n = Mathf.FloorToInt(dt * (40f + s.power * 12f) + (float)rnd.NextDouble());
+            for (int i = 0; i < n; i++)
+            {
+                var c = Color.Lerp(new Color(1f, 0.85f, 0.3f), new Color(1f, 0.3f, 0.06f), (float)rnd.NextDouble());
+                Particles.I?.Spawn(s.pos + UnityEngine.Random.insideUnitCircle * 0.08f * s.power, "spark", c,
+                    (Vector3)(back * (0.6f + (float)rnd.NextDouble()) + UnityEngine.Random.insideUnitCircle * 0.3f), 0.35f, 0.16f + 0.04f * s.power, 0f, -0.4f);
+            }
+            if (rnd.NextDouble() < dt * 14) Particles.I?.Spawn(s.pos, "square", new Color(0.25f, 0.22f, 0.22f, 0.45f), (Vector3)(back * 0.3f + Vector2.up * 0.3f), 0.9f, 0.08f, 0.22f, -0.15f);
+        }
+
+        /// <summary>Einschlag: Explosion mit Flaechenschaden, Feuerring, Licht, Donner – maechtig.</summary>
+        void FireballBlast(Shot s, Monster hit)
+        {
+            float r = 0.6f + 0.18f * s.power;
+            var at = s.pos;
+            Particles.I?.Ring(at, new Color(1f, 0.6f, 0.2f, 0.95f), r * 1.9f, 0.4f);
+            Particles.I?.Ring(at, new Color(1f, 0.95f, 0.7f, 0.9f), r * 1.1f, 0.25f);
+            Particles.I?.Burst(at, "spark", new Color(1f, 0.7f, 0.25f), 14 + (int)(s.power * 4), 4.5f, 0.4f, 0.3f, 0.5f, 1.2f);
+            Particles.I?.Burst(at, "square", new Color(1f, 0.45f, 0.12f), 10, 3.5f, 0.5f, 0.12f, 4f, 1.5f);
+            Particles.I?.Burst(at, "square", new Color(0.25f, 0.22f, 0.22f, 0.7f), 8, 1.4f, 1.1f, 0.25f, -0.6f, 1f);
+            if (flashLight != null) { flashLight.transform.position = at; flashLight.intensity = 1.6f + s.power * 0.5f; flashT = 0.12f; }
+            Sfx.Play("boom", 1.25f + (float)rnd.NextDouble() * 0.15f, 0.4f + s.power * 0.08f);
+            WorldCamera.I?.Shake(0.04f + s.power * 0.015f);
+            foreach (var o in monsters)
+            {
+                if (o == hit || o.dead || (o.pos - hit.pos).magnitude > r) continue;
+                Damage(o, s.damage * 0.55f, s.src);
+                ApplyElement(o, s.src, s.damage * 0.55f);
+                o.knock += (o.pos - at).normalized * 0.5f;
+            }
+            hit.knock += s.vel.normalized * (0.4f + s.power * 0.1f);
         }
 
         void ApplyElement(Monster m, PlantGenome g, float dmg)

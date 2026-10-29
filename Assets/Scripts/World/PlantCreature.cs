@@ -27,6 +27,7 @@ namespace SeedClicker
 
         SpriteRenderer body;
         PlantGenome g;
+        bool single;   // Weizen: eine breite Aehre mit Zweigen
         string style;
         readonly List<Head> heads = new List<Head>();
         readonly List<SpriteRenderer> all = new List<SpriteRenderer>();
@@ -51,6 +52,7 @@ namespace SeedClicker
             c.body = body; c.g = g;
             c.style = g.projectile.id;
             c.Tier = Mathf.Clamp(tier, 1, 4);
+            c.single = PlantForms.IsSingle(sp);
             foreach (var h in sp.heads) c.BuildHead(h);
             c.BuildMutation();
             c.blinkT = Random.Range(1f, 4f);
@@ -93,8 +95,8 @@ namespace SeedClicker
                 head.browR.localRotation = Quaternion.Euler(0, 0, tilt);
                 if (style == "spore" && Tier == 1) { hidden.Add(head.browLSr); hidden.Add(head.browRSr); }
             }
-            // Hoerner ab Mutation 2, groesser und dunkler mit jeder Stufe
-            if (Tier >= 2)
+            // Hoerner ab Mutation 2, groesser und dunkler mit jeder Stufe (nicht beim Feuerweizen, der hat eigene Mutationen)
+            if (Tier >= 2 && !single)
             {
                 float hs = 0.36f + (Tier - 2) * 0.1f;
                 var hornCol = Tier == 2 ? new Color(0.62f, 0.5f, 0.38f) : Tier == 3 ? new Color(0.45f, 0.3f, 0.28f) : new Color(0.22f, 0.1f, 0.14f);
@@ -327,6 +329,7 @@ namespace SeedClicker
 
         void UpdateElement(float dt, float bw, int order)
         {
+            if (single) { UpdateWheat(dt, bw, order); return; }
             if (Tier < 2 || heads.Count == 0) return;
             if (elemParts.Count == 0 && elemLight == null) BuildElement();
             string el = g.element.id;
@@ -403,11 +406,172 @@ namespace SeedClicker
             }
         }
 
+        // ------------------------------------------------------------------ Feuerweizen
+        // Grundform: eine breite Aehre mit Gesicht, zwei Weizenzweige wachsen seitlich heraus.
+        // Mutation 1 "Glutkranz": Flammen kreisen um ihn, er waechst.
+        // Mutation 2 "Fackelaehre": vier Zweige, deren Spitzen brennen; die Aehre glueht von innen.
+        // Mutation 3 "Phoenixweizen": Feuerfluegel schlagen, Flammenkrone, Feuersaeule hinter ihm.
+
+        class Branch { public SpriteRenderer sr, tip; public float ang, h, scale, side; }
+        readonly List<Branch> branches = new List<Branch>();
+        readonly List<SpriteRenderer> orbit = new List<SpriteRenderer>(), wings = new List<SpriteRenderer>(), crown = new List<SpriteRenderer>();
+        Transform wheatRoot;
+        SpriteRenderer pillar;
+        Color baseTint;
+
+        static readonly Color FlameHdr = new Color(2.3f, 0.95f, 0.28f, 0.95f);
+
+        void BuildWheat()
+        {
+            var sp = PlantBalance.I.Species(g.species);
+            var full = WorldArtSet.I != null ? WorldArtSet.I.Get(sp.art + sp.stages[sp.stages.Length - 1]) : null;
+            baseTint = PlantBalance.MutationTint(g, Tier);
+            wheatRoot = new GameObject("Wheat").transform;
+            wheatRoot.SetParent(transform, false);
+            int nb = Tier >= 3 ? 4 : 2;
+            for (int i = 0; i < nb; i++)
+            {
+                float side = i % 2 == 0 ? -1f : 1f;
+                bool upper = i >= 2;
+                var br = new Branch
+                {
+                    side = side, ang = upper ? 52f : 30f, h = upper ? 0.5f : 0.28f, scale = upper ? 0.62f : 0.85f,
+                    sr = Part(wheatRoot, "Branch", PlantForms.Third(full, side < 0 ? 0 : 2), Vector2.zero, 1f)
+                };
+                br.sr.color = baseTint;
+                if (Tier >= 3) { br.tip = Part(wheatRoot, "TipFlame", Get("flame"), Vector2.zero, 0.2f); br.tip.color = FlameHdr; }
+                branches.Add(br);
+            }
+            if (Tier >= 2)
+            {
+                int n = Tier == 2 ? 6 : Tier == 3 ? 8 : 11;
+                for (int i = 0; i < n; i++) { var f = Part(wheatRoot, "Orbit", Get("flame"), Vector2.zero, 0.2f); f.color = FlameHdr; orbit.Add(f); }
+                var lg = new GameObject("ElementLight");
+                lg.transform.SetParent(transform, false);
+                elemLight = lg.AddComponent<Light2D>();
+                elemLight.lightType = Light2D.LightType.Point;
+                elemLight.color = new Color(1f, 0.55f, 0.2f);
+                elemLight.pointLightOuterRadius = 1f + Tier * 0.45f;
+                elemLight.pointLightInnerRadius = 0.05f;
+            }
+            if (Tier >= 4)
+            {
+                for (int i = 0; i < 2; i++) { var w = Part(wheatRoot, "Wing", Get("flame"), Vector2.zero, 1f); w.color = new Color(2.2f, 0.75f, 0.22f, 0.85f); wings.Add(w); }
+                pillar = Part(wheatRoot, "Pillar", Get("flame"), Vector2.zero, 1f);
+                pillar.color = new Color(2f, 0.6f, 0.2f, 0.5f);
+                if (heads.Count > 0)
+                    for (int i = 0; i < 3; i++)
+                    {
+                        var c = Part(heads[0].root, "Crown", Get("flame"), new Vector2((i - 1) * 0.26f, 0.62f + (i == 1 ? 0.08f : 0f)), i == 1 ? 0.5f : 0.38f);
+                        c.color = new Color(2.4f, 1.1f, 0.3f, 1f);
+                        crown.Add(c);
+                    }
+            }
+        }
+
+        void UpdateWheat(float dt, float bw, int order)
+        {
+            if (wheatRoot == null || body.sprite == null) return;
+            float t = Time.time;
+            var sp = PlantBalance.I.Species(g.species);
+            var ps = body.transform.localScale;
+            var b = body.sprite.bounds;
+            float bodyH = b.size.y * Mathf.Abs(ps.y);
+            float s = Mathf.Abs(ps.x) / PlantForms.Widen(sp);   // Skalierung ohne Verbreiterung
+            Vector2 root = new Vector2(b.center.x * ps.x, b.min.y * Mathf.Abs(ps.y));
+            wheatRoot.localPosition = Vector3.zero;
+
+            // Zweige: wachsen seitlich aus der Aehre, wiegen sich leicht
+            foreach (var br in branches)
+            {
+                if (br.sr == null || br.sr.sprite == null) continue;
+                var p = root + new Vector2(br.side * bw * 0.1f, bodyH * br.h);
+                float rot = -br.side * (br.ang + Mathf.Sin(t * 1.4f + br.h * 5f) * 4f);
+                br.sr.transform.localPosition = p;
+                br.sr.transform.localRotation = Quaternion.Euler(0, 0, rot);
+                br.sr.transform.localScale = new Vector3(s * br.scale, Mathf.Abs(ps.y) * br.scale, 1);
+                br.sr.sortingOrder = order - 1;
+                if (br.tip != null)
+                {
+                    float len = br.sr.sprite.bounds.size.y * Mathf.Abs(ps.y) * br.scale;
+                    br.tip.transform.localPosition = p + (Vector2)(Quaternion.Euler(0, 0, rot) * Vector2.up) * len * 0.92f;
+                    float fl = 1f + Mathf.Sin(t * 19f + br.h * 9f) * 0.12f;
+                    br.tip.transform.localScale = new Vector3(bw * 0.32f * (2f - fl), bw * 0.42f * fl, 1);
+                    br.tip.sortingOrder = order + 1;
+                }
+            }
+
+            // Flammenkranz um die Aehre (vorne vor, hinten hinter der Pflanze)
+            Vector2 c = root + new Vector2(0, bodyH * 0.45f);
+            float rx = bw * 0.85f + 0.08f, ry = bodyH * 0.22f;
+            for (int i = 0; i < orbit.Count; i++)
+            {
+                var f = orbit[i];
+                float a = t * (1.2f + Tier * 0.25f) + i * Mathf.PI * 2f / orbit.Count;
+                float sn = Mathf.Sin(a);
+                f.transform.localPosition = c + new Vector2(Mathf.Cos(a) * rx, sn * ry + Mathf.Sin(t * 3f + i) * bodyH * 0.05f);
+                float fl = 1f + Mathf.Sin(t * 17f + i * 2.3f) * 0.12f;
+                float sz = bw * (0.22f + Tier * 0.05f) * (0.85f + 0.15f * -sn);
+                f.transform.localScale = new Vector3(sz * (2f - fl), sz * 1.3f * fl, 1);
+                f.sortingOrder = sn > 0f ? order - 2 : order + 6;
+            }
+
+            // Phoenix: Fluegel, Saeule
+            for (int i = 0; i < wings.Count; i++)
+            {
+                float side = i == 0 ? -1f : 1f;
+                var w = wings[i];
+                // Fluegel: schraeg nach oben aussen, schlagen langsam
+                float flap = Mathf.Sin(t * 3.2f) * 10f;
+                w.transform.localRotation = Quaternion.Euler(0, 0, -side * (38f + flap));
+                float fl = 1f + Mathf.Sin(t * 13f + i) * 0.06f;
+                w.transform.localScale = new Vector3(bodyH * 0.75f, bodyH * 1.1f * fl, 1);
+                w.transform.localPosition = root + new Vector2(side * bw * 0.3f, bodyH * 0.55f) + (Vector2)(Quaternion.Euler(0, 0, -side * (38f + flap)) * Vector2.up) * bodyH * 0.35f;
+                w.sortingOrder = order - 3;
+            }
+            if (pillar != null)
+            {
+                pillar.transform.localPosition = root + new Vector2(0, bodyH * 0.75f);
+                float fl = 1f + Mathf.Sin(t * 9f) * 0.05f + Mathf.Sin(t * 23f) * 0.03f;
+                pillar.transform.localScale = new Vector3(bw * 1.5f * (2f - fl), bodyH * 1.7f * fl, 1);
+                pillar.sortingOrder = order - 4;
+            }
+            foreach (var cr in crown)
+            {
+                float fl = 1f + Mathf.Sin(t * 21f + cr.transform.localPosition.x * 9f) * 0.12f;
+                float baseS = cr.name == "Crown" && Mathf.Abs(cr.transform.localPosition.x) < 0.01f ? 0.5f : 0.38f;
+                cr.transform.localScale = new Vector3(baseS * (2f - fl), baseS * 1.25f * fl, 1);
+                cr.sortingOrder = order - 1;
+            }
+
+            // Aehre glueht von innen (ab Mutation 2), pulsiert
+            if (Tier >= 3)
+            {
+                float pulse = 0.5f + 0.5f * Mathf.Sin(t * 3.5f);
+                body.color = Color.Lerp(baseTint, new Color(1.5f, 0.85f, 0.4f), pulse * (Tier == 3 ? 0.35f : 0.55f));
+            }
+            if (elemLight != null)
+            {
+                elemLight.transform.localPosition = c;
+                float nightK = 0.5f + (NightWave.I != null ? NightWave.I.NightAmount : 0f);
+                elemLight.intensity = (0.6f + Mathf.PerlinNoise(t * 8f, 0f) * 0.5f) * nightK * (Tier - 1) * 0.55f;
+            }
+
+            // Glut und Funken
+            elemT -= dt;
+            if (Tier < 2 || elemT > 0f || Particles.I == null) return;
+            elemT = Random.Range(0.05f, 0.12f) / (Tier - 1);
+            Vector2 at = (Vector2)transform.TransformPoint(c) + new Vector2(Random.Range(-rx, rx), Random.Range(-ry, ry));
+            Particles.I.Spawn(at, "spark", Color.Lerp(new Color(1f, 0.85f, 0.3f), new Color(1f, 0.3f, 0.08f), Random.value),
+                new Vector3(Random.Range(-0.2f, 0.2f), Random.Range(0.6f, 1.3f), 0), 0.7f, 0.06f + Tier * 0.015f, 0f, -0.3f);
+        }
+
         static float MouthSize(string m) => m == "grin" ? 0.42f : m == "fangs" ? 0.46f : m == "smile" ? 0.32f : 0.2f;
 
         /// <summary>Mutationsteile am Fuss: Dornenranken (ab 2) und lodernde Aura (ab 4).</summary>
         void BuildMutation()
         {
+            if (single) { BuildWheat(); return; }
             if (Tier < 2) return;
             baseRoot = new GameObject("Mutation").transform;
             baseRoot.SetParent(transform, false);

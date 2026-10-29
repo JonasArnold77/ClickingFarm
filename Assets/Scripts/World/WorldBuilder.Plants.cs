@@ -247,7 +247,7 @@ namespace SeedClicker
             var sp = PlantBalance.I.Species(g.species);
             float f = p.growth / (float)Mathf.Max(1, PlantBalance.I.growTaps);
             int stage = p.Grown ? 2 : f >= 0.5f ? 1 : 0;
-            var sprite = art.Get(sp.art + sp.stages[Mathf.Clamp(stage, 0, sp.stages.Length - 1)]);
+            var sprite = PlantForms.Body(art, sp, stage);
             if (stage != v.stage) { v.stage = stage; v.sr.sprite = sprite; }
             int tier = PlantBalance.I.Tier(p.Lv);
             if (p.Grown && v.creature != null && v.creature.Tier != tier) { Destroy(v.creature.gameObject); v.creature = null; }
@@ -255,9 +255,9 @@ namespace SeedClicker
             if (snap || v.size < 0f) v.size = PlantWidth(p);
             if (sprite != null)
             {
-                float s = v.size / Mathf.Max(0.01f, sprite.bounds.size.x);
+                float s = v.size / Mathf.Max(0.01f, PlantForms.RefWidth(sp, sprite));
                 float sy = s * PlantStretch(p);
-                v.sr.transform.localScale = new Vector3(s, sy, 1);
+                v.sr.transform.localScale = new Vector3(s * PlantForms.Widen(sp), sy, 1);
                 v.sr.transform.localPosition = new Vector3(0, -sprite.bounds.min.y * sy, 0);
             }
             v.shadow.transform.localScale = new Vector3(v.size * 1.0f, v.size * 0.3f, 1);
@@ -578,8 +578,26 @@ namespace SeedClicker
 
         public void TapEmptyField(Cell c) { if (PlantAt(c) == null) EmptyFieldTapped?.Invoke(c); }
 
+        /// <summary>Umbenannte Pflanzenarten (Weizen wurde Feuer, Glutmais wurde Frostmais).</summary>
+        static readonly Dictionary<string, string> RenamedPlants = new Dictionary<string, string>
+        {
+            { "glutmais", "frostmais" }, { "frostweizen", "glutweizen" }, { "moosweizen", "funkenweizen" },
+            { "dornenweizen", "aschenweizen" }, { "kristallweizen", "flammenweizen" },
+        };
+        static string Renamed(string id) => id != null && RenamedPlants.TryGetValue(id, out var n) ? n : id;
+
+        void MigratePlantIds()
+        {
+            for (int i = 0; i < save.unlocked.Count; i++) save.unlocked[i] = Renamed(save.unlocked[i]);
+            save.selectedPlant = Renamed(save.selectedPlant);
+            foreach (var p in save.planted) p.type = Renamed(p.type);
+            foreach (var p in save.pots) p.type = Renamed(p.type);
+            for (int i = 0; i < save.potStock.Count; i++) save.potStock[i] = Renamed(save.potStock[i]);
+        }
+
         void LoadPlants()
         {
+            MigratePlantIds();
             if (save.starterChosen && !string.IsNullOrEmpty(save.selectedPlant) && !save.unlocked.Contains(save.selectedPlant)) save.unlocked.Add(save.selectedPlant);
             UnlockForWave(save.wave);
             for (int i = save.planted.Count - 1; i >= 0; i--)

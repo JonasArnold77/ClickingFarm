@@ -22,7 +22,8 @@
     { "id": "thorn", "name": "Dorn",      "speed": 14, "damage": 0.85, "cooldown": 0.9, "homing": 0.1, "desc": "Sehr schnell, durchbohrt" },
     { "id": "spore", "name": "Spore",     "speed": 4.5,"damage": 1.5,  "cooldown": 1.3, "homing": 1.0, "desc": "Langsam, aber verfolgt und trifft hart" },
     { "id": "petal", "name": "Blütenblatt","speed": 7,"damage": 0.95, "cooldown": 0.95,"homing": 0.8, "desc": "Fliegt im Bogen und verfolgt" },
-    { "id": "beam",  "name": "Lichtstrahl","speed": 0, "damage": 0.75, "cooldown": 0.7, "homing": 0,   "desc": "Trifft sofort" }
+    { "id": "beam",  "name": "Lichtstrahl","speed": 0, "damage": 0.75, "cooldown": 0.7, "homing": 0,   "desc": "Trifft sofort" },
+    { "id": "fireball", "name": "Feuerball", "speed": 6.5, "damage": 1.8, "cooldown": 1.25, "homing": 0.5, "desc": "Großer Feuerball, explodiert beim Einschlag" }
   ],
   "elements": [
     { "id": "nature",    "name": "Natur", "color": "#8FD45A", "desc": "Mehr Grundschaden" },
@@ -43,23 +44,25 @@
     { "id": "corn",   "name": "mais",    "art": "hh_corn_",   "stages": [1, 3, 5], "scale": 1.05,
       "heads": [ { "x": 0.18, "y": 0.79, "s": 0.27 }, { "x": 0.5, "y": 0.75, "s": 0.27 }, { "x": 0.82, "y": 0.79, "s": 0.27 } ] },
     { "id": "wheat",  "name": "weizen",  "art": "hh_wheat_",  "stages": [1, 3, 5], "scale": 1.05,
-      "heads": [ { "x": 0.18, "y": 0.74, "s": 0.27 }, { "x": 0.5, "y": 0.72, "s": 0.27 }, { "x": 0.82, "y": 0.74, "s": 0.27 } ] },
+      "form": "single", "widen": 2.3,
+      "heads": [ { "x": 0.5, "y": 0.7, "s": 0.95 } ],
+      "mutationNames": [ "Glutweizen", "Glutkranz", "Fackelähre", "Phönixweizen" ] },
     { "id": "carrot", "name": "rübe",   "art": "hh_carrot_", "stages": [0, 2, 3], "scale": 1.5,
       "heads": [ { "x": 0.5, "y": 0.42, "s": 0.5 } ] }
   ],
 
   "catalog": [
-    { "id": "glutmais",       "name": "Glutmais",       "species": "corn",   "starter": true,  "unlockWave": 7,  "pattern": "single", "patternLv": 1, "rangeLv": 1, "projectile": "seed",  "projectileLv": 1, "element": "fire",      "elementLv": 1, "effect": "none",      "effectLv": 1 },
-    { "id": "frostweizen",    "name": "Frostweizen",    "species": "wheat",  "starter": true,  "unlockWave": 9,  "pattern": "pierce", "patternLv": 1, "rangeLv": 2, "projectile": "thorn", "projectileLv": 1, "element": "ice",       "elementLv": 1, "effect": "none",      "effectLv": 1 },
+    { "id": "frostmais",      "name": "Frostmais",      "species": "corn",   "starter": true,  "unlockWave": 7,  "pattern": "pierce", "patternLv": 1, "rangeLv": 2, "projectile": "thorn", "projectileLv": 1, "element": "ice",       "elementLv": 1, "effect": "none",      "effectLv": 1 },
+    { "id": "glutweizen",     "name": "Glutweizen",     "species": "wheat",  "starter": true,  "unlockWave": 9,  "pattern": "single", "patternLv": 1, "rangeLv": 1, "projectile": "fireball", "projectileLv": 1, "element": "fire",   "elementLv": 1, "effect": "none",      "effectLv": 1 },
     { "id": "giftruebe",      "name": "Giftrübe",       "species": "carrot", "starter": true,  "unlockWave": 11, "pattern": "splash", "patternLv": 1, "rangeLv": 1, "projectile": "spore", "projectileLv": 1, "element": "poison",    "elementLv": 1, "effect": "none",      "effectLv": 1 },
     { "id": "blitzmais",      "name": "Blitzmais",      "species": "corn",   "starter": false, "unlockWave": 1,  "pattern": "chain",  "patternLv": 2, "rangeLv": 2, "projectile": "beam",  "projectileLv": 1, "element": "lightning", "elementLv": 2, "effect": "none",      "effectLv": 1 },
-    { "id": "moosweizen",     "name": "Moosweizen",     "species": "wheat",  "starter": false, "unlockWave": 2,  "pattern": "double", "patternLv": 2, "rangeLv": 2, "projectile": "petal", "projectileLv": 2, "element": "nature",    "elementLv": 2, "effect": "crit",      "effectLv": 1 },
+    { "id": "funkenweizen",   "name": "Funkenweizen",   "species": "wheat",  "starter": false, "unlockWave": 2,  "pattern": "double", "patternLv": 2, "rangeLv": 2, "projectile": "fireball", "projectileLv": 2, "element": "fire",   "elementLv": 2, "effect": "crit",      "effectLv": 1 },
     { "id": "feuerruebe",     "name": "Feuerrübe",      "species": "carrot", "starter": false, "unlockWave": 3,  "pattern": "splash", "patternLv": 2, "rangeLv": 2, "projectile": "spore", "projectileLv": 2, "element": "fire",      "elementLv": 2, "effect": "explosion", "effectLv": 2 },
     { "id": "sturmmais",      "name": "Sturmmais",      "species": "corn",   "starter": false, "unlockWave": 4,  "pattern": "spread", "patternLv": 3, "rangeLv": 3, "projectile": "seed",  "projectileLv": 2, "element": "lightning", "elementLv": 2, "effect": "multishot", "effectLv": 2 },
     { "id": "eisruebe",       "name": "Eisrübe",        "species": "carrot", "starter": false, "unlockWave": 5,  "pattern": "splash", "patternLv": 3, "rangeLv": 3, "projectile": "spore", "projectileLv": 3, "element": "ice",       "elementLv": 3, "effect": "knockback", "effectLv": 2 },
-    { "id": "dornenweizen",   "name": "Dornenweizen",   "species": "wheat",  "starter": false, "unlockWave": 6,  "pattern": "pierce", "patternLv": 4, "rangeLv": 4, "projectile": "thorn", "projectileLv": 3, "element": "poison",    "elementLv": 3, "effect": "toxin",     "effectLv": 3 },
+    { "id": "aschenweizen",   "name": "Aschenweizen",   "species": "wheat",  "starter": false, "unlockWave": 6,  "pattern": "splash", "patternLv": 4, "rangeLv": 4, "projectile": "fireball", "projectileLv": 3, "element": "fire",   "elementLv": 3, "effect": "explosion", "effectLv": 3 },
     { "id": "sonnenmais",     "name": "Sonnenmais",     "species": "corn",   "starter": false, "unlockWave": 8,  "pattern": "chain",  "patternLv": 4, "rangeLv": 4, "projectile": "beam",  "projectileLv": 4, "element": "fire",      "elementLv": 4, "effect": "crit",      "effectLv": 3 },
-    { "id": "kristallweizen", "name": "Kristallweizen", "species": "wheat",  "starter": false, "unlockWave": 10, "pattern": "spread", "patternLv": 5, "rangeLv": 5, "projectile": "petal", "projectileLv": 5, "element": "ice",       "elementLv": 5, "effect": "explosion", "effectLv": 4 },
+    { "id": "flammenweizen",  "name": "Flammenweizen",  "species": "wheat",  "starter": false, "unlockWave": 10, "pattern": "spread", "patternLv": 5, "rangeLv": 5, "projectile": "fireball", "projectileLv": 5, "element": "fire",   "elementLv": 5, "effect": "explosion", "effectLv": 4 },
     { "id": "goldruebe",      "name": "Goldrübe",       "species": "carrot", "starter": false, "unlockWave": 13, "pattern": "double", "patternLv": 5, "rangeLv": 5, "projectile": "spore", "projectileLv": 5, "element": "lightning", "elementLv": 5, "effect": "multishot", "effectLv": 5 }
   ],
 

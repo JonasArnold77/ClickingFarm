@@ -327,13 +327,13 @@ namespace SeedClicker
             if (!has) { v.light.intensity = 0f; if (v.creature != null) { Destroy(v.creature.gameObject); v.creature = null; } return; }
             var g = v.st.Genome;
             var sp = PlantBalance.I.Species(g.species);
-            var ps = art.Get(sp.art + sp.stages[sp.stages.Length - 1]);
+            var ps = PlantForms.Body(art, sp, sp.stages.Length - 1);
             v.plant.sprite = ps;
             if (ps != null)
             {
-                float s = 0.6f / Mathf.Max(0.01f, ps.bounds.size.x) * PlantBalance.I.LevelSize(v.st.Lv);
+                float s = 0.6f / Mathf.Max(0.01f, PlantForms.RefWidth(sp, ps)) * PlantBalance.I.LevelSize(v.st.Lv);
                 float sy = s * 1.3f;
-                v.plant.transform.localScale = new Vector3(s, sy, 1);
+                v.plant.transform.localScale = new Vector3(s * PlantForms.Widen(sp), sy, 1);
                 v.plant.transform.localPosition = new Vector3(0, 0.3f - ps.bounds.min.y * sy, 0);
             }
             int tier = PlantBalance.I.Tier(v.st.Lv);

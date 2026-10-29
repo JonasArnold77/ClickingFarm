@@ -115,7 +115,7 @@ namespace SeedClicker
         Sprite SpeciesSprite(PlantGenome g)
         {
             var sp = PlantBalance.I.Species(g.species);
-            return art != null ? art.Get(sp.art + sp.stages[sp.stages.Length - 1]) : null;
+            return PlantForms.Body(art, sp, sp.stages.Length - 1);
         }
 
         static string Dots(int level) => new string('●', Mathf.Clamp(level, 0, 5)) + new string('○', Mathf.Clamp(5 - level, 0, 5));

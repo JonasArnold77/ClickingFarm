@@ -9,7 +9,14 @@ namespace SeedClicker
     [Serializable] public class OptionDef { public string id, name, desc, color; public float speed, damage, cooldown, homing; }
     /// <summary>Lage eines "Kopfes" (Gesicht) auf dem reifen Pflanzen-Sprite: x/y relativ (0..1), s = Kopfbreite relativ zur Spritebreite.</summary>
     [Serializable] public class HeadDef { public float x, y, s; }
-    [Serializable] public class SpeciesDef { public string id, name, art; public int[] stages; public float scale; public HeadDef[] heads; }
+    [Serializable]
+    public class SpeciesDef
+    {
+        public string id, name, art; public int[] stages; public float scale; public HeadDef[] heads;
+        public string form;              // "single": eine breite Aehre mit Zweigen (Weizen)
+        public float widen = 1f;         // Breiten-Faktor des Koerpers bei "single"
+        public string[] mutationNames;   // Namen der 4 Formen (Grundform, Mutation 1-3)
+    }
     [Serializable] public class MonsterDefW { public string id, name, art, tint, weakTo; public float hp, speed, damage, scale, weight; public int firstWave; }
     [Serializable] public class WaveDef
     {
@@ -85,6 +92,12 @@ namespace SeedClicker
         public static Color MutationTint(PlantGenome g, int tier)
         {
             var el = g.ElementColor;
+            if (PlantForms.IsSingle(I.Species(g.species)))
+            {
+                // Feuerweizen glueht mit jeder Mutation mehr von innen statt dunkler zu werden
+                return tier <= 1 ? Color.Lerp(Color.white, el, 0.1f)
+                     : tier == 2 ? new Color(1f, 0.9f, 0.74f) : tier == 3 ? new Color(1.05f, 0.78f, 0.55f) : new Color(1.1f, 0.68f, 0.45f);
+            }
             if (tier <= 1) return Color.Lerp(Color.white, el, 0.15f);
             var dark = Color.Lerp(el, new Color(0.28f, 0.12f, 0.24f), 0.55f);
             float k = tier == 2 ? 0.22f : tier == 3 ? 0.38f : 0.52f;
