@@ -24,8 +24,6 @@ namespace SeedClicker
         Color[] maskPixels;
         int mw, mh;
         System.Random rnd;
-        readonly List<Vector2> path = new List<Vector2>();
-        readonly List<Vector2> branch = new List<Vector2>();
         readonly List<Vector2> occupied = new List<Vector2>();
         readonly List<float> occupiedR = new List<float>();
         Transform objects;
@@ -38,10 +36,20 @@ namespace SeedClicker
         {
             I = this;
             art = WorldArtSet.I;
-            rnd = new System.Random(1234);
+            // Spielstand zuerst: er enthaelt den Karten-Seed (neue Karte bei "Neues Spiel")
+            save = WorldSave.Load();
+            if (save.mapSeed == 0)
+            {
+                // alter Spielstand ohne Karten-Seed: Baumstuempfe passen nicht zur neuen Karte
+                save.mapSeed = new System.Random().Next(1, int.MaxValue);
+                save.felled.Clear(); save.stumpsGone.Clear();
+                save.Save();
+            }
+            rnd = new System.Random(save.mapSeed);
+            salt = save.mapSeed % 9973;
             objects = new GameObject("Objects").transform;
             objects.SetParent(transform, false);
-            BuildPaths();
+            BuildLanes();
             BuildMask();
             BuildTerrain();
             BuildPlateauMask();
@@ -49,6 +57,7 @@ namespace SeedClicker
             BuildMountain();
             PlaceHouse();
             PlaceWorkbench();
+            PlaceRockIslands();
             PlaceNature();
             SetupLight();
             LoadWorldSave();
@@ -57,21 +66,7 @@ namespace SeedClicker
             InitSeason();
         }
 
-        // ------------------------------------------------------------------ Wege
-
-        void BuildPaths()
-        {
-            var p = HousePos + new Vector2(0f, -0.2f);
-            path.Add(p);
-            float x = p.x;
-            for (float y = p.y - 0.8f; y > -MapH / 2f - 1; y -= 0.8f)
-            {
-                x += Mathf.Sin(y * 0.35f) * 0.28f + Mathf.Sin(y * 0.13f + 1.3f) * 0.18f;
-                path.Add(new Vector2(x, y));
-            }
-            var b = path[7];
-            for (int i = 1; i < 16; i++) branch.Add(b + new Vector2(i * 0.8f, Mathf.Sin(i * 0.5f) * 0.35f - i * 0.12f));
-        }
+        // ------------------------------------------------------------------ Wege (Lanes, siehe WorldBuilder.Lanes.cs)
 
         static float DistToPolyline(Vector2 p, List<Vector2> pts)
         {
@@ -85,7 +80,12 @@ namespace SeedClicker
             return best;
         }
 
-        public float DistToPath(Vector2 p) => Mathf.Min(DistToPolyline(p, path), DistToPolyline(p, branch));
+        public float DistToPath(Vector2 p)
+        {
+            float best = float.MaxValue;
+            foreach (var l in lanes) best = Mathf.Min(best, DistToPolyline(p, l));
+            return best;
+        }
 
         // ------------------------------------------------------------------ Splat-Maske
 
@@ -104,13 +104,14 @@ namespace SeedClicker
         {
             mw = Mathf.RoundToInt(MapW * MaskPerUnit); mh = Mathf.RoundToInt(MapH * MaskPerUnit);
             maskPixels = new Color[mw * mh];
-            var mudSpots = new[] { (HousePos + new Vector2(-4.2f, -3.2f), 1.1f), (HousePos + new Vector2(3.8f, -6.5f), 0.8f), (new Vector2(-5f, -9f), 1.4f), (new Vector2(6.5f, -12f), 1.0f) };
+            var mudSpots = new List<(Vector2, float)>();
+            for (int i = 0; i < 4; i++) mudSpots.Add((new Vector2(R() * 18f - 9f, R() * 12f - 13f), 0.8f + R() * 0.6f));
             var yardC = HousePos + new Vector2(0f, -0.85f);
             for (int y = 0; y < mh; y++)
                 for (int x = 0; x < mw; x++)
                 {
                     var w = MaskToWorld(x, y);
-                    float edge = (Fbm(w.x * 1.2f, w.y * 1.2f, 3) - 0.5f) * 0.35f;
+                    float edge = (Fbm(w.x * 1.2f, w.y * 1.2f, 3 + salt) - 0.5f) * 0.35f;
                     float dirt = 1f - Mathf.InverseLerp(0.32f, 0.62f, DistToPath(w) + edge);
                     // Vorplatz aus Pflaster vor dem Haus, von Erde umrandet
                     var yd = (w - yardC) / new Vector2(2.6f, 1.1f);
@@ -122,7 +123,11 @@ namespace SeedClicker
                         float d = (w - c).magnitude / r + (Fbm(w.x * 1.5f, w.y * 1.5f, 9) - 0.5f) * 0.8f;
                         mud = Mathf.Max(mud, 1f - Mathf.InverseLerp(0.75f, 1.05f, d));
                     }
-                    float dark = Mathf.InverseLerp(0.42f, 0.62f, Fbm(w.x * 0.3f, w.y * 0.3f, 21));
+                    float dark = Mathf.InverseLerp(0.42f, 0.62f, Fbm(w.x * 0.3f, w.y * 0.3f, 21 + salt));
+                    // Felseninseln: dunkler, etwas schlammiger Grund
+                    float isl = IslandValue(w);
+                    dark = Mathf.Max(dark, isl);
+                    mud = Mathf.Max(mud, isl * 0.85f);
                     maskPixels[y * mw + x] = new Color(mud, dirt, dark, stone);
                 }
             mask = new Texture2D(mw, mh, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp, name = "SplatMask" };
@@ -231,7 +236,7 @@ namespace SeedClicker
             // ein paar Happy-Harvest-Props direkt am Haus
             var barrel = HousePos + new Vector2(2.65f, -0.3f);
             PlaceSized("hh_barrel", barrel, 0.7f); Shadow(barrel, 0.75f, 0.22f); Reserve(barrel, 0.4f);
-            var sign = path[4] + new Vector2(0.75f, 0f);
+            var sign = LaneTrunk[1] + new Vector2(0.85f, 0.1f);
             PlaceSized("hh_sign", sign, 0.95f); Shadow(sign, 0.45f, 0.14f); Reserve(sign, 0.3f);
 
             // warmes Fensterlicht fuer die Nacht vorbereiten
@@ -256,10 +261,10 @@ namespace SeedClicker
             {
                 var p = RandomPoint(-1.5f);
                 float edge = Mathf.Min(hw - Mathf.Abs(p.x), hh - Mathf.Abs(p.y));
-                float grove = Fbm(p.x * 0.2f, p.y * 0.2f, 31);
+                float grove = Fbm(p.x * 0.2f, p.y * 0.2f, 31 + salt);
                 float density = edge < 2.5f ? 1f : grove > 0.62f ? 0.5f : 0.02f;
                 if (R() > density) continue;
-                if ((p - HousePos).magnitude < 5.5f || !OnBareGrass(p, 1.0f)) continue;
+                if ((p - HousePos).magnitude < 5.5f || !OnBareGrass(p, 1.3f)) continue;   // Lanes frei halten
                 bool big = R() < 0.6f;
                 float r = big ? 1.35f : 0.95f;
                 if (!Free(p, r)) continue;

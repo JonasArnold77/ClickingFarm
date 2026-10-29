@@ -21,7 +21,35 @@ namespace SeedClicker
             Application.targetFrameRate = 60;
             Screen.orientation = ScreenOrientation.Portrait;
             Screen.sleepTimeout = SleepTimeout.SystemSetting;
+            Build();
+        }
 
+        /// <summary>Neues Spiel: Spielstand loeschen, Welt abbauen und mit neuer Zufallskarte neu aufbauen.</summary>
+        public static void NewGame()
+        {
+            WorldSave.Delete();
+            PlayerPrefs.Save();
+            new GameObject("Restarter").AddComponent<Restarter>();
+        }
+
+        class Restarter : MonoBehaviour
+        {
+            int frame;
+            void Update()
+            {
+                frame++;
+                if (frame == 1)
+                {
+                    Time.timeScale = 1f;
+                    var old = GameObject.Find("SeedClicker");
+                    if (old != null) Destroy(old);
+                }
+                else if (frame == 2) { Build(); Destroy(gameObject); }
+            }
+        }
+
+        static void Build()
+        {
             var root = new GameObject("SeedClicker");
             Object.DontDestroyOnLoad(root);
 

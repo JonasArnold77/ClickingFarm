@@ -210,7 +210,37 @@ namespace SeedClicker
             houseBar = UIKit.Bar(p.transform, "HouseHp", new Color(0, 0, 0, 0.35f), new Color(0.95f, 0.45f, 0.35f), out houseFill);
             houseBar.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 0), new Vector2(24, 102), new Vector2(-48, 24));
             var b = Btn(p.transform, "Welle starten (Test)", new Color(0.55f, 0.42f, 0.75f), () => nw?.StartWave(), 28);
+            BuildNewGameButton();
             b.GetComponent<RectTransform>().Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 0), new Vector2(20, 16), new Vector2(-40, 70));
+        }
+
+        /// <summary>"Neues Spiel": erst Sicherheitsabfrage, beim zweiten Tipp neue Zufallskarte.</summary>
+        void BuildNewGameButton()
+        {
+            float armedUntil = -1f;
+            Button ng = null;
+            ng = Btn(safe, "Neues Spiel", new Color(0.35f, 0.3f, 0.26f, 0.85f), () =>
+            {
+                var label = ng.GetComponentInChildren<Text>();
+                if (Time.unscaledTime > armedUntil)
+                {
+                    armedUntil = Time.unscaledTime + 3f;
+                    label.text = "Sicher? Neue Karte!";
+                    ng.GetComponent<Image>().color = new Color(0.8f, 0.35f, 0.25f, 0.95f);
+                    StartCoroutine(ResetNewGameLabel(ng, 3f));
+                    return;
+                }
+                Bootstrap.NewGame();
+            }, 30);
+            ng.GetComponent<RectTransform>().Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-28, -280), new Vector2(300, 78));
+        }
+
+        System.Collections.IEnumerator ResetNewGameLabel(Button b, float after)
+        {
+            yield return new WaitForSecondsRealtime(after);
+            if (b == null) yield break;
+            b.GetComponentInChildren<Text>().text = "Neues Spiel";
+            b.GetComponent<Image>().color = new Color(0.35f, 0.3f, 0.26f, 0.85f);
         }
 
         void BuildGoalHud()

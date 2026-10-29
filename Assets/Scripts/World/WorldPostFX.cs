@@ -85,6 +85,8 @@ namespace SeedClicker
         /// <summary>Weiche, schraege Lichtbahnen, die langsam atmen (haengen an der Kamera).</summary>
         void BuildSunRays()
         {
+            var oldRays = cam.transform.Find("SunRays");
+            if (oldRays != null) Destroy(oldRays.gameObject);
             rayRoot = new GameObject("SunRays").transform;
             rayRoot.SetParent(cam.transform, false);
             rayRoot.localPosition = new Vector3(0, 0, 10);

@@ -27,14 +27,15 @@ namespace SeedClicker
         public string weapon = "pistole";
         public bool enclosureBuilt;   // Zaun ums Startbeet wurde gesetzt
         public int season;            // 0 Sommer, 1 Herbst, 2 Winter
-        public bool plantsCleared;    // einmaliges Loeschen aller Pflanzen (Umstellung auf Leveln durch Klicken)
+        public bool plantsCleared;
+        public int mapSeed;           // Zufallskarte (Lanes, Felseninseln, Baeume); 0 = noch keine    // einmaliges Loeschen aller Pflanzen (Umstellung auf Leveln durch Klicken)
 
         const string Key = "seedclicker_world_v2";   // v2: kleineres Feldraster, Pflanzen-Katalog
         public static WorldSave Load()
         {
-            try { if (PlayerPrefs.HasKey(Key)) return JsonUtility.FromJson<WorldSave>(PlayerPrefs.GetString(Key)) ?? new WorldSave(); }
+            try { if (PlayerPrefs.HasKey(Key)) return JsonUtility.FromJson<WorldSave>(PlayerPrefs.GetString(Key)) ?? new WorldSave { plantsCleared = true }; }
             catch (Exception e) { Debug.LogWarning("Weltstand nicht lesbar: " + e.Message); }
-            return new WorldSave();
+            return new WorldSave { plantsCleared = true };
         }
         public void Save() { PlayerPrefs.SetString(Key, JsonUtility.ToJson(this)); PlayerPrefs.Save(); }
         public static void Delete() { PlayerPrefs.DeleteKey(Key); }
@@ -141,7 +142,6 @@ namespace SeedClicker
 
         void LoadWorldSave()
         {
-            save = WorldSave.Load();
             foreach (var id in save.felled)
                 if (id >= 0 && id < trees.Count) FellImmediate(trees[id], save.stumpsGone.Contains(id));
             foreach (var c in save.fields) PlaceField(c, false, false);
