@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace SeedClicker
 {
@@ -234,6 +235,7 @@ namespace SeedClicker
                 }
             }
             foreach (var sr in behind) if (sr != null) sr.sortingOrder = order + 1;
+            UpdateElement(dt, bw, order);
 
             // Wirkung als kleine Partikel am Kopf (je Mutation haeufiger)
             fxT -= dt * Tier;
@@ -251,6 +253,153 @@ namespace SeedClicker
                     case "lightning": Particles.I.Spawn(at + Random.insideUnitCircle * 0.08f, "spark", new Color(1f, 0.95f, 0.4f), Vector3.zero, 0.12f, 0.08f, 0f, 0f); break;
                     default: if (Random.value < 0.4f) Particles.I.Spawn(at, "leaf", new Color(0.55f, 0.85f, 0.35f), new Vector3(Random.Range(-0.2f, 0.2f), 0.2f, 0), 1.2f, 0.06f, 0.04f, 0.5f, 120f); break;
                 }
+            }
+        }
+
+        // ------------------------------------------------------------------ Element am Koerper (ab Mutation 2)
+
+        readonly List<SpriteRenderer> elemParts = new List<SpriteRenderer>();
+        Light2D elemLight;
+        float elemT, boltT;
+
+        /// <summary>Feuer brennt, Eis vereist, Gift dampft und tropft, Blitz knistert, Natur wuchert –
+        /// ab Mutation 2, mit jeder Mutation staerker.</summary>
+        void BuildElement()
+        {
+            if (Tier < 2) return;
+            string el = g.element.id;
+            var col = g.ElementColor;
+            foreach (var h in heads)
+            {
+                if (el == "fire")
+                {
+                    // lodernde Flamme hinter dem Kopf (HDR -> Bloom)
+                    var f = Part(h.root, "Flame", Get("flame"), new Vector2(0, 0.35f), 1.1f + Tier * 0.25f);
+                    f.color = new Color(2.2f, 0.9f, 0.25f, 0.95f);
+                    elemParts.Add(f);
+                }
+                else if (el == "ice")
+                {
+                    // Eiskristalle wachsen aus dem Kopf
+                    for (int i = 0; i < 1 + Tier; i++)
+                    {
+                        float a = -50f + i * (100f / Mathf.Max(1, Tier));
+                        var sh = Part(h.root, "Ice", Get("shard"), Quaternion.Euler(0, 0, a) * new Vector2(0, 0.55f), 0.32f + Tier * 0.06f);
+                        sh.transform.localRotation = Quaternion.Euler(0, 0, a);
+                        sh.color = new Color(0.8f, 0.95f, 1.25f, 0.9f);
+                        elemParts.Add(sh);
+                    }
+                }
+                else if (el == "lightning")
+                {
+                    var b = Part(h.root, "Bolt", Get("bolt"), new Vector2(0, 0.2f), 0.9f + Tier * 0.15f);
+                    b.color = new Color(2f, 1.9f, 0.7f, 1f);
+                    elemParts.Add(b);
+                }
+                else if (el == "poison")
+                {
+                    // Giftblasen auf dem Kopf
+                    var bub = Part(h.root, "Bubbles", Get("bubbles"), new Vector2(0, 0.45f), 0.6f + Tier * 0.12f);
+                    bub.color = new Color(0.75f, 0.4f, 1f, 0.9f);
+                    elemParts.Add(bub);
+                }
+                else
+                {
+                    // Natur: Blaetterkranz
+                    var w = Part(h.root, "Leaves", Get("leaves"), new Vector2(0, 0.3f), 1f + Tier * 0.15f);
+                    w.color = new Color(0.55f, 0.95f, 0.4f, 1f);
+                    elemParts.Add(w);
+                }
+            }
+            foreach (var p in elemParts) behind.Remove(p);
+            if (el == "fire" || el == "lightning" || el == "ice")
+            {
+                var lg = new GameObject("ElementLight");
+                lg.transform.SetParent(transform, false);
+                elemLight = lg.AddComponent<Light2D>();
+                elemLight.lightType = Light2D.LightType.Point;
+                elemLight.color = el == "fire" ? new Color(1f, 0.55f, 0.2f) : el == "ice" ? new Color(0.6f, 0.85f, 1f) : new Color(1f, 0.95f, 0.5f);
+                elemLight.pointLightOuterRadius = 0.8f + Tier * 0.35f;
+                elemLight.pointLightInnerRadius = 0.05f;
+                elemLight.intensity = 0f;
+            }
+        }
+
+        void UpdateElement(float dt, float bw, int order)
+        {
+            if (Tier < 2 || heads.Count == 0) return;
+            if (elemParts.Count == 0 && elemLight == null) BuildElement();
+            string el = g.element.id;
+            float t = Time.time;
+            elemT -= dt;
+            boltT -= dt;
+            bool flash = false;
+            if (el == "lightning" && boltT <= 0f) { boltT = Random.Range(0.08f, 0.6f / Tier); flash = true; }
+            for (int i = 0; i < elemParts.Count; i++)
+            {
+                var p = elemParts[i];
+                if (p == null) continue;
+                // Flammen/Blaetter hinter dem Gesicht, Eis/Blitz/Blasen davor
+                p.sortingOrder = el == "fire" || el == "nature" ? order - 1 : order + 5;
+                if (el == "fire")
+                {
+                    float fl = 1f + Mathf.Sin(t * 17f + i * 2.1f) * 0.08f + Mathf.Sin(t * 29f + i) * 0.05f;
+                    p.transform.localScale = new Vector3((1.1f + Tier * 0.25f) * (2f - fl), (1.1f + Tier * 0.25f) * fl, 1);
+                    p.flipX = Mathf.Sin(t * 6f + i) > 0f;
+                }
+                else if (el == "lightning")
+                {
+                    if (flash) { p.transform.localRotation = Quaternion.Euler(0, 0, Random.Range(-40f, 40f)); p.flipX = Random.value < 0.5f; }
+                    var c = p.color; c.a = boltT > 0.05f ? Mathf.Clamp01(Random.value * 1.5f) : 1f; p.color = c;
+                }
+                else if (el == "poison")
+                {
+                    p.transform.localScale = Vector3.one * (0.6f + Tier * 0.12f) * (1f + Mathf.Sin(t * 3f + i * 1.7f) * 0.08f);
+                }
+                else if (el == "nature")
+                {
+                    p.transform.localRotation = Quaternion.Euler(0, 0, Mathf.Sin(t * 1.5f + i) * 8f);
+                }
+                else if (el == "ice")
+                {
+                    var c = p.color; c.a = 0.75f + 0.2f * Mathf.Sin(t * 2f + i); p.color = c;
+                }
+            }
+            if (elemLight != null)
+            {
+                elemLight.transform.localPosition = heads[0].root.localPosition;
+                float nightK = 0.5f + (NightWave.I != null ? NightWave.I.NightAmount : 0f);
+                elemLight.intensity = el == "fire" ? (0.7f + Mathf.PerlinNoise(t * 8f, 0f) * 0.6f) * nightK * (Tier - 1) * 0.6f
+                                     : el == "lightning" ? (flash ? 2.5f : 0.15f) * nightK
+                                     : 0.4f * nightK;
+            }
+            // Partikel je Element, mit der Mutation haeufiger
+            if (elemT > 0f || Particles.I == null) return;
+            elemT = Random.Range(0.06f, 0.16f) / (Tier - 1);
+            var h = heads[Random.Range(0, heads.Count)];
+            float hs = h.size * bw;
+            Vector2 top = h.root.position + new Vector3(Random.Range(-0.3f, 0.3f) * hs, hs * 0.5f, 0);
+            Vector2 bottom = (Vector2)body.bounds.center + new Vector2(Random.Range(-0.4f, 0.4f) * body.bounds.extents.x, -body.bounds.extents.y * 0.6f);
+            switch (el)
+            {
+                case "fire":
+                    Particles.I.Spawn(top, "spark", Color.Lerp(new Color(1f, 0.85f, 0.3f), new Color(1f, 0.3f, 0.08f), Random.value), new Vector3(Random.Range(-0.15f, 0.15f), Random.Range(0.8f, 1.4f), 0), 0.6f, 0.08f + Tier * 0.02f, 0f, -0.3f);
+                    if (Random.value < 0.3f) Particles.I.Spawn(top + new Vector2(0, 0.2f), "square", new Color(0.3f, 0.28f, 0.28f, 0.5f), new Vector3(Random.Range(-0.1f, 0.1f), 0.5f, 0), 1.2f, 0.05f, 0.14f, -0.1f);
+                    break;
+                case "ice":
+                    Particles.I.Spawn(top + Random.insideUnitCircle * hs * 0.4f, "spark", new Color(0.85f, 0.97f, 1f), new Vector3(Random.Range(-0.1f, 0.1f), -0.15f, 0), 1.2f, 0.05f + Tier * 0.01f, 0f, 0.1f);
+                    if (Random.value < 0.4f) Particles.I.Spawn(bottom, "square", new Color(0.8f, 0.92f, 1f, 0.35f), new Vector3(Random.Range(-0.3f, 0.3f), 0.05f, 0), 1.5f, 0.08f, 0.22f, 0f);
+                    break;
+                case "poison":
+                    Particles.I.Spawn((Vector2)h.root.position + new Vector2(Random.Range(-0.3f, 0.3f) * hs, -hs * 0.35f), "square", new Color(0.6f, 0.95f, 0.3f), new Vector3(0, -0.2f, 0), 0.9f, 0.05f, 0.03f, 3f);
+                    if (Random.value < 0.5f) Particles.I.Spawn(top, "square", new Color(0.65f, 0.3f, 0.85f, 0.45f), new Vector3(Random.Range(-0.2f, 0.2f), 0.35f, 0), 1.4f, 0.06f, 0.2f, -0.05f);
+                    break;
+                case "lightning":
+                    Particles.I.Spawn(top + Random.insideUnitCircle * hs * 0.6f, "spark", new Color(1f, 0.95f, 0.5f), Random.insideUnitCircle * 1.5f, 0.15f, 0.07f + Tier * 0.015f, 0f, 0f);
+                    break;
+                default:
+                    Particles.I.Spawn(top, "leaf", new Color(0.5f, 0.9f, 0.35f), new Vector3(Random.Range(-0.4f, 0.4f), 0.4f, 0), 1.4f, 0.07f, 0.05f, 0.4f, 200f);
+                    break;
             }
         }
 
@@ -275,7 +424,7 @@ namespace SeedClicker
         static Sprite Get(string key)
         {
             if (sprites.TryGetValue(key, out var s) && s != null) return s;
-            int n = key == "brow" || key == "lash" ? 64 : key == "bramble" ? 192 : key == "horn" ? 48 : 96;
+            int n = key == "brow" || key == "lash" ? 64 : key == "bramble" ? 192 : key == "horn" || key == "shard" ? 48 : 96;
             int h = key == "brow" || key == "lash" ? 24 : key == "grin" || key == "smile" || key == "fangs" ? 56 : key == "bramble" ? 96 : 96;
             var tex = new Texture2D(n, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
             var px = new Color[n * h];
@@ -287,6 +436,77 @@ namespace SeedClicker
                     Color c = Color.clear;
                     switch (key)
                     {
+                        case "flame":
+                            {
+                                // Flammenzunge: unten breit, oben spitz, wellig, heller Kern
+                                float t = (v + 1f) * 0.5f;
+                                float wob = Mathf.Sin(t * 9f) * 0.08f * t;
+                                float half = 0.62f * Mathf.Pow(1f - t, 0.8f) * (0.75f + 0.25f * Mathf.Sin(t * 3.14f));
+                                float dx = Mathf.Abs(u - wob);
+                                if (dx < half && t > 0.02f)
+                                {
+                                    float core = 1f - dx / half;
+                                    c = Color.Lerp(new Color(1f, 0.35f, 0.08f), new Color(1f, 0.95f, 0.6f), core * core * (1f - t * 0.6f));
+                                    c.a = Mathf.Clamp01(core * 3f) * Mathf.Clamp01(t * 10f);
+                                }
+                                break;
+                            }
+                        case "shard":
+                            {
+                                // Eiskristall: schmale Raute mit hellem Grat
+                                float t = (v + 1f) * 0.5f;
+                                float half = 0.6f * (t < 0.25f ? t / 0.25f : (1f - t) / 0.75f);
+                                if (Mathf.Abs(u) < half)
+                                {
+                                    c = Color.Lerp(new Color(0.55f, 0.75f, 0.95f), Color.white, u < 0 ? 0.8f : 0.3f);
+                                    if (Mathf.Abs(u) > half - 0.08f) c = new Color(0.35f, 0.55f, 0.8f);
+                                    c.a = 0.95f;
+                                }
+                                break;
+                            }
+                        case "bolt":
+                            {
+                                // Zickzack-Blitz
+                                float t = (v + 1f) * 0.5f;
+                                float zx = (Mathf.Repeat(t * 3f, 1f) < 0.5f ? Mathf.Repeat(t * 3f, 1f) : 1f - Mathf.Repeat(t * 3f, 1f)) * 1.2f - 0.3f;
+                                float d = Mathf.Abs(u - zx);
+                                if (d < 0.1f) { c = new Color(1f, 1f, 0.85f); c.a = Mathf.Clamp01((0.1f - d) * 25f); }
+                                else if (d < 0.22f) { c = new Color(1f, 0.9f, 0.4f); c.a = Mathf.Clamp01((0.22f - d) * 8f) * 0.6f; }
+                                break;
+                            }
+                        case "bubbles":
+                            {
+                                // drei Giftblasen
+                                float[] bx = { -0.45f, 0.1f, 0.5f }, by = { -0.3f, 0.2f, -0.45f }, br = { 0.32f, 0.42f, 0.25f };
+                                for (int k = 0; k < 3; k++)
+                                {
+                                    float d = Mathf.Sqrt((u - bx[k]) * (u - bx[k]) + (v - by[k]) * (v - by[k]));
+                                    if (d < br[k])
+                                    {
+                                        c = Color.Lerp(new Color(0.85f, 0.55f, 1f), Color.white, d > br[k] * 0.8f ? 0.5f : 0f);
+                                        if (Mathf.Sqrt((u - bx[k] + br[k] * 0.35f) * (u - bx[k] + br[k] * 0.35f) + (v - by[k] - br[k] * 0.35f) * (v - by[k] - br[k] * 0.35f)) < br[k] * 0.22f) c = Color.white;
+                                        c.a = 0.85f;
+                                    }
+                                }
+                                break;
+                            }
+                        case "leaves":
+                            {
+                                // Blaetterkranz: mehrere spitze Blaetter im Faecher
+                                for (int k = 0; k < 5; k++)
+                                {
+                                    float a = (-60f + k * 30f) * Mathf.Deg2Rad;
+                                    float ca = Mathf.Cos(a), sa = Mathf.Sin(a);
+                                    float lx = u * ca - (v + 0.6f) * sa * -1f, ly = u * sa + (v + 0.6f) * ca;   // in Blattrichtung
+                                    lx = u * Mathf.Cos(-a) - (v + 0.6f) * Mathf.Sin(-a); ly = u * Mathf.Sin(-a) + (v + 0.6f) * Mathf.Cos(-a);
+                                    if (ly > 0f && ly < 1.4f && Mathf.Abs(lx) < 0.22f * Mathf.Sin(ly / 1.4f * Mathf.PI))
+                                    {
+                                        c = Mathf.Abs(lx) < 0.025f ? new Color(0.75f, 0.85f, 0.6f) : Color.Lerp(new Color(0.75f, 0.75f, 0.75f), Color.white, ly / 1.4f);
+                                        c.a = 1f;
+                                    }
+                                }
+                                break;
+                            }
                         case "horn":
                             {
                                 // gebogenes Horn: Spitze oben, nach aussen gekruemmt
