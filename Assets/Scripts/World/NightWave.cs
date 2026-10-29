@@ -48,6 +48,7 @@ namespace SeedClicker
             public SpriteRenderer hi; public List<SpriteRenderer> flames;   // 3D-Feuerball: Glanzpunkt, lodernde Flammen
             public bool gas;   // Giftspucke: zerplatzt zu einer Giftwolke
             public GameObject fxBall, fxTrail;   // Cartoon-FX (JMO)
+            public SpriteRenderer kern, kernHot;  // rot leuchtender, wabernder Kern des Feuerballs
             // Bogenwurf (Feuerweizen): nach oben gespuckt, faellt wie eine Granate aufs Ziel
             public bool lob; public Vector2 from, to; public float t, flight, arc; public SpriteRenderer shadow;
             public bool done;
@@ -731,6 +732,19 @@ namespace SeedClicker
                 foreach (var f in flames) f.enabled = false;
                 sr.color = new Color(2.2f, 0.75f, 0.18f, 0.3f);
             }
+            // Kern: rot gluehende Kugel (HDR -> Bloom) mit hellerem Inneren, wabert im Flug
+            shot.kern = new GameObject("Kern").AddComponent<SpriteRenderer>();
+            shot.kern.transform.SetParent(sr.transform, false);
+            shot.kern.sprite = KernSprite;
+            shot.kern.color = new Color(1.9f, 0.16f, 0.08f, 1f);
+            shot.kern.transform.localScale = Vector3.one * 0.6f;
+            shot.kern.sortingOrder = 30030;   // vor den Flammen-Partikeln
+            shot.kernHot = new GameObject("KernHot").AddComponent<SpriteRenderer>();
+            shot.kernHot.transform.SetParent(shot.kern.transform, false);
+            shot.kernHot.sprite = KernSprite;
+            shot.kernHot.color = new Color(2.4f, 0.55f, 0.25f, 0.85f);
+            shot.kernHot.transform.localScale = Vector3.one * 0.45f;
+            shot.kernHot.sortingOrder = 30031;
         }
 
         /// <summary>Bogenflug: steil aus dem Maul nach oben, dann im hohen Bogen herab; Schatten zeigt die Landestelle.</summary>
@@ -845,6 +859,31 @@ namespace SeedClicker
             }
         }
 
+        static Sprite kernSprite;
+        /// <summary>Leuchtkugel: voller Kern, weicher Rand (fuer den Feuerball-Kern).</summary>
+        static Sprite KernSprite
+        {
+            get
+            {
+                if (kernSprite != null) return kernSprite;
+                const int n = 96;
+                var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                var px = new Color[n * n];
+                for (int y = 0; y < n; y++)
+                    for (int x = 0; x < n; x++)
+                    {
+                        float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(n / 2f, n / 2f)) / (n / 2f);
+                        float a = d < 0.55f ? 1f : Mathf.Clamp01(1f - (d - 0.55f) / 0.45f);
+                        a = a * a * (3f - 2f * a);
+                        float bright = Mathf.Lerp(1f, 0.75f, Mathf.Clamp01(d / 0.55f));   // innen heller
+                        px[y * n + x] = new Color(bright, bright, bright, a);
+                    }
+                tex.SetPixels(px); tex.Apply();
+                kernSprite = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), n);
+                return kernSprite;
+            }
+        }
+
         static Sprite fireOrb;
         /// <summary>Kugel mit Licht von oben links, glutfluessiger Oberflaeche (Rauschen) und dunklerem Rand.</summary>
         static Sprite FireOrb
@@ -891,6 +930,19 @@ namespace SeedClicker
             s.sr.transform.localScale = Vector3.one * (0.42f + 0.13f * (s.power - 1)) * fl;
             var back = -s.vel.normalized;
             if (s.core != null) s.core.transform.localRotation = Quaternion.Euler(0, 0, -tt * 400f);
+            if (s.kern != null)
+            {
+                // wabern: ungleichmaessig verformen, drehen, pulsieren
+                float ph = s.power * 1.7f;
+                float kx = 1f + 0.16f * Mathf.Sin(tt * 11f + ph) + 0.07f * Mathf.Sin(tt * 23f + ph * 2f);
+                float ky = 1f + 0.16f * Mathf.Sin(tt * 9f + ph + 1.3f) + 0.07f * Mathf.Sin(tt * 19f + 0.7f);
+                s.kern.transform.localScale = new Vector3(0.6f * kx, 0.6f * ky, 1f);
+                s.kern.transform.localRotation = Quaternion.Euler(0, 0, tt * 90f + Mathf.Sin(tt * 5f) * 25f);
+                s.kern.transform.localPosition = new Vector3(Mathf.Sin(tt * 13f) * 0.025f, Mathf.Cos(tt * 17f) * 0.025f, 0);
+                float glow = 0.85f + 0.15f * Mathf.Sin(tt * 15f + ph);
+                s.kern.color = new Color(1.9f * glow, 0.16f * glow, 0.08f, 1f);
+                s.kernHot.transform.localScale = Vector3.one * (0.45f + 0.08f * Mathf.Sin(tt * 21f));
+            }
             if (s.flames != null)
             {
                 float backAng = Mathf.Atan2(back.y, back.x) * Mathf.Rad2Deg;
