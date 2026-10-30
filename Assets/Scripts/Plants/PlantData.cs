@@ -115,6 +115,7 @@ namespace SeedClicker
         public FarmLevelDef[] farmLevels;
         public WallDef wall;
         public float startCoins = 30f;
+        public bool testUnlockAll;   // Test: alle Pflanzenarten sofort freigeschaltet
         public LevelDef levels;
         public MergeSizeDef[] mergeSizes;
         public int[] mutationLevels;   // ab welcher Stufe Mutation 2, 3, 4 beginnt (erste Zahl = Mutation 1)

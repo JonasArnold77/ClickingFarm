@@ -14,6 +14,7 @@ namespace SeedClicker
     {
         [Serializable] public class Entry { public string name; public Sprite sprite; }
         [Serializable] public class FxEntry { public string name; public GameObject prefab; }
+        [Serializable] public class VfxEntry { public string name; public UnityEngine.VFX.VisualEffectAsset asset; }
 
         [Tooltip("Effekte aus Cartoon FX Remaster (JMO): Name -> Prefab, abgespielt ueber WorldFx")]
         public List<FxEntry> effects = new List<FxEntry>();
@@ -27,6 +28,20 @@ namespace SeedClicker
                 if (effects != null) foreach (var e in effects) if (e != null && e.prefab != null && !string.IsNullOrEmpty(e.name)) fxLookup[e.name] = e.prefab;
             }
             return fxLookup.TryGetValue(name, out var g) ? g : null;
+        }
+
+        [Tooltip("2D-Effekte aus Happy Harvest (VFX Graph): Name -> Effekt, abgespielt ueber WorldVfx")]
+        public List<VfxEntry> vfx = new List<VfxEntry>();
+        Dictionary<string, UnityEngine.VFX.VisualEffectAsset> vfxLookup;
+
+        public UnityEngine.VFX.VisualEffectAsset Vfx(string name)
+        {
+            if (vfxLookup == null)
+            {
+                vfxLookup = new Dictionary<string, UnityEngine.VFX.VisualEffectAsset>();
+                if (vfx != null) foreach (var e in vfx) if (e != null && e.asset != null && !string.IsNullOrEmpty(e.name)) vfxLookup[e.name] = e.asset;
+            }
+            return vfxLookup.TryGetValue(name, out var a) ? a : null;
         }
 
         [Tooltip("Boden-Atlas (256 px pro Kachel, 8x8 Kacheln)")]

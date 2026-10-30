@@ -116,6 +116,13 @@ namespace SeedClicker
             if (targets.Count == 0 && !big) return;   // nichts zu giessen: still bleiben
             var top = PlantBase(p) + new Vector2(0, CellSize * 0.75f);
             StartCoroutine(Fountain(top, big ? 0.22f : 0.14f, big ? 0.6f : 0.3f));
+            // Giessstrahl (2D, Happy Harvest) in Richtung der Ziele
+            if (targets.Count > 0)
+            {
+                Vector2 avg = Vector2.zero; foreach (var c in targets) avg += CellCenter(c); avg /= targets.Count;
+                bool left = avg.x < top.x - 0.05f;
+                WorldVfx.Play("water", top + new Vector2(left ? -0.1f : 0.1f, 0.05f), big ? 1.2f : 0.9f, 30010, null, 2f, left);
+            }
             Shockwave(PlantBase(p), big ? 1.4f : 0.8f, big ? 0.7f : 0.5f, new Color(0.6f, 0.85f, 1f, big ? 0.8f : 0.5f));
             if (big) for (int i = 0; i < 14; i++)
                 Particles.I?.Spawn(top, "drop", WaterCol, new Vector3(UnityEngine.Random.Range(-1.6f, 1.6f), UnityEngine.Random.Range(2.2f, 4f), 0), 0.7f, 0.09f, 0.05f, 8f);

@@ -871,6 +871,7 @@
     }
   ],
   "startCoins": 30,
+  "testUnlockAll": true,
   "wall": {
     "wood": 2,
     "hp": 30

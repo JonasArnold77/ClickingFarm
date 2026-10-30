@@ -108,6 +108,7 @@ namespace SeedClicker
             bool show = infoPlant != null && infoTimer > 0f;
             infoGroup.alpha = Mathf.MoveTowards(infoGroup.alpha, show ? 1f : 0f, dt * (show ? 8f : 2.5f));
             infoGroup.blocksRaycasts = show;
+            wb.Inspected = show ? infoPlant : null;
             infoPanel.localScale = Vector3.one * Mathf.MoveTowards(infoPanel.localScale.x, 1f, dt * 1.5f);
             hintText.enabled = infoGroup.alpha < 0.5f;
             if (infoPlant != null) FillPlantInfo(infoPlant);

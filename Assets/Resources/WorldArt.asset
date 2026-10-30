@@ -277,3 +277,18 @@ MonoBehaviour:
     prefab: {fileID: 2060212803351811498, guid: 38b99d63cdad9994b89d14c10a8783ce, type: 3}
   - name: waterFountain
     prefab: {fileID: 5582959372779851105, guid: f6a3c3d847782f842adfa192f9ad05ed, type: 3}
+  vfx:
+  - name: water
+    asset: {fileID: 8926484042661614526, guid: 7517e52f5006acb4b8b99050faec9f8e, type: 3}
+  - name: seeds
+    asset: {fileID: 8926484042661614526, guid: eebf971c7c3b8e94d93e66abf439a3bc, type: 3}
+  - name: groundPuff
+    asset: {fileID: 8926484042661614526, guid: bc65c27b4503c4a4baa00c34945182b5, type: 3}
+  - name: harvestCarrot
+    asset: {fileID: 8926484042661614526, guid: cb73c24668f114242bd3f1f15cec115a, type: 3}
+  - name: harvestWheat
+    asset: {fileID: 8926484042661614526, guid: c3dca39a1ba4435469f3122ade85ee9a, type: 3}
+  - name: harvestCorn
+    asset: {fileID: 8926484042661614526, guid: 0a829a63a32be1343a0e91bb620b6ae7, type: 3}
+  - name: eat
+    asset: {fileID: 8926484042661614526, guid: efbb53c592d767144a87a0ddef819814, type: 3}

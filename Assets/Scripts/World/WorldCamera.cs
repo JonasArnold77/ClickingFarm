@@ -127,7 +127,7 @@ namespace SeedClicker
         bool consumed;   // Druck wurde schon verarbeitet (z. B. Wachstums-Tipp)
         PlantedState dragCand;   // reife Pflanze unter dem Finger: kann gezogen werden
         bool draggingPlant;
-        bool tappedReady;   // dieser Druck hat schon einen Level-Klick ausgeloest
+        bool tappedReady;   // dieser Druck hat die Pflanze schon wachsen lassen (Info-Fenster offen)
 
         void PointerDown(Vector2 screen, int id)
         {
@@ -145,6 +145,8 @@ namespace SeedClicker
             if (under != null && !wb.Placing && !wb.WallMode)
             {
                 dragCand = under;
+                // Info-Fenster dieser Pflanze ist offen: Tipp laesst sie sofort wachsen/leveln (wie der Knopf)
+                if (under == wb.Inspected) { wb.TapPlant(c); tappedReady = true; }
                 return;
             }
             // Nachts: Tipp = Schuss mit der gewaehlten Waffe (geht genau auf die Tipp-Stelle)

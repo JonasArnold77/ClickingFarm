@@ -152,6 +152,8 @@ namespace SeedClicker
             foreach (var id in save.felled)
                 if (id >= 0 && id < trees.Count) FellImmediate(trees[id], save.stumpsGone.Contains(id));
             foreach (var c in save.fields) PlaceField(c, false, false);
+            if (PlantBalance.I.testUnlockAll)
+                foreach (var d in PlantBalance.I.catalog) if (!save.unlocked.Contains(d.id)) save.unlocked.Add(d.id);
         }
 
         void FellImmediate(TreeObj t, bool stumpGone)

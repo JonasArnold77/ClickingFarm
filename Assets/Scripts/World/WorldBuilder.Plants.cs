@@ -176,6 +176,7 @@ namespace SeedClicker
             var pos = CellCenterOf(c);
             Particles.I?.Burst(pos, "square", new Color(0.45f, 0.3f, 0.18f), 8, 2.2f, 0.45f, 0.7f, 6f, 1f);
             Sfx.Play("sow", UnityEngine.Random.Range(0.95f, 1.1f));
+            WorldVfx.Play("seeds", pos + new Vector2(0, 0.25f), 0.8f, 30010, null, 2.5f);
             Haptics.Tap(12);
             NotifyInventory();
             return true;
@@ -309,6 +310,9 @@ namespace SeedClicker
         /// Das ist die Hauptmechanik – jeder Tipp soll Wucht haben: Treffer-Stopp, Blitz, Federn, Bodenwelle,
         /// Erdbrocken, Zoom-Stoss, tiefer Schlag im Sound.</summary>
         /// <summary>Tipp auf eine Pflanze in der Welt: nur Info-Fenster oeffnen, mit kleiner Rueckmeldung (waechst dabei nicht).</summary>
+        /// <summary>Pflanze, deren Info-Fenster gerade offen ist: Tipps auf sie lassen sie wieder wachsen/leveln.</summary>
+        public PlantedState Inspected { get; set; }
+
         public bool IsReadyForTaps(PlantedState p) => !plantViews.TryGetValue(new Cell(p.x, p.y), out var v) || Time.unscaledTime >= v.readyAt;
 
         public void InspectPlant(Cell c)
@@ -375,6 +379,9 @@ namespace SeedClicker
             Shockwave(basePos, v.size * (1.1f + heat * 0.5f), 0.22f, new Color(1f, 0.95f, 0.8f, 0.55f + heat * 0.25f));
             int clods = 5 + (int)(heat * 6);
             P?.Burst(basePos + new Vector2(0, 0.03f), "square", new Color(0.36f, 0.24f, 0.14f), clods, 2.2f + heat * 1.2f, 0.45f, 0.1f, 13f, 3.2f);
+            // 2D-Effekte (Happy Harvest): wachsen = Erdwolke am Fuss, leveln = goldenes Funkeln
+            if (!p.Grown) WorldVfx.Play("groundPuff", basePos + new Vector2(0, 0.05f), 0.45f + heat * 0.25f, Order(basePos.y) + 5, null, 2f);
+            else WorldVfx.Play("eat", top, 0.7f + heat * 0.3f, 30010, null, 2f);
             P?.Burst(basePos + new Vector2(0, 0.03f), "square", new Color(0.62f, 0.46f, 0.3f), 2 + (int)(heat * 3), 1.8f + heat, 0.4f, 0.07f, 13f, 2.6f);
             P?.Burst(top, "leaf", new Color(0.55f, 0.85f, 0.35f), 1 + (int)(heat * 3), 1.6f + heat, 0.7f, 0.16f, 2.5f, 1.2f);
             P?.Spawn(top + new Vector2(UnityEngine.Random.Range(-0.1f, 0.1f), -0.1f), "spark", new Color(1f, 1f, 0.9f), Vector3.zero, 0.09f, 0.55f + heat * 0.3f, 0f, 0f);
@@ -405,6 +412,7 @@ namespace SeedClicker
                 if (coinsGain > 0)
                 {
                     AddCoins(coinsGain, top + new Vector2(0, 0.35f));
+                    CropVfx(p, top, 0.6f);
                     Particles.I?.Burst(top, "square", new Color(1f, 0.85f, 0.3f), 3, 2.2f, 0.5f, 0.06f, 5f, 1.5f);
                     Sfx.Play("coin", UnityEngine.Random.Range(1.1f, 1.3f), 0.5f);
                 }
@@ -478,6 +486,7 @@ namespace SeedClicker
         {
             var g = p.Genome;
             var P = Particles.I;
+            CropVfx(p, top, 1.1f);
             v.pop = 0f;
             v.flash = 1f;
             v.sy = 0.45f;
@@ -614,6 +623,26 @@ namespace SeedClicker
                 Haptics.Tap(25);
                 Floater?.Invoke(top + new Vector2(0, 0.5f), p.IsCombat ? "Bereit! Weiterklicken macht sie stärker" : p.Role == "harvest" ? "Reif! Jeder Tipp bringt Münzen" : "Bereit! Sie hilft jetzt mit", new Color(1f, 0.95f, 0.6f));
             }
+        }
+
+        /// <summary>2D-Ernte-Effekt (Happy Harvest): Fruechte springen heraus. Weizen und Mais haben eigene,
+        /// sonst fliegt das Bild der Pflanze selbst (Karotten-Effekt mit ausgetauschter Textur), wenn es ein Einzelbild ist.</summary>
+        void CropVfx(PlantedState p, Vector2 at, float scale)
+        {
+            var def = PlantBalance.I.Plant(p.type);
+            string sp = def != null ? def.species : "";
+            if (sp == "wheat") { WorldVfx.Play("harvestWheat", at, scale, 30010, null, 2.5f); return; }
+            if (sp == "corn") { WorldVfx.Play("harvestCorn", at, scale, 30010, null, 2.5f); return; }
+            Texture2D tex = null;
+            if (sp != "carrot" && plantViews.TryGetValue(new Cell(p.x, p.y), out var v) && v.sr != null && v.sr.sprite != null)
+            {
+                var s = v.sr.sprite;
+                // nur Einzelbilder taugen als Textur (aus einem Atlas kaeme das ganze Blatt)
+                if (Mathf.Abs(s.rect.width - s.texture.width) < 2 && Mathf.Abs(s.rect.height - s.texture.height) < 2) tex = s.texture;
+            }
+            // Bild steckt in einem Atlas (z. B. Radieschen): statt fremder Karotten goldenes Funkeln
+            if (tex == null && sp != "carrot") { WorldVfx.Play("eat", at, scale * 1.2f, 30010, null, 2.5f); return; }
+            WorldVfx.Play("harvestCarrot", at, scale, 30010, fx => { if (tex != null && fx.HasTexture("Crop")) fx.SetTexture("Crop", tex); }, 2.5f);
         }
 
         /// <summary>Flache Bodenwelle (Ellipse in Draufsicht), die schnell auseinanderlaeuft.</summary>
