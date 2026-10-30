@@ -13,6 +13,8 @@
 - [ ] Auf echtem Android-Gerät testen: Touch-Gefühl, Wischen vs. Kamera verschieben, Vibration, Safe Area, Performance.
 - [ ] Spieler-Einstellungen: Android-Build auf Hochformat fixieren (Player Settings → Resolution and Presentation → Default Orientation: Portrait). Zur Laufzeit wird Portrait bereits gesetzt.
 - [ ] Zaun-Grafik an den Grenzen gesperrter Bereiche (aktuell: abgedunkelt + Schild + Preis-Label).
+- [ ] Waffenbank: eigene Grafik (Amboss/Werkbank statt Baumstamm) und Hammer-Sound.
+- [ ] Transport-Pflanzen und weitere Gebäude (Ideen: Rankenbahn, Wurzelträger, Brunnen, Treibhaus, Wachturm, Saatgutmühle) – noch nicht entschieden.
 
 ## Später (laut CLAUDE.md nicht Teil der Basisversion)
 - [ ] Echte Werbe-SDK-Anbindung in `AdService` (Rewarded + seltene Interstitials).

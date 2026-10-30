@@ -56,6 +56,7 @@ namespace SeedClicker
             BuildMountain();
             PlaceHouse();
             PlaceWorkbench();
+            PlaceBench();
             ReserveBuildingSpots();
             PlaceRockIslands();
             PlaceNature();
@@ -356,6 +357,8 @@ namespace SeedClicker
             UpdateRocks(Time.deltaTime);
             UpdateEconomy(Time.deltaTime);
             UpdateWatering(Time.deltaTime);
+            UpdateSupport(Time.deltaTime);
+            UpdateBench(Time.deltaTime);
             UpdateSeason(Time.deltaTime);
             ambientT -= Time.deltaTime;
             if (ambientT > 0 || Particles.I == null) return;

@@ -114,6 +114,9 @@
 
 - **Reiter nach Funktion** in Pflanzenauswahl und Pflanzenbuch: *Ernte* (Ernte, Honig), *Wachstum* (Wasser, Dünger, Takt, Automatik), *Verteidigung* (Kampf, Licht), jeweils mit Anzahl. Die Auswahl öffnet im Reiter der zuletzt gewählten Pflanze. Reiter (auch im Laden) teilen sich die Breite.
 
+- **Waffenbank** (`WorldBuilder.Bench.cs`, `WorldUI.Bench.cs`): Holzbank rechts vor dem Haus, die gewählte Waffe liegt darauf. Erster Tipp öffnet unten ihr Fenster, jeder weitere Tipp (oder „Hämmern!“) ist ein Hammerschlag mit Funken. Schläge bis zur nächsten Stufe = `tapsBase · tapsGrowth^(Stufe−1)` (12, 16, 20 …). Jede Stufe: +25 % Schaden und 4 % schneller nachladen (höchstens bis 50 % der Grundzeit), max. Stufe 30. Jede Waffe hat eine eigene Stufe; im Fenster wechselt man die Waffe. Stufenaufstieg = Banner, Feuerwerk, Schockwelle. Annahme: Schmieden kostet nichts außer Klicks, damit es sich wie das Pflanzen-Leveln anfühlt. Werte in `plants.json` → `bench`.
+- **Stützranke** (Rolle `support`, neuer Reiter *Gebäude*): Alle 2,4 s (schneller je Stufe) fliegen Blätter zu allem in Reichweite (2,6 Felder + 0,2 je Stufe). Gekaufte Gebäude verdienen +50 % (+10 % je Stufe) pro Ranke, die Waffenbank bekommt Hammerschläge, beschädigte Mauern werden um 10 % geflickt. Werte in `plants.json` → `support`. Freischaltung bei 2.500 verdienten Münzen.
+
 ## Werbung
 - `Core/AdService.cs` ist die einzige Stelle für Werbung. Derzeit zeigt die UI ein 2-Sekunden-Platzhalter-Video und vergibt dann die Belohnung.
 - Belohnungsvideos: Energie auffüllen, Offline-Ertrag verdoppeln, alles wachsen lassen, Gratis-Samenpaket.

@@ -47,6 +47,10 @@ namespace SeedClicker
     /// <summary>Hof erweitern: Kosten der naechsten Stufe.</summary>
     [Serializable] public class FarmLevelDef { public float cost; public int wood; }
     [Serializable] public class WallDef { public int wood = 2; public float hp = 30f; }
+    /// <summary>Waffenbank: Schlaege bis zur naechsten Waffenstufe (tapsBase * tapsGrowth^(Stufe-1)) und was eine Stufe bringt.</summary>
+    [Serializable] public class BenchDef { public float tapsBase = 12f, tapsGrowth = 1.3f, damagePerLevel = 0.25f, cooldownPerLevel = 0.04f, minCooldown = 0.5f; public int maxLevel = 30; }
+    /// <summary>Stuetzranke: Reichweite, Gebaeude-Bonus, Hammerschlaege an der Waffenbank, Mauer-Reparatur (Anteil der vollen Haltbarkeit).</summary>
+    [Serializable] public class SupportDef { public float radius = 2.6f, radiusPerLevel = 0.2f, buildingBonus = 0.5f, buildingBonusPerLevel = 0.1f, interval = 2.4f, hammer = 1f, repair = 0.1f; }
 
     /// <summary>Rollen der Pflanzen: combat (verteidigt), water (giesst Nachbarn), harvest (bringt Muenzen),
     /// fert (Duenger fuer Nachbarn), boost (Klicks in der Naehe zaehlen doppelt), auto (klickt selbst Nachbarn an),
@@ -56,7 +60,7 @@ namespace SeedClicker
         public static string Name(string r) => r switch
         {
             "water" => "Wasser", "harvest" => "Ernte", "fert" => "Dünger", "boost" => "Verstärker", "auto" => "Automatik",
-            "bee" => "Honig", "light" => "Licht", _ => "Kampf"
+            "bee" => "Honig", "light" => "Licht", "support" => "Bauhelfer", _ => "Kampf"
         };
         public static string Desc(CatalogDef d) => d.role switch
         {
@@ -67,6 +71,7 @@ namespace SeedClicker
             "auto" => "Klickt von selbst auf ihre direkten Nachbarn – je höher die Stufe, desto schneller.",
             "bee" => "Macht Honig: verdient von selbst, mehr mit Blumen in der Nähe.",
             "light" => "Leuchtet nachts: Zombies in ihrem Licht nehmen +50 % Schaden.",
+            "support" => "Hilft Gebäuden nebenan: +50 % Ertrag, hämmert an der Waffenbank, flickt Mauern.",
             _ => "Verteidigt den Hof in der Nacht."
         };
     }
@@ -114,6 +119,8 @@ namespace SeedClicker
         public BuildingDef[] buildings;
         public FarmLevelDef[] farmLevels;
         public WallDef wall;
+        public BenchDef bench;
+        public SupportDef support;
         public float startCoins = 30f;
         public bool testUnlockAll;   // Test: alle Pflanzenarten sofort freigeschaltet
         public LevelDef levels;
@@ -221,6 +228,8 @@ namespace SeedClicker
         public int GrowTapsFor(string id) { var c = Plant(id); return c != null && c.growTaps > 0 ? c.growTaps : growTaps; }
         public string RoleOf(string id) { var c = Plant(id); return c == null || string.IsNullOrEmpty(c.role) ? "combat" : c.role; }
         public WallDef Wall => wall ?? (wall = new WallDef());
+        public BenchDef Bench => bench ?? (bench = new BenchDef());
+        public SupportDef Support => support ?? (support = new SupportDef());
     }
 
     // ------------------------------------------------------------------ Eigenschaften einer Angriffspflanze
@@ -313,6 +322,8 @@ namespace SeedClicker
     [Serializable] public class WallState { public int x, y; public float hp; }
 
     [Serializable] public class BuildingCount { public string id; public int n; }
+    /// <summary>Stufe einer Waffe (an der Waffenbank geschmiedet) und Schlaege zur naechsten Stufe.</summary>
+    [Serializable] public class WeaponLevel { public string id; public int lv = 1; public float xp; }
 
     /// <summary>Eine gepflanzte Pflanze auf einem Feld oder Mauerplatz (Spielstand).</summary>
     [Serializable]

@@ -30,7 +30,7 @@ namespace SeedClicker
         public WeaponDef Weapon => B.Weapon(wb != null ? wb.Save.weapon : "pistole");
         public bool IsWeaponUnlocked(WeaponDef w) => w != null && wb != null && wb.Save.wave >= w.unlockWave;
         /// <summary>0 = bereit, 1 = gerade geschossen (fuer die Anzeige).</summary>
-        public float WeaponCooldown01 { get { var w = Weapon; return w == null || w.cooldown <= 0 ? 0 : Mathf.Clamp01(weaponCd / w.cooldown); } }
+        public float WeaponCooldown01 { get { var w = Weapon; return w == null || w.cooldown <= 0 ? 0 : Mathf.Clamp01(weaponCd / (w.cooldown * wb.WeaponCooldownMult(w.id))); } }
 
         public void SelectWeapon(string id)
         {
@@ -76,8 +76,9 @@ namespace SeedClicker
 
         void Shoot(WeaponDef w, Vector2 aim)
         {
-            float dmg = w.damage * (1f + w.damagePerWave * (WaveNumber - 1));
-            weaponCd = w.cooldown;
+            // Stufe von der Waffenbank: mehr Schaden, schneller wieder bereit
+            float dmg = w.damage * (1f + w.damagePerWave * (WaveNumber - 1)) * wb.WeaponDamageMult(w.id);
+            weaponCd = w.cooldown * wb.WeaponCooldownMult(w.id);
             AddFx(Reticle, aim, 0.16f, 0.75f, 0.45f, new Color(1f, 1f, 1f, 0.9f));
             switch (w.kind)
             {

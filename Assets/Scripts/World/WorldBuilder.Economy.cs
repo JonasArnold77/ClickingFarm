@@ -232,7 +232,7 @@ namespace SeedClicker
             float sum = 0f;
             foreach (var p in save.planted) sum += PlantCps(p);
             var defs = PlantBalance.I.buildings;
-            if (defs != null) foreach (var d in defs) sum += d.cps * BuildingCount(d.id);
+            if (defs != null) for (int i = 0; i < defs.Length; i++) sum += defs[i].cps * BuildingCount(defs[i].id) * BuildingMult(i);
             return sum * UpgradeMult("cps");
         }
 

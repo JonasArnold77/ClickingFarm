@@ -35,6 +35,7 @@ namespace SeedClicker
             if (wb == null) return;
             BuildEconomyUI();
             BuildPlantInfo();
+            BuildBenchInfo();
             BuildJuice();
             wb.EmptyFieldTapped += OpenPlantPicker;
             wb.BookTapped += OpenPlantBook;
@@ -290,6 +291,7 @@ namespace SeedClicker
             UpdateJuice(dt);
             UpdateEconomyUI(dt);
             UpdatePlantInfo(dt);
+            UpdateBenchInfo(dt);
             if (nw == null || waveText == null) return;
             UpdateWeaponBar(dt);
             if (nw.Evening)
@@ -385,6 +387,7 @@ namespace SeedClicker
             ("Ernte", new[] { "harvest", "bee" }),
             ("Wachstum", new[] { "water", "fert", "boost", "auto" }),
             ("Verteidigung", new[] { "combat", "light" }),
+            ("Gebäude", new[] { "support" }),
         };
         int plantTab;
 

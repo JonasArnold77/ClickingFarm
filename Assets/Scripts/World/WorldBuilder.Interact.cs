@@ -29,6 +29,7 @@ namespace SeedClicker
         public bool economyInit;
         public List<string> upgrades = new List<string>();
         public List<BuildingCount> buildings = new List<BuildingCount>();
+        public List<WeaponLevel> weaponLevels = new List<WeaponLevel>();   // an der Waffenbank geschmiedet
         public int farmLevel;
         public List<int> rocksGone = new List<int>();
         public List<WallState> walls = new List<WallState>();

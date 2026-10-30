@@ -174,6 +174,7 @@ namespace SeedClicker
                 case "harvest": s = "Pro Tipp " + Num.Short(wb.HarvestPerTap(p)) + " · von selbst " + Num.Short(wb.PlantCps(p)) + "/s"; break;
                 case "bee": s = "Honig: " + Num.Short(wb.PlantCps(p)) + " Münzen/s"; break;
                 case "water": s = "Gießt gerade " + wb.WaterTargetCount(p) + " Pflanzen"; break;
+                case "support": s = p.Grown ? wb.SupportSummary(p) : ""; break;
                 case "combat": s = PlantGenome.Describe(g.projectile) + " · " + PlantGenome.Describe(g.element) + " · " + PlantGenome.Describe(g.range); break;
                 default: s = ""; break;
             }
