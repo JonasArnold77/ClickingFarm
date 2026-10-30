@@ -86,6 +86,9 @@ namespace SeedClicker
             if (Input.GetMouseButtonDown(1) || Input.GetMouseButtonDown(2)) lastScreen = Input.mousePosition;
             if (Input.GetMouseButton(1) || Input.GetMouseButton(2)) { PanBy((Vector2)Input.mousePosition - lastScreen); lastScreen = Input.mousePosition; return; }
 
+            // Maus ohne Druck: geplante Mauer folgt dem Zeiger
+            var wbh = WorldBuilder.I;
+            if (!down && wbh != null && wbh.WallMode && wbh.WallAnchorActive && !OverUI(-1)) wbh.UpdateWallPlan(World(Input.mousePosition));
             if (Input.GetMouseButtonDown(0)) PointerDown(Input.mousePosition, -1);
             else if (Input.GetMouseButton(0) && down) PointerMove(Input.mousePosition);
             if (Input.GetMouseButtonUp(0) && down) PointerUp(Input.mousePosition);
@@ -143,7 +146,7 @@ namespace SeedClicker
             // Pflanze: laesst sich ziehen (umtopfen); ein kurzer Tipp oeffnet beim Loslassen ihr Info-Fenster
             var under = wb.PlantAt(c);
             // Bau-Modus: gedrueckt halten und ziehen malt Mauern bzw. Pulte
-            if (wb.BuildMode && !wb.Placing && wb.BeginBuildStroke(c)) { painting = true; return; }
+            if (wb.PedestalMode && !wb.Placing && wb.BeginBuildStroke(c)) { painting = true; return; }
             if (under != null && !wb.Placing && !wb.BuildMode)
             {
                 dragCand = under;
@@ -160,7 +163,9 @@ namespace SeedClicker
         void PointerMove(Vector2 screen)
         {
             if (overUI || consumed) return;
-            if (painting) { WorldBuilder.I?.ContinueBuildStroke(WorldBuilder.CellAt(World(screen))); lastScreen = screen; return; }
+            if (painting) { var wbp = WorldBuilder.I; wbp?.ContinueBuildStroke(wbp.TapCell(World(screen))); lastScreen = screen; return; }
+            // Mauer wird geplant: Finger zieht die gruene Vorschau mit (statt die Karte zu schieben)
+            if (WorldBuilder.I != null && WorldBuilder.I.WallMode && WorldBuilder.I.WallAnchorActive) { WorldBuilder.I.UpdateWallPlan(World(screen)); lastScreen = screen; return; }
             if (dragCand != null)
             {
                 var wbd = WorldBuilder.I;
@@ -201,7 +206,7 @@ namespace SeedClicker
 
             // ein Tipp macht das Naheliegende: Mauer bauen (Mauer-Modus), Pflanzen-Info oeffnen, leeren Platz bepflanzen,
             // Feld anlegen, Baum faellen, Fels abbauen
-            if (wb.WallMode) { if (!wb.TapWallMode(cell)) { if (!wb.TryChop(w)) wb.TryMine(w); } return; }
+            if (wb.WallMode) { if (!wb.WallClick(w)) { if (!wb.TryChop(w)) wb.TryMine(w); } return; }
             if (wb.PedestalMode) { if (!wb.TapPedestalMode(cell)) { if (!wb.TryChop(w)) wb.TryMine(w); } return; }
             if (wb.PlantAt(cell) != null) { wb.InspectPlant(cell); return; }
             if (wb.IsSlot(cell)) { wb.TapEmptyField(cell); return; }

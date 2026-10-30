@@ -1018,7 +1018,7 @@
   "startCoins": 30,
   "testUnlockAll": true,
   "wall": {
-    "wood": 2,
+    "wood": 0.2,
     "hp": 30
   },
   "pedestal": {

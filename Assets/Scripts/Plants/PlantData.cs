@@ -46,7 +46,8 @@ namespace SeedClicker
     [Serializable] public class BuildingDef { public string id, name, desc, art; public float baseCost, cps, scale = 1f; }
     /// <summary>Hof erweitern: Kosten der naechsten Stufe.</summary>
     [Serializable] public class FarmLevelDef { public float cost; public int wood; }
-    [Serializable] public class WallDef { public int wood = 2; public float hp = 30f; }
+    /// <summary>Mauer: Holz pro Stueck (darf ein Bruchteil sein, z. B. 0,2 = fuenf Mauern pro Holz) und Haltbarkeit.</summary>
+    [Serializable] public class WallDef { public float wood = 2f; public float hp = 30f; }
     /// <summary>Steinpult: Preis in Muenzen (Abbauen gibt ihn zurueck).</summary>
     [Serializable] public class PedestalDef { public float cost = 20f; }
     /// <summary>Waffenbank: Schlaege bis zur naechsten Waffenstufe (tapsBase * tapsGrowth^(Stufe-1)) und was eine Stufe bringt.</summary>

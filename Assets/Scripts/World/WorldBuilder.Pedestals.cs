@@ -18,8 +18,8 @@ namespace SeedClicker
         bool pedestalMode;
 
         /// <summary>Hoehe der Pult-Vorderseite und wie hoch eine Pflanze im Loch steht (ueber ihrem Bodenpunkt).</summary>
-        public const float PedH = 0.2f, PedLift = 0.35f;
-        const float PedTop = 0.36f;   // Tiefe der Oberseite
+        public const float PedH = 0.2f, PedLift = PedH + CellSize * 0.5f - CellSize * 0.12f;   // Loch in der Mitte der Platte
+        const float PedTop = CellSize;   // Platte ist ein ganzes Feld tief
 
         public bool PedestalMode => pedestalMode;
         public bool BuildMode => wallMode || pedestalMode;
@@ -83,7 +83,7 @@ namespace SeedClicker
             return true;
         }
 
-        Vector2 PedFoot(Cell c) => new Vector2((c.x + 0.5f) * CellSize, c.y * CellSize + 0.04f + (HasWall(c) ? WallH : 0f));
+        Vector2 PedFoot(Cell c) => new Vector2((c.x + 0.5f) * CellSize, c.y * CellSize + (HasWall(c) ? WallH : 0f));
 
         void CreatePedestalView(PedestalState st, bool fx)
         {
@@ -174,12 +174,12 @@ namespace SeedClicker
                     if (walls.TryGetValue(c, out var v) && PlantAt(c) == null && !HasPedestal(c))
                     {
                         RemoveWall(c, v, false);
-                        AddWood(PlantBalance.I.Wall.wood, CellCenter(c) + new Vector2(0, 0.5f));
+                        RefundWallWood(CellCenter(c) + new Vector2(0, 0.5f));
                     }
                     return;
                 }
                 if (!CanPlaceWall(c)) return;
-                if (save.wood < PlantBalance.I.Wall.wood)
+                if (WoodLeft < WallWood - 0.0001f)
                 {
                     if (!strokeWarned) { strokeWarned = true; Floater?.Invoke(CellCenter(c) + new Vector2(0, 0.6f), "Zu wenig Holz – fälle Bäume!", new Color(1f, 0.6f, 0.5f)); Sfx.Play("error", 1f, 0.6f); }
                     return;
@@ -200,7 +200,7 @@ namespace SeedClicker
             {
                 if (pedSprite != null) return pedSprite;
                 const int w = 96;
-                int pw = 80, front = Mathf.RoundToInt(PedH / CellSize * w), top = Mathf.RoundToInt(PedTop / CellSize * w), h = front + top;
+                int pw = w, front = Mathf.RoundToInt(PedH / CellSize * w), top = Mathf.RoundToInt(PedTop / CellSize * w), h = front + top;
                 var tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
                 var px = new Color[w * h];
                 var stone = new Color(0.58f, 0.57f, 0.55f); var stoneHi = new Color(0.82f, 0.8f, 0.76f); var dark = new Color(0.3f, 0.29f, 0.28f);

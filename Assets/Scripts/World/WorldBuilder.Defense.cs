@@ -27,6 +27,7 @@ namespace SeedClicker
         public void SetWallMode(bool on)
         {
             if (on && pedestalMode) { pedestalMode = false; PedestalModeChanged?.Invoke(false); }
+            if (!on) CancelWallPlan();
             wallMode = on;
             RefreshGhosts();
             WallModeChanged?.Invoke(on);
@@ -65,11 +66,22 @@ namespace SeedClicker
         /// ein Tipp dort trifft die Mauer.</summary>
         public Cell TapCell(Vector2 w)
         {
+            // Mauern und Pulte ragen nach oben: ihre sichtbare Oberseite liegt ueber der eigenen Zelle. Von vorn nach
+            // hinten pruefen (die vorderste Zelle wird zuletzt gezeichnet und verdeckt die dahinter).
             var c = CellAt(w);
-            var below = new Cell(c.x, c.y - 1);
-            if (!HasWall(c) && PlantAt(c) == null && !HasStructure(c) && HasWall(below) && w.y <= below.y * CellSize + CellSize + WallH) return below;
+            for (int dy = 2; dy >= 0; dy--)
+            {
+                var b = new Cell(c.x, c.y - dy);
+                float s = SurfaceH(b);
+                if (s <= 0f) continue;
+                float yb = b.y * CellSize;
+                if (w.y >= yb && w.y <= yb + s + CellSize) return b;
+            }
             return c;
         }
+
+        /// <summary>Wie hoch die Oberseite auf dieser Zelle liegt (Mauer und/oder Pult).</summary>
+        public float SurfaceH(Cell c) => (HasWall(c) ? WallH : 0f) + (HasPedestal(c) ? PedH : 0f);
 
         /// <summary>Tipp im Mauer-Modus: Mauer bauen bzw. leere Mauer wieder abbauen.</summary>
         public bool TapWallMode(Cell c)
@@ -78,12 +90,11 @@ namespace SeedClicker
             {
                 if (PlantAt(c) != null || HasPedestal(c)) return false;
                 RemoveWall(c, v, false);
-                AddWood(PlantBalance.I.Wall.wood, CellCenter(c) + new Vector2(0, 0.5f));
+                RefundWallWood(CellCenter(c) + new Vector2(0, 0.5f));
                 return true;
             }
             if (!CanPlaceWall(c)) return false;
-            int cost = PlantBalance.I.Wall.wood;
-            if (save.wood < cost)
+            if (WoodLeft < WallWood - 0.0001f)
             {
                 Floater?.Invoke(CellCenter(c) + new Vector2(0, 0.6f), "Zu wenig Holz – fälle Bäume!", new Color(1f, 0.6f, 0.5f));
                 Sfx.Play("error", 1f, 0.6f);
@@ -94,16 +105,16 @@ namespace SeedClicker
             return true;
         }
 
-        void BuildWall(Cell c)
+        void BuildWall(Cell c, bool loud = true)
         {
-            save.wood -= PlantBalance.I.Wall.wood; WoodChanged?.Invoke(save.wood);
+            PayWallWood();
             var st = new WallState { x = c.x, y = c.y, hp = WallMaxHp };
             save.walls.Add(st);
-            CreateWallView(st, true);
+            CreateWallView(st, true, loud);
             RefreshGhosts();
         }
 
-        void CreateWallView(WallState st, bool fx)
+        void CreateWallView(WallState st, bool fx, bool loud = true)
         {
             var c = new Cell(st.x, st.y);
             var sr = new GameObject("Wall").AddComponent<SpriteRenderer>();
@@ -119,7 +130,7 @@ namespace SeedClicker
             if (fx)
             {
                 Particles.I?.Burst(CellCenter(c), "square", new Color(0.8f, 0.62f, 0.4f), 8, 2.2f, 0.45f, 0.08f, 7f, 1.4f);
-                Sfx.Play("chop", UnityEngine.Random.Range(1.1f, 1.25f), 0.8f);
+                if (loud) Sfx.Play("chop", UnityEngine.Random.Range(1.1f, 1.25f), 0.8f);
                 Haptics.Tap(10);
             }
         }
@@ -171,6 +182,7 @@ namespace SeedClicker
         void UpdateWalls(float dt)
         {
             UpdateWallGhosts();
+            UpdateWallPlanPulse();
             foreach (var kv in walls)
             {
                 var v = kv.Value;

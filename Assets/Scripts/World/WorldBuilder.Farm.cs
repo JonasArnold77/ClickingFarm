@@ -58,7 +58,7 @@ namespace SeedClicker
         /// <summary>Im Mauer-Modus die Vorschau nachziehen, wenn die Kamera ein paar Zellen weiter ist.</summary>
         void UpdateWallGhosts()
         {
-            if (!BuildMode || Camera.main == null) return;
+            if (!PedestalMode || Camera.main == null) return;
             var c = CellAt(Camera.main.transform.position);
             var key = new Vector2Int(Mathf.FloorToInt(c.x / 3f) * 1000 + Mathf.FloorToInt(c.y / 3f), Mathf.RoundToInt(Camera.main.orthographicSize * 2f));
             if (key == ghostView) return;
@@ -96,10 +96,11 @@ namespace SeedClicker
             if (fieldSprite == null) fieldSprite = GroundMaterials.TileSprite(4, 3);
             if (fieldSprite == null) return;
             var seen = new HashSet<Cell>();
-            foreach (var c in BuildMode ? VisibleCells() : FarmCells())
+            // Mauer-Modus: kein Raster – dort zeigt die gruene/rote Vorschau, wo es geht
+            foreach (var c in PedestalMode ? VisibleCells() : FarmCells())
             {
                 seen.Add(c);
-                bool show = WallMode ? CanPlaceWall(c) : PedestalMode ? CanPlacePedestal(c) : CanPlaceField(c) && !HasWall(c);
+                bool show = WallMode ? false : PedestalMode ? CanPlacePedestal(c) : CanPlaceField(c) && !HasWall(c);
                 ghosts.TryGetValue(c, out var sr);
                 if (show && sr == null)
                 {

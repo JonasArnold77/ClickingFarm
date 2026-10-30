@@ -13,6 +13,7 @@ namespace SeedClicker
     public class WorldSave
     {
         public int wood;
+        public float woodDebt;   // angefangenes Holz (Mauern kosten Bruchteile)
         public List<int> felled = new List<int>();       // gefaellte Baeume (Stumpf steht noch)
         public List<int> stumpsGone = new List<int>();   // auch der Stumpf ist weg
         public List<Cell> fields = new List<Cell>();
