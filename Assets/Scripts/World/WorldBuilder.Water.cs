@@ -5,8 +5,8 @@ using UnityEngine;
 namespace SeedClicker
 {
     /// <summary>
-    /// Giess-Effekt des Tauschilfs: Alle paar Sekunden schiesst aus der reifen Wasserpflanze eine kleine Fontaene
-    /// (Cartoon FX "Water Fountain"), Wassertropfen fliegen im Bogen auf die Felder im Umkreis und platschen dort auf
+    /// Giess-Effekt des Tauschilfs: Alle 1-2 Sekunden schiesst aus der reifen Wasserpflanze eine kleine Fontaene
+    /// (Cartoon FX "Water Fountain"), Wassertropfen fliegen im Bogen auf alle Pflanzen im Umkreis (wachsende Saat und reife, die weiter leveln) und platschen dort auf
     /// (Spritzer + zwei Wasserringe), das Feld glaenzt kurz nass. Ein Tipp auf das reife Tauschilf giesst sofort alle
     /// Felder im Umkreis mit einer grossen Fontaene. Ohne das Effekt-Paket laufen eigene Tropfen-Partikel.
     /// </summary>
@@ -92,9 +92,12 @@ namespace SeedClicker
                 {
                     if (dx == 0 && dy == 0) continue;
                     var c = new Cell(w.x + dx, w.y + dy);
-                    // nur dort giessen, wo es etwas bringt: wachsende Saat (gegossen = doppelt so schnell)
+                    // nur dort giessen, wo es etwas bringt: wachsende Saat und reife Pflanzen, die weiter leveln
+                    // (nicht in der kurzen Sperre direkt nach dem Reif-Moment)
                     var t = PlantAt(c);
-                    if (t != null && t != w && !t.Grown && t.x == c.x && t.y == c.y) list.Add(c);
+                    if (t == null || t == w || t.x != c.x || t.y != c.y) continue;
+                    if (t.Grown && plantViews.TryGetValue(c, out var tv) && Time.unscaledTime < tv.readyAt) continue;
+                    list.Add(c);
                 }
             return list;
         }
@@ -115,10 +118,35 @@ namespace SeedClicker
             if (big) for (int i = 0; i < 14; i++)
                 Particles.I?.Spawn(top, "drop", WaterCol, new Vector3(UnityEngine.Random.Range(-1.6f, 1.6f), UnityEngine.Random.Range(2.2f, 4f), 0), 0.7f, 0.09f, 0.05f, 8f);
             Sfx.Play("water", UnityEngine.Random.Range(big ? 0.8f : 1.1f, big ? 0.95f : 1.3f), big ? 0.55f : 0.22f);
-            for (int i = targets.Count - 1; i > 0; i--) { int j = UnityEngine.Random.Range(0, i + 1); (targets[i], targets[j]) = (targets[j], targets[i]); }
-            int n = big ? targets.Count : Mathf.Min(targets.Count, 2 + p.Lv / 2);
-            for (int i = 0; i < n; i++)
-                StartCoroutine(Droplet(top, targets[i], UnityEngine.Random.Range(0f, big ? 0.25f : 0.15f) + i * 0.04f, big));
+            // alle Felder im Umkreis auf einmal: die Tropfen starten zusammen und landen zusammen
+            foreach (var c in targets) StartCoroutine(Droplet(top, c, 0f, big));
+        }
+
+        /// <summary>Ein Tropfen wirkt wie ein Klick: das Feld schwillt an und blitzt, der Balken springt und zaehlt hoch.</summary>
+        void WaterTap(Cell c, bool big)
+        {
+            var p = PlantAt(c);
+            if (p == null || !plantViews.TryGetValue(new Cell(p.x, p.y), out var v)) return;
+            var basePos = PlantBase(p);
+            var top = basePos + new Vector2(0, (v.sr.bounds.max.y - basePos.y) * 0.75f);
+            PunchField(c, big ? 1f : 0.8f);
+            v.flash = Mathf.Max(v.flash, 0.45f);
+            v.barPunch = 1f;
+            v.barShow = 2.5f;
+            int gain;
+            if (!p.Grown)
+            {
+                gain = Mathf.Max(1, Mathf.Min(TapPower(p, true), Mathf.CeilToInt(p.GrowTaps - p.growth)));
+                p.growth = Mathf.Min(p.GrowTaps, p.growth + gain);
+                UpdatePlantSprite(p, v);
+                Floater?.Invoke(top + new Vector2(0.2f, 0.15f), "+" + gain, new Color(0.6f, 0.88f, 1f));
+                if (p.Grown) Ripe(p, v, basePos, top);
+                return;
+            }
+            gain = Mathf.Max(1, TapPower(p, false));
+            p.xp += gain;
+            Floater?.Invoke(top + new Vector2(0.2f, 0.15f), "+" + gain, new Color(0.75f, 0.65f, 1f));
+            if (p.xp >= Mathf.Max(1, PlantBalance.I.levelTaps)) LevelUp(p, v, basePos, top);
         }
 
         IEnumerator Fountain(Vector2 at, float scale, float keep)
@@ -146,7 +174,7 @@ namespace SeedClicker
             sr.color = DropCol;
             sr.sortingOrder = 30005;
             float size = (big ? 0.15f : 0.12f) / Mathf.Max(0.01f, sr.sprite.bounds.size.x);
-            float dur = 0.22f + Vector2.Distance(from, to) * 0.08f;
+            const float dur = 0.38f;
             float h = 0.6f + Vector2.Distance(from, to) * 0.25f;
             Vector2 prev = from;
             for (float k = 0f; k < 1f; k += Time.deltaTime / dur)
@@ -177,6 +205,7 @@ namespace SeedClicker
             Shockwave(at, big ? 0.22f : 0.18f, 0.55f, new Color(0.65f, 0.88f, 1f, 0.45f));
             Sfx.Play("pop", UnityEngine.Random.Range(1.4f, 1.8f), big ? 0.25f : 0.12f);
             if (fields.ContainsKey(c)) wetFlash[c] = 1f;
+            WaterTap(c, big);
         }
     }
 }
