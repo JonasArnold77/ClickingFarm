@@ -58,7 +58,7 @@ namespace SeedClicker
         public bool TryPlaceAt(Vector2 w)
         {
             if (carrying == null) return false;
-            var tp = PlantAt(CellAt(w));
+            var tp = PlantAt(TapCell(w));
             if (IsMergeTarget(tp)) return MergeInto(tp);
             CancelPlacing();
             return false;

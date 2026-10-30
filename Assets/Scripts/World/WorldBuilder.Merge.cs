@@ -46,7 +46,7 @@ namespace SeedClicker
             {
                 carrying = p;
                 Sfx.Play("pop", 0.8f, 0.8f); Haptics.Tap(15);
-                PlacingChanged?.Invoke("Auf ein freies Feld oder eine Mauer ziehen – oder auf eine gleiche reife Pflanze");
+                PlacingChanged?.Invoke("Auf ein freies Feld, eine Mauer oder in ein Steinpult ziehen – oder auf eine gleiche reife Pflanze");
             }
             dragging = true;
             dragPos = w;
@@ -56,7 +56,7 @@ namespace SeedClicker
         public void DragTo(Vector2 w)
         {
             dragPos = w;
-            var cell = CellAt(w);
+            var cell = TapCell(w);   // Toepfe und Mauern ragen nach oben: ihre sichtbare Oberseite zaehlt
             var t = PlantAt(cell);
             if (IsMergeTarget(t) && hoverTarget != t) { Sfx.Play("tick", 1.3f, 0.5f); Haptics.Tap(8); }
             hoverTarget = IsMergeTarget(t) ? t : null;
@@ -69,7 +69,7 @@ namespace SeedClicker
             dragging = false;
             hoverTarget = null;
             hoverSlot = null;
-            var cell = CellAt(w);
+            var cell = TapCell(w);
             var p = carrying;
             if (p != null && PlantAt(cell) == null && IsSlot(cell) && Fits(cell, p.type, true))
             {
@@ -267,10 +267,13 @@ namespace SeedClicker
                 sr.enabled = i < n;
                 if (i >= n) continue;
                 var c = show[i];
-                sr.transform.position = CellCenter(c);
+                // auf Topf oder Mauer: Markierung oben auf die Flaeche heben und vor Topf/Mauer zeichnen
+                float lift = SurfaceH(c);
+                sr.transform.position = CellCenter(c) + new Vector2(0, lift);
+                sr.sortingOrder = lift > 0f ? Order(c.y * CellSize) + 4 : -32290;
                 float k = sr.sprite != null ? CellSize * 0.94f / sr.sprite.bounds.size.x : CellSize;
                 sr.transform.localScale = new Vector3(k, k, 1);
-                bool cellOk = HasField(c) && (PlantAt(c) == null || PlantAt(c) == hoverTarget || PlantAt(c) == carrying || ok);
+                bool cellOk = IsSlot(c) && (PlantAt(c) == null || PlantAt(c) == hoverTarget || PlantAt(c) == carrying || ok);
                 sr.color = ok ? new Color(0.35f, 1f, 0.4f, pulse) : cellOk ? new Color(0.35f, 1f, 0.4f, pulse * 0.6f) : new Color(1f, 0.3f, 0.25f, pulse + 0.1f);
             }
         }
