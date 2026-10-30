@@ -33,6 +33,7 @@ namespace SeedClicker
             BuildGoalHud();
             BuildWeaponBar();
             if (wb == null) return;
+            BuildEconomyUI();
             BuildJuice();
             wb.EmptyFieldTapped += OpenPlantPicker;
             wb.BookTapped += OpenPlantBook;
@@ -154,10 +155,21 @@ namespace SeedClicker
             name.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -imgH - 6), new Vector2(-16, fontSize + 14));
             if (locked)
             {
-                var l = Label(rt, "Freigeschaltet nach Welle " + def.unlockWave, fontSize, InkSoft, TextAnchor.MiddleCenter);
+                var l = Label(rt, def.IsCombat ? "Freigeschaltet nach Welle " + def.unlockWave : "Ab " + Num.Short(def.unlockEarned) + " verdienten Münzen", fontSize, InkSoft, TextAnchor.MiddleCenter);
                 l.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -imgH - fontSize - 30), new Vector2(-20, fontSize * 2 + 10));
                 return rt;
             }
+            if (!def.IsCombat)
+            {
+                // Nutzpflanze: Rolle, Beschreibung und Preis statt Kampfwerten
+                var role = Label(rt, Roles.Name(def.role), fontSize, AccentWarm, TextAnchor.MiddleCenter, true);
+                role.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -imgH - fontSize - 22), new Vector2(-16, fontSize + 8));
+                var ds = Label(rt, Roles.Desc(def), fontSize - 4, InkSoft, TextAnchor.UpperCenter);
+                ds.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -imgH - fontSize * 2 - 40), new Vector2(-30, size.y * 0.4f));
+                CostTag(rt, def, fontSize);
+                return rt;
+            }
+            CostTag(rt, def, fontSize);
             var stars = Label(rt, Dots(g.Stars), fontSize - 4, AccentWarm, TextAnchor.MiddleCenter);
             stars.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -imgH - fontSize - 18), new Vector2(-16, fontSize + 4));
             float y = -imgH - fontSize * 2 - 34;
@@ -171,6 +183,14 @@ namespace SeedClicker
                 y -= fontSize + 6;
             }
             return rt;
+        }
+
+        void CostTag(RectTransform card, CatalogDef def, int fontSize)
+        {
+            if (def.cost <= 0) return;
+            bool ok = wb == null || wb.Coins >= def.cost;
+            var t = Label(card, Num.Short(def.cost) + " Münzen", fontSize - 2, ok ? new Color(0.6f, 0.45f, 0.05f) : new Color(0.8f, 0.3f, 0.25f), TextAnchor.MiddleCenter, true);
+            t.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 10), new Vector2(-20, fontSize + 10));
         }
 
         RectTransform HScroll(Transform parent, string name, out RectTransform content)
@@ -239,7 +259,7 @@ namespace SeedClicker
         void BuildGoalHud()
         {
             var p = Panel(safe, "Goal", new Color(0.12f, 0.1f, 0.08f, 0.55f));
-            p.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(28, -150), new Vector2(520, 110));
+            p.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(28, -295), new Vector2(560, 110));
             p.raycastTarget = false;
             goalIcon = UIKit.Rect(p.transform, "Icon").gameObject.AddComponent<Image>();
             goalIcon.preserveAspect = true; goalIcon.raycastTarget = false;
@@ -255,7 +275,8 @@ namespace SeedClicker
             if (next == null) { goalText.text = "Alle Pflanzen freigeschaltet!"; goalIcon.enabled = false; }
             else
             {
-                goalText.text = "Nächste Pflanze:\nnach Welle " + next.unlockWave;
+                goalText.text = next.IsCombat ? "Nächste Pflanze:\nnach Welle " + next.unlockWave
+                                              : "Nächste Pflanze: " + Roles.Name(next.role) + "\nbei " + Num.Short(next.unlockEarned) + " verdienten Münzen";
                 goalIcon.enabled = true;
                 goalIcon.sprite = SpeciesSprite(next.Genome);
                 goalIcon.color = new Color(0.12f, 0.1f, 0.08f, 0.85f);   // als Silhouette, Spannung!
@@ -266,6 +287,7 @@ namespace SeedClicker
         void UpdatePlantsUI(float dt)
         {
             UpdateJuice(dt);
+            UpdateEconomyUI(dt);
             if (nw == null || waveText == null) return;
             UpdateWeaponBar(dt);
             if (nw.Evening)
@@ -289,8 +311,13 @@ namespace SeedClicker
 
         void Banner(string title, string sub) => StartCoroutine(BannerRoutine(title, sub));
 
+        int bannerTicket, bannerServing;
+
         System.Collections.IEnumerator BannerRoutine(string title, string sub)
         {
+            // Meldungen nacheinander zeigen, nicht uebereinander
+            int my = bannerTicket++;
+            while (my != bannerServing) yield return null;
             var t = UIKit.Txt(canvasRt, title, 76, new Color(1f, 0.95f, 0.8f), TextAnchor.MiddleCenter, true, true);
             t.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 300), new Vector2(1060, 130));
             t.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -305,6 +332,7 @@ namespace SeedClicker
                 yield return null;
             }
             Destroy(t.gameObject); Destroy(s.gameObject);
+            bannerServing++;
         }
 
         // ------------------------------------------------------------------ Start-Pflanze waehlen
@@ -335,7 +363,7 @@ namespace SeedClicker
                     wb.ChooseStarter(chosen.id);
                     CloseModal();
                     RefreshGoal();
-                    Banner(chosen.name + " ist dein Partner!", "Tippe auf ein schimmerndes Feld neben dem Weg");
+                    Banner(chosen.name + " ist dein Partner!", "Tippe auf ein schimmerndes Feld im Hof");
                     SelectTool(WorldTool.Field);
                 }, 44);
                 b.GetComponent<RectTransform>().Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 40), new Vector2(760, 120));

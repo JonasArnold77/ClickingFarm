@@ -99,7 +99,7 @@ namespace SeedClicker
         {
             var list = new List<CatalogDef>();
             foreach (var c in PlantBalance.I.catalog)
-                if (c.unlockWave <= wavesSurvived && !IsUnlocked(c.id)) { save.unlocked.Add(c.id); list.Add(c); }   // auch nicht gewaehlte Start-Pflanzen (spaeter)
+                if (c.IsCombat && c.unlockWave <= wavesSurvived && !IsUnlocked(c.id)) { save.unlocked.Add(c.id); list.Add(c); }   // auch nicht gewaehlte Start-Pflanzen (spaeter)
             if (list.Count > 0) { foreach (var c in list) PlantUnlocked?.Invoke(c.id); NotifyInventory(); }
             return list;
         }
@@ -107,9 +107,13 @@ namespace SeedClicker
         /// <summary>Naechste Art, die noch nicht freigeschaltet ist (fuer die Ziel-Anzeige).</summary>
         public CatalogDef NextUnlock()
         {
+            // zuerst die naechste Nutzpflanze (nach verdienten Muenzen), sonst die naechste Kampfpflanze (nach Wellen)
             CatalogDef best = null;
             foreach (var c in PlantBalance.I.catalog)
-                if (!IsUnlocked(c.id) && (best == null || c.unlockWave < best.unlockWave)) best = c;
+                if (!c.IsCombat && !IsUnlocked(c.id) && (best == null || c.unlockEarned < best.unlockEarned)) best = c;
+            if (best != null) return best;
+            foreach (var c in PlantBalance.I.catalog)
+                if (c.IsCombat && !IsUnlocked(c.id) && (best == null || c.unlockWave < best.unlockWave)) best = c;
             return best;
         }
 
@@ -156,9 +160,14 @@ namespace SeedClicker
 
         // ------------------------------------------------------------------ Einsetzen / Ausgraben
 
+        /// <summary>Feld oder Mauerplatz, auf dem eine Pflanze stehen kann.</summary>
+        public bool IsSlot(Cell c) => HasField(c) || HasWall(c);
+
         public bool PlantInto(Cell c, string type)
         {
-            if (!HasField(c) || PlantAt(c) != null || !IsUnlocked(type)) return false;
+            if (!IsSlot(c) || PlantAt(c) != null || !IsUnlocked(type)) return false;
+            var def = PlantBalance.I.Plant(type);
+            if (def != null && def.cost > 0 && !TrySpend(def.cost, CellCenterOf(c) + new Vector2(0, 0.6f))) return false;
             var p = new PlantedState { x = c.x, y = c.y, type = type, growth = 0 };
             save.planted.Add(p);
             CreatePlantView(p, true);
@@ -167,6 +176,24 @@ namespace SeedClicker
             Sfx.Play("sow", UnityEngine.Random.Range(0.95f, 1.1f));
             Haptics.Tap(12);
             NotifyInventory();
+            return true;
+        }
+
+        /// <summary>Umtopfen: Pflanze samt Stufe und Wachstum auf einen freien Platz setzen.</summary>
+        public bool MovePlant(PlantedState p, Cell to)
+        {
+            if (p == null || !IsSlot(to) || PlantAt(to) != null) return false;
+            var from = new Cell(p.x, p.y);
+            RemovePlantView(from);
+            p.x = to.x; p.y = to.y;
+            CreatePlantView(p, true);
+            if (plantViews.TryGetValue(to, out var v)) v.readyAt = 0f;
+            PunchField(to, 1f);
+            Particles.I?.Burst(CellCenterOf(to), "square", new Color(0.45f, 0.3f, 0.18f), 10, 2.4f, 0.5f, 0.1f, 9f, 2f);
+            Sfx.Play("sow", 1.05f); Sfx.Play("pop", 0.9f, 0.6f);
+            Haptics.Tap(20);
+            RefreshGhosts();
+            save.Save();
             return true;
         }
 
@@ -232,7 +259,7 @@ namespace SeedClicker
         float PlantWidth(PlantedState p)
         {
             var sp = PlantBalance.I.Species(p.Genome.species);
-            float f = p.growth / (float)Mathf.Max(1, PlantBalance.I.growTaps);
+            float f = p.growth / (float)Mathf.Max(1, p.GrowTaps);
             if (p.Grown) return CellSize * 0.95f * p.W;   // so breit wie ihre Felder
             return Mathf.Min(CellSize * 0.95f, CellSize * Mathf.Lerp(0.6f, 0.92f, f) * sp.scale);
         }
@@ -240,7 +267,7 @@ namespace SeedClicker
         /// <summary>Streckung nach oben: je reifer, desto hoeher schiesst die Pflanze ueber ihr Feld.</summary>
         float PlantStretch(PlantedState p)
         {
-            float f = p.growth / (float)Mathf.Max(1, PlantBalance.I.growTaps);
+            float f = p.growth / (float)Mathf.Max(1, p.GrowTaps);
             return p.Grown ? 1.35f * PlantBalance.I.LevelSize(p.Lv) * (p.H > 1 ? 1.15f : 1f) / (p.W > 1 ? 1.1f : 1f) : Mathf.Lerp(1f, 1.25f, f);
         }
 
@@ -248,7 +275,7 @@ namespace SeedClicker
         {
             var g = p.Genome;
             var sp = PlantBalance.I.Species(g.species);
-            float f = p.growth / (float)Mathf.Max(1, PlantBalance.I.growTaps);
+            float f = p.growth / (float)Mathf.Max(1, p.GrowTaps);
             int stage = p.Grown ? 2 : f >= 0.5f ? 1 : 0;
             var sprite = PlantForms.Body(art, sp, stage);
             if (stage != v.stage) { v.stage = stage; v.sr.sprite = sprite; }
@@ -304,8 +331,10 @@ namespace SeedClicker
             float heat = Mathf.Clamp01(combo / 30f);
             v.heat = Mathf.Max(v.heat, heat);
 
-            int taps = leveling ? Mathf.Max(1, PlantBalance.I.levelTaps) : PlantBalance.I.growTaps;
-            if (leveling) p.xp++; else p.growth++;
+            int taps = leveling ? Mathf.Max(1, PlantBalance.I.levelTaps) : p.GrowTaps;
+            int before = p.growth;
+            int power = TapPower(p, !leveling);
+            if (leveling) p.xp += power; else p.growth = Mathf.Min(taps, p.growth + power);
             float progress = (leveling ? p.xp : p.growth) / (float)taps;
             var g = p.Genome;
             var basePos = (Vector2)v.root.position;
@@ -350,8 +379,17 @@ namespace SeedClicker
             WorldCamera.I?.Kick(Vector2.down * (0.7f + heat * 0.8f));
             WorldCamera.I?.Shake(0.008f + heat * 0.012f);
 
+            if (power > 1) Floater?.Invoke(top + new Vector2(0.35f, 0.2f), "×" + power, new Color(0.85f, 1f, 0.6f));
             if (leveling)
             {
+                // Ernte: jeder Tipp bringt Muenzen
+                double coinsGain = HarvestPerTap(p);
+                if (coinsGain > 0)
+                {
+                    AddCoins(coinsGain, top + new Vector2(0, 0.35f));
+                    Particles.I?.Burst(top, "square", new Color(1f, 0.85f, 0.3f), 3, 2.2f, 0.5f, 0.06f, 5f, 1.5f);
+                    Sfx.Play("coin", UnityEngine.Random.Range(1.1f, 1.3f), 0.5f);
+                }
                 if (p.xp >= taps) LevelUp(p, v, basePos, top);
                 else UpdatePlantSprite(p, v);
                 save.Save();
@@ -360,7 +398,7 @@ namespace SeedClicker
 
             // Meilensteine: kurzer Stillstand der ganzen Welt, grosse Welle
             foreach (var m in PlantBalance.I.growMilestones)
-                if (p.growth == m)
+                if (before < m * taps / 100 && p.growth >= m * taps / 100)
                 {
                     v.pop = 0.5f;
                     v.sy = -0.4f;
@@ -555,7 +593,7 @@ namespace SeedClicker
                 Sfx.Play("tick", 1.5f, 0.8f);
                 Sfx.Play("note", 2f, 0.4f);
                 Haptics.Tap(25);
-                Floater?.Invoke(top + new Vector2(0, 0.5f), "Bereit! Weiterklicken macht sie stärker", new Color(1f, 0.95f, 0.6f));
+                Floater?.Invoke(top + new Vector2(0, 0.5f), p.IsCombat ? "Bereit! Weiterklicken macht sie stärker" : p.Role == "harvest" ? "Reif! Jeder Tipp bringt Münzen" : "Bereit! Sie hilft jetzt mit", new Color(1f, 0.95f, 0.6f));
                 v.nextHop = now + 1.6f;
             }
             // als Hinweis regelmaessig ein kleiner Huepfer mit Glitzer
@@ -659,7 +697,7 @@ namespace SeedClicker
             for (int i = save.planted.Count - 1; i >= 0; i--)
             {
                 var p = save.planted[i];
-                if (HasField(new Cell(p.x, p.y)) && PlantBalance.I.Plant(p.type) != null) CreatePlantView(p, false);
+                if (IsSlot(new Cell(p.x, p.y)) && PlantBalance.I.Plant(p.type) != null) CreatePlantView(p, false);
                 else save.planted.RemoveAt(i);
             }
         }
@@ -718,7 +756,7 @@ namespace SeedClicker
                 v.barBack.enabled = v.barFill.enabled = showBar;
                 if (showBar)
                 {
-                    float f = p.Grown ? p.xp / (float)Mathf.Max(1, PlantBalance.I.levelTaps) : p.growth / (float)PlantBalance.I.growTaps;
+                    float f = p.Grown ? p.xp / (float)Mathf.Max(1, PlantBalance.I.levelTaps) : p.growth / (float)p.GrowTaps;
                     var top = new Vector2(v.root.position.x, v.sr.bounds.max.y + 0.1f);
                     float w = CellSize * 0.85f, h = 0.06f * (1 + v.barPunch * 0.8f);
                     v.barBack.transform.position = top; v.barBack.transform.localScale = new Vector3(w + 0.04f, h + 0.04f, 1);

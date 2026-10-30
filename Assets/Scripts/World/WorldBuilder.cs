@@ -49,7 +49,6 @@ namespace SeedClicker
             salt = save.mapSeed % 9973;
             objects = new GameObject("Objects").transform;
             objects.SetParent(transform, false);
-            BuildLanes();
             BuildMask();
             BuildTerrain();
             BuildPlateauMask();
@@ -57,14 +56,17 @@ namespace SeedClicker
             BuildMountain();
             PlaceHouse();
             PlaceWorkbench();
-            PlaceLaneTiles();
+            ReserveBuildingSpots();
             PlaceRockIslands();
             PlaceNature();
             SetupLight();
             LoadWorldSave();
-            LoadPlants();
+            LoadRocks();
             LoadDefense();
+            LoadPlants();
+            RefreshGhosts();
             InitSeason();
+            InitEconomy();
         }
 
         // ------------------------------------------------------------------ Wege (Lanes, siehe WorldBuilder.Lanes.cs)
@@ -81,12 +83,8 @@ namespace SeedClicker
             return best;
         }
 
-        public float DistToPath(Vector2 p)
-        {
-            float best = float.MaxValue;
-            foreach (var l in lanes) best = Mathf.Min(best, DistToPolyline(p, l));
-            return best;
-        }
+        /// <summary>Es gibt keine Wege mehr (freie Farm); bleibt fuer die Pruefungen, die Abstand zu Wegen halten.</summary>
+        public float DistToPath(Vector2 p) => float.MaxValue;
 
         // ------------------------------------------------------------------ Splat-Maske
 
@@ -113,7 +111,7 @@ namespace SeedClicker
                 {
                     var w = MaskToWorld(x, y);
                     float edge = (Fbm(w.x * 1.2f, w.y * 1.2f, 3 + salt) - 0.5f) * 0.35f;
-                    float dirt = 0f;   // Lanes werden als Kacheln im Raster gezeichnet (PlaceLaneTiles)
+                    float dirt = 0f;
                     // Vorplatz aus Pflaster vor dem Haus, von Erde umrandet
                     var yd = (w - yardC) / new Vector2(2.6f, 1.1f);
                     float stone = 1f - Mathf.InverseLerp(0.85f, 1.0f, yd.magnitude + edge * 0.4f);
@@ -182,7 +180,7 @@ namespace SeedClicker
             return Place(spriteName, foot, height / sprite.bounds.size.y, flip);
         }
 
-        void Shadow(Vector2 foot, float w, float h, float alpha = 0.28f)
+        SpriteRenderer Shadow(Vector2 foot, float w, float h, float alpha = 0.28f)
         {
             var go = new GameObject("Shadow");
             go.transform.SetParent(objects, false);
@@ -192,6 +190,7 @@ namespace SeedClicker
             sr.sprite = Art.Get("soft");
             sr.color = new Color(0.08f, 0.14f, 0.1f, alpha);
             sr.sortingOrder = -31000;
+            return sr;
         }
 
         /// <summary>Liegt p im eingezaeunten Startbeet oder so knapp darunter, dass ein Baum es verdecken wuerde?</summary>
@@ -265,7 +264,7 @@ namespace SeedClicker
                 float grove = Fbm(p.x * 0.2f, p.y * 0.2f, 31 + salt);
                 float density = edge < 2.5f ? 1f : grove > 0.62f ? 0.5f : 0.02f;
                 if (R() > density) continue;
-                if ((p - HousePos).magnitude < 5.5f || !OnBareGrass(p, (BuildBand + 1.6f) * CellSize)) continue;   // Strassen und Bau-Reihen frei halten
+                if ((p - HousePos).magnitude < 5.5f || !OnBareGrass(p, 0f)) continue;
                 bool big = R() < 0.6f;
                 float r = big ? 1.35f : 0.95f;
                 if (!Free(p, r)) continue;
@@ -298,7 +297,7 @@ namespace SeedClicker
             for (int i = 0; i < 40; i++)
             {
                 var p = RandomPoint(1f);
-                if ((p - HousePos).magnitude < 3f || !OnBareGrass(p, (BuildBand + 1f) * CellSize) || !Free(p, 0.4f) || NearStartArea(p, 0.6f, 0.6f)) continue;
+                if ((p - HousePos).magnitude < 3f || !OnBareGrass(p, 0f) || !Free(p, 0.4f) || NearStartArea(p, 0.6f, 0.6f)) continue;
                 Reserve(p, 0.4f);
                 float roll = R();
                 if (roll < 0.35f) Place("sk_Stones", p, 0.6f + R() * 0.3f, R() < 0.5f, 0.04f);
@@ -353,6 +352,9 @@ namespace SeedClicker
             UpdateInteract(Time.deltaTime);
             UpdatePlants(Time.deltaTime);
             UpdateCarry(Time.deltaTime);
+            UpdateWalls(Time.deltaTime);
+            UpdateRocks(Time.deltaTime);
+            UpdateEconomy(Time.deltaTime);
             UpdateSeason(Time.deltaTime);
             ambientT -= Time.deltaTime;
             if (ambientT > 0 || Particles.I == null) return;

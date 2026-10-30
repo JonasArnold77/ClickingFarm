@@ -139,18 +139,17 @@ namespace SeedClicker
             if (wb == null) return;
             var w = World(screen);
             var c = WorldBuilder.CellAt(w);
-            // Wachsende Pflanze: sofort beim Druecken reagieren – das macht das Klicken knackig
-            if (wb.IsPlantGrowing(c)) { wb.TapPlant(c); consumed = true; return; }
-            // Nachts: Tipp auf einen Zombie = Schuss mit der gewaehlten Waffe
-            if (NightWave.I != null && NightWave.I.TryShoot(w)) { consumed = true; return; }
-            // reife Pflanze: kann mit dem Finger auf eine gleiche Pflanze gezogen werden
+            if (wb.TryCatchButterfly(w)) { consumed = true; return; }
+            // Pflanze: sofort beim Druecken reagieren (wachsen, Stufe, Ernte) – und sie laesst sich ziehen (umtopfen)
             var under = wb.PlantAt(c);
-            if (under != null && wb.IsReady(under) && (!wb.Placing || wb.Carrying == under))
+            if (under != null && !wb.Placing && !wb.WallMode)
             {
-                dragCand = under;
-                if (!wb.Placing) { wb.TapPlant(c); tappedReady = true; }   // Klick levelt sofort
+                wb.TapPlant(c);
+                dragCand = under; tappedReady = true;
                 return;
             }
+            // Nachts: Tipp = Schuss mit der gewaehlten Waffe (geht genau auf die Tipp-Stelle)
+            if (NightWave.I != null && NightWave.I.TryShoot(w)) { consumed = true; return; }
             if (wb.Placing) return;   // Ziel waehlen: erst beim Loslassen (so kann man dabei auch die Karte schieben)
             if (wb.PlantAt(c) != null) return;   // fertige Pflanze -> beim Loslassen
         }
@@ -191,11 +190,13 @@ namespace SeedClicker
                 return;
             }
 
-            // ein Tipp macht das Naheliegende: Pflanze antippen, leeres Feld bepflanzen, Feld anlegen, Baum faellen
+            // ein Tipp macht das Naheliegende: Mauer bauen (Mauer-Modus), Pflanze antippen, leeren Platz bepflanzen,
+            // Feld anlegen, Baum faellen, Fels abbauen
+            if (wb.WallMode) { if (!wb.TapWallMode(cell)) { if (!wb.TryChop(w)) wb.TryMine(w); } return; }
             if (wb.PlantAt(cell) != null) { wb.TapPlant(cell); return; }
-            if (wb.HasField(cell)) { wb.TapEmptyField(cell); return; }
-            if (wb.CanPlaceField(cell)) { wb.PlaceField(cell, true); return; }
-            wb.TryChop(w);
+            if (wb.IsSlot(cell)) { wb.TapEmptyField(cell); return; }
+            if (wb.TryChop(w) || wb.TryMine(w)) return;
+            if (wb.CanPlaceField(cell)) wb.PlaceField(cell, true);
 
         }
 

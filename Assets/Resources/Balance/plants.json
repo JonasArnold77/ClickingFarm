@@ -4,82 +4,770 @@
   "damagePerLevel": 0.12,
   "growTaps": 100,
   "levelTaps": 40,
-  "growMilestones": [25, 50, 75],
+  "growMilestones": [
+    25,
+    50,
+    75
+  ],
   "comboWindow": 0.4,
   "maxLevel": 5,
   "rangeBase": 2.4,
   "rangePerLevel": 0.75,
-
   "patterns": [
-    { "id": "single", "name": "Einzelschuss",  "desc": "Ein gezielter Schuss" },
-    { "id": "double", "name": "Doppelschuss",  "desc": "Zwei Schüsse auf zwei Ziele" },
-    { "id": "spread", "name": "Fächer",       "desc": "Mehrere Schüsse im Fächer" },
-    { "id": "splash", "name": "Fläche",       "desc": "Trifft alles im Einschlagkreis" },
-    { "id": "pierce", "name": "Durchschlag",   "desc": "Fliegt durch mehrere Gegner" },
-    { "id": "chain",  "name": "Kette",         "desc": "Springt auf weitere Gegner über" }
+    {
+      "id": "single",
+      "name": "Einzelschuss",
+      "desc": "Ein gezielter Schuss"
+    },
+    {
+      "id": "double",
+      "name": "Doppelschuss",
+      "desc": "Zwei Schüsse auf zwei Ziele"
+    },
+    {
+      "id": "spread",
+      "name": "Fächer",
+      "desc": "Mehrere Schüsse im Fächer"
+    },
+    {
+      "id": "splash",
+      "name": "Fläche",
+      "desc": "Trifft alles im Einschlagkreis"
+    },
+    {
+      "id": "pierce",
+      "name": "Durchschlag",
+      "desc": "Fliegt durch mehrere Gegner"
+    },
+    {
+      "id": "chain",
+      "name": "Kette",
+      "desc": "Springt auf weitere Gegner über"
+    }
   ],
   "projectiles": [
-    { "id": "seed",  "name": "Samenkorn", "speed": 9,  "damage": 1.0,  "cooldown": 1.0, "homing": 0.3, "desc": "Schnell und zuverlässig" },
-    { "id": "thorn", "name": "Dorn",      "speed": 14, "damage": 0.85, "cooldown": 0.9, "homing": 0.1, "desc": "Sehr schnell, durchbohrt" },
-    { "id": "spore", "name": "Spore",     "speed": 4.5,"damage": 1.5,  "cooldown": 1.3, "homing": 1.0, "desc": "Langsam, aber verfolgt und trifft hart" },
-    { "id": "petal", "name": "Blütenblatt","speed": 7,"damage": 0.95, "cooldown": 0.95,"homing": 0.8, "desc": "Fliegt im Bogen und verfolgt" },
-    { "id": "beam",  "name": "Lichtstrahl","speed": 0, "damage": 0.75, "cooldown": 0.7, "homing": 0,   "desc": "Trifft sofort" },
-    { "id": "bolt", "name": "Kettenblitz", "speed": 0, "damage": 1.3, "cooldown": 1.0, "homing": 0, "desc": "Zickzack-Blitz, springt auf weitere Zombies über" },
-    { "id": "gas", "name": "Giftspucke", "speed": 7, "damage": 1.1, "cooldown": 1.15, "homing": 0.6, "desc": "Zerplatzt zu einer Giftwolke, die bleibt und vergiftet" },
-    { "id": "fireball", "name": "Feuerball", "speed": 6.5, "damage": 1.8, "cooldown": 1.25, "homing": 0.5, "desc": "Großer Feuerball, explodiert beim Einschlag" }
+    {
+      "id": "seed",
+      "name": "Samenkorn",
+      "speed": 9,
+      "damage": 1.0,
+      "cooldown": 1.0,
+      "homing": 0.3,
+      "desc": "Schnell und zuverlässig"
+    },
+    {
+      "id": "thorn",
+      "name": "Dorn",
+      "speed": 14,
+      "damage": 0.85,
+      "cooldown": 0.9,
+      "homing": 0.1,
+      "desc": "Sehr schnell, durchbohrt"
+    },
+    {
+      "id": "spore",
+      "name": "Spore",
+      "speed": 4.5,
+      "damage": 1.5,
+      "cooldown": 1.3,
+      "homing": 1.0,
+      "desc": "Langsam, aber verfolgt und trifft hart"
+    },
+    {
+      "id": "petal",
+      "name": "Blütenblatt",
+      "speed": 7,
+      "damage": 0.95,
+      "cooldown": 0.95,
+      "homing": 0.8,
+      "desc": "Fliegt im Bogen und verfolgt"
+    },
+    {
+      "id": "beam",
+      "name": "Lichtstrahl",
+      "speed": 0,
+      "damage": 0.75,
+      "cooldown": 0.7,
+      "homing": 0,
+      "desc": "Trifft sofort"
+    },
+    {
+      "id": "bolt",
+      "name": "Kettenblitz",
+      "speed": 0,
+      "damage": 1.3,
+      "cooldown": 1.0,
+      "homing": 0,
+      "desc": "Zickzack-Blitz, springt auf weitere Zombies über"
+    },
+    {
+      "id": "gas",
+      "name": "Giftspucke",
+      "speed": 7,
+      "damage": 1.1,
+      "cooldown": 1.15,
+      "homing": 0.6,
+      "desc": "Zerplatzt zu einer Giftwolke, die bleibt und vergiftet"
+    },
+    {
+      "id": "fireball",
+      "name": "Feuerball",
+      "speed": 6.5,
+      "damage": 1.8,
+      "cooldown": 1.25,
+      "homing": 0.5,
+      "desc": "Großer Feuerball, explodiert beim Einschlag"
+    }
   ],
   "elements": [
-    { "id": "nature",    "name": "Natur", "color": "#8FD45A", "desc": "Mehr Grundschaden" },
-    { "id": "fire",      "name": "Feuer", "color": "#FF8A3D", "desc": "Setzt in Brand" },
-    { "id": "ice",       "name": "Eis",   "color": "#8FE3FF", "desc": "Verlangsamt" },
-    { "id": "poison",    "name": "Gift",  "color": "#B97CFF", "desc": "Stapelbares Gift" },
-    { "id": "lightning", "name": "Blitz", "color": "#FFE45C", "desc": "Springt auf Nachbarn über" }
+    {
+      "id": "nature",
+      "name": "Natur",
+      "color": "#8FD45A",
+      "desc": "Mehr Grundschaden"
+    },
+    {
+      "id": "fire",
+      "name": "Feuer",
+      "color": "#FF8A3D",
+      "desc": "Setzt in Brand"
+    },
+    {
+      "id": "ice",
+      "name": "Eis",
+      "color": "#8FE3FF",
+      "desc": "Verlangsamt"
+    },
+    {
+      "id": "poison",
+      "name": "Gift",
+      "color": "#B97CFF",
+      "desc": "Stapelbares Gift"
+    },
+    {
+      "id": "lightning",
+      "name": "Blitz",
+      "color": "#FFE45C",
+      "desc": "Springt auf Nachbarn über"
+    }
   ],
   "effects": [
-    { "id": "none",      "name": "Keiner",     "desc": "-" },
-    { "id": "explosion", "name": "Explosion",  "desc": "Explodiert beim Einschlag" },
-    { "id": "toxin",     "name": "Vergiftung", "desc": "Zusätzliches Gift" },
-    { "id": "knockback", "name": "Rückstoß", "desc": "Stößt Gegner zurück" },
-    { "id": "crit",      "name": "Volltreffer","desc": "Chance auf doppelten Schaden" },
-    { "id": "multishot", "name": "Mehrfachschuss","desc": "Zusätzliche Geschosse" }
+    {
+      "id": "none",
+      "name": "Keiner",
+      "desc": "-"
+    },
+    {
+      "id": "explosion",
+      "name": "Explosion",
+      "desc": "Explodiert beim Einschlag"
+    },
+    {
+      "id": "toxin",
+      "name": "Vergiftung",
+      "desc": "Zusätzliches Gift"
+    },
+    {
+      "id": "knockback",
+      "name": "Rückstoß",
+      "desc": "Stößt Gegner zurück"
+    },
+    {
+      "id": "crit",
+      "name": "Volltreffer",
+      "desc": "Chance auf doppelten Schaden"
+    },
+    {
+      "id": "multishot",
+      "name": "Mehrfachschuss",
+      "desc": "Zusätzliche Geschosse"
+    }
   ],
   "species": [
-    { "id": "corn",   "name": "mais",    "art": "hh_corn_",   "stages": [1, 3, 5], "scale": 1.05,
-      "form": "single", "widen": 2.2, "character": "spark",
-      "heads": [ { "x": 0.5, "y": 0.76, "s": 0.92 } ],
-      "mutationNames": [ "Funkenkolben", "Spannungskolben", "Sturmkolben", "Donnerkönig" ] },
-    { "id": "wheat",  "name": "weizen",  "art": "hh_wheat_",  "stages": [1, 3, 5], "scale": 1.05,
-      "form": "single", "widen": 2.3, "character": "fire",
-      "heads": [ { "x": 0.5, "y": 0.7, "s": 0.95 } ],
-      "mutationNames": [ "Glutweizen", "Glutkranz", "Fackelähre", "Phönixweizen" ] },
-    { "id": "carrot", "name": "rübe",   "art": "hh_carrot_", "stages": [0, 2, 3], "scale": 1.5,
+    {
+      "id": "corn",
+      "name": "mais",
+      "art": "hh_corn_",
+      "stages": [
+        1,
+        3,
+        5
+      ],
+      "scale": 1.05,
+      "form": "single",
+      "widen": 2.2,
+      "character": "spark",
+      "heads": [
+        {
+          "x": 0.5,
+          "y": 0.76,
+          "s": 0.92
+        }
+      ],
+      "mutationNames": [
+        "Funkenkolben",
+        "Spannungskolben",
+        "Sturmkolben",
+        "Donnerkönig"
+      ]
+    },
+    {
+      "id": "wheat",
+      "name": "weizen",
+      "art": "hh_wheat_",
+      "stages": [
+        1,
+        3,
+        5
+      ],
+      "scale": 1.05,
+      "form": "single",
+      "widen": 2.3,
+      "character": "fire",
+      "heads": [
+        {
+          "x": 0.5,
+          "y": 0.7,
+          "s": 0.95
+        }
+      ],
+      "mutationNames": [
+        "Glutweizen",
+        "Glutkranz",
+        "Fackelähre",
+        "Phönixweizen"
+      ]
+    },
+    {
+      "id": "carrot",
+      "name": "rübe",
+      "art": "hh_carrot_",
+      "stages": [
+        0,
+        2,
+        3
+      ],
+      "scale": 1.5,
       "character": "toxic",
-      "heads": [ { "x": 0.5, "y": 0.42, "s": 0.5 } ],
-      "mutationNames": [ "Giftrübe", "Brodelrübe", "Sumpfrübe", "Seuchenfürst" ] }
+      "heads": [
+        {
+          "x": 0.5,
+          "y": 0.42,
+          "s": 0.5
+        }
+      ],
+      "mutationNames": [
+        "Giftrübe",
+        "Brodelrübe",
+        "Sumpfrübe",
+        "Seuchenfürst"
+      ]
+    },
+    {
+      "id": "reed",
+      "name": "schilf",
+      "art": "sk_Grass",
+      "stages": [],
+      "scale": 1.0,
+      "heads": []
+    },
+    {
+      "id": "radish",
+      "name": "radieschen",
+      "art": "sk_Plant_0",
+      "stages": [],
+      "scale": 0.8,
+      "heads": []
+    },
+    {
+      "id": "turnip",
+      "name": "rübe",
+      "art": "sk_Plant_2",
+      "stages": [],
+      "scale": 0.9,
+      "heads": []
+    },
+    {
+      "id": "brownshroom",
+      "name": "pilz",
+      "art": "sk_Mushroom_3",
+      "stages": [],
+      "scale": 1.0,
+      "heads": []
+    },
+    {
+      "id": "leafy",
+      "name": "kraut",
+      "art": "sk_Plant_4",
+      "stages": [],
+      "scale": 0.9,
+      "heads": []
+    },
+    {
+      "id": "leafy2",
+      "name": "wurz",
+      "art": "sk_Plant_5",
+      "stages": [],
+      "scale": 0.9,
+      "heads": []
+    },
+    {
+      "id": "flowers",
+      "name": "blume",
+      "art": "sk_Flowers_0",
+      "stages": [],
+      "scale": 1.0,
+      "heads": []
+    },
+    {
+      "id": "pinkshroom",
+      "name": "pilz",
+      "art": "sk_Mushroom_1",
+      "stages": [],
+      "scale": 1.0,
+      "heads": []
+    }
   ],
-
   "catalog": [
-    { "id": "funkenmais",     "name": "Funkenmais",     "species": "corn",   "starter": true,  "unlockWave": 7,  "pattern": "single", "patternLv": 1, "rangeLv": 2, "projectile": "bolt",  "projectileLv": 1, "element": "lightning", "elementLv": 1, "effect": "none",      "effectLv": 1 },
-    { "id": "glutweizen",     "name": "Glutweizen",     "species": "wheat",  "starter": true,  "unlockWave": 9,  "pattern": "single", "patternLv": 1, "rangeLv": 1, "projectile": "fireball", "projectileLv": 1, "element": "fire",   "elementLv": 1, "effect": "none",      "effectLv": 1 },
-    { "id": "giftruebe",      "name": "Giftrübe",       "species": "carrot", "starter": true,  "unlockWave": 11, "pattern": "single", "patternLv": 1, "rangeLv": 1, "projectile": "gas",   "projectileLv": 1, "element": "poison",    "elementLv": 1, "effect": "none",      "effectLv": 1 },
-    { "id": "blitzmais",      "name": "Blitzmais",      "species": "corn",   "starter": false, "unlockWave": 1,  "pattern": "chain",  "patternLv": 2, "rangeLv": 2, "projectile": "bolt",  "projectileLv": 2, "element": "lightning", "elementLv": 2, "effect": "none",      "effectLv": 1 },
-    { "id": "funkenweizen",   "name": "Funkenweizen",   "species": "wheat",  "starter": false, "unlockWave": 2,  "pattern": "double", "patternLv": 2, "rangeLv": 2, "projectile": "fireball", "projectileLv": 2, "element": "fire",   "elementLv": 2, "effect": "crit",      "effectLv": 1 },
-    { "id": "sumpfruebe",     "name": "Sumpfrübe",      "species": "carrot", "starter": false, "unlockWave": 3,  "pattern": "splash", "patternLv": 2, "rangeLv": 2, "projectile": "gas",   "projectileLv": 2, "element": "poison",    "elementLv": 2, "effect": "toxin",     "effectLv": 2 },
-    { "id": "sturmmais",      "name": "Sturmmais",      "species": "corn",   "starter": false, "unlockWave": 4,  "pattern": "double", "patternLv": 3, "rangeLv": 3, "projectile": "bolt",  "projectileLv": 3, "element": "lightning", "elementLv": 3, "effect": "multishot", "effectLv": 2 },
-    { "id": "moderruebe",     "name": "Moderrübe",      "species": "carrot", "starter": false, "unlockWave": 5,  "pattern": "splash", "patternLv": 3, "rangeLv": 3, "projectile": "gas",   "projectileLv": 3, "element": "poison",    "elementLv": 3, "effect": "knockback", "effectLv": 2 },
-    { "id": "aschenweizen",   "name": "Aschenweizen",   "species": "wheat",  "starter": false, "unlockWave": 6,  "pattern": "splash", "patternLv": 4, "rangeLv": 4, "projectile": "fireball", "projectileLv": 3, "element": "fire",   "elementLv": 3, "effect": "explosion", "effectLv": 3 },
-    { "id": "donnermais",     "name": "Donnermais",     "species": "corn",   "starter": false, "unlockWave": 8,  "pattern": "chain",  "patternLv": 4, "rangeLv": 4, "projectile": "bolt",  "projectileLv": 4, "element": "lightning", "elementLv": 4, "effect": "crit",      "effectLv": 3 },
-    { "id": "flammenweizen",  "name": "Flammenweizen",  "species": "wheat",  "starter": false, "unlockWave": 10, "pattern": "spread", "patternLv": 5, "rangeLv": 5, "projectile": "fireball", "projectileLv": 5, "element": "fire",   "elementLv": 5, "effect": "explosion", "effectLv": 4 },
-    { "id": "seuchenruebe",   "name": "Seuchenrübe",    "species": "carrot", "starter": false, "unlockWave": 13, "pattern": "double", "patternLv": 5, "rangeLv": 5, "projectile": "gas",   "projectileLv": 5, "element": "poison",    "elementLv": 5, "effect": "toxin",     "effectLv": 5 }
+    {
+      "id": "radieschen",
+      "name": "Radieschen",
+      "species": "radish",
+      "starter": false,
+      "unlockWave": 999,
+      "role": "harvest",
+      "cost": 5,
+      "value": 1,
+      "growTaps": 15,
+      "unlockEarned": 0,
+      "pattern": "single",
+      "patternLv": 1,
+      "rangeLv": 1,
+      "projectile": "seed",
+      "projectileLv": 1,
+      "element": "fire",
+      "elementLv": 1,
+      "effect": "none",
+      "effectLv": 1
+    },
+    {
+      "id": "tauschilf",
+      "name": "Tauschilf",
+      "species": "reed",
+      "starter": false,
+      "unlockWave": 999,
+      "role": "water",
+      "cost": 12,
+      "value": 0,
+      "growTaps": 25,
+      "unlockEarned": 0,
+      "pattern": "single",
+      "patternLv": 1,
+      "rangeLv": 1,
+      "projectile": "seed",
+      "projectileLv": 1,
+      "element": "ice",
+      "elementLv": 1,
+      "effect": "none",
+      "effectLv": 1
+    },
+    {
+      "id": "weissruebe",
+      "name": "Weißrübe",
+      "species": "turnip",
+      "starter": false,
+      "unlockWave": 999,
+      "role": "harvest",
+      "cost": 60,
+      "value": 6,
+      "growTaps": 30,
+      "unlockEarned": 250,
+      "pattern": "single",
+      "patternLv": 1,
+      "rangeLv": 1,
+      "projectile": "seed",
+      "projectileLv": 1,
+      "element": "nature",
+      "elementLv": 1,
+      "effect": "none",
+      "effectLv": 1
+    },
+    {
+      "id": "kompostpilz",
+      "name": "Kompostpilz",
+      "species": "brownshroom",
+      "starter": false,
+      "unlockWave": 999,
+      "role": "fert",
+      "cost": 120,
+      "value": 0,
+      "growTaps": 35,
+      "unlockEarned": 600,
+      "pattern": "single",
+      "patternLv": 1,
+      "rangeLv": 1,
+      "projectile": "seed",
+      "projectileLv": 1,
+      "element": "nature",
+      "elementLv": 1,
+      "effect": "none",
+      "effectLv": 1
+    },
+    {
+      "id": "trommelkraut",
+      "name": "Trommelkraut",
+      "species": "leafy",
+      "starter": false,
+      "unlockWave": 999,
+      "role": "boost",
+      "cost": 300,
+      "value": 0,
+      "growTaps": 40,
+      "unlockEarned": 1500,
+      "pattern": "single",
+      "patternLv": 1,
+      "rangeLv": 1,
+      "projectile": "seed",
+      "projectileLv": 1,
+      "element": "lightning",
+      "elementLv": 1,
+      "effect": "none",
+      "effectLv": 1
+    },
+    {
+      "id": "klopfwurz",
+      "name": "Klopfwurz",
+      "species": "leafy2",
+      "starter": false,
+      "unlockWave": 999,
+      "role": "auto",
+      "cost": 500,
+      "value": 0,
+      "growTaps": 45,
+      "unlockEarned": 3500,
+      "pattern": "single",
+      "patternLv": 1,
+      "rangeLv": 1,
+      "projectile": "seed",
+      "projectileLv": 1,
+      "element": "nature",
+      "elementLv": 1,
+      "effect": "none",
+      "effectLv": 1
+    },
+    {
+      "id": "bienenblume",
+      "name": "Bienenblume",
+      "species": "flowers",
+      "starter": false,
+      "unlockWave": 999,
+      "role": "bee",
+      "cost": 900,
+      "value": 4,
+      "growTaps": 45,
+      "unlockEarned": 8000,
+      "pattern": "single",
+      "patternLv": 1,
+      "rangeLv": 1,
+      "projectile": "seed",
+      "projectileLv": 1,
+      "element": "lightning",
+      "elementLv": 1,
+      "effect": "none",
+      "effectLv": 1
+    },
+    {
+      "id": "gluehpilz",
+      "name": "Glühpilz",
+      "species": "pinkshroom",
+      "starter": false,
+      "unlockWave": 999,
+      "role": "light",
+      "cost": 700,
+      "value": 0,
+      "growTaps": 40,
+      "unlockEarned": 5000,
+      "pattern": "single",
+      "patternLv": 1,
+      "rangeLv": 1,
+      "projectile": "seed",
+      "projectileLv": 1,
+      "element": "poison",
+      "elementLv": 1,
+      "effect": "none",
+      "effectLv": 1
+    },
+    {
+      "id": "funkenmais",
+      "name": "Funkenmais",
+      "species": "corn",
+      "starter": true,
+      "unlockWave": 7,
+      "pattern": "single",
+      "patternLv": 1,
+      "rangeLv": 2,
+      "projectile": "bolt",
+      "projectileLv": 1,
+      "element": "lightning",
+      "elementLv": 1,
+      "effect": "none",
+      "effectLv": 1,
+      "role": "combat",
+      "cost": 0
+    },
+    {
+      "id": "glutweizen",
+      "name": "Glutweizen",
+      "species": "wheat",
+      "starter": true,
+      "unlockWave": 9,
+      "pattern": "single",
+      "patternLv": 1,
+      "rangeLv": 1,
+      "projectile": "fireball",
+      "projectileLv": 1,
+      "element": "fire",
+      "elementLv": 1,
+      "effect": "none",
+      "effectLv": 1,
+      "role": "combat",
+      "cost": 0
+    },
+    {
+      "id": "giftruebe",
+      "name": "Giftrübe",
+      "species": "carrot",
+      "starter": true,
+      "unlockWave": 11,
+      "pattern": "single",
+      "patternLv": 1,
+      "rangeLv": 1,
+      "projectile": "gas",
+      "projectileLv": 1,
+      "element": "poison",
+      "elementLv": 1,
+      "effect": "none",
+      "effectLv": 1,
+      "role": "combat",
+      "cost": 0
+    },
+    {
+      "id": "blitzmais",
+      "name": "Blitzmais",
+      "species": "corn",
+      "starter": false,
+      "unlockWave": 1,
+      "pattern": "chain",
+      "patternLv": 2,
+      "rangeLv": 2,
+      "projectile": "bolt",
+      "projectileLv": 2,
+      "element": "lightning",
+      "elementLv": 2,
+      "effect": "none",
+      "effectLv": 1,
+      "role": "combat",
+      "cost": 32
+    },
+    {
+      "id": "funkenweizen",
+      "name": "Funkenweizen",
+      "species": "wheat",
+      "starter": false,
+      "unlockWave": 2,
+      "pattern": "double",
+      "patternLv": 2,
+      "rangeLv": 2,
+      "projectile": "fireball",
+      "projectileLv": 2,
+      "element": "fire",
+      "elementLv": 2,
+      "effect": "crit",
+      "effectLv": 1,
+      "role": "combat",
+      "cost": 44
+    },
+    {
+      "id": "sumpfruebe",
+      "name": "Sumpfrübe",
+      "species": "carrot",
+      "starter": false,
+      "unlockWave": 3,
+      "pattern": "splash",
+      "patternLv": 2,
+      "rangeLv": 2,
+      "projectile": "gas",
+      "projectileLv": 2,
+      "element": "poison",
+      "elementLv": 2,
+      "effect": "toxin",
+      "effectLv": 2,
+      "role": "combat",
+      "cost": 56
+    },
+    {
+      "id": "sturmmais",
+      "name": "Sturmmais",
+      "species": "corn",
+      "starter": false,
+      "unlockWave": 4,
+      "pattern": "double",
+      "patternLv": 3,
+      "rangeLv": 3,
+      "projectile": "bolt",
+      "projectileLv": 3,
+      "element": "lightning",
+      "elementLv": 3,
+      "effect": "multishot",
+      "effectLv": 2,
+      "role": "combat",
+      "cost": 68
+    },
+    {
+      "id": "moderruebe",
+      "name": "Moderrübe",
+      "species": "carrot",
+      "starter": false,
+      "unlockWave": 5,
+      "pattern": "splash",
+      "patternLv": 3,
+      "rangeLv": 3,
+      "projectile": "gas",
+      "projectileLv": 3,
+      "element": "poison",
+      "elementLv": 3,
+      "effect": "knockback",
+      "effectLv": 2,
+      "role": "combat",
+      "cost": 80
+    },
+    {
+      "id": "aschenweizen",
+      "name": "Aschenweizen",
+      "species": "wheat",
+      "starter": false,
+      "unlockWave": 6,
+      "pattern": "splash",
+      "patternLv": 4,
+      "rangeLv": 4,
+      "projectile": "fireball",
+      "projectileLv": 3,
+      "element": "fire",
+      "elementLv": 3,
+      "effect": "explosion",
+      "effectLv": 3,
+      "role": "combat",
+      "cost": 92
+    },
+    {
+      "id": "donnermais",
+      "name": "Donnermais",
+      "species": "corn",
+      "starter": false,
+      "unlockWave": 8,
+      "pattern": "chain",
+      "patternLv": 4,
+      "rangeLv": 4,
+      "projectile": "bolt",
+      "projectileLv": 4,
+      "element": "lightning",
+      "elementLv": 4,
+      "effect": "crit",
+      "effectLv": 3,
+      "role": "combat",
+      "cost": 116
+    },
+    {
+      "id": "flammenweizen",
+      "name": "Flammenweizen",
+      "species": "wheat",
+      "starter": false,
+      "unlockWave": 10,
+      "pattern": "spread",
+      "patternLv": 5,
+      "rangeLv": 5,
+      "projectile": "fireball",
+      "projectileLv": 5,
+      "element": "fire",
+      "elementLv": 5,
+      "effect": "explosion",
+      "effectLv": 4,
+      "role": "combat",
+      "cost": 140
+    },
+    {
+      "id": "seuchenruebe",
+      "name": "Seuchenrübe",
+      "species": "carrot",
+      "starter": false,
+      "unlockWave": 13,
+      "pattern": "double",
+      "patternLv": 5,
+      "rangeLv": 5,
+      "projectile": "gas",
+      "projectileLv": 5,
+      "element": "poison",
+      "elementLv": 5,
+      "effect": "toxin",
+      "effectLv": 5,
+      "role": "combat",
+      "cost": 176
+    }
   ],
-
   "monsters": [
-    { "id": "schlurfer",  "name": "Schlurfer",  "art": "sk_Mushroom_0", "tint": "#6cc35e", "hp": 8,  "speed": 0.85, "damage": 4,  "scale": 1.0,  "weakTo": "fire",      "firstWave": 1, "weight": 1.0 },
-    { "id": "kriecher",   "name": "Kriecher",   "art": "sk_Plant_4",    "tint": "#8ad072", "hp": 6,  "speed": 0.85,  "damage": 3,  "scale": 1.0,  "weakTo": "ice",       "firstWave": 2, "weight": 0.8 },
-    { "id": "moderbauer", "name": "Moderbauer", "art": "sk_Mushroom_3", "tint": "#58a24c", "hp": 26, "speed": 0.85,  "damage": 8,  "scale": 1.0, "weakTo": "lightning", "firstWave": 3, "weight": 0.6 },
-    { "id": "grabkoloss", "name": "Grabkoloss", "art": "sk_Bush",       "tint": "#4a8a42", "hp": 70, "speed": 0.85,  "damage": 18, "scale": 1.0,  "weakTo": "poison",    "firstWave": 4, "weight": 0.3 }
+    {
+      "id": "schlurfer",
+      "name": "Schlurfer",
+      "art": "sk_Mushroom_0",
+      "tint": "#6cc35e",
+      "hp": 8,
+      "speed": 0.85,
+      "damage": 4,
+      "scale": 1.0,
+      "weakTo": "fire",
+      "firstWave": 1,
+      "weight": 1.0
+    },
+    {
+      "id": "kriecher",
+      "name": "Kriecher",
+      "art": "sk_Plant_4",
+      "tint": "#8ad072",
+      "hp": 6,
+      "speed": 0.85,
+      "damage": 3,
+      "scale": 1.0,
+      "weakTo": "ice",
+      "firstWave": 2,
+      "weight": 0.8
+    },
+    {
+      "id": "moderbauer",
+      "name": "Moderbauer",
+      "art": "sk_Mushroom_3",
+      "tint": "#58a24c",
+      "hp": 26,
+      "speed": 0.85,
+      "damage": 8,
+      "scale": 1.0,
+      "weakTo": "lightning",
+      "firstWave": 3,
+      "weight": 0.6
+    },
+    {
+      "id": "grabkoloss",
+      "name": "Grabkoloss",
+      "art": "sk_Bush",
+      "tint": "#4a8a42",
+      "hp": 70,
+      "speed": 0.85,
+      "damage": 18,
+      "scale": 1.0,
+      "weakTo": "poison",
+      "firstWave": 4,
+      "weight": 0.3
+    }
   ],
-
   "waves": {
     "autoWave": true,
     "firstWaveDelay": 300,
@@ -95,17 +783,358 @@
     "tapDamage": 1.5,
     "woodLossOnDefeat": 5
   },
-
   "weapons": [
-    { "id": "pistole",       "name": "Pistole",       "kind": "bullet",  "desc": "schnell, ein Treffer",            "unlockWave": 0, "damage": 3,   "cooldown": 0.28, "speed": 24, "pellets": 1, "spread": 0,  "pierce": 0, "radius": 0,   "range": 9,  "damagePerWave": 0.12 },
-    { "id": "schrotflinte",  "name": "Schrotflinte",  "kind": "pellet",  "desc": "Streuschuss, stark aus der Nähe", "unlockWave": 2, "damage": 2,   "cooldown": 0.85, "speed": 19, "pellets": 7, "spread": 28, "pierce": 0, "radius": 0,   "range": 5,  "damagePerWave": 0.12 },
-    { "id": "bogen",         "name": "Pfeil & Bogen", "kind": "arrow",   "desc": "durchbohrt mehrere Zombies",      "unlockWave": 3, "damage": 6,   "cooldown": 0.6,  "speed": 15, "pellets": 1, "spread": 0,  "pierce": 3, "radius": 0,   "range": 11, "damagePerWave": 0.12 },
-    { "id": "granatwerfer",  "name": "Granatwerfer",  "kind": "grenade", "desc": "Explosion trifft alle im Umkreis", "unlockWave": 5, "damage": 12,  "cooldown": 1.6,  "speed": 8,  "pellets": 1, "spread": 0,  "pierce": 0, "radius": 1.4, "range": 10, "damagePerWave": 0.12 }
+    {
+      "id": "pistole",
+      "name": "Pistole",
+      "kind": "bullet",
+      "desc": "schnell, ein Treffer",
+      "unlockWave": 0,
+      "damage": 3,
+      "cooldown": 0.28,
+      "speed": 24,
+      "pellets": 1,
+      "spread": 0,
+      "pierce": 0,
+      "radius": 0,
+      "range": 9,
+      "damagePerWave": 0.12
+    },
+    {
+      "id": "schrotflinte",
+      "name": "Schrotflinte",
+      "kind": "pellet",
+      "desc": "Streuschuss, stark aus der Nähe",
+      "unlockWave": 2,
+      "damage": 2,
+      "cooldown": 0.85,
+      "speed": 19,
+      "pellets": 7,
+      "spread": 28,
+      "pierce": 0,
+      "radius": 0,
+      "range": 5,
+      "damagePerWave": 0.12
+    },
+    {
+      "id": "bogen",
+      "name": "Pfeil & Bogen",
+      "kind": "arrow",
+      "desc": "durchbohrt mehrere Zombies",
+      "unlockWave": 3,
+      "damage": 6,
+      "cooldown": 0.6,
+      "speed": 15,
+      "pellets": 1,
+      "spread": 0,
+      "pierce": 3,
+      "radius": 0,
+      "range": 11,
+      "damagePerWave": 0.12
+    },
+    {
+      "id": "granatwerfer",
+      "name": "Granatwerfer",
+      "kind": "grenade",
+      "desc": "Explosion trifft alle im Umkreis",
+      "unlockWave": 5,
+      "damage": 12,
+      "cooldown": 1.6,
+      "speed": 8,
+      "pellets": 1,
+      "spread": 0,
+      "pierce": 0,
+      "radius": 1.4,
+      "range": 10,
+      "damagePerWave": 0.12
+    }
   ],
-
-  "levels": { "damage": 0.6, "range": 0.3, "speed": 0.12, "size": 0.08 },
-  "mutationLevels": [1, 3, 6, 10],
+  "levels": {
+    "damage": 0.6,
+    "range": 0.3,
+    "speed": 0.12,
+    "size": 0.08
+  },
+  "mutationLevels": [
+    1,
+    3,
+    6,
+    10
+  ],
   "mergeSizes": [
-    { "minLevel": 1,  "w": 1, "h": 1 }
+    {
+      "minLevel": 1,
+      "w": 1,
+      "h": 1
+    }
+  ],
+  "startCoins": 30,
+  "wall": {
+    "wood": 2,
+    "hp": 30
+  },
+  "farmLevels": [
+    {
+      "cost": 150,
+      "wood": 10
+    },
+    {
+      "cost": 900,
+      "wood": 25
+    },
+    {
+      "cost": 5000,
+      "wood": 50
+    },
+    {
+      "cost": 25000,
+      "wood": 90
+    },
+    {
+      "cost": 120000,
+      "wood": 150
+    },
+    {
+      "cost": 600000,
+      "wood": 250
+    }
+  ],
+  "buildings": [
+    {
+      "id": "stand",
+      "name": "Marktstand",
+      "desc": "Verkauft Gemüse am Wegrand",
+      "art": "hh_barrel",
+      "baseCost": 15,
+      "cps": 0.3,
+      "scale": 0.8
+    },
+    {
+      "id": "holz",
+      "name": "Holzlager",
+      "desc": "Verarbeitet Holz zu Brettern",
+      "art": "hh_logpile",
+      "baseCost": 120,
+      "cps": 2,
+      "scale": 0.9
+    },
+    {
+      "id": "keller",
+      "name": "Pilzkeller",
+      "desc": "Züchtet Pilze im Dunkeln",
+      "art": "sk_Cave",
+      "baseCost": 1100,
+      "cps": 12,
+      "scale": 0.9
+    },
+    {
+      "id": "scheune",
+      "name": "Scheune",
+      "desc": "Lagert und verkauft große Ernten",
+      "art": "sk_House_1",
+      "baseCost": 12000,
+      "cps": 70,
+      "scale": 1.1
+    },
+    {
+      "id": "gut",
+      "name": "Gutshof",
+      "desc": "Ein ganzer Betrieb arbeitet für dich",
+      "art": "sk_House_2",
+      "baseCost": 130000,
+      "cps": 400,
+      "scale": 1.2
+    },
+    {
+      "id": "mine",
+      "name": "Goldmine",
+      "desc": "Gold aus dem Berg",
+      "art": "sk_Stones",
+      "baseCost": 1400000,
+      "cps": 2500,
+      "scale": 1.3
+    }
+  ],
+  "upgrades": [
+    {
+      "id": "handschuh1",
+      "name": "Arbeitshandschuhe",
+      "desc": "Jeder Tipp zählt doppelt",
+      "effect": "click",
+      "value": 2,
+      "cost": 100,
+      "unlockEarned": 50
+    },
+    {
+      "id": "kanne1",
+      "name": "Gießkanne aus Kupfer",
+      "desc": "Pflanzen wachsen doppelt so schnell",
+      "effect": "growth",
+      "value": 2,
+      "cost": 250,
+      "unlockEarned": 150
+    },
+    {
+      "id": "korb1",
+      "name": "Erntekorb",
+      "desc": "Ernte bringt doppelt so viele Münzen",
+      "effect": "harvest",
+      "value": 2,
+      "cost": 400,
+      "unlockEarned": 300
+    },
+    {
+      "id": "schilf1",
+      "name": "Tiefe Wurzeln",
+      "desc": "Wasserpflanzen gießen 1 Feld weiter",
+      "effect": "water",
+      "value": 1,
+      "cost": 800,
+      "unlockEarned": 600
+    },
+    {
+      "id": "kompost1",
+      "name": "Kompostkunde",
+      "desc": "Dünger wirkt doppelt so stark",
+      "effect": "fert",
+      "value": 2,
+      "cost": 1500,
+      "unlockEarned": 1000
+    },
+    {
+      "id": "handschuh2",
+      "name": "Goldene Handschuhe",
+      "desc": "Jeder Tipp zählt doppelt",
+      "effect": "click",
+      "value": 2,
+      "cost": 2500,
+      "unlockEarned": 1800
+    },
+    {
+      "id": "auto1",
+      "name": "Taktgefühl",
+      "desc": "Automatik-Pflanzen klicken doppelt so schnell",
+      "effect": "auto",
+      "value": 2,
+      "cost": 5000,
+      "unlockEarned": 4000
+    },
+    {
+      "id": "korb2",
+      "name": "Marktschreier",
+      "desc": "Ernte bringt doppelt so viele Münzen",
+      "effect": "harvest",
+      "value": 2,
+      "cost": 9000,
+      "unlockEarned": 6000
+    },
+    {
+      "id": "bienen1",
+      "name": "Königinnen",
+      "desc": "Honig bringt doppelt so viel",
+      "effect": "bee",
+      "value": 2,
+      "cost": 15000,
+      "unlockEarned": 10000
+    },
+    {
+      "id": "mauer1",
+      "name": "Eisenbeschläge",
+      "desc": "Mauern halten doppelt so viel aus",
+      "effect": "wall",
+      "value": 2,
+      "cost": 8000,
+      "unlockEarned": 5000
+    },
+    {
+      "id": "licht1",
+      "name": "Glühwürmchen",
+      "desc": "Licht verstärkt Schaden um weitere 50 %",
+      "effect": "light",
+      "value": 0.5,
+      "cost": 12000,
+      "unlockEarned": 8000
+    },
+    {
+      "id": "cps1",
+      "name": "Buchhaltung",
+      "desc": "Alle Einnahmen von selbst +50 %",
+      "effect": "cps",
+      "value": 1.5,
+      "cost": 20000,
+      "unlockEarned": 15000
+    },
+    {
+      "id": "kanne2",
+      "name": "Sprinkler-Gießkanne",
+      "desc": "Pflanzen wachsen doppelt so schnell",
+      "effect": "growth",
+      "value": 2,
+      "cost": 30000,
+      "unlockEarned": 20000
+    },
+    {
+      "id": "handschuh3",
+      "name": "Kristallhandschuhe",
+      "desc": "Jeder Tipp zählt dreifach",
+      "effect": "click",
+      "value": 3,
+      "cost": 60000,
+      "unlockEarned": 40000
+    },
+    {
+      "id": "golden1",
+      "name": "Schmetterlingsnetz",
+      "desc": "Goldene Schmetterlinge kommen doppelt so oft",
+      "effect": "golden",
+      "value": 2,
+      "cost": 50000,
+      "unlockEarned": 30000
+    },
+    {
+      "id": "offline1",
+      "name": "Nachtwächter",
+      "desc": "Offline-Ertrag hält 4 Stunden länger",
+      "effect": "offline",
+      "value": 4,
+      "cost": 40000,
+      "unlockEarned": 25000
+    },
+    {
+      "id": "korb3",
+      "name": "Großhandel",
+      "desc": "Ernte bringt dreimal so viele Münzen",
+      "effect": "harvest",
+      "value": 3,
+      "cost": 200000,
+      "unlockEarned": 120000
+    },
+    {
+      "id": "cps2",
+      "name": "Genossenschaft",
+      "desc": "Alle Einnahmen von selbst verdoppelt",
+      "effect": "cps",
+      "value": 2,
+      "cost": 500000,
+      "unlockEarned": 300000
+    },
+    {
+      "id": "auto2",
+      "name": "Uhrwerk",
+      "desc": "Automatik-Pflanzen klicken doppelt so schnell",
+      "effect": "auto",
+      "value": 2,
+      "cost": 400000,
+      "unlockEarned": 250000
+    },
+    {
+      "id": "handschuh4",
+      "name": "Sternenhandschuhe",
+      "desc": "Jeder Tipp zählt fünffach",
+      "effect": "click",
+      "value": 5,
+      "cost": 2000000,
+      "unlockEarned": 1200000
+    }
   ]
 }

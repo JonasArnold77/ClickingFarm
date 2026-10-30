@@ -35,6 +35,7 @@ namespace SeedClicker
         public static Sprite Body(WorldArtSet art, SpeciesDef sp, int stageIndex)
         {
             if (art == null || sp == null) return null;
+            if (sp.stages == null || sp.stages.Length == 0) return art.Get(sp.art);   // ein Bild fuer alle Stufen
             var src = art.Get(sp.art + sp.stages[Mathf.Clamp(stageIndex, 0, sp.stages.Length - 1)]);
             return IsSingle(sp) ? Third(src, 1) : src;
         }

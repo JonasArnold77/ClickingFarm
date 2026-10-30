@@ -136,7 +136,7 @@ namespace SeedClicker
             hintText.text = ToolHint(tool);
         }
 
-        string ToolHint(WorldTool tool) => "Tippe auf ein schimmerndes Feld neben dem Weg – dann auf das Feld, um zu pflanzen";
+        string ToolHint(WorldTool tool) => "Tippe auf ein schimmerndes Feld, dann darauf pflanzen. Pflanzen lassen sich jederzeit umtopfen";
 
         void SpawnFloater(Vector2 world, string text, Color col)
         {

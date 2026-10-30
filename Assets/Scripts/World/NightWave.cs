@@ -36,7 +36,7 @@ namespace SeedClicker
             public float slowT, slowAmt, burnT, burnDps, poisonT, poisonDps; public int poisonStacks;
             public Vector2 knock;
             public bool dead;
-            public int lane = -1, wp;   // Lane und naechster Wegpunkt
+            public float bashT;   // schlaegt gerade auf eine Mauer ein
             public float Speed => def.speed * (slowT > 0 ? 1f - slowAmt : 1f);
         }
 
@@ -267,17 +267,13 @@ namespace SeedClicker
             MonsterDefW def = B.monsters[0];
             foreach (var d in B.monsters) { if (d.firstWave > wave) continue; roll -= d.weight; if (roll <= 0) { def = d; break; } }
 
-            // am Anfang einer Lane (Waldrand) auftauchen
+            // aus dem Wald: von links, rechts oder unten – die Festung muss rundum halten
             float hw = WorldBuilder.MapW / 2f, hh = WorldBuilder.MapH / 2f;
             Vector2 p;
-            int lane = -1;
-            if (wb.Lanes.Count > 0)
-            {
-                lane = rnd.Next(wb.Lanes.Count);
-                var l = wb.Lanes[lane];
-                p = l[0] + (l[1] - l[0]).normalized * 0.3f + UnityEngine.Random.insideUnitCircle * 0.25f;
-            }
-            else p = new Vector2(-hw + 2 + (float)rnd.NextDouble() * (hw * 2 - 4), -hh + 0.8f);
+            int side = rnd.Next(4);
+            if (side == 0) p = new Vector2(-hw + 0.4f, -hh + 1.5f + (float)rnd.NextDouble() * (hh + 2f));
+            else if (side == 1) p = new Vector2(hw - 0.4f, -hh + 1.5f + (float)rnd.NextDouble() * (hh + 2f));
+            else p = new Vector2(-hw + 1.5f + (float)rnd.NextDouble() * (hw * 2 - 3), -hh + 0.4f);
 
             var root = new GameObject("Monster_" + def.id).transform;
             root.SetParent(transform, false);
@@ -287,7 +283,6 @@ namespace SeedClicker
             {
                 var zm = BuildPixelZombie(def, root, zart.zombieWalk);
                 zm.pos = p; zm.hp = zm.maxHp = hp0; zm.hop = (float)rnd.NextDouble() * 6; zm.animT = (float)rnd.NextDouble() * 8f;
-                zm.lane = lane; zm.wp = 1;
                 root.position = p;
                 monsters.Add(zm);
                 Particles.I?.Burst(p, "square", new Color(0.35f, 0.26f, 0.18f), 10, 2.2f, 0.5f, 0.3f, 6f, 2f);
@@ -413,15 +408,7 @@ namespace SeedClicker
 
                 var toHouse = HouseTarget - m.pos;
                 float dist = toHouse.magnitude;
-                // Ziel: naechster Wegpunkt der Lane, am Ende das Haus
-                Vector2 goal = HouseTarget;
-                if (m.lane >= 0 && m.lane < wb.Lanes.Count)
-                {
-                    var l = wb.Lanes[m.lane];
-                    while (m.wp < l.Count && (l[m.wp] - m.pos).sqrMagnitude < 0.45f * 0.45f) m.wp++;
-                    if (m.wp < l.Count) goal = l[m.wp];
-                }
-                var to = goal - m.pos;
+                var to = toHouse;
                 if (dist < 0.7f)
                 {
                     HouseHp -= m.def.damage;
@@ -432,11 +419,19 @@ namespace SeedClicker
                     Poof(m, true);
                     continue;
                 }
-                // die Lane entlang (Zelle fuer Zelle), leicht schwankend, Rueckstoss klingt ab
+                // auf das Haus zu, leicht schlaengelnd; eine Mauer im Weg wird zerschlagen
                 var dir = to.normalized;
-                var side = new Vector2(-dir.y, dir.x) * Mathf.Sin(m.hop * 0.7f) * 0.05f;
+                var side = new Vector2(-dir.y, dir.x) * Mathf.Sin(m.hop * 0.7f) * 0.25f;
                 var step = (dir + side).normalized * m.Speed * dt;
-                m.pos += step + m.knock * dt;
+                var wall = wb.WallAt(m.pos + dir * 0.28f);
+                if (wall != null)
+                {
+                    m.bashT += dt;
+                    wb.HitWall(wall, m.def.damage * 0.5f * dt);
+                    m.pos += m.knock * dt;
+                    if (m.bashT > 0.55f) { m.bashT = 0f; Sfx.Play("chop", 0.6f + (float)rnd.NextDouble() * 0.2f, 0.35f); }
+                }
+                else { m.bashT = 0f; m.pos += step + m.knock * dt; }
                 m.knock = Vector2.MoveTowards(m.knock, Vector2.zero, dt * 6f);
                 Color c = Color.white;
                 if (m.slowT > 0) c = new Color(0.7f, 0.88f, 1f);
@@ -511,7 +506,7 @@ namespace SeedClicker
         {
             foreach (var p in wb.Planted)
             {
-                if (!p.Grown) continue;   // nur reife Pflanzen verteidigen
+                if (!p.Grown || !p.IsCombat) continue;   // nur reife Kampfpflanzen schiessen
                 var g = p.Genome;
                 float gcd = g.Cooldown * B.LevelCooldown(p.Lv), grange = g.Range + B.LevelRange(p.Lv);
                 float cd = cooldowns.TryGetValue(p, out var v) ? v : (float)rnd.NextDouble() * gcd;
@@ -1040,6 +1035,7 @@ namespace SeedClicker
         void Damage(Monster m, float dmg, PlantGenome g, bool silent = false, bool crit = false)
         {
             if (m.dead || dmg <= 0) return;
+            dmg *= wb.LightBonus(m.pos);   // im Licht der Gluehpilze trifft alles haerter
             m.hp -= dmg;
             if (!silent)
             {
@@ -1054,6 +1050,7 @@ namespace SeedClicker
         void Kill(Monster m)
         {
             result.kills++;
+            wb.AddCoins(2 + WaveNumber * 2, m.pos + new Vector2(0, 0.8f));   // Beute
             Poof(m, true);
         }
 

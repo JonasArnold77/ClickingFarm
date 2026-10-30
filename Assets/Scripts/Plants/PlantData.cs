@@ -39,11 +39,46 @@ namespace SeedClicker
     [Serializable] public class MergeSizeDef { public int minLevel = 1, w = 1, h = 1; }
 
 
-    /// <summary>Eine Angriffspflanze im Katalog: feste Eigenschaften, wird nach einer Welle freigeschaltet.</summary>
+    /// <summary>Verbesserung im Laden (wie bei Cookie Clicker). effect: click, harvest, growth, water, fert, auto, bee, light, wall, cps, offline, golden.</summary>
+    [Serializable] public class ShopUpgradeDef { public string id, name, desc, effect; public float value, cost, unlockEarned; }
+    /// <summary>Gebaeude: erzeugt dauerhaft Muenzen pro Sekunde, Preis steigt mit jedem Kauf.</summary>
+    [Serializable] public class BuildingDef { public string id, name, desc, art; public float baseCost, cps, scale = 1f; }
+    /// <summary>Hof erweitern: Kosten der naechsten Stufe.</summary>
+    [Serializable] public class FarmLevelDef { public float cost; public int wood; }
+    [Serializable] public class WallDef { public int wood = 2; public float hp = 30f; }
+
+    /// <summary>Rollen der Pflanzen: combat (verteidigt), water (giesst Nachbarn), harvest (bringt Muenzen),
+    /// fert (Duenger fuer Nachbarn), boost (Klicks in der Naehe zaehlen doppelt), auto (klickt selbst Nachbarn an),
+    /// bee (Honig = Muenzen, mehr bei Blumen), light (Zombies im Licht nehmen mehr Schaden).</summary>
+    public static class Roles
+    {
+        public static string Name(string r) => r switch
+        {
+            "water" => "Wasser", "harvest" => "Ernte", "fert" => "Dünger", "boost" => "Verstärker", "auto" => "Automatik",
+            "bee" => "Honig", "light" => "Licht", _ => "Kampf"
+        };
+        public static string Desc(CatalogDef d) => d.role switch
+        {
+            "water" => "Gießt Felder im Umkreis von 2: dort wächst alles doppelt so schnell und Ernte bringt +50 %.",
+            "harvest" => "Reif: jeder Tipp bringt " + d.value + " Münzen, dazu verdient sie von selbst.",
+            "fert" => "Direkte Nachbarn wachsen schneller und bringen +50 % Münzen.",
+            "boost" => "Tipps auf Pflanzen im Umkreis von 2 zählen doppelt.",
+            "auto" => "Klickt von selbst auf ihre direkten Nachbarn – je höher die Stufe, desto schneller.",
+            "bee" => "Macht Honig: verdient von selbst, mehr mit Blumen in der Nähe.",
+            "light" => "Leuchtet nachts: Zombies in ihrem Licht nehmen +50 % Schaden.",
+            _ => "Verteidigt den Hof in der Nacht."
+        };
+    }
+
+    /// <summary>Eine Pflanze im Katalog: feste Eigenschaften, Rolle, Preis; wird freigeschaltet (Welle oder verdiente Muenzen).</summary>
     [Serializable]
     public class CatalogDef
     {
         public string id, name, species; public bool starter; public int unlockWave;
+        public string role = "combat";
+        public float cost, value, unlockEarned;
+        public int growTaps;   // 0 = Standard (growTaps)
+        public bool IsCombat => string.IsNullOrEmpty(role) || role == "combat";
         public string pattern; public int patternLv; public int rangeLv;
         public string projectile; public int projectileLv;
         public string element; public int elementLv;
@@ -74,6 +109,11 @@ namespace SeedClicker
         public MonsterDefW[] monsters;
         public WaveDef waves;
         public WeaponDef[] weapons;
+        public ShopUpgradeDef[] upgrades;
+        public BuildingDef[] buildings;
+        public FarmLevelDef[] farmLevels;
+        public WallDef wall;
+        public float startCoins = 30f;
         public LevelDef levels;
         public MergeSizeDef[] mergeSizes;
         public int[] mutationLevels;   // ab welcher Stufe Mutation 2, 3, 4 beginnt (erste Zahl = Mutation 1)
@@ -92,6 +132,7 @@ namespace SeedClicker
         {
             var el = g.ElementColor;
             var spc = I.Species(g.species);
+            if (I.RoleOf(g.typeId) != "combat") return Color.white;   // Nutzpflanzen behalten ihre Farbe
             if (spc != null && spc.character == "toxic")
             {
                 // Giftruebe: wird kraenklich gruen, dann violett geadert
@@ -175,6 +216,9 @@ namespace SeedClicker
         public SpeciesDef Species(string id) { foreach (var s in species) if (s.id == id) return s; return species[0]; }
         public MonsterDefW Monster(string id) { foreach (var m in monsters) if (m.id == id) return m; return monsters[0]; }
         public CatalogDef Plant(string id) { foreach (var c in catalog) if (c.id == id) return c; return null; }
+        public int GrowTapsFor(string id) { var c = Plant(id); return c != null && c.growTaps > 0 ? c.growTaps : growTaps; }
+        public string RoleOf(string id) { var c = Plant(id); return c == null || string.IsNullOrEmpty(c.role) ? "combat" : c.role; }
+        public WallDef Wall => wall ?? (wall = new WallDef());
     }
 
     // ------------------------------------------------------------------ Eigenschaften einer Angriffspflanze
@@ -263,7 +307,12 @@ namespace SeedClicker
 
     /// <summary>Ein Zaunstueck auf einer Rasterzelle (Spielstand).</summary>
 
-    /// <summary>Eine gepflanzte Angriffspflanze auf einem Feld (Spielstand).</summary>
+    /// <summary>Ein Mauerstueck (Holz) auf einer Rasterzelle: blockiert Zombies, darauf kann eine Pflanze stehen.</summary>
+    [Serializable] public class WallState { public int x, y; public float hp; }
+
+    [Serializable] public class BuildingCount { public string id; public int n; }
+
+    /// <summary>Eine gepflanzte Pflanze auf einem Feld oder Mauerplatz (Spielstand).</summary>
     [Serializable]
     public class PlantedState
     {
@@ -276,7 +325,10 @@ namespace SeedClicker
         public int W => Mathf.Max(1, w);
         public int H => Mathf.Max(1, h);
         public bool Covers(Cell c) => c.x >= x && c.x < x + W && c.y >= y && c.y < y + H;
-        public bool Grown => growth >= PlantBalance.I.growTaps;
+        public int GrowTaps => PlantBalance.I.GrowTapsFor(type);
+        public bool Grown => growth >= GrowTaps;
+        public string Role => PlantBalance.I.RoleOf(type);
+        public bool IsCombat => Role == "combat";
         public PlantGenome Genome { get { var c = PlantBalance.I.Plant(type); return c != null ? c.Genome : PlantBalance.I.catalog[0].Genome; } }
     }
 }

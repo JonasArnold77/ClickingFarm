@@ -1,9 +1,11 @@
 # TODO.md – offene Punkte
 
 ## Als Nächstes
-- [ ] Startbeet erweitern: weitere Bereiche/Zaun-Ausbau mit Holz oder Münzen freischalten (Fläche ist aktuell fest).
+- [ ] Balancing Wirtschaft: Preise der Verbesserungen/Gebäude, Ertrag der Nutzpflanzen, Tempo der Freischaltungen in den ersten 10 Minuten.
+- [ ] Startauswahl der Kampfpflanze passt nicht mehr ganz zum neuen Start mit Radieschen – evtl. erst vor der ersten Nacht fragen.
+- [ ] Eigene Grafiken für Gebäude und Nutzpflanzen (aktuell vorhandene Sprites als Platzhalter).
+- [ ] Mauern reparieren; Zombies laufen nicht um Mauern herum (keine Wegfindung).
 - [ ] Waffen: Munition/Nachladen? Bessere Waffen-Icons.
-- [ ] Zombies laufen nicht um Zäune herum, sondern schlagen sich durch – evtl. Wegfindung, Tore im Zaun, Zaun reparieren.
 - [ ] Zombies: Arme nach vorn (IK-Ziele der Figur verschieben), eigene Zombie-Grafik statt umgefärbter Bauer, Umfall-Animation beim Besiegen.
 - [ ] Mehr Pflanzen-Grafiken: aktuell nur Mais/Weizen/Rübe als Arten, die Katalog-Pflanzen unterscheiden sich nur durch Farbe/Werte.
 - [ ] Balancing 100 Tipps pro Pflanze vs. Wellentempo (Auto-Welle alle 60 s ist nur zum Testen).

@@ -61,7 +61,7 @@ namespace SeedClicker
             weaponGroup.blocksRaycasts = weaponShow > 0.5f;
             weaponGroup.transform.localScale = Vector3.one * Mathf.Lerp(0.9f, 1f, weaponShow);
             // Hinweistext ueber die Waffenleiste schieben, solange sie sichtbar ist
-            hintText.rectTransform.anchoredPosition = new Vector2(0, Mathf.Lerp(50f, 240f, weaponShow));
+            hintText.rectTransform.anchoredPosition = new Vector2(0, Mathf.Lerp(200f, 240f, weaponShow));
             if (weaponShow <= 0f) return;
             var cur = nw.Weapon;
             foreach (var s in weaponSlots)

@@ -14,6 +14,7 @@ namespace SeedClicker
         bool dragging;
         Vector2 dragPos;
         PlantedState hoverTarget;
+        Cell? hoverSlot;
         readonly List<SpriteRenderer> footprintPool = new List<SpriteRenderer>();
         List<Cell> fpCells;
         bool fpOk;
@@ -40,7 +41,13 @@ namespace SeedClicker
         /// <summary>Finger zieht eine reife Pflanze: aufnehmen, falls noch nicht geschehen.</summary>
         public bool BeginDrag(PlantedState p, Vector2 w)
         {
-            if (carrying != p) { StartPlacing(p); if (carrying != p) return false; }
+            // jede Pflanze laesst sich ziehen: auf einen freien Platz (umtopfen) oder auf eine gleiche reife Pflanze
+            if (carrying != p)
+            {
+                carrying = p;
+                Sfx.Play("pop", 0.8f, 0.8f); Haptics.Tap(15);
+                PlacingChanged?.Invoke("Auf ein freies Feld oder eine Mauer ziehen – oder auf eine gleiche reife Pflanze");
+            }
             dragging = true;
             dragPos = w;
             return true;
@@ -49,9 +56,11 @@ namespace SeedClicker
         public void DragTo(Vector2 w)
         {
             dragPos = w;
-            var t = PlantAt(CellAt(w));
+            var cell = CellAt(w);
+            var t = PlantAt(cell);
             if (IsMergeTarget(t) && hoverTarget != t) { Sfx.Play("tick", 1.3f, 0.5f); Haptics.Tap(8); }
             hoverTarget = IsMergeTarget(t) ? t : null;
+            hoverSlot = t == null && IsSlot(cell) ? cell : (Cell?)null;
         }
 
         /// <summary>Finger loslassen: gleiche Pflanze unter dem Finger -> ablegen, sonst zurueck.</summary>
@@ -59,6 +68,16 @@ namespace SeedClicker
         {
             dragging = false;
             hoverTarget = null;
+            hoverSlot = null;
+            var cell = CellAt(w);
+            var p = carrying;
+            if (p != null && PlantAt(cell) == null && IsSlot(cell))
+            {
+                carrying = null;
+                PlacingChanged?.Invoke(null);
+                MovePlant(p, cell);
+                return;
+            }
             TryPlaceAt(w);
         }
 
@@ -229,6 +248,7 @@ namespace SeedClicker
             {
                 ok = FindFootprint(hoverTarget, hoverTarget.Lv + carrying.Lv, out _, out show);
             }
+            else if (dragging && hoverSlot.HasValue) { show = new List<Cell> { hoverSlot.Value }; ok = true; }
             else if (fpFlashT > 0f) { fpFlashT -= udt; show = fpCells; ok = fpOk; }
 
             int n = show != null ? show.Count : 0;

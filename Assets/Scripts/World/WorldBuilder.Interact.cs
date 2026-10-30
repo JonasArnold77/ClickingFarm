@@ -24,6 +24,15 @@ namespace SeedClicker
         public int wave;   // ueberstandene Wellen
         // Verteidigung: Zaeune, gewaehlte Waffe
         public string weapon = "pistole";
+        // Wirtschaft und Festung
+        public double coins, earned;
+        public bool economyInit;
+        public List<string> upgrades = new List<string>();
+        public List<BuildingCount> buildings = new List<BuildingCount>();
+        public int farmLevel;
+        public List<int> rocksGone = new List<int>();
+        public List<WallState> walls = new List<WallState>();
+        public long lastSeen;
         public int season;            // 0 Sommer, 1 Herbst, 2 Winter
         public bool plantsCleared;
         public int mapSeed;           // Zufallskarte (Lanes, Felseninseln, Baeume); 0 = noch keine    // einmaliges Loeschen aller Pflanzen (Umstellung auf Leveln durch Klicken)
@@ -264,7 +273,7 @@ namespace SeedClicker
         {
             if (fields.ContainsKey(c)) return false;
             var center = CellCenter(c);
-            if (!IsBuildable(c)) return false;                                // nur Startbeet und neben den Strassen
+            if (!IsBuildable(c)) return false;                                // nur im Hof
             float hc = CellSize / 2f;
             foreach (var corner in new[] { new Vector2(-hc, -hc), new Vector2(hc, -hc), new Vector2(-hc, hc), new Vector2(hc, hc) })
             {
@@ -272,7 +281,7 @@ namespace SeedClicker
                 if (Inside(p) < 0.35f) return false;                         // nicht an die Klippe
                 if (Mathf.Abs(p.x) > MapW / 2f - 0.5f || Mathf.Abs(p.y) > MapH / 2f - 0.5f) return false;
             }
-            if (IsLaneCell(c)) return false;                                  // nicht auf die Strasse
+            if (HasWall(c)) return false;                                     // dort steht eine Mauer
             if (MaskAt(center).a > 0.15f) return false;                      // nicht aufs Pflaster
             // Baeume, Stuempfe, Felsen, Haus blockieren; Blumen/Gras/Buesche werden weggeraeumt
             for (int i = 0; i < occupied.Count; i++)
