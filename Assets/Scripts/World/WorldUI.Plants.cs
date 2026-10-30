@@ -418,6 +418,7 @@ namespace SeedClicker
             // beim Oeffnen den Reiter der zuletzt gewaehlten Pflanze zeigen
             var sel = PlantBalance.I.Plant(wb.Save.selectedPlant);
             if (sel != null) plantTab = TabOf(sel);
+            if (wb.HasPedestal(cell)) plantTab = 2;   // ins Steinpult passen nur Kampf- und Verteidigungspflanzen
             OpenPlantPicker(cell, plantTab);
         }
 

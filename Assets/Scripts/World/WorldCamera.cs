@@ -142,7 +142,9 @@ namespace SeedClicker
             if (wb.TryCatchButterfly(w)) { consumed = true; return; }
             // Pflanze: laesst sich ziehen (umtopfen); ein kurzer Tipp oeffnet beim Loslassen ihr Info-Fenster
             var under = wb.PlantAt(c);
-            if (under != null && !wb.Placing && !wb.WallMode)
+            // Bau-Modus: gedrueckt halten und ziehen malt Mauern bzw. Pulte
+            if (wb.BuildMode && !wb.Placing && wb.BeginBuildStroke(c)) { painting = true; return; }
+            if (under != null && !wb.Placing && !wb.BuildMode)
             {
                 dragCand = under;
                 // Info-Fenster dieser Pflanze ist offen: Tipp laesst sie sofort wachsen/leveln (wie der Knopf)
@@ -158,6 +160,7 @@ namespace SeedClicker
         void PointerMove(Vector2 screen)
         {
             if (overUI || consumed) return;
+            if (painting) { WorldBuilder.I?.ContinueBuildStroke(WorldBuilder.CellAt(World(screen))); lastScreen = screen; return; }
             if (dragCand != null)
             {
                 var wbd = WorldBuilder.I;
@@ -178,7 +181,8 @@ namespace SeedClicker
             if (draggingPlant) { draggingPlant = false; dragCand = null; WorldBuilder.I?.Drop(World(screen)); return; }
             dragCand = null;
             if (tappedReady) { tappedReady = false; return; }
-            if (overUI || panning || painting || consumed) { painting = false; return; }
+            if (painting) { painting = false; WorldBuilder.I?.EndBuildStroke(); return; }
+            if (overUI || panning || consumed) return;
             var w = World(screen);
             var wb = WorldBuilder.I;
             if (wb == null) return;
@@ -187,7 +191,7 @@ namespace SeedClicker
             if (wb.PlacingStructure != null) { wb.TryPlaceStructure(cell); return; }
             if (wb.HitBench(w)) { wb.TapBench(); return; }
             var hs = wb.HitStructure(w);
-            if (hs != null && !wb.Placing && !wb.WallMode) { wb.TapStructure(hs); return; }
+            if (hs != null && !wb.Placing && !wb.BuildMode) { wb.TapStructure(hs); return; }
             if (wb.Placing)
             {
                 if (wb.PlantAt(cell) == wb.Carrying) wb.CancelPlacing();
@@ -198,6 +202,7 @@ namespace SeedClicker
             // ein Tipp macht das Naheliegende: Mauer bauen (Mauer-Modus), Pflanzen-Info oeffnen, leeren Platz bepflanzen,
             // Feld anlegen, Baum faellen, Fels abbauen
             if (wb.WallMode) { if (!wb.TapWallMode(cell)) { if (!wb.TryChop(w)) wb.TryMine(w); } return; }
+            if (wb.PedestalMode) { if (!wb.TapPedestalMode(cell)) { if (!wb.TryChop(w)) wb.TryMine(w); } return; }
             if (wb.PlantAt(cell) != null) { wb.InspectPlant(cell); return; }
             if (wb.IsSlot(cell)) { wb.TapEmptyField(cell); return; }
             if (wb.TryChop(w) || wb.TryMine(w)) return;

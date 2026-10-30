@@ -1021,6 +1021,9 @@
     "wood": 2,
     "hp": 30
   },
+  "pedestal": {
+    "cost": 20
+  },
   "bench": {
     "tapsBase": 12,
     "tapsGrowth": 1.3,

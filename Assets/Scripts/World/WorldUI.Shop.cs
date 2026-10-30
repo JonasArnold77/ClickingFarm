@@ -41,13 +41,22 @@ namespace SeedClicker
             var wall = Btn(row, "Mauer bauen", new Color(0.62f, 0.45f, 0.28f), () => wbi.SetWallMode(!wbi.WallMode), 36);
             wall.GetComponent<RectTransform>().Place(new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(0, 0), new Vector2(380, 0));
             wallBtnImg = wall.GetComponent<Image>(); wallBtnText = wall.GetComponentInChildren<Text>();
+            var ped = Btn(row, "Steinpult", new Color(0.55f, 0.55f, 0.58f), () => wbi.SetPedestalMode(!wbi.PedestalMode), 32);
+            ped.GetComponent<RectTransform>().Place(new Vector2(0.5f, 0), new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, 0), new Vector2(200, 0));
+            var pedImg = ped.GetComponent<Image>(); var pedText = ped.GetComponentInChildren<Text>();
+            wbi.PedestalModeChanged += on =>
+            {
+                pedText.text = on ? "Fertig" : "Steinpult";
+                pedImg.color = on ? new Color(0.85f, 0.6f, 0.25f) : new Color(0.55f, 0.55f, 0.58f);
+                hintText.text = on ? "Steinpult (" + Num.Short(PlantBalance.I.Pedestal.cost) + " Münzen) auf Boden oder Mauer setzen – halten und ziehen setzt viele. Ins Loch passen Kampfpflanzen" : ToolHint(WorldCamera.Tool);
+            };
             var shop = Btn(row, "Laden", new Color(0.36f, 0.62f, 0.3f), () => OpenShop(shopTab), 44);
             shop.GetComponent<RectTransform>().Place(new Vector2(1, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(0, 0), new Vector2(380, 0));
             wbi.WallModeChanged += on =>
             {
                 wallBtnText.text = on ? "Fertig" : "Mauer bauen";
                 wallBtnImg.color = on ? new Color(0.85f, 0.6f, 0.25f) : new Color(0.62f, 0.45f, 0.28f);
-                hintText.text = on ? "Tippe auf einen hellen Holzplatz: Mauer bauen (" + PlantBalance.I.Wall.wood + " Holz). Leere Mauer antippen: abbauen" : ToolHint(WorldCamera.Tool);
+                hintText.text = on ? "Mauer bauen (" + PlantBalance.I.Wall.wood + " Holz): tippen oder gedrückt halten und ziehen. Auf leerer Mauer beginnen: abbauen" : ToolHint(WorldCamera.Tool);
             };
 
             wbi.OfflineEarned += OpenWelcomeBack;
@@ -75,6 +84,7 @@ namespace SeedClicker
                 dayButtons.alpha = Mathf.MoveTowards(dayButtons.alpha, night ? 0f : 1f, dt * 4f);
                 dayButtons.blocksRaycasts = dayButtons.alpha > 0.5f;
                 if (night && wbi.WallMode) wbi.SetWallMode(false);
+                if (night && wbi.PedestalMode) wbi.SetPedestalMode(false);
             }
         }
 

@@ -354,6 +354,7 @@ namespace SeedClicker
             UpdatePlants(Time.deltaTime);
             UpdateCarry(Time.deltaTime);
             UpdateWalls(Time.deltaTime);
+            UpdatePedestals(Time.deltaTime);
             UpdateRocks(Time.deltaTime);
             UpdateEconomy(Time.deltaTime);
             UpdateWatering(Time.deltaTime);

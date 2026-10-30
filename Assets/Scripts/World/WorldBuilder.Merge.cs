@@ -60,7 +60,7 @@ namespace SeedClicker
             var t = PlantAt(cell);
             if (IsMergeTarget(t) && hoverTarget != t) { Sfx.Play("tick", 1.3f, 0.5f); Haptics.Tap(8); }
             hoverTarget = IsMergeTarget(t) ? t : null;
-            hoverSlot = t == null && IsSlot(cell) ? cell : (Cell?)null;
+            hoverSlot = t == null && IsSlot(cell) && (carrying == null || Fits(cell, carrying.type, false)) ? cell : (Cell?)null;
         }
 
         /// <summary>Finger loslassen: gleiche Pflanze unter dem Finger -> ablegen, sonst zurueck.</summary>
@@ -71,7 +71,7 @@ namespace SeedClicker
             hoverSlot = null;
             var cell = CellAt(w);
             var p = carrying;
-            if (p != null && PlantAt(cell) == null && IsSlot(cell))
+            if (p != null && PlantAt(cell) == null && IsSlot(cell) && Fits(cell, p.type, true))
             {
                 carrying = null;
                 PlacingChanged?.Invoke(null);

@@ -58,7 +58,7 @@ namespace SeedClicker
         /// <summary>Im Mauer-Modus die Vorschau nachziehen, wenn die Kamera ein paar Zellen weiter ist.</summary>
         void UpdateWallGhosts()
         {
-            if (!WallMode || Camera.main == null) return;
+            if (!BuildMode || Camera.main == null) return;
             var c = CellAt(Camera.main.transform.position);
             var key = new Vector2Int(Mathf.FloorToInt(c.x / 3f) * 1000 + Mathf.FloorToInt(c.y / 3f), Mathf.RoundToInt(Camera.main.orthographicSize * 2f));
             if (key == ghostView) return;
@@ -96,10 +96,10 @@ namespace SeedClicker
             if (fieldSprite == null) fieldSprite = GroundMaterials.TileSprite(4, 3);
             if (fieldSprite == null) return;
             var seen = new HashSet<Cell>();
-            foreach (var c in WallMode ? VisibleCells() : FarmCells())
+            foreach (var c in BuildMode ? VisibleCells() : FarmCells())
             {
                 seen.Add(c);
-                bool show = WallMode ? CanPlaceWall(c) : CanPlaceField(c) && !HasWall(c);
+                bool show = WallMode ? CanPlaceWall(c) : PedestalMode ? CanPlacePedestal(c) : CanPlaceField(c) && !HasWall(c);
                 ghosts.TryGetValue(c, out var sr);
                 if (show && sr == null)
                 {
@@ -114,8 +114,12 @@ namespace SeedClicker
                 {
                     sr.enabled = show;
                     // Mauer-Modus: helles Holz statt Erde
-                    sr.sprite = WallMode ? WallGhostSprite : fieldSprite;
-                    sr.color = WallMode ? new Color(1f, 1f, 1f, 0.35f) : new Color(1f, 1f, 1f, 0.2f);
+                    sr.sprite = WallMode ? WallGhostSprite : PedestalMode ? PedestalGhostSprite : fieldSprite;
+                    sr.color = BuildMode ? new Color(1f, 1f, 1f, PedestalMode ? 0.55f : 0.35f) : new Color(1f, 1f, 1f, 0.2f);
+                    // Pult-Vorschau oben auf einer Mauer: auf den Wehrgang heben und vor die Mauer sortieren
+                    bool onWall = PedestalMode && HasWall(c);
+                    sr.transform.position = CellCenter(c) + new Vector2(0, onWall ? WallH : 0f);
+                    sr.sortingOrder = onWall ? Order(c.y * CellSize + 0.1f) + 2 : -32305;
                     sr.transform.localScale = Vector3.one * CellSize * 0.94f / (sr.sprite != null ? sr.sprite.bounds.size.x : 1f);
                 }
             }

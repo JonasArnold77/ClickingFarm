@@ -26,6 +26,7 @@ namespace SeedClicker
 
         public void SetWallMode(bool on)
         {
+            if (on && pedestalMode) { pedestalMode = false; PedestalModeChanged?.Invoke(false); }
             wallMode = on;
             RefreshGhosts();
             WallModeChanged?.Invoke(on);
@@ -34,6 +35,7 @@ namespace SeedClicker
         void LoadDefense()
         {
             foreach (var w in save.walls) CreateWallView(w, false);
+            LoadPedestals();
             RefreshGhosts();
         }
 
@@ -41,7 +43,7 @@ namespace SeedClicker
         /// Bauwerken oder Pflanzen. Auch ausserhalb des Hofs und auf leeren Feldern.</summary>
         public bool CanPlaceWall(Cell c)
         {
-            if (HasWall(c) || HasStructure(c) || PlantAt(c) != null) return false;
+            if (HasWall(c) || HasStructure(c) || HasPedestal(c) || PlantAt(c) != null) return false;
             var center = CellCenter(c);
             float hc = CellSize / 2f;
             foreach (var corner in new[] { new Vector2(-hc, -hc), new Vector2(hc, -hc), new Vector2(-hc, hc), new Vector2(hc, hc) })
@@ -74,7 +76,7 @@ namespace SeedClicker
         {
             if (walls.TryGetValue(c, out var v))
             {
-                if (PlantAt(c) != null) return false;
+                if (PlantAt(c) != null || HasPedestal(c)) return false;
                 RemoveWall(c, v, false);
                 AddWood(PlantBalance.I.Wall.wood, CellCenter(c) + new Vector2(0, 0.5f));
                 return true;
@@ -87,13 +89,18 @@ namespace SeedClicker
                 Sfx.Play("error", 1f, 0.6f);
                 return true;
             }
-            save.wood -= cost; WoodChanged?.Invoke(save.wood);
+            BuildWall(c);
+            save.Save();
+            return true;
+        }
+
+        void BuildWall(Cell c)
+        {
+            save.wood -= PlantBalance.I.Wall.wood; WoodChanged?.Invoke(save.wood);
             var st = new WallState { x = c.x, y = c.y, hp = WallMaxHp };
             save.walls.Add(st);
             CreateWallView(st, true);
             RefreshGhosts();
-            save.Save();
-            return true;
         }
 
         void CreateWallView(WallState st, bool fx)
@@ -125,6 +132,7 @@ namespace SeedClicker
             if (broken) WorldCamera.I?.Shake(0.06f);
             var p = PlantAt(c);
             if (p != null) Unplant(p);   // die Pflanze faellt mit
+            RemovePedestal(c, false);    // ein Pult obendrauf auch
             if (v.sr != null) Destroy(v.sr.gameObject);
             walls.Remove(c);
             save.walls.Remove(v.st);

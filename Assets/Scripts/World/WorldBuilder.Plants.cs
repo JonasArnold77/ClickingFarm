@@ -83,10 +83,10 @@ namespace SeedClicker
         public const float MaxOverhang = 0.17f;
 
         /// <summary>Sortier-Hoehe: auf einer Mauer zaehlt der Fuss am Boden, sonst laege die Pflanze hinter der Mauer.</summary>
-        float PlantSortY(PlantedState p, float y) => HasWall(new Cell(p.x, p.y)) ? y - WallH : y;
+        float PlantSortY(PlantedState p, float y) => y - CellLift(new Cell(p.x, p.y));
 
         public static Vector2 PlantBase(PlantedState p) => new Vector2((p.x + p.W * 0.5f) * CellSize, p.y * CellSize + CellSize * 0.12f
-            + (I != null && I.HasWall(new Cell(p.x, p.y)) ? WallH : 0f));   // auf einer Mauer steht sie oben auf dem Wehrgang
+            + (I != null ? I.CellLift(new Cell(p.x, p.y)) : 0f));   // auf Mauer/Steinpult steht sie entsprechend hoeher
 
         /// <summary>Alle Felder, die eine Pflanze belegt.</summary>
         public static List<Cell> PlantCells(PlantedState p)
@@ -167,11 +167,23 @@ namespace SeedClicker
         // ------------------------------------------------------------------ Einsetzen / Ausgraben
 
         /// <summary>Feld oder Mauerplatz, auf dem eine Pflanze stehen kann.</summary>
-        public bool IsSlot(Cell c) => (HasField(c) || HasWall(c)) && !HasStructure(c);
+        public bool IsSlot(Cell c) => (HasField(c) || HasWall(c) || HasPedestal(c)) && !HasStructure(c);
+
+        /// <summary>Passt diese Pflanze auf diesen Platz? Ins Steinpult nur Kampf- und Verteidigungspflanzen.</summary>
+        public bool Fits(Cell c, string type, bool tell)
+        {
+            if (!HasPedestal(c) || IsDefensePlant(PlantBalance.I.Plant(type))) return true;
+            if (tell)
+            {
+                Floater?.Invoke(CellCenter(c) + new Vector2(0, 0.9f), "Ins Steinpult passen nur Kampf- und Verteidigungspflanzen", new Color(1f, 0.75f, 0.55f));
+                Sfx.Play("error", 1f, 0.5f);
+            }
+            return false;
+        }
 
         public bool PlantInto(Cell c, string type)
         {
-            if (!IsSlot(c) || PlantAt(c) != null || !IsUnlocked(type)) return false;
+            if (!IsSlot(c) || PlantAt(c) != null || !IsUnlocked(type) || !Fits(c, type, true)) return false;
             var def = PlantBalance.I.Plant(type);
             if (def != null && def.cost > 0 && !TrySpend(SeedCost(def), CellCenterOf(c) + new Vector2(0, 0.6f))) return false;
             var p = new PlantedState { x = c.x, y = c.y, type = type, growth = 0 };
@@ -189,7 +201,7 @@ namespace SeedClicker
         /// <summary>Umtopfen: Pflanze samt Stufe und Wachstum auf einen freien Platz setzen.</summary>
         public bool MovePlant(PlantedState p, Cell to)
         {
-            if (p == null || !IsSlot(to) || PlantAt(to) != null) return false;
+            if (p == null || !IsSlot(to) || PlantAt(to) != null || !Fits(to, p.type, true)) return false;
             var from = new Cell(p.x, p.y);
             RemovePlantView(from);
             p.x = to.x; p.y = to.y;
@@ -295,7 +307,7 @@ namespace SeedClicker
                 float s = v.size / Mathf.Max(0.01f, PlantForms.RefWidth(sp, sprite));
                 float sy = s * PlantStretch(p);
                 // Grenze: hoechstens 17 % ins Feld darueber, nicht breiter als das eigene Feld
-                float top = (p.y + p.H) * CellSize + CellSize * MaxOverhang + (HasWall(new Cell(p.x, p.y)) ? WallH : 0f);   // auf der Mauer mit angehoben
+                float top = (p.y + p.H) * CellSize + CellSize * MaxOverhang + CellLift(new Cell(p.x, p.y));   // auf Mauer/Pult mit angehoben
                 float maxH = top - PlantBase(p).y;
                 float h = sprite.bounds.size.y * sy;
                 if (h > maxH) { float k = maxH / h; s *= k; sy *= k; }

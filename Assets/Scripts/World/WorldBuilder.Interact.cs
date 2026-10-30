@@ -34,6 +34,7 @@ namespace SeedClicker
         public int farmLevel;
         public List<int> rocksGone = new List<int>();
         public List<WallState> walls = new List<WallState>();
+        public List<PedestalState> pedestals = new List<PedestalState>();
         public long lastSeen;
         public int season;            // 0 Sommer, 1 Herbst, 2 Winter
         public bool plantsCleared;

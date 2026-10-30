@@ -47,6 +47,8 @@ namespace SeedClicker
     /// <summary>Hof erweitern: Kosten der naechsten Stufe.</summary>
     [Serializable] public class FarmLevelDef { public float cost; public int wood; }
     [Serializable] public class WallDef { public int wood = 2; public float hp = 30f; }
+    /// <summary>Steinpult: Preis in Muenzen (Abbauen gibt ihn zurueck).</summary>
+    [Serializable] public class PedestalDef { public float cost = 20f; }
     /// <summary>Waffenbank: Schlaege bis zur naechsten Waffenstufe (tapsBase * tapsGrowth^(Stufe-1)) und was eine Stufe bringt.</summary>
     [Serializable] public class BenchDef { public float tapsBase = 12f, tapsGrowth = 1.3f, damagePerLevel = 0.25f, cooldownPerLevel = 0.04f, minCooldown = 0.5f; public int maxLevel = 30; }
     /// <summary>Bauwerk zum Aufstellen (einmal kaufen, auf einen freien Platz im Hof setzen, per Klick verbessern).
@@ -144,6 +146,7 @@ namespace SeedClicker
         public BuildingDef[] buildings;
         public FarmLevelDef[] farmLevels;
         public WallDef wall;
+        public PedestalDef pedestal;
         public BenchDef bench;
         public SupportDef support;
         public StructureDef[] structures;
@@ -256,6 +259,7 @@ namespace SeedClicker
         public int GrowTapsFor(string id) { var c = Plant(id); return c != null && c.growTaps > 0 ? c.growTaps : growTaps; }
         public string RoleOf(string id) { var c = Plant(id); return c == null || string.IsNullOrEmpty(c.role) ? "combat" : c.role; }
         public WallDef Wall => wall ?? (wall = new WallDef());
+        public PedestalDef Pedestal => pedestal ?? (pedestal = new PedestalDef());
         public BenchDef Bench => bench ?? (bench = new BenchDef());
         public StructureTapsDef StructureTaps => structureTaps ?? (structureTaps = new StructureTapsDef());
         public HelperDef Helpers => helpers ?? (helpers = new HelperDef());
@@ -351,6 +355,8 @@ namespace SeedClicker
 
     /// <summary>Ein Mauerstueck (Holz) auf einer Rasterzelle: blockiert Zombies, darauf kann eine Pflanze stehen.</summary>
     [Serializable] public class WallState { public int x, y; public float hp; }
+    /// <summary>Ein Steinpult (Spielstand): auf dem Boden oder auf einer Mauer.</summary>
+    [Serializable] public class PedestalState { public int x, y; }
 
     [Serializable] public class BuildingCount { public string id; public int n; }
     /// <summary>Stufe einer Waffe (an der Waffenbank geschmiedet) und Schlaege zur naechsten Stufe.</summary>
