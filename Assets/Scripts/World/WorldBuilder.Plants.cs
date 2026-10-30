@@ -61,6 +61,8 @@ namespace SeedClicker
         public event Action<Cell> EmptyFieldTapped;
         public event Action BookTapped;
         public event Action<PlantedState> PlantGrown;
+        /// <summary>Spieler hat eine Pflanze angetippt (fuer das Info-Fenster).</summary>
+        public event Action<PlantedState> PlantTapped;
         public event Action InventoryChanged;
         public event Action<string> PlantUnlocked;
 
@@ -310,6 +312,7 @@ namespace SeedClicker
         {
             var p = PlantAt(c);
             if (p == null || !plantViews.TryGetValue(new Cell(p.x, p.y), out var v)) return false;
+            PlantTapped?.Invoke(p);
             if (p.Grown)
             {
                 v.creature?.Poke();

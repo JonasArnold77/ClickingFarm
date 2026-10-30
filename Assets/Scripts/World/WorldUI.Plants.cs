@@ -34,6 +34,7 @@ namespace SeedClicker
             BuildWeaponBar();
             if (wb == null) return;
             BuildEconomyUI();
+            BuildPlantInfo();
             BuildJuice();
             wb.EmptyFieldTapped += OpenPlantPicker;
             wb.BookTapped += OpenPlantBook;
@@ -288,6 +289,7 @@ namespace SeedClicker
         {
             UpdateJuice(dt);
             UpdateEconomyUI(dt);
+            UpdatePlantInfo(dt);
             if (nw == null || waveText == null) return;
             UpdateWeaponBar(dt);
             if (nw.Evening)

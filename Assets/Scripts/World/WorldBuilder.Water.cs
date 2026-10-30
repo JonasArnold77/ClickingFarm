@@ -102,6 +102,8 @@ namespace SeedClicker
             return list;
         }
 
+        public int WaterTargetCount(PlantedState w) => WaterTargets(w).Count;
+
         /// <summary>Eine Giess-Runde: Fontaene und Tropfen auf ein paar (big: alle) Felder im Umkreis.</summary>
         void WaterPulse(PlantedState p, bool big)
         {
