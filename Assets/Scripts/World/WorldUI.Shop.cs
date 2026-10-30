@@ -93,8 +93,8 @@ namespace SeedClicker
             for (int i = 0; i < names.Length; i++)
             {
                 int k = i;
-                var b = Btn(tabs.transform, names[i], i == tab ? AccentWarm : new Color(0.55f, 0.5f, 0.45f), () => OpenShop(k), 32);
-                b.GetComponent<RectTransform>().LE(300, 80);
+                var b = Btn(tabs.transform, names[i], i == tab ? AccentWarm : new Color(0.55f, 0.5f, 0.45f), () => OpenShop(k), 27);
+                b.GetComponent<RectTransform>().LE(0, 80, 1);   // Reiter teilen sich die Breite
             }
             var coins = Label(panel, "Münzen: " + Num.Short(wbi.Coins) + "   Holz: " + wbi.Wood + "   (+" + Num.Short(wbi.Cps) + "/s)", 32, InkSoft, TextAnchor.MiddleCenter, true);
             coins.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -215), new Vector2(-40, 50));

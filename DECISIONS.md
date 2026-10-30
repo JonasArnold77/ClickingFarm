@@ -112,6 +112,8 @@
 - **Test: alle Pflanzen frei** – `plants.json` → `testUnlockAll: true` schaltet beim Laden alle Arten frei (für die Veröffentlichung auf `false` stellen).
 - **2D-Effekte aus Happy Harvest (VFX Graph)** (`WorldVfx.cs`, Liste `vfx` in `Resources/WorldArt.asset`): Wachs-Tipp = Erdwolke am Fuß (`VFX_GroundPuff`), Level-Tipp = goldenes Funkeln (`VFX_Eat`), Säen = Saatkörner (`VFX_Seeds`), Reif-Moment und Ernte-Tipps = Früchte springen heraus (`VFX_Harvest_Wheat`/`_Corn`/`_Carrot`; Arten aus einem Sprite-Atlas wie Radieschen bekommen stattdessen das Funkeln, damit keine fremden Karotten fliegen), Tauschilf = Gießstrahl der Gießkanne in Richtung der Ziele (`VFX_Watering`). Annahme: Die Kampf-Effekte (Feuerball, Blitz, Explosionen) bleiben bei Cartoon FX. VFX Graph braucht Compute Shader – auf Geräten ohne (und im WebGL-Build) wird nichts abgespielt, die eigenen Partikel laufen weiter. Getestet: Regen-Tropfen- und Blätter-Effekt passten nicht (Regen fällt schräg durchs Bild), daher nicht eingetragen.
 
+- **Reiter nach Funktion** in Pflanzenauswahl und Pflanzenbuch: *Ernte* (Ernte, Honig), *Wachstum* (Wasser, Dünger, Takt, Automatik), *Verteidigung* (Kampf, Licht), jeweils mit Anzahl. Die Auswahl öffnet im Reiter der zuletzt gewählten Pflanze. Reiter (auch im Laden) teilen sich die Breite.
+
 ## Werbung
 - `Core/AdService.cs` ist die einzige Stelle für Werbung. Derzeit zeigt die UI ein 2-Sekunden-Platzhalter-Video und vergibt dann die Belohnung.
 - Belohnungsvideos: Energie auffüllen, Offline-Ertrag verdoppeln, alles wachsen lassen, Gratis-Samenpaket.

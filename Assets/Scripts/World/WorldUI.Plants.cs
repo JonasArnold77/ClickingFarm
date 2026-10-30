@@ -377,14 +377,56 @@ namespace SeedClicker
         // ------------------------------------------------------------------ Pflanzenart waehlen / Infos / Pflanzenbuch
 
         /// <summary>Leeres Feld angetippt: welche Pflanze soll dorthin? Die Wahl wird direkt eingesetzt.</summary>
+        // ------------------------------------------------------------------ Reiter nach Funktion
+
+        /// <summary>Reiter fuer Pflanzenauswahl und Pflanzenbuch: Pflanzen nach ihrer Funktion gruppiert.</summary>
+        static readonly (string name, string[] roles)[] RoleTabs =
+        {
+            ("Ernte", new[] { "harvest", "bee" }),
+            ("Wachstum", new[] { "water", "fert", "boost", "auto" }),
+            ("Verteidigung", new[] { "combat", "light" }),
+        };
+        int plantTab;
+
+        static int TabOf(CatalogDef c)
+        {
+            for (int i = 0; i < RoleTabs.Length; i++) if (Array.IndexOf(RoleTabs[i].roles, c.role) >= 0) return i;
+            return RoleTabs.Length - 1;
+        }
+
+        /// <summary>Reiter-Leiste; count(i) liefert die Anzahl je Reiter (wird im Namen angezeigt).</summary>
+        void RoleTabRow(RectTransform panel, float y, Func<int, int> count, Action<int> open)
+        {
+            var tabs = UIKit.HRow(panel, "Tabs", 12, TextAnchor.MiddleCenter, new RectOffset(20, 20, 0, 0));
+            tabs.GetComponent<RectTransform>().Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, y), new Vector2(0, 90));
+            for (int i = 0; i < RoleTabs.Length; i++)
+            {
+                int k = i;
+                var b = Btn(tabs.transform, RoleTabs[i].name + " (" + count(i) + ")", i == plantTab ? AccentWarm : new Color(0.55f, 0.5f, 0.45f), () => open(k), 25);
+                b.GetComponent<RectTransform>().LE(0, 80, 1);   // Reiter teilen sich die Breite
+            }
+        }
+
         void OpenPlantPicker(Cell cell)
         {
-            OpenModal(out var panel, 420, 360);
+            // beim Oeffnen den Reiter der zuletzt gewaehlten Pflanze zeigen
+            var sel = PlantBalance.I.Plant(wb.Save.selectedPlant);
+            if (sel != null) plantTab = TabOf(sel);
+            OpenPlantPicker(cell, plantTab);
+        }
+
+        void OpenPlantPicker(Cell cell, int tab)
+        {
+            plantTab = tab;
+            OpenModal(out var panel, 300, 300);
             Header(panel, "Welche Pflanze setzen?");
-            HScroll(panel, "List", out var content).Stretch(20, 20, 130, 30);
+            RoleTabRow(panel, -120, i => { int n = 0; foreach (var c in PlantBalance.I.catalog) if (wb.IsUnlocked(c.id) && TabOf(c) == i) n++; return n; }, k => OpenPlantPicker(cell, k));
+            HScroll(panel, "List", out var content).Stretch(20, 20, 225, 30);
+            int shown = 0;
             foreach (var c in PlantBalance.I.catalog)
             {
-                if (!wb.IsUnlocked(c.id)) continue;
+                if (!wb.IsUnlocked(c.id) || TabOf(c) != tab) continue;
+                shown++;
                 var cc = c;
                 PlantCard(content, c, new Vector2(400, 640), wb.Save.selectedPlant == c.id, false, () =>
                 {
@@ -394,6 +436,7 @@ namespace SeedClicker
                     hintText.text = "Tippe " + cc.name + " ~" + PlantBalance.I.growTaps + "× an, damit sie wächst";
                 }, 26);
             }
+            if (shown == 0) Label(content, "Hier ist noch nichts freigeschaltet.", 32, InkSoft, TextAnchor.MiddleCenter).LE(600, 300);
         }
 
         void OpenPlantInfo(PlantedState p)
@@ -417,15 +460,19 @@ namespace SeedClicker
             dig.GetComponent<RectTransform>().Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(640, 110));
         }
 
-        void OpenPlantBook()
+        void OpenPlantBook() => OpenPlantBook(plantTab);
+
+        void OpenPlantBook(int tab)
         {
+            plantTab = tab;
             OpenModal(out var panel, 120, 50);
             Header(panel, "Pflanzenbuch");
             int unlocked = 0; foreach (var c in PlantBalance.I.catalog) if (wb.IsUnlocked(c.id)) unlocked++;
             var sub = Label(panel, "Freigeschaltet: " + unlocked + " / " + PlantBalance.I.catalog.Length, 32, InkSoft, TextAnchor.MiddleLeft, true);
             sub.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(40, -118), new Vector2(-80, 50));
+            RoleTabRow(panel, -175, i => { int n = 0; foreach (var c in PlantBalance.I.catalog) if (TabOf(c) == i) n++; return n; }, OpenPlantBook);
             UIKit.Scroll(panel, out var scroll);
-            scroll.GetComponent<RectTransform>().Stretch(20, 20, 180, 30);
+            scroll.GetComponent<RectTransform>().Stretch(20, 20, 275, 30);
             var gridRt = UIKit.Rect(scroll.content, "Grid");
             var grid = gridRt.gameObject.AddComponent<GridLayoutGroup>();
             var cell = new Vector2(440, 600);
@@ -438,6 +485,7 @@ namespace SeedClicker
             grid.childAlignment = TextAnchor.UpperCenter;
             foreach (var c in PlantBalance.I.catalog)
             {
+                if (TabOf(c) != tab) continue;
                 bool locked = !wb.IsUnlocked(c.id);
                 var cc = c;
                 PlantCard(gridRt, c, cell, !locked && wb.Save.selectedPlant == c.id, locked,
