@@ -17,7 +17,7 @@ namespace SeedClicker
             var B = PlantBalance.I;
             if (B.weapons == null || B.weapons.Length == 0) return;
             var bar = Panel(safe, "Weapons", new Color(0.1f, 0.08f, 0.12f, 0.6f));
-            bar.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 310), new Vector2(1030, 190));
+            bar.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(1030, 190));
             weaponGroup = bar.gameObject.AddComponent<CanvasGroup>();
             weaponGroup.alpha = 0f; weaponGroup.blocksRaycasts = false;
             var row = UIKit.HRow(bar.transform, "Row", 14, TextAnchor.MiddleCenter, new RectOffset(16, 16, 10, 10));
@@ -61,7 +61,7 @@ namespace SeedClicker
             weaponGroup.blocksRaycasts = weaponShow > 0.5f;
             weaponGroup.transform.localScale = Vector3.one * Mathf.Lerp(0.9f, 1f, weaponShow);
             // Hinweistext ueber die Waffenleiste schieben, solange sie sichtbar ist
-            hintText.rectTransform.anchoredPosition = new Vector2(0, Mathf.Lerp(312f, 510f, weaponShow));
+            hintText.rectTransform.anchoredPosition = new Vector2(0, Mathf.Lerp(50f, 240f, weaponShow));
             if (weaponShow <= 0f) return;
             var cur = nw.Weapon;
             foreach (var s in weaponSlots)

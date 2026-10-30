@@ -240,6 +240,7 @@ namespace SeedClicker
             t.stump = null;
             t.gone = true;
             if (t.occ >= 0 && t.occ < occupiedR.Count) occupiedR[t.occ] = 0f; // Platz ist jetzt frei
+            if (fx) RefreshGhosts();
         }
 
         public void RaiseFloater(Vector2 at, string text, Color col) => Floater?.Invoke(at, text, col);
@@ -263,7 +264,7 @@ namespace SeedClicker
         {
             if (fields.ContainsKey(c)) return false;
             var center = CellCenter(c);
-            if (!InFarmArea(center)) return false;                            // nur im eingezaeunten Beet
+            if (!IsBuildable(c)) return false;                                // nur Startbeet und neben den Strassen
             float hc = CellSize / 2f;
             foreach (var corner in new[] { new Vector2(-hc, -hc), new Vector2(hc, -hc), new Vector2(-hc, hc), new Vector2(hc, hc) })
             {
@@ -271,7 +272,7 @@ namespace SeedClicker
                 if (Inside(p) < 0.35f) return false;                         // nicht an die Klippe
                 if (Mathf.Abs(p.x) > MapW / 2f - 0.5f || Mathf.Abs(p.y) > MapH / 2f - 0.5f) return false;
             }
-            if (DistToPath(center) < 0.6f) return false;                     // nicht auf den Weg
+            if (IsLaneCell(c)) return false;                                  // nicht auf die Strasse
             if (MaskAt(center).a > 0.15f) return false;                      // nicht aufs Pflaster
             // Baeume, Stuempfe, Felsen, Haus blockieren; Blumen/Gras/Buesche werden weggeraeumt
             for (int i = 0; i < occupied.Count; i++)
@@ -288,12 +289,6 @@ namespace SeedClicker
         /// <summary>Legt ein Feld an (Rasterzelle). Gibt false zurueck, wenn der Platz nicht geht.</summary>
         public bool PlaceField(Cell c, bool fx, bool persist = true)
         {
-            if (fx && !InFarmArea(CellCenter(c)) && noWoodT <= 0f)
-            {
-                Floater?.Invoke(CellCenter(c) + new Vector2(0, 0.5f), "Felder nur im markierten Beet", new Color(1f, 0.85f, 0.6f));
-                Sfx.Play("error", 1.1f, 0.4f);
-                noWoodT = 1.2f;
-            }
             if (!CanPlaceField(c)) return false;
             var center = CellCenter(c);
             // Blumen, Gras, Pilze, Buesche in der Zelle wegraeumen
@@ -323,6 +318,7 @@ namespace SeedClicker
                 Sfx.Play("dig", UnityEngine.Random.Range(0.9f, 1.1f));
                 Haptics.Tap(10);
             }
+            if (ghosts.TryGetValue(c, out var gh) && gh != null) gh.enabled = false;
             if (persist) { save.fields.Add(c); save.Save(); }
             return true;
         }

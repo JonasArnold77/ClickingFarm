@@ -12,7 +12,6 @@ namespace SeedClicker
         CanvasScaler scaler;
         Text woodText, hintText;
         readonly CountUp woodCount = new CountUp();
-        readonly List<(Image slot, RectTransform rt, WorldTool tool)> slots = new List<(Image, RectTransform, WorldTool)>();
         WorldArtSet art;
         static Sprite rounded;
 
@@ -124,73 +123,20 @@ namespace SeedClicker
 
         void BuildToolbar()
         {
-            var bar = Panel(safe, "Toolbar", new Color(0.12f, 0.1f, 0.08f, 0.5f));
-            bar.rectTransform.Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(650, 270));
-            var row = UIKit.HRow(bar.transform, "Row", 14, TextAnchor.MiddleCenter, new RectOffset(20, 20, 16, 16));
-            row.GetComponent<RectTransform>().Stretch();
-            AddSlot(row.transform, WorldTool.Axe, Icon("sk_Tree_0"), "Fällen");
-            AddSlot(row.transform, WorldTool.Field, Icon("hh_hoe_icon"), "Felder");
-            AddSlot(row.transform, WorldTool.Plant, Icon("hh_corn_seedbag"), "Pflanzen");
-
+            // keine Werkzeuge mehr: ein Tipp auf die Welt macht das Naheliegende (siehe WorldCamera)
             hintText = UIKit.Txt(safe, "", 32, Color.white, TextAnchor.MiddleCenter, true, true);
-            hintText.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 312), new Vector2(-60, 80));
+            hintText.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 50), new Vector2(-60, 80));
         }
-
 
         Sprite Icon(string name) => art != null ? art.Get(name) : null;
-
-        Image AddSlot(Transform parent, WorldTool tool, Sprite iconSprite, string label)
-        {
-            var holder = UIKit.Rect(parent, "Slot_" + tool);
-            holder.LE(182, 236);
-            var slot = UIKit.Rect(holder, "Frame").gameObject.AddComponent<Image>();
-            slot.sprite = art != null ? art.Get("hh_slot") : null;
-            slot.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(170, 170));
-            var icon = UIKit.Rect(slot.transform, "Icon").gameObject.AddComponent<Image>();
-            icon.sprite = iconSprite; icon.preserveAspect = true; icon.raycastTarget = false;
-            icon.rectTransform.Stretch(24, 24, 20, 30);
-            var t = UIKit.Txt(holder, label, 30, Color.white, TextAnchor.MiddleCenter, true, true);
-            t.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 0), new Vector2(40, 48));
-            t.horizontalOverflow = HorizontalWrapMode.Overflow;
-            if (tool == WorldTool.Plant) plantSlotIcon = icon;
-            var b = slot.gameObject.AddComponent<Button>();
-            b.transition = Selectable.Transition.None;
-            b.onClick.AddListener(() =>
-            {
-                bool again = WorldCamera.Tool == tool;
-                SelectTool(tool); Sfx.Play("click"); Haptics.Tap(8);
-                if (tool == WorldTool.Plant) OnPlantToolTapped(again);
-            });
-            slot.gameObject.AddComponent<Juicy>();
-            slots.Add((slot, slot.rectTransform, tool));
-            return icon;
-        }
 
         void SelectTool(WorldTool tool)
         {
             WorldCamera.Tool = tool;
-            foreach (var (slot, rt, t) in slots)
-            {
-                bool sel = t == tool;
-                slot.sprite = art != null ? art.Get(sel ? "hh_slot_selected" : "hh_slot") : null;
-                slot.color = sel ? new Color(1f, 0.95f, 0.75f) : new Color(1, 1, 1, 0.85f);
-                rt.sizeDelta = sel ? new Vector2(182, 182) : new Vector2(158, 158);
-            }
             hintText.text = ToolHint(tool);
         }
 
-        string ToolHint(WorldTool tool)
-        {
-            var wbi = WorldBuilder.I;
-            switch (tool)
-            {
-                case WorldTool.Axe: return "Tippe oft auf einen Baum, um ihn zu fällen";
-                case WorldTool.Field: return "Tippe oder wische über die Wiese, um Felder anzulegen";
-                case WorldTool.Plant: return "Tippe auf ein Feld zum Einsetzen – dann ~100× auf die Pflanze tippen";
-                default:
-                    return "Reife Pflanzen auf gleiche ziehen, um sie zu verstärken";
-            }
-        }
+        string ToolHint(WorldTool tool) => "Tippe auf ein schimmerndes Feld neben dem Weg – dann auf das Feld, um zu pflanzen";
 
         void SpawnFloater(Vector2 world, string text, Color col)
         {

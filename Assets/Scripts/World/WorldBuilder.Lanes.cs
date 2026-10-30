@@ -4,9 +4,12 @@ using UnityEngine;
 namespace SeedClicker
 {
     /// <summary>
-    /// Zufallskarte mit Lanes: Vom Waldrand unten (manchmal auch von der Seite) fuehren 3–4 Erdpfade im Feldraster
-    /// (gerade Abschnitte nach oben und zur Seite) zum Hof. Dazwischen liegen natuerliche Felseninseln (Felsbrocken auf dunklem Grund), die die Lanes bilden.
-    /// Nachts tauchen die Zombies am Anfang der Lanes auf und folgen ihnen zum Haus (NightWave).
+    /// Zufallskarte mit Lanes im Feldraster, uebersichtlich wie ein Strassennetz: drei Strassen kommen gerade vom
+    /// Waldrand unten herauf (hoechstens ein rechtwinkliger Versatz je Strasse) und muenden in eine Querstrasse;
+    /// von dort fuehrt ein gerader Weg zum Haus. Manchmal kommt eine Seitenstrasse vom Rand und trifft im rechten
+    /// Winkel auf eine aeussere Strasse. Neben jeder Strasse bleiben je drei Feldreihen frei zum Bebauen (sie
+    /// schimmern als moegliche Felder durch); erst dahinter liegen die Felseninseln.
+    /// Nachts tauchen die Zombies am Anfang der Strassen auf und folgen ihnen zum Haus (NightWave).
     /// Alles haengt am Karten-Seed im Spielstand – "Neues Spiel" wuerfelt einen neuen.
     /// </summary>
     public partial class WorldBuilder
@@ -16,92 +19,80 @@ namespace SeedClicker
 
         public IReadOnlyList<List<Vector2>> Lanes => lanes;
 
-        /// <summary>Zusammenfluss (rechts unterhalb des Startbeets) und der gemeinsame Weg zum Vorplatz, in Feldzellen.</summary>
-        static readonly Cell MergeCell = new Cell(3, -6);
-        static readonly Cell[] TrunkCorners = { new Cell(3, 1), new Cell(1, 1), new Cell(1, 4) };
+        /// <summary>Querstrasse (Zeile) und gerader Weg zum Vorplatz (Spalte), in Feldzellen.</summary>
+        const int CollectorRow = -6, TrunkCol = 3, TrunkTop = 4;
+        /// <summary>So viele Feldreihen bleiben neben jeder Strasse frei zum Bebauen.</summary>
+        public const int BuildBand = 3;
 
         readonly HashSet<Cell> laneCells = new HashSet<Cell>();
+        readonly HashSet<Cell> buildable = new HashSet<Cell>();
         Sprite laneSprite;
 
         public bool IsLaneCell(Cell c) => laneCells.Contains(c);
+        public bool IsBuildable(Cell c) => buildable.Contains(c);
 
-        /// <summary>Lanes im Feldraster: Abschnitte gehen nur gerade nach oben oder zur Seite.</summary>
         void BuildLanes()
         {
             float hw = MapW / 2f, hh = MapH / 2f;
             int minX = Mathf.CeilToInt((-hw + 1.2f) / CellSize), maxX = Mathf.FloorToInt((hw - 1.2f) / CellSize) - 1;
             int bottomY = Mathf.FloorToInt((-hh + 0.05f) / CellSize);
-            int n = 3 + (R() < 0.5f ? 1 : 0);
-            bool sideLane = n == 4 && R() < 0.6f;
-            int bottom = sideLane ? 3 : n;
-            for (int i = 0; i < n; i++)
+            // drei Strassen: links, Mitte (laeuft gerade in den Weg zum Haus), rechts – weit genug auseinander
+            int[] cols = { -11 + rnd.Next(-1, 2), TrunkCol + rnd.Next(-1, 2), 11 + rnd.Next(-1, 2) };
+            var paths = new List<List<Cell>>();
+            foreach (var x0 in cols)
             {
-                Cell start;
-                if (sideLane && i == n - 1)
+                var cells = new List<Cell>();
+                var cur = new Cell(x0, bottomY);
+                cells.Add(cur);
+                // hoechstens ein Versatz, im rechten Winkel, um 2 Zellen (Mitte: nur wenn sie dadurch nicht zu nah kommt)
+                int jogRow = R() < 0.6f ? rnd.Next(bottomY + 5, CollectorRow - 6) : int.MinValue;
+                int jog = R() < 0.5f ? -2 : 2;
+                if (x0 == cols[1] && Mathf.Abs(x0 + jog - TrunkCol) > 2) jog = -jog;
+                while (cur.y < CollectorRow)
                 {
-                    bool left = R() < 0.5f;
-                    start = new Cell(left ? minX - 1 : maxX + 1, Mathf.FloorToInt((-5f - R() * 4f) / CellSize));
+                    if (cur.y == jogRow) for (int k = 0; k < Mathf.Abs(jog); k++) { cur = new Cell(cur.x + System.Math.Sign(jog), cur.y); cells.Add(cur); }
+                    cur = new Cell(cur.x, cur.y + 1); cells.Add(cur);
                 }
-                else
-                {
-                    float slot = (i + 0.5f) / bottom;
-                    int x = Mathf.RoundToInt(Mathf.Lerp(minX + 1, maxX - 1, slot) + (R() - 0.5f) * 3f);
-                    start = new Cell(Mathf.Clamp(x, minX, maxX), bottomY);
-                }
-                lanes.Add(MakeLane(start, minX, maxX));
+                while (cur.x != TrunkCol) { cur = new Cell(cur.x + (TrunkCol > cur.x ? 1 : -1), cur.y); cells.Add(cur); }
+                while (cur.y < TrunkTop) { cur = new Cell(cur.x, cur.y + 1); cells.Add(cur); }
+                paths.Add(cells);
             }
-        }
-
-        List<Vector2> MakeLane(Cell start, int minX, int maxX)
-        {
-            var cells = new List<Cell> { start };
-            var cur = start;
-            // Seiteneingang: erst ein Stueck nach innen
-            if (start.x < minX || start.x > maxX)
+            // Seitenstrasse: vom linken oder rechten Rand waagerecht auf die aeussere Strasse, dann ihr nach
+            if (R() < 0.45f)
             {
-                int dx = start.x < minX ? 1 : -1;
-                for (int k = 0; k < 3 + rnd.Next(3); k++) { cur = new Cell(cur.x + dx, cur.y); cells.Add(cur); }
-            }
-            while (cur.y < MergeCell.y || cur.x != MergeCell.x)
-            {
-                int dy = MergeCell.y - cur.y, dx = MergeCell.x - cur.x;
-                if (dy <= Mathf.Abs(dx) + 1)
+                bool left = R() < 0.5f;
+                var outer = paths[left ? 0 : 2];
+                int row = rnd.Next(bottomY + 7, CollectorRow - 5);
+                int join = outer.FindIndex(c => c.y == row);
+                if (join >= 0)
                 {
-                    // kurz vor dem Zusammenfluss: erst zur Seite, dann hoch
-                    if (dx != 0) cur = new Cell(cur.x + (dx > 0 ? 1 : -1), cur.y);
-                    else cur = new Cell(cur.x, cur.y + 1);
-                    cells.Add(cur);
-                    continue;
+                    var cells = new List<Cell>();
+                    int x = left ? minX - 2 : maxX + 2, tx = outer[join].x;
+                    for (; x != tx; x += left ? 1 : -1) cells.Add(new Cell(x, row));
+                    cells.AddRange(outer.GetRange(join, outer.Count - join));
+                    paths.Add(cells);
                 }
-                if (R() < 0.35f)
-                {
-                    // seitlicher Abschnitt: meist Richtung Ziel, manchmal weg davon
-                    int dir = R() < 0.7f ? (dx >= 0 ? 1 : -1) : (dx >= 0 ? -1 : 1);
-                    int len = 2 + rnd.Next(4);
-                    for (int k = 0; k < len; k++)
+            }
+            foreach (var cells in paths)
+            {
+                var pts = new List<Vector2>();
+                foreach (var c in cells) { laneCells.Add(c); pts.Add(CellCenter(c)); }
+                lanes.Add(pts);
+            }
+            // Bauflaeche: je drei Reihen neben den Strassen, dazu das Startbeet
+            foreach (var c in laneCells)
+                for (int dx = -BuildBand; dx <= BuildBand; dx++)
+                    for (int dy = -BuildBand; dy <= BuildBand; dy++)
                     {
-                        int nx = cur.x + dir;
-                        if (nx < minX || nx > maxX) break;
-                        cur = new Cell(nx, cur.y); cells.Add(cur);
+                        var b = new Cell(c.x + dx, c.y + dy);
+                        if (!laneCells.Contains(b) && b.x >= minX - 1 && b.x <= maxX + 1 && b.y > bottomY) buildable.Add(b);
                     }
-                }
-                int up = 2 + rnd.Next(5);
-                for (int k = 0; k < up && cur.y < MergeCell.y; k++) { cur = new Cell(cur.x, cur.y + 1); cells.Add(cur); }
-            }
-            // gemeinsamer Weg zum Vorplatz
-            foreach (var corner in TrunkCorners)
-                while (cur.x != corner.x || cur.y != corner.y)
-                {
-                    if (cur.x != corner.x) cur = new Cell(cur.x + (corner.x > cur.x ? 1 : -1), cur.y);
-                    else cur = new Cell(cur.x, cur.y + (corner.y > cur.y ? 1 : -1));
-                    cells.Add(cur);
-                }
-            var pts = new List<Vector2>();
-            foreach (var c in cells) { laneCells.Add(c); pts.Add(CellCenter(c)); }
-            return pts;
+            var a0 = CellAt(StartArea.min + new Vector2(0.01f, 0.01f));
+            var a1 = CellAt(StartArea.max - new Vector2(0.01f, 0.01f));
+            for (int x = a0.x; x <= a1.x; x++) for (int y = a0.y; y <= a1.y; y++) if (!laneCells.Contains(new Cell(x, y))) buildable.Add(new Cell(x, y));
         }
 
-        /// <summary>Die Lanes als Erdkacheln im Feldraster zeichnen (wie die Felder).</summary>
+        /// <summary>Die Strassen als Erdkacheln im Feldraster zeichnen (wie die Felder).</summary>
         void PlaceLaneTiles()
         {
             if (laneSprite == null) laneSprite = GroundMaterials.TileSprite(1, 5);
@@ -125,10 +116,11 @@ namespace SeedClicker
             if (p.y > -1.6f || Mathf.Abs(p.x) > hw - 0.4f || p.y < -hh + 0.4f) return 0f;
             if ((p - HousePos).magnitude < 6.5f || NearStartArea(p, 1.6f, 1.2f)) return 0f;
             float d = DistToPath(p);
-            if (d < 1.1f) return 0f;   // die Lane selbst bleibt frei
-            // alles zwischen den Lanes wird Fels, mit ausgefranstem Rand; nach oben (zum Hof) laeuft es aus
+            // Strasse und die drei Bau-Reihen daneben bleiben frei; dahinter Fels mit ausgefranstem Rand (nur nach aussen)
             float edge = (Fbm(p.x * 0.6f, p.y * 0.6f, 51 + salt) - 0.5f) * 1.1f;
-            float v = Mathf.InverseLerp(1.35f, 2.0f, d + edge);
+            float free = (BuildBand + 0.75f) * CellSize;
+            if (d < free) return 0f;
+            float v = Mathf.InverseLerp(free, free + 0.5f, d - Mathf.Abs(edge) * 0.8f);
             v *= Mathf.InverseLerp(-1.6f, -3.4f, p.y + edge * 0.6f);
             v *= Mathf.InverseLerp(hw - 0.4f, hw - 1.6f, Mathf.Abs(p.x));
             return Mathf.Clamp01(v);

@@ -265,7 +265,7 @@ namespace SeedClicker
                 float grove = Fbm(p.x * 0.2f, p.y * 0.2f, 31 + salt);
                 float density = edge < 2.5f ? 1f : grove > 0.62f ? 0.5f : 0.02f;
                 if (R() > density) continue;
-                if ((p - HousePos).magnitude < 5.5f || !OnBareGrass(p, 1.3f)) continue;   // Lanes frei halten
+                if ((p - HousePos).magnitude < 5.5f || !OnBareGrass(p, (BuildBand + 1.6f) * CellSize)) continue;   // Strassen und Bau-Reihen frei halten
                 bool big = R() < 0.6f;
                 float r = big ? 1.35f : 0.95f;
                 if (!Free(p, r)) continue;
@@ -298,7 +298,7 @@ namespace SeedClicker
             for (int i = 0; i < 40; i++)
             {
                 var p = RandomPoint(1f);
-                if ((p - HousePos).magnitude < 3f || !OnBareGrass(p, 0.7f) || !Free(p, 0.4f) || NearStartArea(p, 0.6f, 0.6f)) continue;
+                if ((p - HousePos).magnitude < 3f || !OnBareGrass(p, (BuildBand + 1f) * CellSize) || !Free(p, 0.4f) || NearStartArea(p, 0.6f, 0.6f)) continue;
                 Reserve(p, 0.4f);
                 float roll = R();
                 if (roll < 0.35f) Place("sk_Stones", p, 0.6f + R() * 0.3f, R() < 0.5f, 0.04f);

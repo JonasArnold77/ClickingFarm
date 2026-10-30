@@ -4,46 +4,45 @@ using UnityEngine;
 namespace SeedClicker
 {
     /// <summary>
-    /// Das Startbeet: ein Bereich links vor dem Haus, in dem anfangs Felder angelegt werden duerfen.
-    /// Es gibt keine Zaeune mehr; die freien Beet-Zellen sind dezent als Raster markiert.
+    /// Bauflaeche: das Startbeet links vor dem Haus und je drei Reihen neben den Strassen (WorldBuilder.Lanes).
+    /// Freie Bau-Zellen schimmern ganz leicht als Feld durch; ein Tipp legt das Feld an.
     /// </summary>
     public partial class WorldBuilder
     {
-        float noWoodT;
-        readonly Dictionary<Cell, SpriteRenderer> plotMarks = new Dictionary<Cell, SpriteRenderer>();
 
         /// <summary>Innenflaeche des Startbeets (Welteinheiten). Felder gehen anfangs nur hier.</summary>
         public static readonly Rect StartArea = new Rect(-4.5f, -0.9f, 3.6f, 2.7f);
 
-        /// <summary>Darf an dieser Stelle ein Feld liegen? (Spaeter: weitere Bereiche freischalten.)</summary>
-        public static bool InFarmArea(Vector2 p) => StartArea.Contains(p);
 
         void LoadDefense()
         {
-            BuildPlotMarks();
+            RefreshGhosts();
         }
 
-        /// <summary>Jede Zelle des Startbeets bekommt ein schwaches Rasterkaestchen, damit man sieht, wo Felder hingehen.</summary>
-        void BuildPlotMarks()
+        readonly Dictionary<Cell, SpriteRenderer> ghosts = new Dictionary<Cell, SpriteRenderer>();
+
+        /// <summary>Ueberall, wo ein Feld angelegt werden kann, schimmert es ganz leicht durch.</summary>
+        void RefreshGhosts()
         {
-            var sprite = art.Get("hh_slot");
-            if (sprite == null) return;
-            var a = CellAt(StartArea.min + new Vector2(0.01f, 0.01f));
-            var b = CellAt(StartArea.max - new Vector2(0.01f, 0.01f));
-            for (int x = a.x; x <= b.x; x++)
-                for (int y = a.y; y <= b.y; y++)
+            if (fieldSprite == null) fieldSprite = GroundMaterials.TileSprite(4, 3);
+            if (fieldSprite == null) return;
+            foreach (var c in buildable)
+            {
+                bool show = CanPlaceField(c);
+                ghosts.TryGetValue(c, out var sr);
+                if (show && sr == null)
                 {
-                    var c = new Cell(x, y);
-                    if (!InFarmArea(CellCenter(c))) continue;
-                    var sr = new GameObject("Plot").AddComponent<SpriteRenderer>();
+                    sr = new GameObject("FieldGhost").AddComponent<SpriteRenderer>();
                     sr.transform.SetParent(objects, false);
                     sr.transform.position = CellCenter(c);
-                    sr.transform.localScale = Vector3.one * (CellSize * 0.92f / sprite.bounds.size.x);
-                    sr.sprite = sprite;
-                    sr.color = new Color(1f, 0.95f, 0.8f, 0.28f);
-                    sr.sortingOrder = -32302;
-                    plotMarks[c] = sr;
+                    sr.transform.localScale = Vector3.one * CellSize * 0.94f;
+                    sr.sprite = fieldSprite;
+                    sr.color = new Color(1f, 1f, 1f, 0.2f);
+                    sr.sortingOrder = -32305;
+                    ghosts[c] = sr;
                 }
+                if (sr != null) sr.enabled = show;
+            }
         }
     }
 }

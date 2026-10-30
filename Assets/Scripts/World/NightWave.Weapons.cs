@@ -63,29 +63,21 @@ namespace SeedClicker
         /// <summary>Tipp nachts: trifft der Finger einen Zombie, wird geschossen. true = Tipp verbraucht.</summary>
         public bool TryShoot(Vector2 world)
         {
+            // nachts geht jeder Schuss genau dorthin, wo getippt wurde – auch daneben
             if (!Active || wb == null) return false;
-            Monster best = null; float bd = 0.85f * 0.85f;
-            foreach (var m in monsters)
-            {
-                if (m.dead) continue;
-                float d = (m.pos + new Vector2(0, 0.45f) - world).sqrMagnitude;
-                if (d < bd) { bd = d; best = m; }
-            }
-            if (best == null) return false;
             var w = Weapon;
             if (w == null) return false;
             if (weaponCd > 0f) { Sfx.Play("dry", 1f, 0.35f); return true; }
-            Shoot(w, best);
+            Shoot(w, world);
             return true;
         }
 
         Vector2 Center(Monster m) => m.pos + new Vector2(0, 0.45f);
 
-        void Shoot(WeaponDef w, Monster target)
+        void Shoot(WeaponDef w, Vector2 aim)
         {
             float dmg = w.damage * (1f + w.damagePerWave * (WaveNumber - 1));
             weaponCd = w.cooldown;
-            var aim = Center(target);
             AddFx(Reticle, aim, 0.16f, 0.75f, 0.45f, new Color(1f, 1f, 1f, 0.9f));
             switch (w.kind)
             {
@@ -114,13 +106,14 @@ namespace SeedClicker
                     break;
                 case "grenade":
                     {
-                        var s = Launch(w, target.pos, dmg, 0.55f, WeaponArt.Grenade, 0.34f);
+                        var ground = aim + new Vector2(0, -0.45f);   // Bodenpunkt unter der Tipp-Stelle
+                        var s = Launch(w, ground, dmg, 0.55f, WeaponArt.Grenade, 0.34f);
                         s.shadow = new GameObject("GrenadeShadow").AddComponent<SpriteRenderer>();
                         s.shadow.transform.SetParent(transform, false);
-                        s.shadow.transform.position = target.pos;
+                        s.shadow.transform.position = ground;
                         s.shadow.sprite = WorldBuilder.Mist; s.shadow.color = new Color(0, 0, 0, 0f);
                         s.shadow.sortingOrder = 29990;
-                        AddFx(Reticle, target.pos, s.flight, 0.9f, 0.5f, new Color(1f, 0.5f, 0.35f, 0.9f));
+                        AddFx(Reticle, ground, s.flight, 0.9f, 0.5f, new Color(1f, 0.5f, 0.35f, 0.9f));
                         Sfx.Play("launch", Random.Range(0.95f, 1.05f), 0.9f);
                         Haptics.Tap(18);
                         break;
@@ -130,9 +123,9 @@ namespace SeedClicker
                         // Pistole: sofortiger Treffer, Leuchtspur von oben
                         var p = aim + Random.insideUnitCircle * 0.06f;
                         Beam(SkyPoint(p), p, new Color(1f, 0.92f, 0.6f));
-                        target.knock += Vector2.up * 0.25f;
-                        Damage(target, dmg, null);
-                        ImpactFx(p, 1f);
+                        var hit = NearestTo(p, 0.38f);
+                        if (hit != null) { hit.knock += Vector2.up * 0.25f; Damage(hit, dmg, null); ImpactFx(p, 1f); }
+                        else MissFx(p);
                         Sfx.Play("shot", Random.Range(0.95f, 1.1f), 0.8f);
                         WorldCamera.I?.Shake(0.03f);
                         WorldCamera.I?.Punch(0.008f);
@@ -140,6 +133,14 @@ namespace SeedClicker
                         break;
                     }
             }
+        }
+
+        /// <summary>Daneben: Einschlag im Boden mit Staub und Erdbrocken.</summary>
+        void MissFx(Vector2 at)
+        {
+            Particles.I?.Burst(at, "square", new Color(0.45f, 0.33f, 0.22f), 6, 2.2f, 0.4f, 0.08f, 9f, 2f);
+            Particles.I?.Burst(at, "square", new Color(0.7f, 0.65f, 0.55f, 0.6f), 4, 0.8f, 0.6f, 0.12f, -0.3f, 0.6f);
+            WorldFx.Play("poof", at, 0.08f);
         }
 
         Monster NearestTo(Vector2 p, float r)

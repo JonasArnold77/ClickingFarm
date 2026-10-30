@@ -19,7 +19,7 @@ namespace SeedClicker
         static readonly Color AccentWarm = new Color(0.93f, 0.6f, 0.25f);
 
         Text waveText, goalText;
-        Image goalIcon, plantSlotIcon;
+        Image goalIcon;
         RectTransform houseBar, houseFill;
         GameObject modal;
         WorldBuilder wb;
@@ -34,7 +34,7 @@ namespace SeedClicker
             BuildWeaponBar();
             if (wb == null) return;
             BuildJuice();
-            wb.EmptyFieldTapped += c => OpenPlantPicker();
+            wb.EmptyFieldTapped += OpenPlantPicker;
             wb.BookTapped += OpenPlantBook;
             wb.InventoryChanged += RefreshGoal;
             if (nw != null)
@@ -45,13 +45,6 @@ namespace SeedClicker
             }
             RefreshGoal();
             if (!wb.Save.starterChosen) OpenStarterChoice();
-        }
-
-        /// <summary>Wird von der Werkzeugleiste aufgerufen, wenn "Pflanzen" angetippt wird.</summary>
-        void OnPlantToolTapped(bool alreadySelected)
-        {
-            if (wb == null) return;
-            if (alreadySelected || string.IsNullOrEmpty(wb.Save.selectedPlant)) OpenPlantPicker();
         }
 
         // ------------------------------------------------------------------ Bausteine
@@ -268,7 +261,6 @@ namespace SeedClicker
                 goalIcon.color = new Color(0.12f, 0.1f, 0.08f, 0.85f);   // als Silhouette, Spannung!
             }
             var sel = PlantBalance.I.Plant(wb.Save.selectedPlant);
-            if (plantSlotIcon != null && sel != null) { plantSlotIcon.sprite = SpeciesSprite(sel.Genome); plantSlotIcon.color = Color.Lerp(Color.white, sel.Genome.ElementColor, 0.18f); }
         }
 
         void UpdatePlantsUI(float dt)
@@ -343,7 +335,7 @@ namespace SeedClicker
                     wb.ChooseStarter(chosen.id);
                     CloseModal();
                     RefreshGoal();
-                    Banner(chosen.name + " ist dein Partner!", "Lege Felder an und setze sie mit „Pflanzen“ ein.");
+                    Banner(chosen.name + " ist dein Partner!", "Tippe auf ein schimmerndes Feld neben dem Weg");
                     SelectTool(WorldTool.Field);
                 }, 44);
                 b.GetComponent<RectTransform>().Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 40), new Vector2(760, 120));
@@ -354,7 +346,8 @@ namespace SeedClicker
 
         // ------------------------------------------------------------------ Pflanzenart waehlen / Infos / Pflanzenbuch
 
-        void OpenPlantPicker()
+        /// <summary>Leeres Feld angetippt: welche Pflanze soll dorthin? Die Wahl wird direkt eingesetzt.</summary>
+        void OpenPlantPicker(Cell cell)
         {
             OpenModal(out var panel, 420, 360);
             Header(panel, "Welche Pflanze setzen?");
@@ -366,9 +359,9 @@ namespace SeedClicker
                 PlantCard(content, c, new Vector2(400, 640), wb.Save.selectedPlant == c.id, false, () =>
                 {
                     wb.SelectPlant(cc.id);
-                    SelectTool(WorldTool.Plant);
                     CloseModal();
-                    hintText.text = cc.name + " ausgewählt – tippe oder wische über leere Felder";
+                    wb.PlantInto(cell, cc.id);
+                    hintText.text = "Tippe " + cc.name + " ~" + PlantBalance.I.growTaps + "× an, damit sie wächst";
                 }, 26);
             }
         }

@@ -21,12 +21,10 @@ namespace SeedClicker
         Vector2 kick, kickVel;           // gerichteter Ruck, federt zurueck
 
         // Zeigerzustand
-        bool down, overUI, panning, painting;
+        bool down, overUI, panning, painting;   // painting: frueher Wischen mit Werkzeugen, bleibt aus
         Vector2 downScreen, lastScreen;
         float lastPinch;
         int lastTouchCount;
-        Cell lastCell;
-        bool hasLastCell;
 
         float MinSize => 1.5f / Mathf.Max(0.3f, cam.aspect);
         float MaxSize => Mathf.Min(WorldBuilder.MapH / 2f, WorldBuilder.MapW / 2f / Mathf.Max(0.3f, cam.aspect));
@@ -133,7 +131,7 @@ namespace SeedClicker
 
         void PointerDown(Vector2 screen, int id)
         {
-            down = true; panning = false; painting = false; hasLastCell = false; consumed = false; dragCand = null; draggingPlant = false; tappedReady = false;
+            down = true; panning = false; painting = false; consumed = false; dragCand = null; draggingPlant = false; tappedReady = false;
             downScreen = lastScreen = screen;
             overUI = OverUI(id);
             if (overUI) return;
@@ -155,16 +153,11 @@ namespace SeedClicker
             }
             if (wb.Placing) return;   // Ziel waehlen: erst beim Loslassen (so kann man dabei auch die Karte schieben)
             if (wb.PlantAt(c) != null) return;   // fertige Pflanze -> beim Loslassen
-            if (Tool == WorldTool.Field || (Tool == WorldTool.Plant && wb.HasField(c)))
-            {
-                painting = true; Paint(screen);
-            }
         }
 
         void PointerMove(Vector2 screen)
         {
             if (overUI || consumed) return;
-            if (painting) { Paint(screen); return; }
             if (dragCand != null)
             {
                 var wbd = WorldBuilder.I;
@@ -198,31 +191,12 @@ namespace SeedClicker
                 return;
             }
 
-            if (wb.PlantAt(cell) != null && Tool != WorldTool.Axe) { wb.TapPlant(cell); return; }
-            if (Tool == WorldTool.Axe)
-            {
-                if (wb.TryChop(w)) return;
-                if (wb.PlantAt(cell) != null) wb.TapPlant(cell);
-                return;
-            }
+            // ein Tipp macht das Naheliegende: Pflanze antippen, leeres Feld bepflanzen, Feld anlegen, Baum faellen
+            if (wb.PlantAt(cell) != null) { wb.TapPlant(cell); return; }
+            if (wb.HasField(cell)) { wb.TapEmptyField(cell); return; }
+            if (wb.CanPlaceField(cell)) { wb.PlaceField(cell, true); return; }
+            wb.TryChop(w);
 
-        }
-
-        /// <summary>Wischen: Felder anlegen (Feld-Werkzeug) bzw. leere Felder bepflanzen (Pflanzen-Werkzeug).</summary>
-        void Paint(Vector2 screen)
-        {
-            var wb = WorldBuilder.I;
-            if (wb == null) return;
-            var c = WorldBuilder.CellAt(World(screen));
-            if (hasLastCell && c.x == lastCell.x && c.y == lastCell.y) return;
-            hasLastCell = true; lastCell = c;
-            if (Tool == WorldTool.Field) { wb.ShowCellCursor(c); wb.PlaceField(c, true); return; }
-            if (Tool == WorldTool.Plant && wb.HasField(c) && wb.PlantAt(c) == null)
-            {
-                var sel = wb.Save.selectedPlant;
-                if (string.IsNullOrEmpty(sel) || !wb.IsUnlocked(sel)) { wb.TapEmptyField(c); painting = false; return; }
-                wb.PlantInto(c, sel);
-            }
         }
 
         // ------------------------------------------------------------------ Verschieben / Zoomen
