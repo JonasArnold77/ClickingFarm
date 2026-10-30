@@ -4,14 +4,15 @@ using UnityEngine;
 namespace SeedClicker
 {
     /// <summary>
-    /// Mauern aus Holz: Im Mauer-Modus (Knopf unten links) schimmern freie Hof-Zellen als helle Holzplaetze; ein Tipp
+    /// Mauern aus Holz: Im Mauer-Modus (Knopf unten links) schimmern freie Zellen im Bild als helle Holzplaetze – ueberall
+    /// auf der Karte, auch ausserhalb des Hofs und auf leeren Feldern (das Feld liegt darunter weiter). Ein Tipp
     /// baut ein Mauerstueck (kostet Holz), ein Tipp auf eine leere Mauer baut sie wieder ab (Holz zurueck).
     /// Auf jedem Mauerstueck kann eine Pflanze stehen – Tipp auf eine leere Mauer (ausserhalb des Modus) fragt, welche.
     /// Zombies muessen Mauern erst kaputtschlagen; steht eine Pflanze darauf, faellt sie mit.
     /// </summary>
     public partial class WorldBuilder
     {
-        class WallView { public WallState st; public SpriteRenderer sr, edge; public float shake, pop = 1f; }
+        class WallView { public WallState st; public SpriteRenderer sr; public float shake, pop = 1f; }
         readonly Dictionary<Cell, WallView> walls = new Dictionary<Cell, WallView>();
         static Sprite wallSprite;
         bool wallMode;
@@ -20,6 +21,7 @@ namespace SeedClicker
         public event System.Action<bool> WallModeChanged;
 
         public bool HasWall(Cell c) => walls.ContainsKey(c);
+        static Vector2 WallFoot(Cell c) => new Vector2((c.x + 0.5f) * CellSize, c.y * CellSize);
         float WallMaxHp => PlantBalance.I.Wall.hp * UpgradeMult("wall");
 
         public void SetWallMode(bool on)
@@ -35,7 +37,37 @@ namespace SeedClicker
             RefreshGhosts();
         }
 
-        public bool CanPlaceWall(Cell c) => !HasWall(c) && !fields.ContainsKey(c) && CanPlaceField(c);
+        /// <summary>Mauer geht ueberall, wo nichts Festes steht: nicht an der Klippe, nicht auf Baeumen, Felsen, Haus,
+        /// Bauwerken oder Pflanzen. Auch ausserhalb des Hofs und auf leeren Feldern.</summary>
+        public bool CanPlaceWall(Cell c)
+        {
+            if (HasWall(c) || HasStructure(c) || PlantAt(c) != null) return false;
+            var center = CellCenter(c);
+            float hc = CellSize / 2f;
+            foreach (var corner in new[] { new Vector2(-hc, -hc), new Vector2(hc, -hc), new Vector2(-hc, hc), new Vector2(hc, hc) })
+            {
+                var p = center + corner;
+                if (Inside(p) < 0.35f) return false;
+                if (Mathf.Abs(p.x) > MapW / 2f - 0.5f || Mathf.Abs(p.y) > MapH / 2f - 0.5f) return false;
+            }
+            for (int i = 0; i < occupied.Count; i++)
+            {
+                if (occupiedR[i] <= 0f || IsDecorOcc(i)) continue;
+                float d = CellSize * 0.42f + occupiedR[i] * 0.75f;
+                if ((occupied[i] - center).sqrMagnitude < d * d) return false;
+            }
+            return true;
+        }
+
+        /// <summary>Zelle unter dem Finger. Hohe Mauern (und Pflanzen darauf) ragen in die Zelle darueber –
+        /// ein Tipp dort trifft die Mauer.</summary>
+        public Cell TapCell(Vector2 w)
+        {
+            var c = CellAt(w);
+            var below = new Cell(c.x, c.y - 1);
+            if (!HasWall(c) && PlantAt(c) == null && !HasStructure(c) && HasWall(below) && w.y <= below.y * CellSize + CellSize + WallH) return below;
+            return c;
+        }
 
         /// <summary>Tipp im Mauer-Modus: Mauer bauen bzw. leere Mauer wieder abbauen.</summary>
         public bool TapWallMode(Cell c)
@@ -69,16 +101,12 @@ namespace SeedClicker
             var c = new Cell(st.x, st.y);
             var sr = new GameObject("Wall").AddComponent<SpriteRenderer>();
             sr.transform.SetParent(objects, false);
-            sr.transform.position = CellCenter(c);
+            sr.transform.position = WallFoot(c);
             sr.sprite = WallSprite;
-            sr.sortingOrder = -32299;
-            // Vorderkante: macht die Mauer etwas erhaben
-            var edge = new GameObject("WallEdge").AddComponent<SpriteRenderer>();
-            edge.transform.SetParent(sr.transform, false);
-            edge.sprite = Art.Get("white");
-            edge.color = new Color(0.45f, 0.3f, 0.17f);
-            edge.sortingOrder = -32298;
-            var v = new WallView { st = st, sr = sr, edge = edge, pop = fx ? 0f : 1f };
+            // sortiert knapp hinter der Vorderkante: Zombies davor bleiben vorn, alles in der Zelle dahinter liegt hinten;
+            // Pflanzen obendrauf sortieren nach ihrem Fuss auf dem Boden (PlantSortY) und bleiben damit vorn
+            sr.sortingOrder = Order(WallFoot(c).y + 0.1f);
+            var v = new WallView { st = st, sr = sr, pop = fx ? 0f : 1f };
             walls[c] = v;
             ClearDecorAround(CellCenter(c), CellSize * 0.6f);
             if (fx)
@@ -134,6 +162,7 @@ namespace SeedClicker
 
         void UpdateWalls(float dt)
         {
+            UpdateWallGhosts();
             foreach (var kv in walls)
             {
                 var v = kv.Value;
@@ -142,43 +171,77 @@ namespace SeedClicker
                 float e = 1 + 2.70158f * Mathf.Pow(v.pop - 1, 3) + 1.70158f * Mathf.Pow(v.pop - 1, 2);
                 float s = CellSize / Mathf.Max(0.01f, v.sr.sprite.bounds.size.x);
                 v.sr.transform.localScale = Vector3.one * s * e;
-                v.sr.transform.position = (Vector3)CellCenter(kv.Key) + (Vector3)(UnityEngine.Random.insideUnitCircle * v.shake * 0.03f);
-                // Vorderkante als duenner Streifen unter dem Platz
-                float w = v.sr.sprite.bounds.size.x;
-                v.edge.transform.localPosition = new Vector3(0, -w * 0.5f - w * 0.06f, 0);
-                v.edge.transform.localScale = new Vector3(w / Mathf.Max(0.001f, v.edge.sprite.bounds.size.x), w * 0.12f / Mathf.Max(0.001f, v.edge.sprite.bounds.size.y), 1);
+                v.sr.transform.position = (Vector3)WallFoot(kv.Key) + (Vector3)(UnityEngine.Random.insideUnitCircle * v.shake * 0.03f);
                 float hp = Mathf.Clamp01(v.st.hp / Mathf.Max(1f, WallMaxHp));
                 v.sr.color = Color.Lerp(new Color(0.6f, 0.5f, 0.45f), Color.white, hp);
             }
         }
 
-        /// <summary>Heller Holzplatz (Bretter), im Code gemalt.</summary>
+        /// <summary>Hoehe der Mauer-Vorderseite in Welteinheiten; Pflanzen auf einer Mauer stehen um so viel hoeher.</summary>
+        public const float WallH = 0.6f;
+
+        /// <summary>Hohe Holzmauer in Schraegsicht: unten die Vorderseite aus liegenden Staemmen, oben der Wehrgang
+        /// aus Brettern (genau eine Zelle tief). Nebeneinander gebaut ergeben sie eine durchgehende Mauer.</summary>
         public static Sprite WallSprite
         {
             get
             {
                 if (wallSprite != null) return wallSprite;
-                const int n = 96;
-                var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
-                var px = new Color[n * n];
-                var light = new Color(0.93f, 0.8f, 0.58f); var mid = new Color(0.84f, 0.68f, 0.46f); var dark = new Color(0.55f, 0.38f, 0.22f);
-                for (int y = 0; y < n; y++)
-                    for (int x = 0; x < n; x++)
+                const int w = 96;
+                int front = Mathf.RoundToInt(WallH / CellSize * w), h = front + w;
+                var tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                var px = new Color[w * h];
+                var light = new Color(0.93f, 0.8f, 0.58f); var mid = new Color(0.84f, 0.68f, 0.46f); var dark = new Color(0.45f, 0.3f, 0.17f);
+                var log = new Color(0.62f, 0.42f, 0.24f); var logHi = new Color(0.82f, 0.6f, 0.36f);
+                for (int y = 0; y < h; y++)
+                    for (int x = 0; x < w; x++)
                     {
-                        int plank = y / (n / 3);
-                        float py = (y % (n / 3)) / (float)(n / 3);
-                        float grain = Mathf.PerlinNoise(x * 0.08f + plank * 7f, y * 0.6f) * 0.5f + Mathf.PerlinNoise(x * 0.3f, y * 0.1f + plank) * 0.2f;
-                        var c = Color.Lerp(mid, light, grain + (plank == 1 ? 0.1f : 0f));
-                        if (py < 0.08f || py > 0.93f) c = dark;                       // Fugen zwischen den Brettern
-                        if (x < 3 || x > n - 4 || y < 3 || y > n - 4) c = dark;         // Rand
-                        if ((x == 12 || x == n - 13) && (int)(py * 10) == 5) c = dark * 0.8f;   // Naegel
+                        Color c;
+                        if (y < front)
+                        {
+                            // Vorderseite: drei liegende Staemme, rund schattiert, unten dunkler (Schatten am Boden)
+                            const int n = 4; float lh = front / (float)n;
+                            float k = (y % lh) / lh;
+                            float round = Mathf.Sin(k * Mathf.PI);
+                            float grain = Mathf.PerlinNoise(x * 0.05f + (int)(y / lh) * 5f, y * 0.4f) * 0.25f;
+                            c = Color.Lerp(log * 0.75f, logHi, round * 0.85f + grain);
+                            c *= Mathf.Lerp(0.7f, 1f, y / (float)front);
+                            if (k < 0.08f) c = dark;
+                            if (x < 2 || x > w - 3) c = dark * 0.9f;
+                        }
+                        else
+                        {
+                            // Wehrgang: helle Bretter, quer
+                            int yy = y - front;
+                            int plank = yy / (w / 3);
+                            float py = (yy % (w / 3)) / (float)(w / 3);
+                            float grain = Mathf.PerlinNoise(x * 0.08f + plank * 7f, yy * 0.6f) * 0.5f + Mathf.PerlinNoise(x * 0.3f, yy * 0.1f + plank) * 0.2f;
+                            c = Color.Lerp(mid, light, grain + (plank == 1 ? 0.1f : 0f));
+                            if (py < 0.08f || py > 0.93f) c = dark;
+                            if (x < 3 || x > w - 4 || yy < 3 || y > h - 4) c = dark;
+                            if ((x == 12 || x == w - 13) && (int)(py * 10) == 5) c = dark * 0.8f;
+                        }
                         c.a = 1f;
-                        px[y * n + x] = c;
+                        px[y * w + x] = c;
                     }
                 tex.SetPixels(px); tex.Apply();
-                wallSprite = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), n);
+                wallSprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0f), w);
                 return wallSprite;
             }
         }
+
+        /// <summary>Flacher Holzplatz (nur der Wehrgang) fuer die Bau-Vorschau im Mauer-Modus.</summary>
+        public static Sprite WallGhostSprite
+        {
+            get
+            {
+                if (wallGhost != null) return wallGhost;
+                var s = WallSprite;
+                int front = Mathf.RoundToInt(WallH / CellSize * 96);
+                wallGhost = Sprite.Create(s.texture, new Rect(0, front, 96, 96), new Vector2(0.5f, 0.5f), 96);
+                return wallGhost;
+            }
+        }
+        static Sprite wallGhost;
     }
 }

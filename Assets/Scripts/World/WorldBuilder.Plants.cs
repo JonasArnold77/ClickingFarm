@@ -82,7 +82,11 @@ namespace SeedClicker
         /// <summary>Wie weit eine Pflanze ins Feld darueber ragen darf (Anteil einer Feldhoehe).</summary>
         public const float MaxOverhang = 0.17f;
 
-        public static Vector2 PlantBase(PlantedState p) => new Vector2((p.x + p.W * 0.5f) * CellSize, p.y * CellSize + CellSize * 0.12f);
+        /// <summary>Sortier-Hoehe: auf einer Mauer zaehlt der Fuss am Boden, sonst laege die Pflanze hinter der Mauer.</summary>
+        float PlantSortY(PlantedState p, float y) => HasWall(new Cell(p.x, p.y)) ? y - WallH : y;
+
+        public static Vector2 PlantBase(PlantedState p) => new Vector2((p.x + p.W * 0.5f) * CellSize, p.y * CellSize + CellSize * 0.12f
+            + (I != null && I.HasWall(new Cell(p.x, p.y)) ? WallH : 0f));   // auf einer Mauer steht sie oben auf dem Wehrgang
 
         /// <summary>Alle Felder, die eine Pflanze belegt.</summary>
         public static List<Cell> PlantCells(PlantedState p)
@@ -242,7 +246,7 @@ namespace SeedClicker
             glow.transform.localPosition = new Vector3(0, CellSize * 0.45f, 0);
             var body = new GameObject("Body").transform;   // Feder-Knoten: stauchen/kippen um den Fusspunkt
             body.SetParent(root, false);
-            var sr = WorldSprite(body, "Sprite", null, Order(root.position.y));
+            var sr = WorldSprite(body, "Sprite", null, Order(PlantSortY(p, root.position.y)));
             Material mat = null;
             if (PlantMaterialShared != null) { mat = new Material(PlantMaterialShared); sr.sharedMaterial = mat; }
             var barBack = WorldSprite(transform, "BarBack", Art.Get("white"), 31000);
@@ -291,7 +295,7 @@ namespace SeedClicker
                 float s = v.size / Mathf.Max(0.01f, PlantForms.RefWidth(sp, sprite));
                 float sy = s * PlantStretch(p);
                 // Grenze: hoechstens 17 % ins Feld darueber, nicht breiter als das eigene Feld
-                float top = (p.y + p.H) * CellSize + CellSize * MaxOverhang;
+                float top = (p.y + p.H) * CellSize + CellSize * MaxOverhang + (HasWall(new Cell(p.x, p.y)) ? WallH : 0f);   // auf der Mauer mit angehoben
                 float maxH = top - PlantBase(p).y;
                 float h = sprite.bounds.size.y * sy;
                 if (h > maxH) { float k = maxH / h; s *= k; sy *= k; }
@@ -782,7 +786,7 @@ namespace SeedClicker
                 var home = PlantBase(p);
                 var want = dragging && carrying == p ? dragPos + new Vector2(0, -0.25f) : home;
                 v.root.position = Vector2.Lerp(v.root.position, want, Mathf.Clamp01(udt * (dragging && carrying == p ? 30f : 14f)));
-                v.sr.sortingOrder = dragging && carrying == p ? 31150 : Order(v.root.position.y);
+                v.sr.sortingOrder = dragging && carrying == p ? 31150 : Order(PlantSortY(p, v.root.position.y));
                 UpdateMergeMarker(p, v);
                 v.body.localScale = new Vector3((1f - v.sy * 0.75f) * pop, (1f + v.sy) * pop, 1);
                 v.body.localRotation = Quaternion.Euler(0, 0, sway + v.tilt);

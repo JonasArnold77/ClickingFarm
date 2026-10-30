@@ -42,6 +42,30 @@ namespace SeedClicker
             return ctr.x - h >= r.xMin - 0.01f && ctr.x + h <= r.xMax + 0.01f && ctr.y - h >= r.yMin - 0.01f && ctr.y + h <= r.yMax + 0.01f;
         }
 
+        Vector2Int ghostView = new Vector2Int(int.MinValue, 0);
+
+        /// <summary>Alle Zellen, die gerade im Bild sind (Mauer-Vorschau ueberall auf der Karte).</summary>
+        IEnumerable<Cell> VisibleCells()
+        {
+            var cam = Camera.main;
+            if (cam == null) { foreach (var c in FarmCells()) yield return c; yield break; }
+            float hh = cam.orthographicSize + CellSize, hw = hh * cam.aspect + CellSize;
+            Vector2 ctr = cam.transform.position;
+            var a = CellAt(ctr - new Vector2(hw, hh)); var b = CellAt(ctr + new Vector2(hw, hh));
+            for (int x = a.x; x <= b.x; x++) for (int y = a.y; y <= b.y; y++) yield return new Cell(x, y);
+        }
+
+        /// <summary>Im Mauer-Modus die Vorschau nachziehen, wenn die Kamera ein paar Zellen weiter ist.</summary>
+        void UpdateWallGhosts()
+        {
+            if (!WallMode || Camera.main == null) return;
+            var c = CellAt(Camera.main.transform.position);
+            var key = new Vector2Int(Mathf.FloorToInt(c.x / 3f) * 1000 + Mathf.FloorToInt(c.y / 3f), Mathf.RoundToInt(Camera.main.orthographicSize * 2f));
+            if (key == ghostView) return;
+            ghostView = key;
+            RefreshGhosts();
+        }
+
         /// <summary>Alle Zellen im aktuellen Hof.</summary>
         IEnumerable<Cell> FarmCells()
         {
@@ -72,10 +96,10 @@ namespace SeedClicker
             if (fieldSprite == null) fieldSprite = GroundMaterials.TileSprite(4, 3);
             if (fieldSprite == null) return;
             var seen = new HashSet<Cell>();
-            foreach (var c in FarmCells())
+            foreach (var c in WallMode ? VisibleCells() : FarmCells())
             {
                 seen.Add(c);
-                bool show = CanPlaceField(c) && !HasWall(c);
+                bool show = WallMode ? CanPlaceWall(c) : CanPlaceField(c) && !HasWall(c);
                 ghosts.TryGetValue(c, out var sr);
                 if (show && sr == null)
                 {
@@ -90,7 +114,7 @@ namespace SeedClicker
                 {
                     sr.enabled = show;
                     // Mauer-Modus: helles Holz statt Erde
-                    sr.sprite = WallMode ? WallSprite : fieldSprite;
+                    sr.sprite = WallMode ? WallGhostSprite : fieldSprite;
                     sr.color = WallMode ? new Color(1f, 1f, 1f, 0.35f) : new Color(1f, 1f, 1f, 0.2f);
                     sr.transform.localScale = Vector3.one * CellSize * 0.94f / (sr.sprite != null ? sr.sprite.bounds.size.x : 1f);
                 }

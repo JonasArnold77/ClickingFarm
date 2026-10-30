@@ -138,7 +138,7 @@ namespace SeedClicker
             var wb = WorldBuilder.I;
             if (wb == null) return;
             var w = World(screen);
-            var c = WorldBuilder.CellAt(w);
+            var c = wb.TapCell(w);
             if (wb.TryCatchButterfly(w)) { consumed = true; return; }
             // Pflanze: laesst sich ziehen (umtopfen); ein kurzer Tipp oeffnet beim Loslassen ihr Info-Fenster
             var under = wb.PlantAt(c);
@@ -183,7 +183,7 @@ namespace SeedClicker
             var wb = WorldBuilder.I;
             if (wb == null) return;
             if (wb.HitWorkbench(w)) { wb.TapWorkbench(); return; }
-            var cell = WorldBuilder.CellAt(w);
+            var cell = wb.TapCell(w);
             if (wb.PlacingStructure != null) { wb.TryPlaceStructure(cell); return; }
             if (wb.HitBench(w)) { wb.TapBench(); return; }
             var hs = wb.HitStructure(w);
