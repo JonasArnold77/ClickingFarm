@@ -12,13 +12,16 @@ namespace SeedClicker
     /// </summary>
     public partial class WorldBuilder
     {
-        class PedestalView { public PedestalState st; public SpriteRenderer sr; public float pop; }
+        class PedestalView { public PedestalState st; public SpriteRenderer sr, lip; public float pop; }
         readonly Dictionary<Cell, PedestalView> pedestals = new Dictionary<Cell, PedestalView>();
         static Sprite pedSprite, pedGhost;
         bool pedestalMode;
 
         /// <summary>Hoehe der Pult-Vorderseite und wie hoch eine Pflanze im Loch steht (ueber ihrem Bodenpunkt).</summary>
-        public const float PedH = 0.2f, PedLift = PedH + CellSize * 0.5f - CellSize * 0.12f;   // Loch in der Mitte der Platte
+        public const float PedH = 0.2f, PedLift = PedH + CellSize * 0.5f - PedSink - CellSize * 0.12f;   // Fuss etwas unter der Lochmitte
+        /// <summary>So tief steckt der Fuss der Pflanze in der Erde; die vordere Kante (PedLipSprite) verdeckt ihn.</summary>
+        const float PedSink = 0.1f, PedCut = 0.04f;
+        static Sprite pedLip;
         const float PedTop = CellSize;   // Platte ist ein ganzes Feld tief
 
         public bool PedestalMode => pedestalMode;
@@ -94,7 +97,12 @@ namespace SeedClicker
             sr.transform.position = PedFoot(c);
             sr.transform.localScale = Vector3.one * CellSize;
             sr.sortingOrder = Order(c.y * CellSize + 0.1f) + 1;   // knapp vor der Mauer, hinter der Pflanze im Loch
-            pedestals[c] = new PedestalView { st = st, sr = sr, pop = fx ? 0f : 1f };
+            // vordere Haelfte (Erde vorn im Loch, Rand, Vorderseite) vor der Pflanze: so waechst sie aus dem Loch heraus
+            var lip = new GameObject("PedestalLip").AddComponent<SpriteRenderer>();
+            lip.transform.SetParent(sr.transform, false);
+            lip.sprite = PedestalLipSprite;
+            lip.sortingOrder = Order(c.y * CellSize) + 3;
+            pedestals[c] = new PedestalView { st = st, sr = sr, lip = lip, pop = fx ? 0f : 1f };
             ClearDecorAround(CellCenter(c), CellSize * 0.6f);
             if (fx)
             {
@@ -237,6 +245,25 @@ namespace SeedClicker
                 tex.SetPixels(px); tex.Apply();
                 pedSprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0f), w);
                 return pedSprite;
+            }
+        }
+
+        /// <summary>Vorderer Teil des Pults bis knapp unter die Lochmitte (inklusive Erde) – liegt vor der Pflanze.</summary>
+        public static Sprite PedestalLipSprite
+        {
+            get
+            {
+                if (pedLip != null) return pedLip;
+                var src = PedestalSprite.texture;
+                int w = src.width, h = src.height;
+                int front = Mathf.RoundToInt(PedH / CellSize * w), top = Mathf.RoundToInt(PedTop / CellSize * w);
+                int cut = front + top / 2 - Mathf.RoundToInt(PedCut / CellSize * w);
+                var px = src.GetPixels();
+                for (int y = cut; y < h; y++) for (int x = 0; x < w; x++) px[y * w + x] = Color.clear;
+                var tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                tex.SetPixels(px); tex.Apply();
+                pedLip = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0f), w);
+                return pedLip;
             }
         }
 
