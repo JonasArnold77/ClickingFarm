@@ -140,12 +140,11 @@ namespace SeedClicker
             var w = World(screen);
             var c = WorldBuilder.CellAt(w);
             if (wb.TryCatchButterfly(w)) { consumed = true; return; }
-            // Pflanze: sofort beim Druecken reagieren (wachsen, Stufe, Ernte) – und sie laesst sich ziehen (umtopfen)
+            // Pflanze: laesst sich ziehen (umtopfen); ein kurzer Tipp oeffnet beim Loslassen ihr Info-Fenster
             var under = wb.PlantAt(c);
             if (under != null && !wb.Placing && !wb.WallMode)
             {
-                wb.TapPlant(c);
-                dragCand = under; tappedReady = true;
+                dragCand = under;
                 return;
             }
             // Nachts: Tipp = Schuss mit der gewaehlten Waffe (geht genau auf die Tipp-Stelle)
@@ -190,10 +189,10 @@ namespace SeedClicker
                 return;
             }
 
-            // ein Tipp macht das Naheliegende: Mauer bauen (Mauer-Modus), Pflanze antippen, leeren Platz bepflanzen,
+            // ein Tipp macht das Naheliegende: Mauer bauen (Mauer-Modus), Pflanzen-Info oeffnen, leeren Platz bepflanzen,
             // Feld anlegen, Baum faellen, Fels abbauen
             if (wb.WallMode) { if (!wb.TapWallMode(cell)) { if (!wb.TryChop(w)) wb.TryMine(w); } return; }
-            if (wb.PlantAt(cell) != null) { wb.TapPlant(cell); return; }
+            if (wb.PlantAt(cell) != null) { wb.InspectPlant(cell); return; }
             if (wb.IsSlot(cell)) { wb.TapEmptyField(cell); return; }
             if (wb.TryChop(w) || wb.TryMine(w)) return;
             if (wb.CanPlaceField(cell)) wb.PlaceField(cell, true);

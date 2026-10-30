@@ -308,6 +308,21 @@ namespace SeedClicker
         /// <summary>Tipp auf eine Pflanze: waechst ein Stueck (Klick-Wachstum) oder zeigt Infos, wenn sie fertig ist.
         /// Das ist die Hauptmechanik – jeder Tipp soll Wucht haben: Treffer-Stopp, Blitz, Federn, Bodenwelle,
         /// Erdbrocken, Zoom-Stoss, tiefer Schlag im Sound.</summary>
+        /// <summary>Tipp auf eine Pflanze in der Welt: nur Info-Fenster oeffnen, mit kleiner Rueckmeldung (waechst dabei nicht).</summary>
+        public bool IsReadyForTaps(PlantedState p) => !plantViews.TryGetValue(new Cell(p.x, p.y), out var v) || Time.unscaledTime >= v.readyAt;
+
+        public void InspectPlant(Cell c)
+        {
+            var p = PlantAt(c);
+            if (p == null || !plantViews.TryGetValue(new Cell(p.x, p.y), out var v)) return;
+            v.flash = Mathf.Max(v.flash, 0.35f);
+            v.creature?.Poke();
+            PunchField(new Cell(p.x, p.y), 0.35f);
+            Sfx.Play("click", 1.1f, 0.5f);
+            Haptics.Tap(8);
+            PlantTapped?.Invoke(p);
+        }
+
         public bool TapPlant(Cell c)
         {
             var p = PlantAt(c);

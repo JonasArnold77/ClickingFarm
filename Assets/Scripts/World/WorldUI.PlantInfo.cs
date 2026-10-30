@@ -5,8 +5,9 @@ namespace SeedClicker
 {
     /// <summary>
     /// Pflanzen-Info: Ein Tipp auf eine Pflanze oeffnet unten ein Fenster mit Bild, Name, Stufe, Rolle, was sie macht,
-    /// ihren Werten und dem Fortschritt zur naechsten Stufe. Es blockiert nichts – weiter auf die Pflanze tippen laesst
-    /// sie wachsen/leveln und das Fenster zaehlt live mit. Nach ein paar Sekunden ohne Tipp blendet es aus.
+    /// ihren Werten und dem Fortschritt zur naechsten Stufe. Der Tipp selbst laesst die Pflanze nicht wachsen – dafuer hat
+    /// das Fenster einen grossen Knopf (Wachsen lassen / Ernten / Giessen / Staerker machen), der wie der fruehere
+    /// Klick auf die Pflanze wirkt; das Fenster zaehlt live mit und blendet nach ein paar Sekunden ohne Tipp aus.
     /// Mit der Maus (Browser/Editor) zeigt ein kurzes Schild ueber der Pflanze Name und Stufe, das wieder ausblendet.
     /// </summary>
     public partial class WorldUI
@@ -19,6 +20,10 @@ namespace SeedClicker
         float infoTimer;
         string infoBuiltFor;
 
+        Button infoAct;
+        Text infoActText;
+        Image infoActImg;
+
         Text hoverText;
         PlantedState hoverPlant;
         float hoverT = 99f;
@@ -28,7 +33,7 @@ namespace SeedClicker
         void BuildPlantInfo()
         {
             var root = UIKit.Rect(safe, "PlantInfo");
-            root.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 195), new Vector2(-40, 360));
+            root.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 195), new Vector2(-40, 470));
             infoGroup = root.gameObject.AddComponent<CanvasGroup>();
             infoGroup.alpha = 0f; infoGroup.blocksRaycasts = false;
             var bg = Panel(root, "Bg", PanelCol);
@@ -64,6 +69,12 @@ namespace SeedClicker
             infoBarFill.rectTransform.offsetMin = infoBarFill.rectTransform.offsetMax = Vector2.zero;
             infoBarText = Label(barBg.transform, "", 28, Ink, TextAnchor.MiddleCenter, true);
             infoBarText.rectTransform.Stretch();
+
+            // Grosser Knopf: hier wird geklickt – wachsen lassen, ernten, leveln (der Tipp in der Welt oeffnet nur das Fenster)
+            infoAct = Btn(root, "", Accent, () => { if (infoPlant != null) wb.TapPlant(new Cell(infoPlant.x, infoPlant.y)); }, 40);
+            infoAct.GetComponent<RectTransform>().Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 88), new Vector2(-60, 104));
+            infoActText = infoAct.GetComponentInChildren<Text>();
+            infoActImg = infoAct.GetComponent<Image>();
 
             var x = Btn(root, "X", new Color(0.8f, 0.45f, 0.35f), HidePlantInfo, 40);
             x.GetComponent<RectTransform>().Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-18, -18), new Vector2(96, 84));
@@ -141,6 +152,9 @@ namespace SeedClicker
             infoBarFill.rectTransform.anchorMax = new Vector2(Mathf.Clamp01(f), 1f);
             infoBarFill.color = !p.Grown ? new Color(0.55f, 0.82f, 0.35f) : new Color(0.7f, 0.55f, 1f);
             infoBarText.text = bar;
+            bool locked = p.Grown && !wb.IsReadyForTaps(p);
+            infoActText.text = locked ? "Gleich bereit …" : !p.Grown ? "Wachsen lassen!" : def.role == "harvest" ? "Ernten!" : def.role == "water" ? "Gießen!" : "Stärker machen!";
+            infoActImg.color = !p.Grown ? Accent : def.role == "harvest" ? new Color(0.92f, 0.68f, 0.2f) : def.role == "water" ? new Color(0.35f, 0.62f, 0.92f) : new Color(0.6f, 0.45f, 0.9f);
         }
 
         static int NextMutationLevel(int lv)
