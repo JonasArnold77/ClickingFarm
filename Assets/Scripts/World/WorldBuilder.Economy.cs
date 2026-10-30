@@ -176,7 +176,12 @@ namespace SeedClicker
             return n;
         }
 
-        public bool IsWatered(PlantedState p) => GrownNear(p, "water", 2 + (int)UpgradeAdd("water")) > 0;
+        /// <summary>Gegossen: ein Tauschilf erreicht das Feld (Saftrohre verlaengern) oder ein Brunnen steht in der Naehe.</summary>
+        public bool IsWatered(PlantedState p)
+        {
+            foreach (var q in save.planted) if (q != p && q.Grown && q.Role == "water" && Cheb(p, q) <= WaterRadiusOf(q)) return true;
+            return StructEffect("water", CellCenter(new Cell(p.x, p.y))) > 0f;
+        }
         float FertMult(PlantedState p) => 1f + 0.5f * GrownNear(p, "fert", 1) * UpgradeMult("fert");
         float BoostMult(PlantedState p) => GrownNear(p, "boost", 2) > 0 ? 2f : 1f;
         float WaterMult(PlantedState p) => IsWatered(p) ? 1.5f : 1f;
@@ -184,7 +189,7 @@ namespace SeedClicker
         /// <summary>So viel bringt ein Tipp: Wachstum (bzw. Stufen-Fortschritt) und bei reifer Ernte Muenzen.</summary>
         public int TapPower(PlantedState p, bool growing)
         {
-            float m = UpgradeMult("click") * BoostMult(p);
+            float m = UpgradeMult("click") * BoostMult(p) * (1f + StructEffect("scare", CellCenter(new Cell(p.x, p.y))));
             if (growing) m *= UpgradeMult("growth") * (IsWatered(p) ? 2f : 1f) * (1f + 0.5f * GrownNear(p, "fert", 1));
             return Mathf.Max(1, Mathf.RoundToInt(m));
         }
@@ -209,7 +214,7 @@ namespace SeedClicker
                 var pos = CellCenter(new Cell(p.x, p.y));
                 foreach (var d in decor) if (d.go != null && d.go.name.ToLower().Contains("flower") && (d.p - pos).sqrMagnitude < 2.2f * 2.2f) flowers++;
                 flowers += GrownNear(p, "bee", 2);
-                return c.value * p.Lv * (1f + 0.25f * flowers) * UpgradeMult("bee") * FertMult(p);
+                return c.value * p.Lv * (1f + 0.25f * flowers) * UpgradeMult("bee") * FertMult(p) * (1f + StructGlobal("bee"));
             }
             return 0f;
         }
@@ -224,7 +229,7 @@ namespace SeedClicker
                 float r = 2.2f + 0.3f * (p.Lv - 1);
                 if ((CellCenter(new Cell(p.x, p.y)) - pos).sqrMagnitude < r * r) best = Mathf.Max(best, 1.5f + UpgradeAdd("light") + 0.05f * (p.Lv - 1));
             }
-            return best;
+            return Mathf.Max(best, 1f + StructEffect("light", pos));   // Laternen
         }
 
         float ComputeCps()
@@ -244,7 +249,7 @@ namespace SeedClicker
             var top = basePos + new Vector2(0, (v.sr.bounds.max.y - basePos.y) * 0.75f);
             v.sy = Mathf.Min(v.sy, -0.05f); v.flash = Mathf.Max(v.flash, 0.3f);
             PunchField(new Cell(p.x, p.y), 0.4f);
-            if (plantViews.TryGetValue(new Cell(from.x, from.y), out var fv)) fv.sy = Mathf.Min(fv.sy, -0.04f);
+            if (from != null && plantViews.TryGetValue(new Cell(from.x, from.y), out var fv)) fv.sy = Mathf.Min(fv.sy, -0.04f);
             Particles.I?.Spawn(basePos + new Vector2(0, 0.15f), "spark", new Color(0.8f, 1f, 0.6f), Vector3.up * 0.6f, 0.3f, 0.1f, 0f, 0f);
             Sfx.Play("tick", UnityEngine.Random.Range(1.6f, 1.9f), 0.15f);
             if (!p.Grown)
@@ -286,12 +291,13 @@ namespace SeedClicker
             if (!save.economyInit) { save.coins = Math.Max(save.coins, PlantBalance.I.startCoins); save.economyInit = true; }
             CheckEarnedUnlocks();
             RefreshBuildingViews();
+            InitStructures();
             cps = ComputeCps();
             // Offline-Ertrag (gedeckelt, halbe Rate)
             long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             if (save.lastSeen > 0)
             {
-                double secs = Math.Min(now - save.lastSeen, (2 + UpgradeAdd("offline")) * 3600.0);
+                double secs = Math.Min(now - save.lastSeen, (2 + UpgradeAdd("offline") + StructGlobal("offline")) * 3600.0);
                 double earned = secs > 60 ? cps * secs * 0.5 : 0;
                 if (earned >= 1) { AddCoins(earned); StartCoroutine(AnnounceOffline(earned, secs)); }
             }
@@ -339,7 +345,7 @@ namespace SeedClicker
                 {
                     if (kv.Value == null || wetFlash.ContainsKey(kv.Key)) continue;
                     var p = PlantAt(kv.Key);
-                    bool wet = p != null ? IsWatered(p) : GrownNear(new PlantedState { x = kv.Key.x, y = kv.Key.y }, "water", 2 + (int)UpgradeAdd("water")) > 0;
+                    bool wet = p != null ? IsWatered(p) : IsWatered(new PlantedState { x = kv.Key.x, y = kv.Key.y });
                     kv.Value.color = wet ? new Color(0.7f, 0.68f, 0.8f) : Color.white;
                 }
             }

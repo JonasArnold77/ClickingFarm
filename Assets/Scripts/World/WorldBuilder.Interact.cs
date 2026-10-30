@@ -29,6 +29,7 @@ namespace SeedClicker
         public bool economyInit;
         public List<string> upgrades = new List<string>();
         public List<BuildingCount> buildings = new List<BuildingCount>();
+        public List<StructureState> structures = new List<StructureState>();
         public List<WeaponLevel> weaponLevels = new List<WeaponLevel>();   // an der Waffenbank geschmiedet
         public int farmLevel;
         public List<int> rocksGone = new List<int>();
@@ -274,7 +275,7 @@ namespace SeedClicker
 
         public bool CanPlaceField(Cell c)
         {
-            if (fields.ContainsKey(c)) return false;
+            if (fields.ContainsKey(c) || HasStructure(c)) return false;
             var center = CellCenter(c);
             if (!IsBuildable(c)) return false;                                // nur im Hof
             float hc = CellSize / 2f;

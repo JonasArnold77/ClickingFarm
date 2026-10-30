@@ -36,6 +36,7 @@ namespace SeedClicker
             BuildEconomyUI();
             BuildPlantInfo();
             BuildBenchInfo();
+            BuildStructureInfo();
             BuildJuice();
             wb.EmptyFieldTapped += OpenPlantPicker;
             wb.BookTapped += OpenPlantBook;
@@ -190,8 +191,9 @@ namespace SeedClicker
         void CostTag(RectTransform card, CatalogDef def, int fontSize)
         {
             if (def.cost <= 0) return;
-            bool ok = wb == null || wb.Coins >= def.cost;
-            var t = Label(card, Num.Short(def.cost) + " Münzen", fontSize - 2, ok ? new Color(0.6f, 0.45f, 0.05f) : new Color(0.8f, 0.3f, 0.25f), TextAnchor.MiddleCenter, true);
+            float cost = wb != null ? wb.SeedCost(def) : def.cost;
+            bool ok = wb == null || wb.Coins >= cost;
+            var t = Label(card, Num.Short(cost) + " Münzen", fontSize - 2, ok ? new Color(0.6f, 0.45f, 0.05f) : new Color(0.8f, 0.3f, 0.25f), TextAnchor.MiddleCenter, true);
             t.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 10), new Vector2(-20, fontSize + 10));
         }
 
@@ -292,6 +294,7 @@ namespace SeedClicker
             UpdateEconomyUI(dt);
             UpdatePlantInfo(dt);
             UpdateBenchInfo(dt);
+            UpdateStructureInfo(dt);
             if (nw == null || waveText == null) return;
             UpdateWeaponBar(dt);
             if (nw.Evening)
@@ -387,7 +390,7 @@ namespace SeedClicker
             ("Ernte", new[] { "harvest", "bee" }),
             ("Wachstum", new[] { "water", "fert", "boost", "auto" }),
             ("Verteidigung", new[] { "combat", "light" }),
-            ("Gebäude", new[] { "support" }),
+            ("Helfer", new[] { "support", "transport", "carrier", "sower", "pipe" }),
         };
         int plantTab;
 

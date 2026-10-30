@@ -163,13 +163,13 @@ namespace SeedClicker
         // ------------------------------------------------------------------ Einsetzen / Ausgraben
 
         /// <summary>Feld oder Mauerplatz, auf dem eine Pflanze stehen kann.</summary>
-        public bool IsSlot(Cell c) => HasField(c) || HasWall(c);
+        public bool IsSlot(Cell c) => (HasField(c) || HasWall(c)) && !HasStructure(c);
 
         public bool PlantInto(Cell c, string type)
         {
             if (!IsSlot(c) || PlantAt(c) != null || !IsUnlocked(type)) return false;
             var def = PlantBalance.I.Plant(type);
-            if (def != null && def.cost > 0 && !TrySpend(def.cost, CellCenterOf(c) + new Vector2(0, 0.6f))) return false;
+            if (def != null && def.cost > 0 && !TrySpend(SeedCost(def), CellCenterOf(c) + new Vector2(0, 0.6f))) return false;
             var p = new PlantedState { x = c.x, y = c.y, type = type, growth = 0 };
             save.planted.Add(p);
             CreatePlantView(p, true);

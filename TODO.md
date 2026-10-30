@@ -14,7 +14,8 @@
 - [ ] Spieler-Einstellungen: Android-Build auf Hochformat fixieren (Player Settings → Resolution and Presentation → Default Orientation: Portrait). Zur Laufzeit wird Portrait bereits gesetzt.
 - [ ] Zaun-Grafik an den Grenzen gesperrter Bereiche (aktuell: abgedunkelt + Schild + Preis-Label).
 - [ ] Waffenbank: eigene Grafik (Amboss/Werkbank statt Baumstamm) und Hammer-Sound.
-- [ ] Transport-Pflanzen und weitere Gebäude (Ideen: Rankenbahn, Wurzelträger, Brunnen, Treibhaus, Wachturm, Saatgutmühle) – noch nicht entschieden.
+- [ ] Bauwerke: echte Grafik statt gemalter Platzhalter; beim Aufstellen freie Plätze hervorheben; Balancing der Preise und Wirkungen.
+- [ ] Rankenbahn: sichtbare Ranke zwischen Pflanze und Haus zeichnen (fliegt bisher nur als Münze).
 
 ## Später (laut CLAUDE.md nicht Teil der Basisversion)
 - [ ] Echte Werbe-SDK-Anbindung in `AdService` (Rewarded + seltene Interstitials).

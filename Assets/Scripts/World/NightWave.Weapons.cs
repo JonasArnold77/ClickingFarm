@@ -28,7 +28,26 @@ namespace SeedClicker
         static Sprite reticle;
 
         public WeaponDef Weapon => B.Weapon(wb != null ? wb.Save.weapon : "pistole");
-        public bool IsWeaponUnlocked(WeaponDef w) => w != null && wb != null && wb.Save.wave >= w.unlockWave;
+        /// <summary>Freigeschaltet nach Welle unlockWave – die Schmiede holt Waffen um ihre Stufe frueher.</summary>
+        public bool IsWeaponUnlocked(WeaponDef w) => w != null && wb != null && wb.Save.wave >= w.unlockWave - wb.StructLevel("forge");
+
+        /// <summary>Wachturm: schiesst auf den naechsten Zombie in Reichweite. true = getroffen.</summary>
+        public int TowerHits { get; private set; }
+        public bool TowerShot(Vector2 from, float range, float dmg)
+        {
+            if (!Active) return false;
+            Monster best = null; float bd = range * range;
+            foreach (var m in monsters) { if (m.dead) continue; float d = (m.pos - from).sqrMagnitude; if (d < bd) { bd = d; best = m; } }
+            if (best == null) return false;
+            var p = Center(best);
+            Beam(from, p, new Color(0.75f, 0.95f, 1f));
+            best.knock += (best.pos - from).normalized * 0.2f;
+            Damage(best, dmg * (1f + 0.12f * (WaveNumber - 1)), null);
+            ImpactFx(p, 0.8f);
+            Sfx.Play("bow", Random.Range(1.1f, 1.25f), 0.5f);
+            TowerHits++;
+            return true;
+        }
         /// <summary>0 = bereit, 1 = gerade geschossen (fuer die Anzeige).</summary>
         public float WeaponCooldown01 { get { var w = Weapon; return w == null || w.cooldown <= 0 ? 0 : Mathf.Clamp01(weaponCd / (w.cooldown * wb.WeaponCooldownMult(w.id))); } }
 

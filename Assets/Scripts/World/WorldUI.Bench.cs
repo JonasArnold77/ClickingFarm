@@ -38,7 +38,8 @@ namespace SeedClicker
             benchIcon.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(125, -120), new Vector2(210, 110));
 
             benchName = Label(root, "", 46, Ink, TextAnchor.MiddleLeft, true);
-            benchName.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(250, -22), new Vector2(-480, 64));
+            benchName.resizeTextForBestFit = true; benchName.resizeTextMinSize = 26; benchName.resizeTextMaxSize = 46;
+            benchName.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(250, -22), new Vector2(-560, 64));
             benchLevel = Label(root, "", 44, AccentWarm, TextAnchor.MiddleRight, true);
             benchLevel.rectTransform.Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-140, -22), new Vector2(240, 64));
             var sub = Label(root, "Waffenbank", 30, AccentWarm, TextAnchor.MiddleLeft, true);

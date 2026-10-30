@@ -49,6 +49,26 @@ namespace SeedClicker
     [Serializable] public class WallDef { public int wood = 2; public float hp = 30f; }
     /// <summary>Waffenbank: Schlaege bis zur naechsten Waffenstufe (tapsBase * tapsGrowth^(Stufe-1)) und was eine Stufe bringt.</summary>
     [Serializable] public class BenchDef { public float tapsBase = 12f, tapsGrowth = 1.3f, damagePerLevel = 0.25f, cooldownPerLevel = 0.04f, minCooldown = 0.5f; public int maxLevel = 30; }
+    /// <summary>Bauwerk zum Aufstellen (einmal kaufen, auf einen freien Platz im Hof setzen, per Klick verbessern).
+    /// effect: scare (Tipps in der Naehe staerker), water (giesst Umkreis), light (Zombies nehmen mehr Schaden), tower (schiesst nachts),
+    /// bee (Honig), forge (Waffenbank), greenhouse (Pflanzen wachsen von selbst), seedcost (Samen billiger), offline (Offline-Stunden).
+    /// radius 0 = wirkt ueberall.</summary>
+    [Serializable] public class StructureDef
+    {
+        public string id, name, desc, effect;
+        public float cost, unlockEarned, value, valuePerLevel, radius, radiusPerLevel, scale = 1f;
+        public int wood;
+    }
+    /// <summary>Klicks bis zur naechsten Stufe eines Bauwerks: tapsBase * tapsGrowth^(Stufe-1).</summary>
+    [Serializable] public class StructureTapsDef { public float tapsBase = 15f, tapsGrowth = 1.35f; public int maxLevel = 20; }
+    /// <summary>Helfer-Pflanzen: Rankenbahn (transport), Wurzeltraeger (carrier), Pustesamen (sower), Saftrohr (pipe).</summary>
+    [Serializable] public class HelperDef
+    {
+        public float transportInterval = 2.5f, transportBonus = 1.5f; public int transportRadius = 2;
+        public float carrierInterval = 7f; public int carrierWood = 1;
+        public float sowerInterval = 4f; public int sowerRadius = 2;
+        public int pipeRadius = 2, pipeBonus = 1;
+    }
     /// <summary>Stuetzranke: Reichweite, Gebaeude-Bonus, Hammerschlaege an der Waffenbank, Mauer-Reparatur (Anteil der vollen Haltbarkeit).</summary>
     [Serializable] public class SupportDef { public float radius = 2.6f, radiusPerLevel = 0.2f, buildingBonus = 0.5f, buildingBonusPerLevel = 0.1f, interval = 2.4f, hammer = 1f, repair = 0.1f; }
 
@@ -60,7 +80,8 @@ namespace SeedClicker
         public static string Name(string r) => r switch
         {
             "water" => "Wasser", "harvest" => "Ernte", "fert" => "Dünger", "boost" => "Verstärker", "auto" => "Automatik",
-            "bee" => "Honig", "light" => "Licht", "support" => "Bauhelfer", _ => "Kampf"
+            "bee" => "Honig", "light" => "Licht", "support" => "Bauhelfer",
+            "transport" => "Transport", "carrier" => "Träger", "sower" => "Säer", "pipe" => "Leitung", _ => "Kampf"
         };
         public static string Desc(CatalogDef d) => d.role switch
         {
@@ -71,6 +92,10 @@ namespace SeedClicker
             "auto" => "Klickt von selbst auf ihre direkten Nachbarn – je höher die Stufe, desto schneller.",
             "bee" => "Macht Honig: verdient von selbst, mehr mit Blumen in der Nähe.",
             "light" => "Leuchtet nachts: Zombies in ihrem Licht nehmen +50 % Schaden.",
+            "transport" => "Erntet reife Ernte-Pflanzen im Umkreis von 2 – Münzen +50 %.",
+            "carrier" => "Trägt Holz aus dem Wald zum Haus, schneller mit jeder Stufe.",
+            "sower" => "Sät die gewählte Pflanze auf leere Felder im Umkreis von 2.",
+            "pipe" => "Tauschilf im Umkreis von 2 gießt 1 Feld weiter.",
             "support" => "Hilft Gebäuden nebenan: +50 % Ertrag, hämmert an der Waffenbank, flickt Mauern.",
             _ => "Verteidigt den Hof in der Nacht."
         };
@@ -121,6 +146,9 @@ namespace SeedClicker
         public WallDef wall;
         public BenchDef bench;
         public SupportDef support;
+        public StructureDef[] structures;
+        public StructureTapsDef structureTaps;
+        public HelperDef helpers;
         public float startCoins = 30f;
         public bool testUnlockAll;   // Test: alle Pflanzenarten sofort freigeschaltet
         public LevelDef levels;
@@ -229,6 +257,9 @@ namespace SeedClicker
         public string RoleOf(string id) { var c = Plant(id); return c == null || string.IsNullOrEmpty(c.role) ? "combat" : c.role; }
         public WallDef Wall => wall ?? (wall = new WallDef());
         public BenchDef Bench => bench ?? (bench = new BenchDef());
+        public StructureTapsDef StructureTaps => structureTaps ?? (structureTaps = new StructureTapsDef());
+        public HelperDef Helpers => helpers ?? (helpers = new HelperDef());
+        public StructureDef Structure(string id) { if (structures != null) foreach (var s in structures) if (s.id == id) return s; return null; }
         public SupportDef Support => support ?? (support = new SupportDef());
     }
 
@@ -323,6 +354,8 @@ namespace SeedClicker
 
     [Serializable] public class BuildingCount { public string id; public int n; }
     /// <summary>Stufe einer Waffe (an der Waffenbank geschmiedet) und Schlaege zur naechsten Stufe.</summary>
+    /// <summary>Ein aufgestelltes Bauwerk (Spielstand). placed = false: gekauft, wartet auf seinen Platz.</summary>
+    [Serializable] public class StructureState { public string id; public int x, y, lv = 1; public float xp; public bool placed; }
     [Serializable] public class WeaponLevel { public string id; public int lv = 1; public float xp; }
 
     /// <summary>Eine gepflanzte Pflanze auf einem Feld oder Mauerplatz (Spielstand).</summary>

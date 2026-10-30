@@ -89,11 +89,11 @@ namespace SeedClicker
             // Reiter
             var tabs = UIKit.HRow(panel, "Tabs", 12, TextAnchor.MiddleCenter, new RectOffset(20, 20, 0, 0));
             tabs.GetComponent<RectTransform>().Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -120), new Vector2(0, 90));
-            string[] names = { "Verbesserungen", "Gebäude", "Hof" };
+            string[] names = { "Verbesserungen", "Gebäude", "Hof", "Bauwerke" };
             for (int i = 0; i < names.Length; i++)
             {
                 int k = i;
-                var b = Btn(tabs.transform, names[i], i == tab ? AccentWarm : new Color(0.55f, 0.5f, 0.45f), () => OpenShop(k), 27);
+                var b = Btn(tabs.transform, names[i], i == tab ? AccentWarm : new Color(0.55f, 0.5f, 0.45f), () => OpenShop(k), names[i].Length > 10 ? 22 : 27);
                 b.GetComponent<RectTransform>().LE(0, 80, 1);   // Reiter teilen sich die Breite
             }
             var coins = Label(panel, "Münzen: " + Num.Short(wbi.Coins) + "   Holz: " + wbi.Wood + "   (+" + Num.Short(wbi.Cps) + "/s)", 32, InkSoft, TextAnchor.MiddleCenter, true);
@@ -126,6 +126,7 @@ namespace SeedClicker
                         () => { if (wbi.BuyBuilding(dd)) OpenShop(1); });
                 }
             }
+            else if (tab == 3) StructureShop(content);
             else
             {
                 var next = wbi.NextFarmLevel();

@@ -86,7 +86,7 @@ namespace SeedClicker
         List<Cell> WaterTargets(PlantedState w)
         {
             var list = new List<Cell>();
-            int r = WaterRadius;
+            int r = WaterRadiusOf(w);
             for (int dx = -r; dx <= r; dx++)
                 for (int dy = -r; dy <= r; dy++)
                 {

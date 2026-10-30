@@ -49,7 +49,8 @@ namespace SeedClicker
             infoIcon.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(125, -130), new Vector2(190, 190));
 
             infoName = Label(root, "", 50, Ink, TextAnchor.MiddleLeft, true);
-            infoName.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(250, -22), new Vector2(-480, 64));
+            infoName.resizeTextForBestFit = true; infoName.resizeTextMinSize = 26; infoName.resizeTextMaxSize = 50;
+            infoName.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(250, -22), new Vector2(-560, 64));
             infoLevel = Label(root, "", 44, AccentWarm, TextAnchor.MiddleRight, true);
             infoLevel.rectTransform.Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-140, -22), new Vector2(240, 64));
             infoRole = Label(root, "", 32, AccentWarm, TextAnchor.MiddleLeft, true);
@@ -175,6 +176,7 @@ namespace SeedClicker
                 case "bee": s = "Honig: " + Num.Short(wb.PlantCps(p)) + " Münzen/s"; break;
                 case "water": s = "Gießt gerade " + wb.WaterTargetCount(p) + " Pflanzen"; break;
                 case "support": s = p.Grown ? wb.SupportSummary(p) : ""; break;
+                case "transport": case "carrier": case "sower": case "pipe": s = p.Grown ? wb.HelperSummary(p) : ""; break;
                 case "combat": s = PlantGenome.Describe(g.projectile) + " · " + PlantGenome.Describe(g.element) + " · " + PlantGenome.Describe(g.range); break;
                 default: s = ""; break;
             }

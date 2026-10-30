@@ -183,8 +183,11 @@ namespace SeedClicker
             var wb = WorldBuilder.I;
             if (wb == null) return;
             if (wb.HitWorkbench(w)) { wb.TapWorkbench(); return; }
-            if (wb.HitBench(w)) { wb.TapBench(); return; }
             var cell = WorldBuilder.CellAt(w);
+            if (wb.PlacingStructure != null) { wb.TryPlaceStructure(cell); return; }
+            if (wb.HitBench(w)) { wb.TapBench(); return; }
+            var hs = wb.HitStructure(w);
+            if (hs != null && !wb.Placing && !wb.WallMode) { wb.TapStructure(hs); return; }
             if (wb.Placing)
             {
                 if (wb.PlantAt(cell) == wb.Carrying) wb.CancelPlacing();

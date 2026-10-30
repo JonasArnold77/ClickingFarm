@@ -97,7 +97,7 @@ namespace SeedClicker
                 if (loud) { benchSquash = 0.4f; Sfx.Play("dry", 1.2f, 0.4f); Floater?.Invoke(top + new Vector2(0, 0.5f), "Höchste Stufe!", new Color(1f, 0.9f, 0.6f)); }
                 return;
             }
-            float gain = Mathf.Max(1f, Mathf.Round(power * (loud ? UpgradeMult("click") : 1f)));
+            float gain = Mathf.Max(1f, Mathf.Round(power * (loud ? UpgradeMult("click") : 1f) * (1f + StructGlobal("forge"))));
             e.xp += gain;
             benchSquash = loud ? 1f : Mathf.Max(benchSquash, 0.45f);
             var P = Particles.I;
@@ -243,16 +243,18 @@ namespace SeedClicker
 
         static readonly Color LeafCol = new Color(0.45f, 0.78f, 0.3f);
 
-        /// <summary>Ein Blatt fliegt im Bogen von der Ranke zum Ziel; dort passiert onHit.</summary>
-        IEnumerator Leaf(Vector2 from, Vector2 to, Action onHit)
+        /// <summary>Ein Blatt (oder eine Muenze, ein Holzscheit, ein Samen) fliegt im Bogen zum Ziel; dort passiert onHit.</summary>
+        IEnumerator Leaf(Vector2 from, Vector2 to, Action onHit, Sprite sprite = null, Color? col = null, float width = 0.13f)
         {
             var sr = new GameObject("Leaf").AddComponent<SpriteRenderer>();
             sr.transform.SetParent(objects, false);
-            sr.sprite = DropSprite;
-            sr.sharedMaterial = UnlitMat;
-            sr.color = LeafCol;
+            sr.sprite = sprite != null ? sprite : DropSprite;
+            if (sprite == null) sr.sharedMaterial = UnlitMat;
+            var tint = col ?? LeafCol;
+            sr.color = sprite != null ? Color.white : tint;
             sr.sortingOrder = 30005;
-            float size = 0.13f / Mathf.Max(0.01f, sr.sprite.bounds.size.x);
+            float size = width / Mathf.Max(0.01f, sr.sprite.bounds.size.x);
+            float stretch = sprite == null ? 1.4f : 1f;
             float dur = 0.45f + Vector2.Distance(from, to) * 0.05f;
             float h = 0.5f + Vector2.Distance(from, to) * 0.2f;
             float spin = UnityEngine.Random.Range(-720f, 720f);
@@ -260,10 +262,10 @@ namespace SeedClicker
             {
                 var pos = Vector2.Lerp(from, to, k) + Vector2.up * (4f * h * k * (1f - k));
                 sr.transform.position = pos;
-                sr.transform.rotation = Quaternion.Euler(0, 0, spin * k);
-                sr.transform.localScale = new Vector3(size, size * 1.4f, 1f);
+                sr.transform.rotation = Quaternion.Euler(0, 0, sprite == null ? spin * k : spin * k * 0.25f);
+                sr.transform.localScale = new Vector3(size, size * stretch, 1f);
                 if (UnityEngine.Random.value < 0.3f)
-                    Particles.I?.Spawn(pos, "square", new Color(LeafCol.r, LeafCol.g, LeafCol.b, 0.6f), Vector3.zero, 0.3f, 0.04f, 0.01f, 0.5f);
+                    Particles.I?.Spawn(pos, "square", new Color(tint.r, tint.g, tint.b, 0.6f), Vector3.zero, 0.3f, 0.04f, 0.01f, 0.5f);
                 yield return null;
             }
             Destroy(sr.gameObject);
