@@ -291,6 +291,7 @@
       "id": "brownshroom",
       "name": "pilz",
       "art": "sk_Mushroom_3",
+      "sway": 0,
       "stages": [],
       "scale": 1.0,
       "heads": []
@@ -323,6 +324,7 @@
       "id": "pinkshroom",
       "name": "pilz",
       "art": "sk_Mushroom_1",
+      "sway": 0,
       "stages": [],
       "scale": 1.0,
       "heads": []

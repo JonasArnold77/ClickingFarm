@@ -21,7 +21,7 @@ namespace SeedClicker
             public Material mat;
             public float pop = 1f, barPunch, barShow;
             public float sy, syVel, tilt, tiltVel, freeze, flash, size = -1f, heat;   // Feder (Stauchen), Kippen, Treffer-Stopp, Blitz
-            public float readyAt, nextHop, lift;   // reif: erst nach readyAt antippbar; Huepfer als Hinweis; angehoben beim Platzieren
+            public float readyAt, lift;   // reif: erst nach readyAt antippbar; angehoben beim Platzieren
             public bool readyShown = true;
             public SpriteRenderer marker;   // Pfeil, wenn die Pflanze ein Ziel zum Zusammenfuehren ist
             public PlantCreature creature;  // Gesichter, sobald die Pflanze reif ist
@@ -595,14 +595,6 @@ namespace SeedClicker
                 Sfx.Play("note", 2f, 0.4f);
                 Haptics.Tap(25);
                 Floater?.Invoke(top + new Vector2(0, 0.5f), p.IsCombat ? "Bereit! Weiterklicken macht sie stärker" : p.Role == "harvest" ? "Reif! Jeder Tipp bringt Münzen" : "Bereit! Sie hilft jetzt mit", new Color(1f, 0.95f, 0.6f));
-                v.nextHop = now + 1.6f;
-            }
-            // als Hinweis regelmaessig ein kleiner Huepfer mit Glitzer
-            if (carrying != p && now >= v.nextHop)
-            {
-                v.nextHop = now + 1.6f;
-                v.sy = 0.18f;
-                Particles.I?.Burst(top, "spark", new Color(1f, 0.95f, 0.7f), 3, 1.2f, 0.5f, 0.15f, 0f, 0.8f);
             }
         }
 
@@ -734,7 +726,10 @@ namespace SeedClicker
                 }
                 if (p.Grown) UpdateRipe(p, v, udt);
                 float pop = 1 + 2.70158f * Mathf.Pow(v.pop - 1, 3) + 1.70158f * Mathf.Pow(v.pop - 1, 2);
-                float sway = Mathf.Sin(t * 1.6f + p.x * 0.7f + p.y) * 1f;
+                // Wind: Boeen laufen als Welle ueber den Hof, jede Pflanze wiegt sich leicht versetzt; Pilze stehen fest
+                float gust = 0.55f + 0.45f * Mathf.Sin(t * 0.45f - p.x * 0.35f + p.y * 0.12f);
+                float sway = (Mathf.Sin(t * 1.4f + p.x * 0.7f + p.y * 1.3f) * 0.7f + Mathf.Sin(t * 2.7f + p.x * 1.9f) * 0.3f + 0.35f)
+                             * gust * 5f * PlantBalance.I.Species(PlantBalance.I.Plant(p.type)?.species).sway;
                 v.lift = Mathf.MoveTowards(v.lift, carrying == p ? 0.18f + Mathf.Sin(Time.unscaledTime * 6f) * 0.04f : 0f, udt * 2f);
                 v.body.localPosition = new Vector3(0, v.lift, 0);
                 var home = PlantBase(p);

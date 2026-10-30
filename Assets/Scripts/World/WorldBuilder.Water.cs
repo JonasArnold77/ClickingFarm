@@ -68,7 +68,7 @@ namespace SeedClicker
                 if (t <= 0f)
                 {
                     WaterPulse(p, false);
-                    t = UnityEngine.Random.Range(3f, 4.5f) / Mathf.Max(1f, 0.6f + 0.4f * p.Lv);
+                    t = UnityEngine.Random.Range(1.1f, 1.6f) / Mathf.Max(1f, 0.6f + 0.4f * p.Lv);
                 }
                 waterTimers[p] = t;
             }
@@ -92,7 +92,9 @@ namespace SeedClicker
                 {
                     if (dx == 0 && dy == 0) continue;
                     var c = new Cell(w.x + dx, w.y + dy);
-                    if (fields.ContainsKey(c) || (HasWall(c) && PlantAt(c) != null)) list.Add(c);
+                    // nur dort giessen, wo es etwas bringt: wachsende Saat (gegossen = doppelt so schnell)
+                    var t = PlantAt(c);
+                    if (t != null && t != w && !t.Grown && t.x == c.x && t.y == c.y) list.Add(c);
                 }
             return list;
         }
@@ -106,6 +108,7 @@ namespace SeedClicker
                 waterTapCool = 0.35f;
             }
             var targets = WaterTargets(p);
+            if (targets.Count == 0 && !big) return;   // nichts zu giessen: still bleiben
             var top = PlantBase(p) + new Vector2(0, CellSize * 0.75f);
             StartCoroutine(Fountain(top, big ? 0.22f : 0.14f, big ? 0.6f : 0.3f));
             Shockwave(PlantBase(p), big ? 1.4f : 0.8f, big ? 0.7f : 0.5f, new Color(0.6f, 0.85f, 1f, big ? 0.8f : 0.5f));
@@ -113,7 +116,7 @@ namespace SeedClicker
                 Particles.I?.Spawn(top, "drop", WaterCol, new Vector3(UnityEngine.Random.Range(-1.6f, 1.6f), UnityEngine.Random.Range(2.2f, 4f), 0), 0.7f, 0.09f, 0.05f, 8f);
             Sfx.Play("water", UnityEngine.Random.Range(big ? 0.8f : 1.1f, big ? 0.95f : 1.3f), big ? 0.55f : 0.22f);
             for (int i = targets.Count - 1; i > 0; i--) { int j = UnityEngine.Random.Range(0, i + 1); (targets[i], targets[j]) = (targets[j], targets[i]); }
-            int n = big ? targets.Count : Mathf.Min(targets.Count, 1 + p.Lv / 2);
+            int n = big ? targets.Count : Mathf.Min(targets.Count, 2 + p.Lv / 2);
             for (int i = 0; i < n; i++)
                 StartCoroutine(Droplet(top, targets[i], UnityEngine.Random.Range(0f, big ? 0.25f : 0.15f) + i * 0.04f, big));
         }
@@ -143,7 +146,7 @@ namespace SeedClicker
             sr.color = DropCol;
             sr.sortingOrder = 30005;
             float size = (big ? 0.15f : 0.12f) / Mathf.Max(0.01f, sr.sprite.bounds.size.x);
-            float dur = 0.35f + Vector2.Distance(from, to) * 0.12f;
+            float dur = 0.22f + Vector2.Distance(from, to) * 0.08f;
             float h = 0.6f + Vector2.Distance(from, to) * 0.25f;
             Vector2 prev = from;
             for (float k = 0f; k < 1f; k += Time.deltaTime / dur)
@@ -174,9 +177,6 @@ namespace SeedClicker
             Shockwave(at, big ? 0.22f : 0.18f, 0.55f, new Color(0.65f, 0.88f, 1f, 0.45f));
             Sfx.Play("pop", UnityEngine.Random.Range(1.4f, 1.8f), big ? 0.25f : 0.12f);
             if (fields.ContainsKey(c)) wetFlash[c] = 1f;
-            // getroffene Pflanze wippt kurz (Feder wie beim Antippen, nur sanfter)
-            var p = PlantAt(c);
-            if (p != null && plantViews.TryGetValue(new Cell(p.x, p.y), out var v)) { v.syVel -= big ? 3f : 2f; v.tiltVel += UnityEngine.Random.Range(-40f, 40f); }
         }
     }
 }

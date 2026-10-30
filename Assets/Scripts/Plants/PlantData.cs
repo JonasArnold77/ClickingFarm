@@ -17,6 +17,7 @@ namespace SeedClicker
         public float widen = 1f;         // Breiten-Faktor des Koerpers bei "single"
         public string[] mutationNames;   // Namen der 4 Formen (Grundform, Mutation 1-3)
         public string character;         // Charakter bei "single": "fire" (Feuerweizen), "spark" (Blitzmais)
+        public float sway = 1f;          // Wiegen im Wind (0 = feste Pflanze, z. B. Pilze)
     }
     [Serializable] public class MonsterDefW { public string id, name, art, tint, weakTo; public float hp, speed, damage, scale, weight; public int firstWave; }
     [Serializable] public class WaveDef

@@ -242,9 +242,9 @@ namespace SeedClicker
             if (!plantViews.TryGetValue(new Cell(p.x, p.y), out var v)) return;
             var basePos = (Vector2)v.root.position;
             var top = basePos + new Vector2(0, (v.sr.bounds.max.y - basePos.y) * 0.75f);
-            v.sy = Mathf.Min(v.sy, -0.15f); v.flash = Mathf.Max(v.flash, 0.4f);
+            v.sy = Mathf.Min(v.sy, -0.05f); v.flash = Mathf.Max(v.flash, 0.3f);
             PunchField(new Cell(p.x, p.y), 0.4f);
-            if (plantViews.TryGetValue(new Cell(from.x, from.y), out var fv)) fv.sy = Mathf.Min(fv.sy, -0.12f);
+            if (plantViews.TryGetValue(new Cell(from.x, from.y), out var fv)) fv.sy = Mathf.Min(fv.sy, -0.04f);
             Particles.I?.Spawn(basePos + new Vector2(0, 0.15f), "spark", new Color(0.8f, 1f, 0.6f), Vector3.up * 0.6f, 0.3f, 0.1f, 0f, 0f);
             Sfx.Play("tick", UnityEngine.Random.Range(1.6f, 1.9f), 0.15f);
             if (!p.Grown)
