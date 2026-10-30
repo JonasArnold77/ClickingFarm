@@ -355,6 +355,7 @@ namespace SeedClicker
             UpdateWalls(Time.deltaTime);
             UpdateRocks(Time.deltaTime);
             UpdateEconomy(Time.deltaTime);
+            UpdateWatering(Time.deltaTime);
             UpdateSeason(Time.deltaTime);
             ambientT -= Time.deltaTime;
             if (ambientT > 0 || Particles.I == null) return;

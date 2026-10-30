@@ -329,9 +329,6 @@ namespace SeedClicker
                     var pos = CellCenter(new Cell(p.x, p.y)) + new Vector2(0, 0.4f);
                     Particles.I?.Spawn(pos, "square", p.Role == "bee" ? new Color(1f, 0.8f, 0.2f) : new Color(1f, 0.88f, 0.35f), Vector3.up * 0.8f, 0.7f, 0.06f, 0.03f, 0f);
                 }
-                foreach (var p in save.planted)
-                    if (p.Grown && p.Role == "water" && UnityEngine.Random.value < 0.6f)
-                        Particles.I?.Burst(CellCenter(new Cell(p.x, p.y)) + new Vector2(0, 0.3f), "square", new Color(0.55f, 0.8f, 1f, 0.9f), 3, 1.2f, 0.5f, 0.04f, 4f, 1.5f);
             }
             // gegossene Felder sind dunkler
             fieldTintT -= dt;
@@ -340,7 +337,7 @@ namespace SeedClicker
                 fieldTintT = 0.5f;
                 foreach (var kv in fields)
                 {
-                    if (kv.Value == null) continue;
+                    if (kv.Value == null || wetFlash.ContainsKey(kv.Key)) continue;
                     var p = PlantAt(kv.Key);
                     bool wet = p != null ? IsWatered(p) : GrownNear(new PlantedState { x = kv.Key.x, y = kv.Key.y }, "water", 2 + (int)UpgradeAdd("water")) > 0;
                     kv.Value.color = wet ? new Color(0.7f, 0.68f, 0.8f) : Color.white;

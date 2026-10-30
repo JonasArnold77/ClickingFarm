@@ -390,6 +390,7 @@ namespace SeedClicker
                     Particles.I?.Burst(top, "square", new Color(1f, 0.85f, 0.3f), 3, 2.2f, 0.5f, 0.06f, 5f, 1.5f);
                     Sfx.Play("coin", UnityEngine.Random.Range(1.1f, 1.3f), 0.5f);
                 }
+                if (p.Role == "water") WaterPulse(p, true);   // Tipp auf reifes Tauschilf giesst sofort alles im Umkreis
                 if (p.xp >= taps) LevelUp(p, v, basePos, top);
                 else UpdatePlantSprite(p, v);
                 save.Save();

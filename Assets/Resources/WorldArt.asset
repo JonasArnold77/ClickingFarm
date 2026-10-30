@@ -275,3 +275,5 @@ MonoBehaviour:
     prefab: {fileID: 5531231052371847854, guid: 60c88e966a0f8324da766221921ee65f, type: 3}
   - name: firework
     prefab: {fileID: 2060212803351811498, guid: 38b99d63cdad9994b89d14c10a8783ce, type: 3}
+  - name: waterFountain
+    prefab: {fileID: 5582959372779851105, guid: f6a3c3d847782f842adfa192f9ad05ed, type: 3}
