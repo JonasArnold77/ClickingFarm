@@ -183,3 +183,7 @@
 - Bäche fließen nur um Gärten herum: nie auf ein Feld, und die Vorschau endet am ersten Feld oder Hindernis (springt nicht darüber). Felder lassen sich nicht auf einen Bach legen.
 - Pflanzen auf Feldern direkt am Bach (auch schräg) gelten als gegossen und wachsen ×1,5 schneller und produzieren ×1,5 mehr von selbst (`growth`, `produce`).
 - Look: comichaft – dicke dunkelblaue Kontur, kräftiges Türkis, heller Schaumrand, grasiger Uferstreifen, Glanzflecken. Bewegung: Helligkeitswellen laufen den Bach entlang, weiße Strömungsstriche ziehen in Fließrichtung (Richtung, in die gezogen wurde), ab und zu glitzert es.
+
+## Geboostete Felder sichtbar machen
+- `WorldBuilder.Boosts.cs`, `WorldUI.Boosts.cs`: Jedes Feld, das verstärkt wird (Totem, Bach, Tauschilf, Dünger, Verstärker, Vogelscheuche, Brunnen, Treibhaus), schimmert leicht in der Farbe seiner ersten Quelle; ein heller Schimmer wandert schräg über die Felder, vereinzelt glitzert es.
+- Maus über einem geboosteten Feld: pulsierender Rahmen ums Feld, von jeder Quelle eine leuchtende Raute und eine Linie aus Strichen, die zum Feld wandern; neben dem Zeiger eine Liste „Geboostet durch:“ mit jeder Quelle in ihrer Farbe. Ohne Maus (Handy) erscheinen die Linien für die gerade geöffnete Pflanze. Im Bau- und Platzier-Modus aus.

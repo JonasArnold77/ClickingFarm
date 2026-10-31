@@ -89,6 +89,9 @@ namespace SeedClicker
             // Maus ohne Druck: geplante Mauer folgt dem Zeiger
             var wbh = WorldBuilder.I;
             if (!down && wbh != null && wbh.PlanFollows && !OverUI(-1)) wbh.UpdateWallPlan(World(Input.mousePosition));
+            // Maus ueber einem Feld: zeigen, woher es geboostet wird
+            if (wbh != null) wbh.HoverCell = !down && !OverUI(-1) && !wbh.BuildMode && !wbh.Placing && wbh.PlacingStructure == null && !wbh.FieldPlanActive
+                ? wbh.TapCell(World(Input.mousePosition)) : (Cell?)null;
             if (Input.GetMouseButtonDown(0)) PointerDown(Input.mousePosition, -1);
             else if (Input.GetMouseButton(0) && down) PointerMove(Input.mousePosition);
             if (Input.GetMouseButtonUp(0) && down) PointerUp(Input.mousePosition);
