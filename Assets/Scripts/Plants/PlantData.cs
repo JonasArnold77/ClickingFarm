@@ -418,7 +418,7 @@ namespace SeedClicker
     [Serializable] public class KnolliJob { public bool set; public int x, y; }
     /// <summary>Stufe einer Waffe (an der Waffenbank geschmiedet) und Schlaege zur naechsten Stufe.</summary>
     /// <summary>Ein aufgestelltes Bauwerk (Spielstand). placed = false: gekauft, wartet auf seinen Platz.</summary>
-    [Serializable] public class StructureState { public string id; public int x, y, lv = 1; public float xp; public bool placed, stone, moon; public bool anchored; public int bx, by; }   // bx/by: Feld, zu dem ein Totem gehoert
+    [Serializable] public class StructureState { public string id; public int x, y, lv = 1; public float xp; public bool placed, stone, moon; public bool anchored; public int bx, by; public bool area; public int ax0, ay0, ax1, ay1; }   // Totem: aufgezogene Flaeche (area) oder altes Beet (bx/by)
     [Serializable] public class WeaponLevel
     {
         public string id; public int lv = 1; public float xp;

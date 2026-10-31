@@ -33,8 +33,8 @@ namespace SeedClicker
             totemMap.Clear(); totemBeds.Clear();
             foreach (var s in save.structures)
             {
-                if (!s.placed || !s.anchored || !IsTotem(s)) continue;
-                var bed = Bed(new Cell(s.bx, s.by));
+                if (!s.placed || !(s.anchored || s.area) || !IsTotem(s)) continue;
+                var bed = s.area ? AreaOf(s) : Bed(new Cell(s.bx, s.by));
                 totemBeds[s] = bed;
                 bool free = true;
                 foreach (var c in bed) if (totemMap.ContainsKey(c)) { free = false; break; }
@@ -42,6 +42,65 @@ namespace SeedClicker
                 foreach (var c in bed) totemMap[c] = s;
             }
         }
+        static HashSet<Cell> AreaOf(StructureState s)
+        {
+            var set = new HashSet<Cell>();
+            for (int y = Mathf.Min(s.ay0, s.ay1); y <= Mathf.Max(s.ay0, s.ay1); y++)
+                for (int x = Mathf.Min(s.ax0, s.ax1); x <= Mathf.Max(s.ax0, s.ax1); x++) set.Add(new Cell(x, y));
+            return set;
+        }
+
+        /// <summary>Liegt diese Zelle schon in der Flaeche eines anderen Totems?</summary>
+        bool TotemTaken(Cell c) { RefreshTotems(); return totemMap.TryGetValue(c, out var o) && o != pendingStruct; }
+
+        /// <summary>Totemflaeche aufziehen wie Felder: 1. Tipp Ecke, 2. Tipp Reihe fest, 3. Tipp Flaeche anlegen.</summary>
+        public bool TotemClick(Vector2 w)
+        {
+            if (pendingStruct == null || !IsTotem(pendingStruct)) return false;
+            var c = TapCell(w);
+            if (!wallAnchor.HasValue)
+            {
+                if (TotemTaken(c)) { Sfx.Play("error", 1f, 0.5f); Floater?.Invoke(CellCenter(c) + new Vector2(0, 0.6f), "Hier wirkt schon ein Totem", new Color(1f, 0.6f, 0.5f)); return true; }
+                wallAnchor = c; planFields = true; planTotem = true; fieldRowFixed = false;
+                UpdateWallPlan(w);
+                Floater?.Invoke(CellCenter(c) + new Vector2(0, 0.6f), "Reihe aufziehen – nochmal tippen", new Color(1f, 0.92f, 0.6f));
+                Sfx.Play("tick", 1.2f, 0.5f); Haptics.Tap(8);
+                return true;
+            }
+            if (!fieldRowFixed)
+            {
+                UpdateWallPlan(w);
+                fieldRowFixed = true;
+                Floater?.Invoke(CellCenter(fieldRowEnd) + new Vector2(0, 0.6f), "In die Breite ziehen – nochmal tippen", new Color(1f, 0.92f, 0.6f));
+                Sfx.Play("tick", 1.35f, 0.5f); Haptics.Tap(8);
+                UpdateWallPlan(w);
+                return true;
+            }
+            UpdateWallPlan(w);
+            var rect = FieldPath(planTo);
+            foreach (var rc in rect)
+                if (TotemTaken(rc))
+                {
+                    Sfx.Play("error", 1f, 0.5f);
+                    Floater?.Invoke(CellCenter(rc) + new Vector2(0, 0.6f), "Überschneidet ein anderes Totem", new Color(1f, 0.6f, 0.5f));
+                    return true;
+                }
+            int x0 = int.MaxValue, y0 = int.MaxValue, x1 = int.MinValue, y1 = int.MinValue;
+            foreach (var rc in rect) { x0 = Mathf.Min(x0, rc.x); y0 = Mathf.Min(y0, rc.y); x1 = Mathf.Max(x1, rc.x); y1 = Mathf.Max(y1, rc.y); }
+            CancelWallPlan();
+            var st = pendingStruct;
+            pendingStruct = null;
+            st.area = true; st.anchored = false;
+            st.ax0 = x0; st.ay0 = y0; st.ax1 = x1; st.ay1 = y1;
+            st.x = (x0 + x1) / 2; st.y = (y0 + y1) / 2; st.placed = true;
+            CreateStructView(st, true);
+            TotemPlaced(st);
+            StructurePlacing?.Invoke(null);
+            RefreshGhosts();
+            save.Save();
+            return true;
+        }
+
         /// <summary>Nach Aenderungen an Feldern oder Totems sofort neu zuordnen.</summary>
         void DirtyTotems() => totemFrame = -1;
 
@@ -114,8 +173,8 @@ namespace SeedClicker
             bedFlash = bed; bedFlashT = 1.6f;
             var d = PlantBalance.I.Structure(st.id);
             float share = TotemShare(st);
-            string msg = share >= 1f ? "Wacht über dieses Beet (" + bed.Count + " Felder)"
-                                     : "Beet zu groß (" + bed.Count + " Felder) – wirkt nur zu " + Mathf.RoundToInt(share * 100) + " %";
+            string msg = share >= 1f ? "Totem wirkt auf " + bed.Count + " Felder"
+                                     : "Fläche zu groß (" + bed.Count + " Felder) – wirkt nur zu " + Mathf.RoundToInt(share * 100) + " %";
             Floater?.Invoke(StructPos(st) + new Vector2(0, 1.2f), msg, share >= 1f ? new Color(0.8f, 1f, 0.7f) : new Color(1f, 0.8f, 0.5f));
         }
 
@@ -217,11 +276,11 @@ namespace SeedClicker
         {
             var d = PlantBalance.I.Structure(s.id);
             var bed = TotemBed(s);
-            if (bed == null || bed.Count == 0) return "Kein Beet mehr – versetze das Totem an ein Feld";
-            if (!TotemActive(s)) return "Dieses Beet hat schon ein Totem – hier wirkt es nicht";
+            if (bed == null || bed.Count == 0) return "Keine Fläche mehr – versetze das Totem";
+            if (!TotemActive(s)) return "Hier wirkt schon ein anderes Totem";
             float share = TotemShare(s);
             string txt = BoostName(d.boost) + " ×" + (1f + StructValue(s) * share).ToString("0.##") + " · " + bed.Count + " Felder";
-            if (share < 1f) txt += "\nBeet zu groß: voll wirkt es nur bis " + d.fullCells + " Felder";
+            if (share < 1f) txt += "\nFläche zu groß: voll wirkt es nur bis " + d.fullCells + " Felder";
             else txt += " (voll bis " + d.fullCells + ")";
             return txt;
         }

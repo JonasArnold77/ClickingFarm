@@ -13,6 +13,7 @@ namespace SeedClicker
     {
         Cell? wallAnchor;
         bool planFields;   // Vorschau fuer Felder statt Mauern
+        bool planTotem;    // ... bzw. fuer eine Totemflaeche (gleiche drei Klicks)
         // Felder in drei Klicks: Anfang -> Reihe festlegen -> in die andere Richtung aufziehen -> anlegen
         bool fieldRowFixed, fieldRowHoriz;
         Cell fieldRowEnd;
@@ -21,7 +22,7 @@ namespace SeedClicker
         readonly List<Cell> planOk = new List<Cell>();
         Cell planTo;
 
-        static readonly Color PlanGreen = new Color(0.45f, 1f, 0.45f, 0.55f), PlanRed = new Color(1f, 0.4f, 0.35f, 0.45f);
+        static readonly Color PlanGreen = new Color(0.45f, 1f, 0.45f, 0.55f), PlanRed = new Color(1f, 0.4f, 0.35f, 0.45f), PlanGold = new Color(1f, 0.85f, 0.35f, 0.5f);
 
         public bool WallAnchorActive => wallAnchor.HasValue && !planFields;
         public bool FieldPlanActive => wallAnchor.HasValue && planFields;
@@ -33,6 +34,7 @@ namespace SeedClicker
         /// false = hier geht kein Feld (dann macht der Tipp etwas anderes).</summary>
         public bool FieldClick(Vector2 w)
         {
+            if (planTotem) return TotemClick(w);
             var c = TapCell(w);
             if (!wallAnchor.HasValue)
             {
@@ -129,6 +131,7 @@ namespace SeedClicker
         {
             wallAnchor = null;
             planFields = false;
+            planTotem = false;
             fieldRowFixed = false;
             planOk.Clear();
             foreach (var sr in planViews) if (sr != null) sr.enabled = false;
@@ -159,8 +162,8 @@ namespace SeedClicker
             int n = 0;
             foreach (var c in path)
             {
-                if (planFields ? HasField(c) : HasWall(c)) continue;   // schon da: nichts zeigen
-                bool ok = planFields ? CanPlaceField(c) : CanPlaceWall(c) && budget >= WallWood - 0.0001f;
+                if (!planTotem && (planFields ? HasField(c) : HasWall(c))) continue;   // schon da: nichts zeigen
+                bool ok = planTotem ? !TotemTaken(c) : planFields ? CanPlaceField(c) : CanPlaceWall(c) && budget >= WallWood - 0.0001f;
                 if (ok) { if (!planFields) budget -= WallWood; planOk.Add(c); }
                 var sr = PlanView(n++);
                 sr.enabled = true;
@@ -179,7 +182,7 @@ namespace SeedClicker
                     sr.transform.position = WallFoot(c);
                     sr.sortingOrder = Order(WallFoot(c).y + 0.1f) + 3;
                 }
-                sr.color = ok ? PlanGreen : PlanRed;
+                sr.color = ok ? (planTotem ? PlanGold : PlanGreen) : PlanRed;
             }
             for (int i = n; i < planViews.Count; i++) if (planViews[i] != null) planViews[i].enabled = false;
         }
@@ -230,7 +233,7 @@ namespace SeedClicker
             foreach (var sr in planViews)
             {
                 if (sr == null || !sr.enabled) continue;
-                var c = sr.color; c.a = (c.g > 0.9f ? PlanGreen.a : PlanRed.a) * k; sr.color = c;
+                var c = sr.color; c.a = (c.g > 0.8f ? PlanGreen.a : PlanRed.a) * k; sr.color = c;
             }
         }
     }
