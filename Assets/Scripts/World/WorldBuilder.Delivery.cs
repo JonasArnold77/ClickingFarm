@@ -8,7 +8,7 @@ namespace SeedClicker
     /// Ernte als Produkte: Ernte-Pflanzen (Radieschen, Weissruebe, Bienenblume) bringen keine Muenzen mehr direkt, sondern
     /// ihr eigenes Produkt (catalog.product), das sich als kleiner Vorrat neben der Pflanze stapelt – beim Antippen und
     /// langsam von selbst. Knollis (kleine braune, runde Wesen) sammeln den Vorrat ein und tragen ihn zur Lieferkiste
-    /// beim Haus. Am naechsten Morgen (nach der Nacht) wird die Kiste ausbezahlt. Werte in plants.json -> delivery.
+    /// beim Haus. Sobald die Ernte in der Kiste liegt, gibt es das Geld. Werte in plants.json -> delivery.
     /// </summary>
     public partial class WorldBuilder
     {
@@ -21,7 +21,7 @@ namespace SeedClicker
 
         public static bool MakesProduct(PlantedState p) => p != null && (p.Role == "harvest" || p.Role == "bee");
         public static string ProductName(CatalogDef d) => d == null ? "" : !string.IsNullOrEmpty(d.product) ? d.product : d.name;
-        const int RingSlots = 12, RingLayers = 4;   // Bild: 12 Stueck je Kreis, darueber weitere Lagen (der Vorrat selbst ist unbegrenzt)
+        const int PileShown = 48;   // so viele Stuecke werden gezeigt (der Vorrat selbst ist unbegrenzt)
 
         /// <summary>Wert eines Produkts dieser Pflanze (Ernte: wie frueher ein Tipp; Honig: ein Glas = einige Sekunden Honig).</summary>
         public double ItemValue(PlantedState p)
@@ -38,7 +38,7 @@ namespace SeedClicker
             p.stockValue += add * valueEach;
             if (fxFrom.HasValue)
             {
-                var pile = RingPos(p, Mathf.Min(p.stock - 1, RingSlots * RingLayers - 1));
+                var pile = ScatterPos(p, Mathf.Min(p.stock - 1, PileShown - 1));
                 var spr = plantViews.TryGetValue(new Cell(p.x, p.y), out var v) && v.sr != null ? v.sr.sprite : null;
                 StartCoroutine(Leaf(fxFrom.Value, pile, null, spr, null, 0.18f));
                 Floater?.Invoke(fxFrom.Value + new Vector2(0.25f, 0.3f), "+" + add + " " + ProductName(PlantBalance.I.Plant(p.type)), new Color(1f, 0.92f, 0.6f));
@@ -48,13 +48,22 @@ namespace SeedClicker
 
         Vector2 PilePos(PlantedState p) => PlantBase(p) + new Vector2(CellSize * 0.32f, -CellSize * 0.1f);
 
-        /// <summary>Platz i im Kreis um die Pflanze (flach gedrueckt fuer die Schraegsicht; Platz 0 vorn, dann reihum).</summary>
-        Vector2 RingPos(PlantedState p, int i)
+        /// <summary>Feste Zufallszahl 0..1 je Pflanze, Stueck und Kanal (bleibt beim Neuzeichnen gleich).</summary>
+        static float Hash(PlantedState p, int i, int ch)
         {
-            int layer = i / RingSlots, k = i % RingSlots;
-            // jede Lage leicht versetzt und etwas hoeher, damit es nach einem wachsenden Haufen aussieht
-            float a = -Mathf.PI / 2f + (k + layer * 0.5f) * Mathf.PI * 2f / RingSlots;
-            return PlantBase(p) + new Vector2(0, CellSize * 0.08f + layer * 0.045f) + new Vector2(Mathf.Cos(a) * CellSize * (0.42f - layer * 0.03f), Mathf.Sin(a) * CellSize * 0.26f);
+            float v = Mathf.Sin((i + 1) * 12.9898f + p.x * 78.233f + p.y * 37.719f + ch * 4.1414f) * 43758.5453f;
+            return v - Mathf.Floor(v);
+        }
+
+        /// <summary>Platz i: wild verstreut im Feld und rund ums Feld herum (nicht direkt auf der Pflanze).</summary>
+        Vector2 ScatterPos(PlantedState p, int i)
+        {
+            var center = PlantBase(p) + new Vector2(0, CellSize * 0.38f);   // Feldmitte (auf Mauer/Pult mit angehoben)
+            float dx = (Hash(p, i, 0) * 2f - 1f) * CellSize * 0.66f;
+            float dy = (Hash(p, i, 1) * 2f - 1f) * CellSize * 0.6f;
+            // die Mitte (dort steht die Pflanze) freilassen
+            if (Mathf.Abs(dx) < CellSize * 0.18f && Mathf.Abs(dy) < CellSize * 0.2f) dx = Mathf.Sign(dx + 0.001f) * CellSize * (0.2f + Hash(p, i, 2) * 0.3f);
+            return center + new Vector2(dx, dy);
         }
 
         /// <summary>Von selbst nachproduzieren (vorher verdienten diese Pflanzen Muenzen pro Sekunde).</summary>
@@ -72,12 +81,12 @@ namespace SeedClicker
             UpdatePiles();
         }
 
-        /// <summary>Die Ernte liegt kreisrund um die Pflanze verteilt: ein Mini-Bild je Stueck im Vorrat.</summary>
+        /// <summary>Die Ernte liegt wild im und ums Feld verstreut: ein Mini-Bild je Stueck im Vorrat.</summary>
         void UpdatePiles()
         {
             foreach (var p in save.planted)
             {
-                int show = Mathf.Min(RingSlots * RingLayers, p.stock);
+                int show = Mathf.Min(PileShown, p.stock);
                 pileViews.TryGetValue(p, out var list);
                 if (list == null && show == 0) continue;
                 if (list == null) pileViews[p] = list = new List<SpriteRenderer>();
@@ -96,14 +105,13 @@ namespace SeedClicker
                     sr.sprite = spr;
                     float s = 0.15f / Mathf.Max(0.01f, spr.bounds.size.x);
                     sr.transform.localScale = Vector3.one * s;
-                    var pos = RingPos(p, i);
+                    var pos = ScatterPos(p, i);
                     sr.transform.position = pos;
                     // hinter der Pflanze liegende Stuecke werden von ihr verdeckt, vordere liegen davor
                     int plantOrder = Order(PlantSortY(p, PlantBase(p).y));   // auch auf Mauer/Pult richtig
-                    bool behind = Mathf.Sin(-Mathf.PI / 2f + ((i % RingSlots) + (i / RingSlots) * 0.5f) * Mathf.PI * 2f / RingSlots) > 0.05f;
-                    sr.sortingOrder = plantOrder + (behind ? -3 : 12) + i / RingSlots;
-                    // voller Vorrat wippt, damit man es sieht
-                    sr.transform.rotation = Quaternion.Euler(0, 0, ((i * 37) % 21 - 10) * 1.2f);
+                    bool behind = pos.y > PlantBase(p).y + CellSize * 0.1f;
+                    sr.sortingOrder = plantOrder + (behind ? -3 : 12);
+                    sr.transform.rotation = Quaternion.Euler(0, 0, (Hash(p, i, 3) * 2f - 1f) * 35f);
                 }
             }
             // Haeufchen von Pflanzen, die es nicht mehr gibt
@@ -148,22 +156,22 @@ namespace SeedClicker
         {
             crateSquash = 0.6f;
             Sfx.Play("pop", 0.9f);
-            Floater?.Invoke(cratePos + new Vector2(0, 1f), save.depotCount > 0
-                ? "Lieferkiste: " + save.depotCount + " Stück – morgen +" + Num.Short(save.depotValue) + " Münzen"
-                : "Lieferkiste ist leer – Knollis bringen die Ernte her", new Color(1f, 0.92f, 0.6f));
+            Floater?.Invoke(cratePos + new Vector2(0, 1f), save.deliveredCount > 0
+                ? "Lieferkiste: schon " + save.deliveredCount + " Stück verkauft"
+                : "Lieferkiste – Knollis bringen die Ernte her, Geld gibt es sofort", new Color(1f, 0.92f, 0.6f));
         }
 
         void Deposit(int n, double value, Vector2 at)
         {
-            save.depotCount += n;
-            save.depotValue += value;
+            // sofort bezahlt, sobald die Ernte in der Kiste liegt
+            save.deliveredCount += n;
             crateSquash = 0.7f;
-            Particles.I?.Burst(cratePos + new Vector2(0, 0.5f), "star", new Color(1f, 0.9f, 0.5f), 6, 1.8f, 0.5f, 0.15f, 1f, 1f);
-            Floater?.Invoke(cratePos + new Vector2(0, 0.8f), "+" + n + " · " + Num.Short(save.depotValue) + " morgen", new Color(1f, 0.92f, 0.6f));
-            Sfx.Play("pop", UnityEngine.Random.Range(1.1f, 1.3f), 0.5f);
+            Particles.I?.Burst(cratePos + new Vector2(0, 0.5f), "square", new Color(1f, 0.85f, 0.3f), 8, 2.2f, 0.6f, 0.08f, 3f, 1.2f);
+            AddCoins(value, cratePos + new Vector2(0, 0.8f));
+            Sfx.Play("coin", UnityEngine.Random.Range(1.1f, 1.3f), 0.6f);
         }
 
-        /// <summary>Am Morgen nach der Nacht: Lieferkiste auszahlen.</summary>
+        /// <summary>Alte Spielstaende: was noch in der Kiste wartete, am naechsten Morgen auszahlen.</summary>
         void PayDelivery()
         {
             if (save.depotCount <= 0 && save.depotValue <= 0) return;

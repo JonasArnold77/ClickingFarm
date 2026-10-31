@@ -111,7 +111,7 @@ namespace SeedClicker
         public static string Desc(CatalogDef d) => d.role switch
         {
             "water" => "Gießt die Felder links, rechts, oben und unten: wachsen doppelt so schnell, Ernte +50 %.",
-            "harvest" => "Reif: jeder Tipp bringt " + (string.IsNullOrEmpty(d.product) ? d.name : d.product) + ", dazu wächst von selbst nach. Knollis tragen es zur Lieferkiste, Geld gibt es am nächsten Morgen.",
+            "harvest" => "Reif: jeder Tipp bringt " + (string.IsNullOrEmpty(d.product) ? d.name : d.product) + ", dazu wächst von selbst nach. Knollis tragen es zur Lieferkiste – dort gibt es sofort Geld.",
             "fert" => "Direkte Nachbarn wachsen schneller und bringen +50 % Münzen.",
             "boost" => "Tipps auf Pflanzen im Umkreis von 2 zählen doppelt.",
             "auto" => "Klickt von selbst das Feld vor sich – schneller mit jeder Stufe.",
