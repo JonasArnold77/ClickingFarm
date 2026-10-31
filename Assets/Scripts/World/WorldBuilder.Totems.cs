@@ -100,6 +100,93 @@ namespace SeedClicker
             Floater?.Invoke(StructPos(st) + new Vector2(0, 1.2f), msg, share >= 1f ? new Color(0.8f, 1f, 0.7f) : new Color(1f, 0.8f, 0.5f));
         }
 
+        // ------------------------------------------------------------------ Leuchtende Umrandung des Beets
+
+        readonly List<SpriteRenderer> outlinePool = new List<SpriteRenderer>();
+        int outlineUsed;
+
+        /// <summary>Farbe nach Staerke (Bonus, z. B. 1 = +100 %): Gruen → Tuerkis → Blau → Violett → Gold.</summary>
+        static readonly (float at, Color col)[] OutlineTiers =
+        {
+            (0f, new Color(0.55f, 1f, 0.45f)), (0.75f, new Color(0.3f, 1f, 0.85f)), (1.25f, new Color(0.35f, 0.6f, 1f)),
+            (2f, new Color(0.8f, 0.4f, 1f)), (3f, new Color(1f, 0.82f, 0.25f)),
+        };
+
+        public static Color OutlineColor(float strength)
+        {
+            for (int i = 1; i < OutlineTiers.Length; i++)
+                if (strength < OutlineTiers[i].at)
+                    return Color.Lerp(OutlineTiers[i - 1].col, OutlineTiers[i].col, Mathf.InverseLerp(OutlineTiers[i - 1].at, OutlineTiers[i].at, strength));
+            return OutlineTiers[OutlineTiers.Length - 1].col;
+        }
+
+        /// <summary>Wirkung, die tatsaechlich ankommt (Wert × Anteil) – bestimmt Farbe, Tempo und Dicke der Umrandung.</summary>
+        public float TotemStrength(StructureState s) => TotemActive(s) ? StructValue(s) * TotemShare(s) : 0f;
+
+        SpriteRenderer OutlineSr()
+        {
+            if (outlineUsed >= outlinePool.Count)
+            {
+                var sr = new GameObject("TotemOutline").AddComponent<SpriteRenderer>();
+                sr.transform.SetParent(objects, false);
+                sr.sprite = Art.Get("white");
+                sr.sharedMaterial = UnlitMat;   // leuchtet auch nachts
+                outlinePool.Add(sr);
+            }
+            var r = outlinePool[outlineUsed++];
+            r.enabled = true;
+            return r;
+        }
+
+        void Strip(Vector2 mid, Vector2 dir, float len, float thick, Color col, int order)
+        {
+            var sr = OutlineSr();
+            float w = Mathf.Max(0.01f, sr.sprite.bounds.size.x);
+            sr.transform.position = mid;
+            sr.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
+            sr.transform.localScale = new Vector3(len / w, thick / w, 1f);
+            sr.color = col;
+            sr.sortingOrder = order;
+        }
+
+        /// <summary>Jedes Beet mit Totem bekommt eine leuchtende Umrandung, auf der Lichtstriche ringsum laufen.
+        /// Staerkeres Totem: andere Farbe, schneller, dicker, mehr Striche.</summary>
+        void UpdateTotemOutlines()
+        {
+            outlineUsed = 0;
+            foreach (var s in save.structures)
+            {
+                if (!s.placed || !IsTotem(s)) continue;
+                float str = TotemStrength(s);
+                if (str <= 0f) continue;
+                var bed = TotemBed(s);
+                var col = OutlineColor(str);
+                float k = Mathf.Clamp01(str / 3f);
+                float thick = 0.025f + 0.025f * k, speed = 0.6f + 1.4f * k;
+                int dashes = 1 + Mathf.RoundToInt(2f * k);
+                float pulse = 0.55f + 0.2f * Mathf.Sin(Time.time * (2f + 3f * k) + s.x);
+                float t = Time.time * speed;
+                foreach (var c in bed)
+                    for (int d = 0; d < 4; d++)
+                    {
+                        var nb = Step(c, d, 1);
+                        if (bed.Contains(nb)) continue;
+                        // Kante nach aussen; gegen den Uhrzeigersinn umlaufen (Beet liegt links), so laufen die Striche nahtlos weiter
+                        var n = CellCenter(nb) - CellCenter(c); n.Normalize();
+                        var tan = new Vector2(-n.y, n.x);
+                        var mid = CellCenter(c) + n * (CellSize * 0.5f - thick * 0.5f);
+                        var start = mid - tan * CellSize * 0.5f;
+                        Strip(mid, tan, CellSize + thick, thick, new Color(col.r, col.g, col.b, 0.5f * pulse + 0.3f), -32280);
+                        for (int i = 0; i < dashes; i++)
+                        {
+                            float u = Mathf.Repeat(t + i / (float)dashes, 1f);
+                            Strip(start + tan * CellSize * u, tan, CellSize * 0.28f, thick * 1.9f, Color.Lerp(col, Color.white, 0.25f), -32279);
+                        }
+                    }
+            }
+            for (int i = outlineUsed; i < outlinePool.Count; i++) outlinePool[i].enabled = false;
+        }
+
         static string BoostName(string boost) => boost == "growth" ? "Wachstum" : boost == "harvest" ? "Ernte pro Tipp" : "Ernte von selbst";
 
         string TotemSummary(StructureState s)

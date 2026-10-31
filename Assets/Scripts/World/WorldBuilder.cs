@@ -367,6 +367,7 @@ namespace SeedClicker
             UpdateProducts(Time.deltaTime);
             UpdateKnollis(Time.deltaTime);
             UpdateStructures(Time.deltaTime);
+            UpdateTotemOutlines();
             UpdateHelpers(Time.deltaTime);
             UpdateSeason(Time.deltaTime);
             ambientT -= Time.deltaTime;
