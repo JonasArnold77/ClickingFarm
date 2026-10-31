@@ -11,7 +11,7 @@ namespace SeedClicker
     /// </summary>
     public partial class WorldBuilder
     {
-        public struct BoostSource { public string label; public Vector2 from; public Color col; }
+        public struct BoostSource { public string label; public Vector2 from; public Color col; public bool noLink; }   // noLink: keine Linie (Totem – seine Umrandung zeigt es schon)
 
         /// <summary>Feld unter dem Mauszeiger (null: keine Maus, ueber der Oberflaeche oder im Bau-Modus).</summary>
         public Cell? HoverCell { get; set; }
@@ -37,7 +37,7 @@ namespace SeedClicker
             if (totemMap.TryGetValue(c, out var t) && TotemActive(t))
             {
                 var d = PlantBalance.I.Structure(t.id);
-                list.Add(new BoostSource { label = d.name + ": " + BoostName(d.boost) + " ×" + (1f + StructValue(t) * TotemShare(t)).ToString("0.##"), from = TotemCenter(t), col = OutlineColor(TotemStrength(t)) });
+                list.Add(new BoostSource { label = d.name + ": " + BoostName(d.boost) + " ×" + (1f + StructValue(t) * TotemShare(t)).ToString("0.##"), from = TotemCenter(t), col = OutlineColor(TotemStrength(t)), noLink = true });
             }
             for (int dx = -1; dx <= 1 && rivers.Count > 0; dx++)
                 for (int dy = -1; dy <= 1; dy++)
@@ -183,6 +183,7 @@ namespace SeedClicker
                 }
                 foreach (var s in src)
                 {
+                    if (s.noLink) continue;
                     var dir = to - s.from;
                     float len = dir.magnitude;
                     // Quelle: leuchtende Raute
