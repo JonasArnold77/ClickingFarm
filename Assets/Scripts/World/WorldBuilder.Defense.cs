@@ -12,7 +12,7 @@ namespace SeedClicker
     /// </summary>
     public partial class WorldBuilder
     {
-        class WallView { public WallState st; public SpriteRenderer sr; public float shake, pop = 1f; }
+        class WallView { public WallState st; public SpriteRenderer sr, thornSr; public float shake, pop = 1f; }
         readonly Dictionary<Cell, WallView> walls = new Dictionary<Cell, WallView>();
         static Sprite wallSprite;
         bool wallMode;
@@ -125,6 +125,7 @@ namespace SeedClicker
             // Pflanzen obendrauf sortieren nach ihrem Fuss auf dem Boden (PlantSortY) und bleiben damit vorn
             sr.sortingOrder = Order(WallFoot(c).y + 0.1f);
             var v = new WallView { st = st, sr = sr, pop = fx ? 0f : 1f };
+            ApplyThornLook(v);
             walls[c] = v;
             ClearDecorAround(CellCenter(c), CellSize * 0.6f);
             if (fx)

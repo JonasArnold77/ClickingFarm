@@ -33,19 +33,25 @@ namespace SeedClicker
 
         /// <summary>Wachturm: schiesst auf den naechsten Zombie in Reichweite. true = getroffen.</summary>
         public int TowerHits { get; private set; }
-        public bool TowerShot(Vector2 from, float range, float dmg)
+        public bool TowerShot(Vector2 from, float range, float dmg, int shots = 1)
         {
             if (!Active) return false;
-            Monster best = null; float bd = range * range;
-            foreach (var m in monsters) { if (m.dead) continue; float d = (m.pos - from).sqrMagnitude; if (d < bd) { bd = d; best = m; } }
-            if (best == null) return false;
-            var p = Center(best);
-            Beam(from, p, new Color(0.75f, 0.95f, 1f));
-            best.knock += (best.pos - from).normalized * 0.2f;
-            Damage(best, dmg * (1f + 0.12f * (WaveNumber - 1)), null);
-            ImpactFx(p, 0.8f);
+            // shots > 1 (Mondblume): jeder Schuss auf einen anderen Zombie, solange es genug gibt
+            var used = new HashSet<Monster>();
+            for (int i = 0; i < shots; i++)
+            {
+                Monster best = null; float bd = range * range;
+                foreach (var m in monsters) { if (m.dead || used.Contains(m)) continue; float d = (m.pos - from).sqrMagnitude; if (d < bd) { bd = d; best = m; } }
+                if (best == null) { if (i == 0) return false; break; }
+                used.Add(best);
+                var p = Center(best);
+                Beam(from, p, i == 0 ? new Color(0.75f, 0.95f, 1f) : new Color(0.7f, 0.8f, 1f));
+                best.knock += (best.pos - from).normalized * 0.2f;
+                Damage(best, dmg * (1f + 0.12f * (WaveNumber - 1)), null);
+                ImpactFx(p, 0.8f);
+                TowerHits++;
+            }
             Sfx.Play("bow", Random.Range(1.1f, 1.25f), 0.5f);
-            TowerHits++;
             return true;
         }
         /// <summary>0 = bereit, 1 = gerade geschossen (fuer die Anzeige).</summary>

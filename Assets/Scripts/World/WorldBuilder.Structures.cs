@@ -29,8 +29,27 @@ namespace SeedClicker
 
         // ------------------------------------------------------------------ Werte
 
-        public float StructValue(StructureState s) { var d = PlantBalance.I.Structure(s.id); return d == null ? 0f : d.value + d.valuePerLevel * (s.lv - 1); }
-        public float StructRadius(StructureState s) { var d = PlantBalance.I.Structure(s.id); return d == null ? 0f : d.radius + d.radiusPerLevel * (s.lv - 1); }
+        public float StructValue(StructureState s)
+        {
+            var d = PlantBalance.I.Structure(s.id);
+            if (d == null) return 0f;
+            float v = d.value + d.valuePerLevel * (s.lv - 1);
+            if (s.stone && d.effect == "tower") v *= PlantBalance.I.Transforms.stoneTowerDamage;   // Steinturm trifft haerter
+            return v;
+        }
+
+        public float StructRadius(StructureState s)
+        {
+            var d = PlantBalance.I.Structure(s.id);
+            if (d == null) return 0f;
+            float r = d.radius + d.radiusPerLevel * (s.lv - 1);
+            if (s.stone && d.effect == "tower") r += PlantBalance.I.Transforms.stoneTowerRange;
+            if (s.moon && d.effect == "light") r *= 2f;   // Mondblume: Laterne leuchtet doppelt so weit
+            return r;
+        }
+
+        /// <summary>Bild eines Bauwerks (Wachturm aus Holz oder Stein).</summary>
+        public static Sprite StructSprite(StructureState s) => StructureArt.Get(s.stone ? s.id + "_stone" : s.id);
         Vector2 StructPos(StructureState s) => CellCenter(new Cell(s.x, s.y));
 
         /// <summary>Summe der Wirkung aller Bauwerke dieser Art, deren Umkreis pos erreicht (radius 0 = ueberall).</summary>
@@ -83,8 +102,8 @@ namespace SeedClicker
             {
                 case "scare": return "Tipps zählen ×" + (1f + v).ToString("0.##") + where;
                 case "water": return "Gießt alle Pflanzen" + where;
-                case "light": return "Zombies nehmen +" + Mathf.RoundToInt(v * 100) + " % Schaden" + where;
-                case "tower": return "Schießt nachts für " + v.ToString("0.#") + " Schaden" + where;
+                case "light": return "Zombies nehmen +" + Mathf.RoundToInt(v * 100) + " % Schaden" + where + (s.moon ? " · Mondlicht" : "");
+                case "tower": return (s.moon ? "Schießt nachts doppelt, je " : "Schießt nachts für ") + v.ToString("0.#") + " Schaden" + where + (s.stone ? " · Stein" : "");
                 case "bee": return "Honig +" + Mathf.RoundToInt(v * 100) + " %" + where;
                 case "forge": return "Hammerschläge +" + Mathf.RoundToInt(v * 100) + " % · Waffen " + s.lv + " Wellen früher";
                 case "greenhouse": return v.ToString("0.#") + " Wachstums-Tipps pro Sekunde" + where;
@@ -164,7 +183,7 @@ namespace SeedClicker
             var foot = StructPos(st) + new Vector2(0, -CellSize * 0.35f);
             var sr = new GameObject("Struct_" + st.id).AddComponent<SpriteRenderer>();
             sr.transform.SetParent(objects, false);
-            sr.sprite = StructureArt.Get(st.id);
+            sr.sprite = StructSprite(st);
             float scale = CellSize * 1.8f * d.scale / Mathf.Max(0.01f, sr.sprite.bounds.size.x);
             sr.transform.position = foot;
             sr.transform.localScale = Vector3.one * scale;
@@ -184,6 +203,7 @@ namespace SeedClicker
                 v.light.intensity = 0f;
             }
             structViews.Add(v);
+            ApplyStructLook(v);
             if (pop)
             {
                 Particles.I?.Burst(foot + new Vector2(0, 0.5f), "star", new Color(1f, 0.9f, 0.5f), 18, 3f, 0.8f, 0.3f, 1f, 1.5f);
@@ -191,6 +211,16 @@ namespace SeedClicker
                 Sfx.Play("unlock", 1.1f, 0.7f);
                 Haptics.Tap(30);
             }
+        }
+
+        /// <summary>Bild und Licht nach Verwandlungen: Stein-Turm, Mondlicht (kuehles, weites Licht).</summary>
+        void ApplyStructLook(StructView v)
+        {
+            v.sr.sprite = StructSprite(v.st);
+            if (v.light == null) return;
+            bool lantern = v.def.effect == "light";
+            v.light.pointLightOuterRadius = (lantern ? 2.5f : 1.4f) * (v.st.moon ? 2f : 1f);
+            if (v.st.moon) v.light.color = new Color(0.65f, 0.78f, 1f);
         }
 
         // ------------------------------------------------------------------ Antippen und Verbessern
@@ -286,7 +316,7 @@ namespace SeedClicker
             switch (v.def.effect)
             {
                 case "tower":
-                    if (NightWave.I != null && NightWave.I.TowerShot(new Vector2(v.sr.bounds.center.x, v.sr.bounds.max.y - 0.1f), r, StructValue(v.st)))
+                    if (NightWave.I != null && NightWave.I.TowerShot(new Vector2(v.sr.bounds.center.x, v.sr.bounds.max.y - 0.1f), r, StructValue(v.st), v.st.moon ? 2 : 1))
                         v.squash = Mathf.Max(v.squash, 0.35f);
                     return Mathf.Max(0.4f, 1.3f - 0.04f * v.st.lv);
                 case "greenhouse":
@@ -370,6 +400,11 @@ namespace SeedClicker
                         ?? Box(x, y, 26, 100, 102, 118, Wood, WoodHi)                                                       // Plattform
                         ?? Box(x, y, 34, 2, 44, 100, Wood, WoodHi) ?? Box(x, y, 84, 2, 94, 100, Wood, WoodHi)
                         ?? Line(x, y, 40, 10, 88, 90, 3, Wood) ?? Line(x, y, 88, 10, 40, 90, 3, Wood);
+                case "wachturm_stone":
+                    return Tri(x, y, 18, 118, 110, 118, 64, 158, new Color(0.35f, 0.4f, 0.5f), new Color(0.55f, 0.6f, 0.7f))   // Schieferdach
+                        ?? Box(x, y, 58, 70, 70, 92, new Color(0.12f, 0.1f, 0.1f), new Color(0.2f, 0.18f, 0.16f))          // Schiessscharte
+                        ?? Box(x, y, 24, 100, 104, 118, Stone, StoneHi, true)                                                // Zinnen
+                        ?? Box(x, y, 32, 2, 96, 100, Stone, StoneHi, true);                                                  // Turm
                 case "bienenhaus":
                     return Tri(x, y, 18, 92, 110, 92, 64, 124, Roof, RoofHi)
                         ?? Circle(x, y, 64, 54, 8, new Color(0.2f, 0.15f, 0.1f), new Color(0.3f, 0.2f, 0.1f))

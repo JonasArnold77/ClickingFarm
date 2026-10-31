@@ -51,7 +51,13 @@ namespace SeedClicker
     /// <summary>Steinpult: Preis in Muenzen (Abbauen gibt ihn zurueck).</summary>
     [Serializable] public class PedestalDef { public float cost = 20f; }
     /// <summary>Verwandlungen: wie viele Holzmauern Steinmoos umwandelt, wie viel Stein haelt, hoechste Element-Stufe einer Waffe.</summary>
-    [Serializable] public class TransformsDef { public int stoneCells = 4, stoneCellsPerLevel = 2; public float stoneHpMult = 3f; public int maxElementLevel = 5; }
+    [Serializable] public class TransformsDef
+    {
+        public float stoneHpMult = 3f; public int maxElementLevel = 5;   // Steinmoos wandelt immer den ganzen Mauerabschnitt
+        public float thornDps = 2.5f; public int maxThorns = 5;              // Dornenranke: Schaden pro Sekunde je Stufe an schlagenden Zombies
+        public float heartRange = 0.6f; public int maxHeart = 3;              // Wurzelherz: Reichweite je Stufe fuer die Pflanze im Pult
+        public float stoneTowerDamage = 1.75f, stoneTowerRange = 1f;         // Steinmoos auf Wachturm
+    }
     /// <summary>Waffenbank: Schlaege bis zur naechsten Waffenstufe (tapsBase * tapsGrowth^(Stufe-1)) und was eine Stufe bringt.</summary>
     [Serializable] public class BenchDef { public float tapsBase = 12f, tapsGrowth = 1.3f, damagePerLevel = 0.25f, cooldownPerLevel = 0.04f, minCooldown = 0.5f; public int maxLevel = 30; }
     /// <summary>Bauwerk zum Aufstellen (einmal kaufen, auf einen freien Platz im Hof setzen, per Klick verbessern).
@@ -103,7 +109,10 @@ namespace SeedClicker
             "pipe" => "Tauschilf im Umkreis von 2 gießt 1 Feld weiter.",
             "transform" => d.transform switch
             {
-                "stone" => "Reif auf eine Holzmauer ziehen: sie und Mauern daneben werden zu Stein (3× so stabil).",
+                "stone" => "Reif auf einen Mauerabschnitt oder hölzernen Wachturm ziehen: wird ganz zu Stein (Mauern 3× so stabil, Turm trifft härter und weiter).",
+                "thorns" => "Reif auf einen Mauerabschnitt ziehen: der ganze Abschnitt bekommt Dornen – schlagende Zombies verletzen sich.",
+                "heart" => "Reif in ein Steinpult ziehen: die Pflanze darin schießt weiter.",
+                "moon" => "Reif auf Laterne oder Wachturm ziehen: Laterne leuchtet doppelt so weit, Turm schießt doppelt.",
                 "fire" => "Reif auf die Waffenbank ziehen: die gewählte Waffe setzt Zombies in Brand.",
                 "ice" => "Reif auf die Waffenbank ziehen: Treffer der gewählten Waffe verlangsamen Zombies.",
                 "lightning" => "Reif auf die Waffenbank ziehen: Treffer springen als Blitz auf weitere Zombies über.",
@@ -369,14 +378,14 @@ namespace SeedClicker
     /// <summary>Ein Zaunstueck auf einer Rasterzelle (Spielstand).</summary>
 
     /// <summary>Ein Mauerstueck (Holz) auf einer Rasterzelle: blockiert Zombies, darauf kann eine Pflanze stehen.</summary>
-    [Serializable] public class WallState { public int x, y; public float hp; public bool stone; }
+    [Serializable] public class WallState { public int x, y; public float hp; public bool stone; public int thorns; }
     /// <summary>Ein Steinpult (Spielstand): auf dem Boden oder auf einer Mauer.</summary>
-    [Serializable] public class PedestalState { public int x, y; }
+    [Serializable] public class PedestalState { public int x, y; public int heart; }
 
     [Serializable] public class BuildingCount { public string id; public int n; }
     /// <summary>Stufe einer Waffe (an der Waffenbank geschmiedet) und Schlaege zur naechsten Stufe.</summary>
     /// <summary>Ein aufgestelltes Bauwerk (Spielstand). placed = false: gekauft, wartet auf seinen Platz.</summary>
-    [Serializable] public class StructureState { public string id; public int x, y, lv = 1; public float xp; public bool placed; }
+    [Serializable] public class StructureState { public string id; public int x, y, lv = 1; public float xp; public bool placed, stone, moon; }
     [Serializable] public class WeaponLevel { public string id; public int lv = 1; public float xp; public string element; public int elementLv; }
 
     /// <summary>Eine gepflanzte Pflanze auf einem Feld oder Mauerplatz (Spielstand).</summary>

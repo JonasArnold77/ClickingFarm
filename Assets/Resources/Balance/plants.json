@@ -403,6 +403,31 @@
       "heads": []
     },
     {
+      "id": "thornvine",
+      "name": "dorn",
+      "art": "sk_Bush",
+      "stages": [],
+      "scale": 0.85,
+      "heads": []
+    },
+    {
+      "id": "rootheart",
+      "name": "herz",
+      "art": "sk_Mushroom_2",
+      "sway": 0,
+      "stages": [],
+      "scale": 0.9,
+      "heads": []
+    },
+    {
+      "id": "moonflower",
+      "name": "mond",
+      "art": "sk_Flowers_1",
+      "stages": [],
+      "scale": 1.0,
+      "heads": []
+    },
+    {
       "id": "pinkshroom",
       "name": "pilz",
       "art": "sk_Mushroom_1",
@@ -797,6 +822,72 @@
       "effectLv": 1
     },
     {
+      "id": "dornenranke",
+      "name": "Dornenranke",
+      "species": "thornvine",
+      "starter": false,
+      "unlockWave": 999,
+      "role": "transform",
+      "transform": "thorns",
+      "cost": 180,
+      "value": 0,
+      "growTaps": 35,
+      "unlockEarned": 1200,
+      "pattern": "single",
+      "patternLv": 1,
+      "rangeLv": 1,
+      "projectile": "seed",
+      "projectileLv": 1,
+      "element": "nature",
+      "elementLv": 1,
+      "effect": "none",
+      "effectLv": 1
+    },
+    {
+      "id": "wurzelherz",
+      "name": "Wurzelherz",
+      "species": "rootheart",
+      "starter": false,
+      "unlockWave": 999,
+      "role": "transform",
+      "transform": "heart",
+      "cost": 300,
+      "value": 0,
+      "growTaps": 40,
+      "unlockEarned": 2500,
+      "pattern": "single",
+      "patternLv": 1,
+      "rangeLv": 1,
+      "projectile": "seed",
+      "projectileLv": 1,
+      "element": "nature",
+      "elementLv": 1,
+      "effect": "none",
+      "effectLv": 1
+    },
+    {
+      "id": "mondblume",
+      "name": "Mondblume",
+      "species": "moonflower",
+      "starter": false,
+      "unlockWave": 999,
+      "role": "transform",
+      "transform": "moon",
+      "cost": 400,
+      "value": 0,
+      "growTaps": 45,
+      "unlockEarned": 4000,
+      "pattern": "single",
+      "patternLv": 1,
+      "rangeLv": 1,
+      "projectile": "seed",
+      "projectileLv": 1,
+      "element": "nature",
+      "elementLv": 1,
+      "effect": "none",
+      "effectLv": 1
+    },
+    {
       "id": "funkenmais",
       "name": "Funkenmais",
       "species": "corn",
@@ -1177,10 +1268,14 @@
     "cost": 20
   },
   "transforms": {
-    "stoneCells": 4,
-    "stoneCellsPerLevel": 2,
     "stoneHpMult": 3,
-    "maxElementLevel": 5
+    "maxElementLevel": 5,
+    "thornDps": 2.5,
+    "maxThorns": 5,
+    "heartRange": 0.6,
+    "maxHeart": 3,
+    "stoneTowerDamage": 1.75,
+    "stoneTowerRange": 1
   },
   "bench": {
     "tapsBase": 12,

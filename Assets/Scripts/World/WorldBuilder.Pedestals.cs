@@ -12,7 +12,7 @@ namespace SeedClicker
     /// </summary>
     public partial class WorldBuilder
     {
-        class PedestalView { public PedestalState st; public SpriteRenderer sr, lip; public float pop; }
+        class PedestalView { public PedestalState st; public SpriteRenderer sr, lip, heartSr; public float pop; }
         readonly Dictionary<Cell, PedestalView> pedestals = new Dictionary<Cell, PedestalView>();
         static Sprite pedSprite, pedGhost;
         bool pedestalMode;
@@ -103,6 +103,7 @@ namespace SeedClicker
             lip.sprite = PedestalLipSprite;
             lip.sortingOrder = Order(c.y * CellSize) + 3;
             pedestals[c] = new PedestalView { st = st, sr = sr, lip = lip, pop = fx ? 0f : 1f };
+            ApplyHeartLook(pedestals[c]);
             ClearDecorAround(CellCenter(c), CellSize * 0.6f);
             if (fx)
             {
@@ -117,6 +118,13 @@ namespace SeedClicker
             foreach (var kv in pedestals)
             {
                 var v = kv.Value;
+                if (v.heartSr != null)
+                {
+                    // Wurzelherz pulsiert wie ein Herzschlag
+                    float beat = Mathf.Pow(Mathf.Max(0f, Mathf.Sin(Time.time * 3.2f + kv.Key.x)), 6f);
+                    v.heartSr.color = new Color(1f, 0.35f, 0.5f, 0.45f + 0.35f * beat);
+                    if (UnityEngine.Random.value < dt * 1.5f) Particles.I?.Spawn((Vector2)v.heartSr.transform.position, "spark", new Color(1f, 0.5f, 0.6f), Vector3.up * 0.5f, 0.7f, 0.07f, 0f, 0f);
+                }
                 if (v.pop >= 1f || v.sr == null) continue;
                 v.pop = Mathf.MoveTowards(v.pop, 1f, dt * 4f);
                 float e = 1 + 2.70158f * Mathf.Pow(v.pop - 1, 3) + 1.70158f * Mathf.Pow(v.pop - 1, 2);

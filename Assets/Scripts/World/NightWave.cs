@@ -428,6 +428,13 @@ namespace SeedClicker
                 {
                     m.bashT += dt;
                     wb.HitWall(wall, m.def.damage * 0.5f * dt);
+                    // Dornen: wer zuschlaegt, verletzt sich
+                    if (wall.thorns > 0)
+                    {
+                        Damage(m, B.Transforms.thornDps * wall.thorns * (1f + 0.12f * (WaveNumber - 1)) * dt, null, silent: true);
+                        m.hitFlash = Mathf.Max(m.hitFlash, 0.3f);
+                        if (rnd.NextDouble() < dt * 4) Particles.I?.Spawn(m.pos + new Vector2(0, 0.4f), "square", new Color(0.7f, 0.15f, 0.15f), new Vector3((float)rnd.NextDouble() - 0.5f, 1f, 0), 0.4f, 0.06f, 0f, 5f);
+                    }
                     m.pos += m.knock * dt;
                     if (m.bashT > 0.55f) { m.bashT = 0f; Sfx.Play("chop", 0.6f + (float)rnd.NextDouble() * 0.2f, 0.35f); }
                 }
@@ -508,7 +515,7 @@ namespace SeedClicker
             {
                 if (!p.Grown || !p.IsCombat) continue;   // nur reife Kampfpflanzen schiessen
                 var g = p.Genome;
-                float gcd = g.Cooldown * B.LevelCooldown(p.Lv), grange = g.Range + B.LevelRange(p.Lv);
+                float gcd = g.Cooldown * B.LevelCooldown(p.Lv), grange = g.Range + B.LevelRange(p.Lv) + wb.PotRange(p);   // Wurzelherz im Pult
                 float cd = cooldowns.TryGetValue(p, out var v) ? v : (float)rnd.NextDouble() * gcd;
                 cd -= dt;
                 if (cd <= 0f)

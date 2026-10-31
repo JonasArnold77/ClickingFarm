@@ -110,7 +110,7 @@ namespace SeedClicker
             var st = structShown;
             var d = PlantBalance.I.Structure(st.id);
             if (d == null) return;
-            structIcon.sprite = StructureArt.Get(st.id);
+            structIcon.sprite = WorldBuilder.StructSprite(st);
             structName.text = d.name;
             structLevel.text = "Stufe " + st.lv;
             structDesc.text = d.desc;

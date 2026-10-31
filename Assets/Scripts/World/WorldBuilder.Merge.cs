@@ -15,6 +15,7 @@ namespace SeedClicker
         Vector2 dragPos;
         PlantedState hoverTarget;
         Cell? hoverSlot;
+        List<Cell> hoverCells;   // Verwandlung: ganzer Mauerabschnitt unter dem Finger
         readonly List<SpriteRenderer> footprintPool = new List<SpriteRenderer>();
         List<Cell> fpCells;
         bool fpOk;
@@ -61,6 +62,7 @@ namespace SeedClicker
             if (IsMergeTarget(t) && hoverTarget != t) { Sfx.Play("tick", 1.3f, 0.5f); Haptics.Tap(8); }
             hoverTarget = IsMergeTarget(t) ? t : null;
             hoverSlot = t == null && IsSlot(cell) && (carrying == null || Fits(cell, carrying.type, false)) ? cell : (Cell?)null;
+            hoverCells = null;
             if (TransformHover(carrying, w)) hoverTarget = null;   // Verwandlung: Ziel (Holzmauer / Waffenbank) hervorheben
         }
 
@@ -70,6 +72,7 @@ namespace SeedClicker
             dragging = false;
             hoverTarget = null;
             hoverSlot = null;
+            hoverCells = null;
             var cell = TapCell(w);
             var p = carrying;
             // reife Verwandlungs-Pflanze auf ihrem Ziel: wirkt und ist verbraucht
@@ -251,6 +254,7 @@ namespace SeedClicker
             {
                 ok = FindFootprint(hoverTarget, hoverTarget.Lv + carrying.Lv, out _, out show);
             }
+            else if (dragging && hoverCells != null) { show = hoverCells; ok = true; }
             else if (dragging && hoverSlot.HasValue) { show = new List<Cell> { hoverSlot.Value }; ok = true; }
             else if (fpFlashT > 0f) { fpFlashT -= udt; show = fpCells; ok = fpOk; }
 

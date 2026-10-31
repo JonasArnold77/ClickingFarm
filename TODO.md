@@ -17,6 +17,8 @@
 - [ ] Bauwerke: echte Grafik statt gemalter Platzhalter; beim Aufstellen freie Plätze hervorheben; Balancing der Preise und Wirkungen.
 - [ ] Rankenbahn: sichtbare Ranke zwischen Pflanze und Haus zeichnen (fliegt bisher nur als Münze).
 
+- [ ] Mondblume nutzt vorerst dasselbe Bild wie der Pustesamen – eigene Grafik für Verwandlungs-Pflanzen.
+
 ## Später (laut CLAUDE.md nicht Teil der Basisversion)
 - [ ] Echte Werbe-SDK-Anbindung in `AdService` (Rewarded + seltene Interstitials).
 - [ ] WebGL-Build und Spieleportal-Anbindung.
