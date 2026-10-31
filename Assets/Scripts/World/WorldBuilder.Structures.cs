@@ -149,7 +149,7 @@ namespace SeedClicker
             BeginPlacing(st);
         }
 
-        public bool CanPlaceStructure(Cell c) => IsBuildable(c) && PlantAt(c) == null && !HasWall(c) && !HasStructure(c) && (HasField(c) || CanPlaceField(c));
+        public bool CanPlaceStructure(Cell c) => PlantAt(c) == null && !HasWall(c) && !HasStructure(c) && (HasField(c) || CanPlaceField(c));
 
         public bool TryPlaceStructure(Cell c)
         {

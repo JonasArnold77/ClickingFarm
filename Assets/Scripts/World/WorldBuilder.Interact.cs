@@ -299,7 +299,6 @@ namespace SeedClicker
         {
             if (fields.ContainsKey(c) || HasStructure(c) || HasRiver(c)) return false;
             var center = CellCenter(c);
-            if (!IsBuildable(c)) return false;                                // nur im Hof
             float hc = CellSize / 2f;
             foreach (var corner in new[] { new Vector2(-hc, -hc), new Vector2(hc, -hc), new Vector2(-hc, hc), new Vector2(hc, hc) })
             {

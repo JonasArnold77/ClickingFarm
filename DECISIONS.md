@@ -192,4 +192,5 @@
 - `WorldBuilder.Clearing.cs`: Im ruhigen Umfeld um den Hof (Hoffläche der Ausbaustufe 2, also etwa x −7,2…7,2 / y −7,2…2,4, plus 1 Einheit Rand, nach oben 3) entstehen keine Bäume, Felsbrocken, Steine oder Baumstämme; gefällte Bäume wachsen dort nicht nach. Im Test waren dort 382 von 384 Zellen für Mauern frei (nur das Schild blockiert).
 - Jedes Hindernis lässt sich durch oft Antippen entfernen: Bäume und Stümpfe (wie bisher), Felsbrocken (wie bisher) und neu der lose Kram (Steine 3, großer Fels 5, mittlerer 3, kleiner 2, Baumstamm 4 Tipps). Kram gibt 1–3 Münzen bzw. 1 Holz; gespeichert in `junkGone`. Eine kleine Zahl zeigt, wie viele Tipps noch fehlen.
 - Gebäude-Plätze blockieren erst, wenn dort ein Gebäude steht. Felder dürfen jetzt auch aufs Pflaster.
-- Gilt weiter: Felder nur innerhalb der aktuellen Hoffläche (Hof-Ausbau bleibt ein Ziel); Haus, Werkbank, Waffenbank, Altar, Lieferkiste, Almanach und Klippe blockieren.
+- Gartenfelder (und Bauwerke/Totems) gehen jetzt überall auf der Karte, wo nichts im Weg ist, nicht mehr nur in der gekauften Hoffläche. Die Hoffläche bestimmt nur noch, wo die schimmernden Feld-Vorschläge erscheinen.
+- Gilt weiter: Haus, Werkbank, Waffenbank, Altar, Lieferkiste, Almanach und Klippe blockieren.
