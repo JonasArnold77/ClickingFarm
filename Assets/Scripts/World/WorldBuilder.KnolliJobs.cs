@@ -114,6 +114,8 @@ namespace SeedClicker
         {
             HashSet<Cell> show = null;
             if (selectedKnolli != null) show = BedOf(selectedKnolli);
+            bool gold = false;
+            if (show == null && IsTotem(OpenStructure)) { show = TotemBed(OpenStructure); gold = true; }
             if (show == null && bedFlashT > 0f) { bedFlashT -= dt; show = bedFlash; }
             int n = show != null ? show.Count : 0, i = 0;
             while (bedPool.Count < n)
@@ -133,7 +135,7 @@ namespace SeedClicker
                     sr.transform.position = CellCenter(c);
                     float k = CellSize * 0.96f / Mathf.Max(0.01f, sr.sprite.bounds.size.x);
                     sr.transform.localScale = new Vector3(k, k, 1);
-                    sr.color = new Color(0.4f, 1f, 0.45f, pulse);
+                    sr.color = gold ? new Color(1f, 0.85f, 0.35f, pulse) : new Color(0.4f, 1f, 0.45f, pulse);
                 }
             for (; i < bedPool.Count; i++) bedPool[i].enabled = false;
 

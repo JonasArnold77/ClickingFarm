@@ -86,6 +86,9 @@ namespace SeedClicker
         public string id, name, desc, effect;
         public float cost, unlockEarned, value, valuePerLevel, radius, radiusPerLevel, scale = 1f;
         public int wood;
+        // Totems (effect "totem"): mehrfach kaufbar (multi, jedes Stueck costGrowth-mal teurer), boost = growth | harvest | produce,
+        // volle Wirkung fuer ein Beet bis fullCells Felder, darueber anteilig weniger
+        public bool multi; public string boost; public int fullCells = 6; public float costGrowth = 1.8f;
     }
     /// <summary>Klicks bis zur naechsten Stufe eines Bauwerks: tapsBase * tapsGrowth^(Stufe-1).</summary>
     [Serializable] public class StructureTapsDef { public float tapsBase = 15f, tapsGrowth = 1.35f; public int maxLevel = 20; }
@@ -415,7 +418,7 @@ namespace SeedClicker
     [Serializable] public class KnolliJob { public bool set; public int x, y; }
     /// <summary>Stufe einer Waffe (an der Waffenbank geschmiedet) und Schlaege zur naechsten Stufe.</summary>
     /// <summary>Ein aufgestelltes Bauwerk (Spielstand). placed = false: gekauft, wartet auf seinen Platz.</summary>
-    [Serializable] public class StructureState { public string id; public int x, y, lv = 1; public float xp; public bool placed, stone, moon; }
+    [Serializable] public class StructureState { public string id; public int x, y, lv = 1; public float xp; public bool placed, stone, moon; public bool anchored; public int bx, by; }   // bx/by: Feld, zu dem ein Totem gehoert
     [Serializable] public class WeaponLevel
     {
         public string id; public int lv = 1; public float xp;

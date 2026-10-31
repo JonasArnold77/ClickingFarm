@@ -29,6 +29,7 @@
 - [ ] Echte Grafik (über `Resources/Sprites/…` austauschbar) und Musik.
 - [ ] Komposter, Truhe, Zaun, Wege, Saatgutmaschine (Gegenstände aus CLAUDE.md 5.4, noch nicht gebaut).
 - [ ] Jahreszeiten, Tiere, Dorf, Angeln (am Teich), Bergbau.
+- [ ] Totems: Balance prüfen (Preise, `fullCells`, Werte); evtl. weitere Arten (z. B. Regentotem, Knolli-Totem).
 
 ## Bekannte Einschränkungen
 - Der Spielstand hat noch keine Versions-Migration (Feld `version` ist vorbereitet).

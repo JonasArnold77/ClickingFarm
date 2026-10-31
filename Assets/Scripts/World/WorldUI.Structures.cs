@@ -85,7 +85,7 @@ namespace SeedClicker
             };
             wb.PlantTapped += _ => { structTimer = 0f; structGroup.alpha = 0f; if (benchGroup != null) { benchTimer = 0f; benchGroup.alpha = 0f; } };
             wb.BenchTapped += () => { structTimer = 0f; structGroup.alpha = 0f; infoGroup.alpha = 0f; };
-            wb.StructureLeveled += (d, lv) => Banner(d.name + " – Stufe " + lv + "!", wb.StructSummary(wb.Struct(d.id)));
+            wb.StructureLeveled += (d, st) => Banner(d.name + " – Stufe " + st.lv + "!", wb.StructSummary(st));
             wb.StructurePlacing += d =>
             {
                 if (d != null) { CloseModal(); hintText.text = "Tippe auf einen freien Platz im Hof: " + d.name + " aufstellen"; }
@@ -132,8 +132,9 @@ namespace SeedClicker
             {
                 var dd = d;
                 var st = wbi.Struct(d.id);
-                string price = Num.Short(d.cost) + (d.wood > 0 ? " + " + d.wood + " Holz" : "");
-                if (st != null)
+                float cost = wbi.StructCost(d);
+                string price = Num.Short(cost) + (d.wood > 0 ? " + " + d.wood + " Holz" : "");
+                if (st != null && !d.multi)
                 {
                     ShopRow(content, d.name + "  · Stufe " + st.lv, st.placed ? wbi.StructSummary(st) : "Wartet auf seinen Platz", "Gebaut", false, () => { });
                     continue;
@@ -143,8 +144,11 @@ namespace SeedClicker
                     ShopRow(content, d.name, "Ab " + Num.Short(d.unlockEarned) + " verdienten Münzen", price, false, () => { });
                     continue;
                 }
-                bool ok = wbi.Coins >= d.cost && wbi.Wood >= d.wood;
-                ShopRow(content, d.name, d.desc, price, ok, () => { if (wbi.BuyStructure(dd)) Banner(dd.name + " gekauft!", "Tippe auf einen freien Platz im Hof"); });
+                bool ok = wbi.Coins >= cost && wbi.Wood >= d.wood && wbi.PlacingStructure == null;
+                int have = d.multi ? wbi.StructCount(d.id) : 0;
+                string title = d.name + (have > 0 ? "  · " + have + " aufgestellt" : "");
+                string hint = WorldBuilder.IsTotem(dd) ? "Tippe auf ein Feld oder direkt daneben" : "Tippe auf einen freien Platz im Hof";
+                ShopRow(content, title, d.desc, price, ok, () => { if (wbi.BuyStructure(dd)) Banner(dd.name + " gekauft!", hint); });
             }
         }
     }

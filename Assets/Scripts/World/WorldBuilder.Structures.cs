@@ -18,7 +18,7 @@ namespace SeedClicker
         StructureState pendingStruct;
 
         public event Action<StructureState> StructureTapped;
-        public event Action<StructureDef, int> StructureLeveled;
+        public event Action<StructureDef, StructureState> StructureLeveled;
         public event Action<StructureDef> StructurePlacing;   // null = fertig gesetzt
         /// <summary>Bauwerk, dessen Fenster gerade offen ist – ein Tipp darauf verbessert es.</summary>
         public StructureState OpenStructure { get; set; }
@@ -96,6 +96,7 @@ namespace SeedClicker
         {
             var d = PlantBalance.I.Structure(s.id);
             if (d == null) return "";
+            if (IsTotem(d)) return TotemSummary(s);
             float v = StructValue(s), r = StructRadius(s);
             string where = r > 0 ? " · Umkreis " + r.ToString("0.#") : " · überall";
             switch (d.effect)
@@ -117,8 +118,9 @@ namespace SeedClicker
 
         public bool BuyStructure(StructureDef d)
         {
-            if (d == null || Struct(d.id) != null || save.earned < d.unlockEarned || save.wood < d.wood || save.coins < d.cost) return false;
-            if (!TrySpend(d.cost)) return false;
+            float cost = StructCost(d);
+            if (d == null || (!d.multi && Struct(d.id) != null) || save.earned < d.unlockEarned || save.wood < d.wood || save.coins < cost) return false;
+            if (!TrySpend(cost)) return false;
             save.wood -= d.wood; WoodChanged?.Invoke(save.wood);
             var st = new StructureState { id = d.id, lv = 1 };
             save.structures.Add(st);
@@ -152,17 +154,21 @@ namespace SeedClicker
         public bool TryPlaceStructure(Cell c)
         {
             if (pendingStruct == null) return false;
-            if (!CanPlaceStructure(c))
+            bool totem = IsTotem(pendingStruct);
+            Cell anchor = c;
+            if (totem ? !CanPlaceTotem(c, out anchor) : !CanPlaceStructure(c))
             {
                 Sfx.Play("error", 1f, 0.5f);
-                Floater?.Invoke(CellCenter(c) + new Vector2(0, 0.6f), "Hier ist kein Platz", new Color(1f, 0.6f, 0.5f));
+                Floater?.Invoke(CellCenter(c) + new Vector2(0, 0.6f), totem ? "Stell das Totem auf oder neben ein Feld ohne Totem" : "Hier ist kein Platz", new Color(1f, 0.6f, 0.5f));
                 return false;
             }
             var st = pendingStruct;
             pendingStruct = null;
             st.x = c.x; st.y = c.y; st.placed = true;
+            if (totem) { st.anchored = true; st.bx = anchor.x; st.by = anchor.y; }
             ClearDecorAround(CellCenter(c), CellSize * 0.6f);
             CreateStructView(st, true);
+            if (totem) TotemPlaced(st);
             StructurePlacing?.Invoke(null);
             RefreshGhosts();
             save.Save();
@@ -281,7 +287,7 @@ namespace SeedClicker
             Sfx.Play("levelup", 1.05f, 0.9f);
             Haptics.Tap(40);
             WorldPostFX.Punch(0.4f);
-            StructureLeveled?.Invoke(v.def, st.lv);
+            StructureLeveled?.Invoke(v.def, st);
             save.Save();
         }
 
@@ -427,8 +433,25 @@ namespace SeedClicker
                     return Tri(x, y, 4, 82, 124, 82, 64, 120, Roof, RoofHi)
                         ?? Box(x, y, 44, 2, 84, 56, new Color(0.45f, 0.28f, 0.16f), new Color(0.6f, 0.4f, 0.24f))
                         ?? Box(x, y, 10, 2, 118, 82, Wood, WoodHi, true);
+                case "totem_wachstum": return Totem(x, y, new Color(0.35f, 0.75f, 0.3f), new Color(0.7f, 1f, 0.55f));
+                case "totem_ernte": return Totem(x, y, new Color(0.9f, 0.62f, 0.15f), new Color(1f, 0.88f, 0.4f));
+                case "totem_fleiss": return Totem(x, y, new Color(0.45f, 0.4f, 0.85f), new Color(0.7f, 0.68f, 1f));
             }
             return Box(x, y, 20, 2, 108, 100, Wood, WoodHi);
+        }
+
+        /// <summary>Geschnitzter Pfahl mit zwei Gesichtern, Fluegeln und einem leuchtenden Zeichen in der Farbe seiner Wirkung.</summary>
+        static Color? Totem(int x, int y, Color c, Color hi)
+        {
+            var dark = new Color(0.22f, 0.13f, 0.08f);
+            return Circle(x, y, 64, 140, 13, c, hi)                                                                   // Zeichen
+                ?? Tri(x, y, 14, 112, 114, 112, 64, 128, c * 0.85f, hi)                                                // Fluegel
+                ?? Box(x, y, 52, 92, 60, 100, dark, dark) ?? Box(x, y, 68, 92, 76, 100, dark, dark)                   // Augen oben
+                ?? Box(x, y, 54, 74, 74, 80, dark, dark)                                                               // Mund oben
+                ?? Box(x, y, 40, 60, 88, 66, c, hi)                                                                    // Band
+                ?? Box(x, y, 52, 42, 60, 50, dark, dark) ?? Box(x, y, 68, 42, 76, 50, dark, dark)                     // Augen unten
+                ?? Box(x, y, 56, 24, 72, 32, c, hi)                                                                    // Mund unten
+                ?? Box(x, y, 44, 2, 84, 112, Wood, WoodHi);                                                            // Pfahl
         }
 
         static Color Shade(Color c, Color hi, float k) { var col = Color.Lerp(c, hi, Mathf.Clamp01(k) * 0.8f); return col; }
