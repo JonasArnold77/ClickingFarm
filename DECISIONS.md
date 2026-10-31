@@ -154,6 +154,13 @@
 
 - **Bäume wachsen nach** (`WorldBuilder.Regrow.cs`): Ein gefällter Baum steht nach 3 Nächten wieder (`plants.json` → `treeRegrowNights`), egal ob der Stumpf noch da ist. Jede Nacht zählt, auch eine verlorene (`save.nights`). Er schießt mit kleinem Überschwingen und Blättern aus dem Boden und lässt sich wieder fällen. Steht inzwischen ein Feld, eine Mauer, ein Pult, ein Bauwerk oder eine Pflanze an seinem Fuß, wartet er, bis der Platz frei ist. Bereits gefällte Bäume aus alten Spielständen bekommen ab dem Laden ihre 3 Nächte.
 
+- **Ernte als Produkte, Knollis und Lieferkiste** (`WorldBuilder.Delivery.cs`):
+  - Ernte-Pflanzen (Radieschen → Radieschen-Bund, Weißrübe → Rübe, Bienenblume → Honigglas, `catalog[].product`) bringen keine Münzen mehr direkt. Jeder Ernte-Tipp legt ein Produkt in den Vorrat neben der Pflanze (kleines Häufchen, max. 12, voll = es wippt). Von selbst wächst langsam nach, so schnell wie früher die Münzen pro Sekunde. Der Wert eines Produkts ist der frühere Münzwert eines Tipps.
+  - **Knollis**, kleine braune, runde Wesen mit Spross auf dem Kopf, holen den Vorrat ab (bis 4 Stück) und tragen ihn zur **Lieferkiste** rechts vor dem Haus. Mehrere Knollis teilen sich die Arbeit. Zum Start gibt es 1, weitere im Laden (Reiter *Hof*), jeder teurer.
+  - **Am nächsten Morgen** (nach jeder Nacht) wird die Kiste ausbezahlt, mit Banner. Antippen der Kiste zeigt Stückzahl und erwarteten Betrag.
+  - Die Rankenbahn bringt den Vorrat naher Ernte-Pflanzen direkt zur Lieferkiste (×1,5). Die Klopfwurz erntet halb so gut.
+  - Ernte-Pflanzen zählen nicht mehr zu den Münzen pro Sekunde (Gebäude schon). Werte in `plants.json` → `delivery`.
+
 ## Werbung
 - `Core/AdService.cs` ist die einzige Stelle für Werbung. Derzeit zeigt die UI ein 2-Sekunden-Platzhalter-Video und vergibt dann die Belohnung.
 - Belohnungsvideos: Energie auffüllen, Offline-Ertrag verdoppeln, alles wachsen lassen, Gratis-Samenpaket.

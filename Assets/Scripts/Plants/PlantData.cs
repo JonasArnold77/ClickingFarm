@@ -50,6 +50,12 @@ namespace SeedClicker
     [Serializable] public class WallDef { public float wood = 2f; public float hp = 30f; }
     /// <summary>Steinpult: Preis in Muenzen (Abbauen gibt ihn zurueck).</summary>
     [Serializable] public class PedestalDef { public float cost = 20f; }
+    /// <summary>Ernte-Lieferung: Vorrat je Pflanze, Knollis (Preis, Traglast, Tempo), Honigglas = so viele Sekunden Honig.</summary>
+    [Serializable] public class DeliveryDef
+    {
+        public int maxStock = 12, knolliCarry = 4, startKnollis = 1;
+        public float knolliCost = 40f, knolliCostGrowth = 1.6f, knolliSpeed = 1.6f, beeJarSeconds = 6f;
+    }
     /// <summary>Runen-Altar: pro geopfertem Runenstein (Fluch-Stufe) werden Zombies staerker, groesser und zahlreicher,
     /// dafuer gibt es mehr Muenzen pro Zombie, einen Bonus beim Ueberstehen (victoryBonus * Stufe * Welle) und oefter Runensteine.</summary>
     [Serializable] public class AltarDef
@@ -105,11 +111,11 @@ namespace SeedClicker
         public static string Desc(CatalogDef d) => d.role switch
         {
             "water" => "Gießt die Felder links, rechts, oben und unten: wachsen doppelt so schnell, Ernte +50 %.",
-            "harvest" => "Reif: jeder Tipp bringt " + d.value + " Münzen, dazu verdient sie von selbst.",
+            "harvest" => "Reif: jeder Tipp bringt " + (string.IsNullOrEmpty(d.product) ? d.name : d.product) + ", dazu wächst von selbst nach. Knollis tragen es zur Lieferkiste – Geld gibt es am nächsten Morgen.",
             "fert" => "Direkte Nachbarn wachsen schneller und bringen +50 % Münzen.",
             "boost" => "Tipps auf Pflanzen im Umkreis von 2 zählen doppelt.",
             "auto" => "Klickt von selbst das Feld vor sich – schneller mit jeder Stufe.",
-            "bee" => "Macht Honig: verdient von selbst, mehr mit Blumen in der Nähe.",
+            "bee" => "Füllt Honiggläser, mehr mit Blumen in der Nähe. Knollis tragen sie zur Lieferkiste.",
             "light" => "Leuchtet nachts: Zombies in ihrem Licht nehmen +50 % Schaden.",
             "transport" => "Erntet reife Ernte-Pflanzen im Umkreis von 2 – Münzen +50 %.",
             "carrier" => "Trägt Holz aus dem Wald zum Haus, schneller mit jeder Stufe.",
@@ -137,6 +143,7 @@ namespace SeedClicker
     public class CatalogDef
     {
         public string id, name, species; public bool starter; public int unlockWave;
+        public string product;     // Ernte-Produkt (Name), z. B. "Honig" – sonst der Pflanzenname
         public string transform;   // Rolle transform: stone (Holzmauer -> Stein) oder fire/ice/lightning/poison (Waffenbank)
         public string role = "combat";
         public float cost, value, unlockEarned;
@@ -177,6 +184,7 @@ namespace SeedClicker
         public FarmLevelDef[] farmLevels;
         public WallDef wall;
         public PedestalDef pedestal;
+        public DeliveryDef delivery;
         public AltarDef altar;
         public TransformsDef transforms;
         public BenchDef bench;
@@ -293,6 +301,7 @@ namespace SeedClicker
         public string RoleOf(string id) { var c = Plant(id); return c == null || string.IsNullOrEmpty(c.role) ? "combat" : c.role; }
         public WallDef Wall => wall ?? (wall = new WallDef());
         public PedestalDef Pedestal => pedestal ?? (pedestal = new PedestalDef());
+        public DeliveryDef Delivery => delivery ?? (delivery = new DeliveryDef());
         public AltarDef Altar => altar ?? (altar = new AltarDef());
         public TransformsDef Transforms => transforms ?? (transforms = new TransformsDef());
         public BenchDef Bench => bench ?? (bench = new BenchDef());
@@ -418,7 +427,8 @@ namespace SeedClicker
         public int growth;        // Tipps bisher
         public int level, w, h;   // Stufe (Klicken / Zusammenfuehren) und Flaechenbedarf in Feldern (0 = 1)
         public int xp;            // Klicks seit der letzten Stufe (reife Pflanze)
-        public int dir;           // Blickrichtung von Wasser- und Klick-Pflanzen: 0 Nord, 1 Ost, 2 Sued, 3 West
+        public int dir;           // Blickrichtung von Klick-Pflanzen: 0 Nord, 1 Ost, 2 Sued, 3 West
+        public int stock; public double stockValue;   // Ernte-Vorrat neben der Pflanze (Knollis holen ihn ab)
         public int Lv => Mathf.Max(1, level);
         public int W => Mathf.Max(1, w);
         public int H => Mathf.Max(1, h);

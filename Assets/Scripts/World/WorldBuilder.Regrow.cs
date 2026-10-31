@@ -38,6 +38,7 @@ namespace SeedClicker
         public void NightPassed()
         {
             save.nights++;
+            PayDelivery();   // am Morgen: Lieferkiste wird bezahlt
             int n = 0;
             for (int i = save.fellNights.Count - 1; i >= 0; i--)
             {

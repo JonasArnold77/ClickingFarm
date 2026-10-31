@@ -31,7 +31,7 @@ namespace SeedClicker
             var h = PlantBalance.I.Helpers;
             switch (p.Role)
             {
-                case "transport": { int n = 0; foreach (var q in save.planted) if (q.Grown && q.Role == "harvest" && Cheb(p, q) <= h.transportRadius) n++; return n > 0 ? "Erntet " + n + (n == 1 ? " Pflanze" : " Pflanzen") + " · ×" + h.transportBonus.ToString("0.#") + " Münzen" : "Keine Ernte-Pflanze in Reichweite"; }
+                case "transport": { int n = 0; foreach (var q in save.planted) if (q.Grown && MakesProduct(q) && Cheb(p, q) <= h.transportRadius) n++; return n > 0 ? "Bringt die Ernte von " + n + (n == 1 ? " Pflanze" : " Pflanzen") + " zur Lieferkiste · ×" + h.transportBonus.ToString("0.#") : "Keine Ernte-Pflanze in Reichweite"; }
                 case "carrier": return "+" + h.carrierWood + " Holz alle " + HelperInterval(p, h.carrierInterval).ToString("0.#") + " s";
                 case "sower": { var d = PlantBalance.I.Plant(SowType()); return d != null ? "Sät " + d.name + " (" + Num.Short(SeedCost(d)) + " Münzen)" : "Wähle zuerst eine Pflanze"; }
                 case "pipe": { int n = 0; foreach (var q in save.planted) if (q.Grown && q.Role == "water" && Cheb(p, q) <= h.pipeRadius) n++; return n > 0 ? n + " Tauschilf gießt +" + (h.pipeBonus + (p.Lv - 1) / 3) + " Feld weiter" : "Kein Tauschilf in Reichweite"; }
@@ -77,11 +77,16 @@ namespace SeedClicker
         /// <summary>Rankenbahn: eine reife Ernte-Pflanze in der Naehe ernten, Muenze laeuft ueber die Ranke zum Haus.</summary>
         void Transport(PlantedState p, HelperDef h)
         {
+            // nimmt den Vorrat einer Ernte-Pflanze in der Naehe und schickt ihn ueber die Ranke zur Lieferkiste
             PlantedState pick = null; int seen = 0;
             foreach (var q in save.planted)
-                if (q.Grown && q.Role == "harvest" && Cheb(p, q) <= h.transportRadius && IsReadyForTaps(q) && Random.Range(0, ++seen) == 0) pick = q;
+                if (q.stock > 0 && MakesProduct(q) && Cheb(p, q) <= h.transportRadius && Random.Range(0, ++seen) == 0) pick = q;
             if (pick == null) return;
-            double coins = HarvestPerTap(pick) * h.transportBonus;
+            int n = Mathf.Min(pick.stock, 2 + p.Lv);
+            double each = pick.stockValue / Mathf.Max(1, pick.stock);
+            pick.stock -= n; pick.stockValue -= each * n;
+            if (pick.stock <= 0) { pick.stock = 0; pick.stockValue = 0; }
+            double coins = each * n * h.transportBonus;
             var qc = new Cell(pick.x, pick.y);
             PunchField(qc, 0.4f);
             Nudge(pick); Nudge(p);
@@ -92,7 +97,7 @@ namespace SeedClicker
             StartCoroutine(Leaf(from, mid, () =>
             {
                 Sfx.Play("tick", Random.Range(1.5f, 1.7f), 0.2f);
-                StartCoroutine(Leaf(mid, HousePos + new Vector2(0, -0.4f), () => AddCoins(coins, HousePos + new Vector2(0, 0.2f)), coin, new Color(1f, 0.85f, 0.3f), 0.2f));
+                StartCoroutine(Leaf(mid, CrateDrop, () => Deposit(n, coins, CrateDrop), coin, new Color(1f, 0.85f, 0.3f), 0.2f));
             }, coin, new Color(1f, 0.85f, 0.3f), 0.18f));
         }
 

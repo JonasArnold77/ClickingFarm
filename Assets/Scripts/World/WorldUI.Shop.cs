@@ -60,6 +60,7 @@ namespace SeedClicker
             };
 
             wbi.OfflineEarned += OpenWelcomeBack;
+            wbi.DeliveryPaid += (n, v) => Banner("Lieferung bezahlt: +" + Num.Short(v) + " Münzen", n + " Stück Ernte sind verkauft");
             wbi.GoldenCaught += msg => Banner("Goldener Schmetterling!", msg);
             wbi.PlantUnlocked += id =>
             {
@@ -144,6 +145,9 @@ namespace SeedClicker
                     ShopRow(content, "Hof erweitern (Stufe " + (wbi.FarmLevel + 1) + ")", "Mehr Platz für Felder und Mauern – braucht auch " + next.wood + " Holz",
                         Num.Short(next.cost), wbi.Coins >= next.cost && wbi.Wood >= next.wood, () => { if (wbi.BuyFarm()) { CloseModal(); Banner("Der Hof wächst!", "Neue Fläche zum Bebauen"); } });
                 else Label(content, "Der Hof ist voll ausgebaut.", 32, InkSoft, TextAnchor.MiddleCenter).LE(-1, 120);
+                double kc = wbi.KnolliCost;
+                ShopRow(content, "Knolli anheuern (" + wbi.KnolliCount + ")", "Trägt die Ernte zur Lieferkiste – je mehr Knollis, desto schneller", Num.Short(kc), wbi.Coins >= kc,
+                    () => { if (wbi.HireKnolli()) OpenShop(2); });
                 Label(content, "Tipp: Bäume fällen gibt Holz, Felsbrocken antippen gibt Münzen und macht Platz.", 28, InkSoft, TextAnchor.MiddleCenter).LE(-1, 110);
             }
         }

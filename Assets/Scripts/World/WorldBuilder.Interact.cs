@@ -16,6 +16,8 @@ namespace SeedClicker
         public float woodDebt;   // angefangenes Holz (Mauern kosten Bruchteile)
         public int runes, altarLevel;   // Runensteine; fuer die naechste Welle geopferte Runen
         public bool runesInit;
+        public int depotCount, knollis; public double depotValue;   // Lieferkiste (wird morgens bezahlt), Knollis
+        public bool knolliInit;
         public List<int> felled = new List<int>();       // gefaellte Baeume (Stumpf steht noch)
         public List<int> stumpsGone = new List<int>();   // auch der Stumpf ist weg
         public List<TreeFell> fellNights = new List<TreeFell>();   // wann gefaellt (fuers Nachwachsen)

@@ -440,6 +440,7 @@
   "catalog": [
     {
       "id": "radieschen",
+      "product": "Radieschen-Bund",
       "name": "Radieschen",
       "species": "radish",
       "starter": false,
@@ -482,6 +483,7 @@
     },
     {
       "id": "weissruebe",
+      "product": "Rübe",
       "name": "Weißrübe",
       "species": "turnip",
       "starter": false,
@@ -566,6 +568,7 @@
     },
     {
       "id": "bienenblume",
+      "product": "Honigglas",
       "name": "Bienenblume",
       "species": "flowers",
       "starter": false,
@@ -1290,6 +1293,15 @@
     "runeDrop": 0.05,
     "runeDropPerLevel": 0.05,
     "rockRune": 0.2
+  },
+  "delivery": {
+    "maxStock": 12,
+    "knolliCarry": 4,
+    "startKnollis": 1,
+    "knolliCost": 40,
+    "knolliCostGrowth": 1.6,
+    "knolliSpeed": 1.6,
+    "beeJarSeconds": 6
   },
   "bench": {
     "tapsBase": 12,

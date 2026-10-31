@@ -198,6 +198,7 @@ namespace SeedClicker
             if (wb.PlacingStructure != null) { wb.TryPlaceStructure(cell); return; }
             if (wb.HitBench(w)) { wb.TapBench(); return; }
             if (wb.HitAltar(w)) { wb.TapAltar(); return; }
+            if (wb.HitCrate(w)) { wb.TapCrate(); return; }
             var hs = wb.HitStructure(w);
             if (hs != null && !wb.Placing && !wb.BuildMode) { wb.TapStructure(hs); return; }
             if (wb.Placing)

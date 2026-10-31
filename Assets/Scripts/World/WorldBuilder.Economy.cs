@@ -235,7 +235,7 @@ namespace SeedClicker
         float ComputeCps()
         {
             float sum = 0f;
-            foreach (var p in save.planted) sum += PlantCps(p);
+            foreach (var p in save.planted) if (!MakesProduct(p)) sum += PlantCps(p);   // Ernte-Pflanzen machen Produkte statt Muenzen
             var defs = PlantBalance.I.buildings;
             if (defs != null) for (int i = 0; i < defs.Length; i++) sum += defs[i].cps * BuildingCount(defs[i].id) * BuildingMult(i);
             return sum * UpgradeMult("cps");
@@ -260,7 +260,7 @@ namespace SeedClicker
                 return;
             }
             if (Time.unscaledTime < v.readyAt) return;
-            if (p.Role == "harvest") AddCoins(HarvestPerTap(p) * 0.5, top + new Vector2(0, 0.3f));
+            if (p.Role == "harvest") AddProduct(p, 1, ItemValue(p) * 0.5, null);   // Klopfwurz erntet halb so gut
             p.xp += 1;
             if (p.xp >= Mathf.Max(1, PlantBalance.I.levelTaps)) LevelUp(p, v, basePos, top);
         }
@@ -291,6 +291,7 @@ namespace SeedClicker
             CheckEarnedUnlocks();
             RefreshBuildingViews();
             InitStructures();
+            InitKnollis();
             cps = ComputeCps();
             // Offline-Ertrag (gedeckelt, halbe Rate)
             long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();

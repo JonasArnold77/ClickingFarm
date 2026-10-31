@@ -1,0 +1,393 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace SeedClicker
+{
+    /// <summary>
+    /// Ernte als Produkte: Ernte-Pflanzen (Radieschen, Weissruebe, Bienenblume) bringen keine Muenzen mehr direkt, sondern
+    /// ihr eigenes Produkt (catalog.product), das sich als kleiner Vorrat neben der Pflanze stapelt – beim Antippen und
+    /// langsam von selbst. Knollis (kleine braune, runde Wesen) sammeln den Vorrat ein und tragen ihn zur Lieferkiste
+    /// beim Haus. Am naechsten Morgen (nach der Nacht) wird die Kiste ausbezahlt. Werte in plants.json -> delivery.
+    /// </summary>
+    public partial class WorldBuilder
+    {
+        // ------------------------------------------------------------------ Vorrat an der Pflanze
+
+        readonly Dictionary<PlantedState, double> prodFrac = new Dictionary<PlantedState, double>();
+        readonly Dictionary<PlantedState, List<SpriteRenderer>> pileViews = new Dictionary<PlantedState, List<SpriteRenderer>>();
+
+        public event Action<int, double> DeliveryPaid;   // Stueck, Muenzen
+
+        public static bool MakesProduct(PlantedState p) => p != null && (p.Role == "harvest" || p.Role == "bee");
+        public static string ProductName(CatalogDef d) => d == null ? "" : !string.IsNullOrEmpty(d.product) ? d.product : d.name;
+        int MaxStock => PlantBalance.I.Delivery.maxStock;
+
+        /// <summary>Wert eines Produkts dieser Pflanze (Ernte: wie frueher ein Tipp; Honig: ein Glas = einige Sekunden Honig).</summary>
+        public double ItemValue(PlantedState p)
+        {
+            if (p.Role == "bee") return Math.Max(1, PlantCps(p) * PlantBalance.I.Delivery.beeJarSeconds);
+            return Math.Max(1, HarvestPerTap(p));
+        }
+
+        /// <summary>Produkte in den Vorrat der Pflanze legen. false = Vorrat voll.</summary>
+        public bool AddProduct(PlantedState p, int n, double valueEach, Vector2? fxFrom = null)
+        {
+            if (p.stock >= MaxStock)
+            {
+                if (fxFrom.HasValue) Floater?.Invoke(fxFrom.Value + new Vector2(0, 0.3f), "Vorrat voll – Knollis holen ab", new Color(1f, 0.8f, 0.5f));
+                return false;
+            }
+            int add = Mathf.Min(n, MaxStock - p.stock);
+            p.stock += add;
+            p.stockValue += add * valueEach;
+            if (fxFrom.HasValue)
+            {
+                var pile = PilePos(p);
+                var spr = plantViews.TryGetValue(new Cell(p.x, p.y), out var v) && v.sr != null ? v.sr.sprite : null;
+                StartCoroutine(Leaf(fxFrom.Value, pile + new Vector2(0, 0.1f), null, spr, null, 0.18f));
+                Floater?.Invoke(fxFrom.Value + new Vector2(0.25f, 0.3f), "+" + add + " " + ProductName(PlantBalance.I.Plant(p.type)), new Color(1f, 0.92f, 0.6f));
+            }
+            return true;
+        }
+
+        Vector2 PilePos(PlantedState p) => PlantBase(p) + new Vector2(CellSize * 0.32f, -CellSize * 0.1f);
+
+        /// <summary>Von selbst nachproduzieren (vorher verdienten diese Pflanzen Muenzen pro Sekunde).</summary>
+        void UpdateProducts(float dt)
+        {
+            foreach (var p in save.planted)
+            {
+                if (!p.Grown || !MakesProduct(p) || p.stock >= MaxStock) continue;
+                prodFrac.TryGetValue(p, out var f);
+                f += PlantCps(p) * dt;
+                double val = ItemValue(p);
+                if (f >= val) { f -= val; AddProduct(p, 1, val, null); }
+                prodFrac[p] = f;
+            }
+            UpdatePiles();
+        }
+
+        /// <summary>Kleine Haeufchen neben der Pflanze: bis zu vier Mini-Bilder des Produkts.</summary>
+        void UpdatePiles()
+        {
+            foreach (var p in save.planted)
+            {
+                int show = Mathf.Min(4, p.stock);
+                pileViews.TryGetValue(p, out var list);
+                if (list == null && show == 0) continue;
+                if (list == null) pileViews[p] = list = new List<SpriteRenderer>();
+                var spr = plantViews.TryGetValue(new Cell(p.x, p.y), out var v) && v.sr != null ? v.sr.sprite : null;
+                while (list.Count < show)
+                {
+                    var sr = new GameObject("Pile").AddComponent<SpriteRenderer>();
+                    sr.transform.SetParent(objects, false);
+                    list.Add(sr);
+                }
+                var basePos = PilePos(p);
+                for (int i = 0; i < list.Count; i++)
+                {
+                    var sr = list[i];
+                    sr.enabled = i < show && spr != null;
+                    if (!sr.enabled) continue;
+                    sr.sprite = spr;
+                    float s = 0.17f / Mathf.Max(0.01f, spr.bounds.size.x);
+                    sr.transform.localScale = Vector3.one * s;
+                    sr.transform.position = basePos + new Vector2((i % 2) * 0.1f - 0.05f, (i / 2) * 0.07f);
+                    sr.sortingOrder = Order(basePos.y) + 2 + i;
+                    // voller Vorrat wippt, damit man es sieht
+                    sr.transform.rotation = Quaternion.Euler(0, 0, p.stock >= MaxStock ? Mathf.Sin(Time.time * 6f + i) * 8f : (i - 1.5f) * 6f);
+                }
+            }
+            // Haeufchen von Pflanzen, die es nicht mehr gibt
+            foreach (var key in new List<PlantedState>(pileViews.Keys))
+                if (!save.planted.Contains(key)) { foreach (var sr in pileViews[key]) if (sr != null) Destroy(sr.gameObject); pileViews.Remove(key); }
+        }
+
+        // ------------------------------------------------------------------ Lieferkiste
+
+        SpriteRenderer crate;
+        Vector2 cratePos;
+        float crateSquash, crateScale;
+        static Sprite crateSprite;
+
+        public int DepotCount => save.depotCount;
+        public double DepotValue => save.depotValue;
+
+        void PlaceCrate()
+        {
+            cratePos = HousePos + new Vector2(1.9f, -1.6f);
+            Shadow(cratePos, 1f, 0.25f, 0.3f);
+            crate = new GameObject("Lieferkiste").AddComponent<SpriteRenderer>();
+            crate.transform.SetParent(objects, false);
+            crate.sprite = CrateSprite;
+            crateScale = 0.85f / Mathf.Max(0.01f, crate.sprite.bounds.size.x);
+            crate.transform.position = cratePos;
+            crate.transform.localScale = Vector3.one * crateScale;
+            crate.sortingOrder = Order(cratePos.y);
+            Reserve(cratePos + new Vector2(0, 0.2f), 0.6f);
+        }
+
+        Vector2 CrateDrop => cratePos + new Vector2(0, -0.15f);
+
+        public bool HitCrate(Vector2 w)
+        {
+            if (crate == null) return false;
+            var b = crate.bounds; b.Expand(new Vector3(0.2f, 0.3f, 0));
+            return b.Contains(new Vector3(w.x, w.y, b.center.z));
+        }
+
+        public void TapCrate()
+        {
+            crateSquash = 0.6f;
+            Sfx.Play("pop", 0.9f);
+            Floater?.Invoke(cratePos + new Vector2(0, 1f), save.depotCount > 0
+                ? "Lieferkiste: " + save.depotCount + " Stück – morgen +" + Num.Short(save.depotValue) + " Münzen"
+                : "Lieferkiste ist leer – Knollis bringen die Ernte her", new Color(1f, 0.92f, 0.6f));
+        }
+
+        void Deposit(int n, double value, Vector2 at)
+        {
+            save.depotCount += n;
+            save.depotValue += value;
+            crateSquash = 0.7f;
+            Particles.I?.Burst(cratePos + new Vector2(0, 0.5f), "star", new Color(1f, 0.9f, 0.5f), 6, 1.8f, 0.5f, 0.15f, 1f, 1f);
+            Floater?.Invoke(cratePos + new Vector2(0, 0.8f), "+" + n + " · " + Num.Short(save.depotValue) + " morgen", new Color(1f, 0.92f, 0.6f));
+            Sfx.Play("pop", UnityEngine.Random.Range(1.1f, 1.3f), 0.5f);
+        }
+
+        /// <summary>Am Morgen nach der Nacht: Lieferkiste auszahlen.</summary>
+        void PayDelivery()
+        {
+            if (save.depotCount <= 0 && save.depotValue <= 0) return;
+            int n = save.depotCount; double v = save.depotValue;
+            save.depotCount = 0; save.depotValue = 0;
+            AddCoins(v, cratePos + new Vector2(0, 0.9f));
+            crateSquash = 1f;
+            Particles.I?.Burst(cratePos + new Vector2(0, 0.6f), "square", new Color(1f, 0.85f, 0.3f), 24, 4f, 0.8f, 0.1f, 4f, 1.5f);
+            Sfx.Play("coin", 1f, 1f);
+            DeliveryPaid?.Invoke(n, v);
+        }
+
+        // ------------------------------------------------------------------ Knollis
+
+        class Knolli
+        {
+            public SpriteRenderer body, shadow, item;
+            public Vector2 pos, target; public int state; public PlantedState goal;
+            public int carry; public double carryValue; public float walkT, idleT, face = 1f;
+        }
+
+        readonly List<Knolli> knollis = new List<Knolli>();
+        static Sprite knolliSprite;
+
+        public int KnolliCount => save.knollis;
+        public double KnolliCost => Math.Ceiling(PlantBalance.I.Delivery.knolliCost * Math.Pow(PlantBalance.I.Delivery.knolliCostGrowth, Mathf.Max(0, save.knollis - PlantBalance.I.Delivery.startKnollis)));
+
+        void InitKnollis()
+        {
+            if (!save.knolliInit) { save.knollis = Mathf.Max(save.knollis, PlantBalance.I.Delivery.startKnollis); save.knolliInit = true; }
+            for (int i = 0; i < save.knollis; i++) SpawnKnolli(false);
+        }
+
+        public bool HireKnolli()
+        {
+            if (!TrySpend(KnolliCost)) return false;
+            save.knollis++;
+            SpawnKnolli(true);
+            Sfx.Play("unlock", 1.3f, 0.7f);
+            Haptics.Tap(20);
+            save.Save();
+            return true;
+        }
+
+        void SpawnKnolli(bool fx)
+        {
+            var k = new Knolli { pos = CrateDrop + UnityEngine.Random.insideUnitCircle * 0.4f, idleT = UnityEngine.Random.Range(0f, 1f) };
+            k.shadow = Shadow(k.pos, 0.32f, 0.1f, 0.3f);
+            k.body = new GameObject("Knolli").AddComponent<SpriteRenderer>();
+            k.body.transform.SetParent(objects, false);
+            k.body.sprite = KnolliSprite;
+            k.item = new GameObject("KnolliLoad").AddComponent<SpriteRenderer>();
+            k.item.transform.SetParent(objects, false);
+            k.item.enabled = false;
+            knollis.Add(k);
+            if (fx) Particles.I?.Burst(k.pos + new Vector2(0, 0.2f), "star", new Color(0.85f, 0.65f, 0.4f), 10, 2f, 0.5f, 0.15f, 1f, 1f);
+        }
+
+        /// <summary>Pflanze mit Vorrat, die noch nicht von genug Knollis angesteuert wird – die naechste zuerst.</summary>
+        PlantedState FindPickup(Knolli k)
+        {
+            PlantedState best = null; float bd = float.MaxValue;
+            foreach (var p in save.planted)
+            {
+                if (p.stock <= 0) continue;
+                int coming = 0;
+                foreach (var o in knollis) if (o != k && o.goal == p && o.state == 1) coming += PlantBalance.I.Delivery.knolliCarry;
+                if (coming >= p.stock) continue;
+                float d = (PilePos(p) - k.pos).sqrMagnitude;
+                if (d < bd) { bd = d; best = p; }
+            }
+            return best;
+        }
+
+        void UpdateKnollis(float dt)
+        {
+            var D = PlantBalance.I.Delivery;
+            foreach (var k in knollis)
+            {
+                // Ziel weg (geerntet, umgetopft)? Mit Ladung zur Kiste, sonst neu suchen
+                if (k.state == 1 && (k.goal == null || !save.planted.Contains(k.goal) || k.goal.stock <= 0)) { k.goal = null; k.state = k.carry > 0 ? 2 : 0; k.target = CrateDrop; }
+                if (k.state == 0)
+                {
+                    k.idleT -= dt;
+                    if (k.idleT <= 0f)
+                    {
+                        var p = FindPickup(k);
+                        if (p != null) { k.goal = p; k.state = 1; k.target = PilePos(p) + new Vector2(0.12f, -0.05f); }
+                        else { k.idleT = UnityEngine.Random.Range(0.8f, 2f); k.target = CrateDrop + UnityEngine.Random.insideUnitCircle * 0.7f; }
+                    }
+                }
+                if (k.state == 1) k.target = PilePos(k.goal) + new Vector2(0.12f, -0.05f);   // Pflanze kann umgetopft werden
+
+                var d = k.target - k.pos;
+                float dist = d.magnitude;
+                float speed = D.knolliSpeed * (k.state == 0 ? 0.4f : 1f);
+                bool moving = dist > 0.04f;
+                if (moving)
+                {
+                    k.pos += d / dist * Mathf.Min(dist, speed * dt);
+                    k.walkT += dt * 10f;
+                    if (Mathf.Abs(d.x) > 0.02f) k.face = Mathf.Sign(d.x);
+                }
+                else if (k.state == 1)
+                {
+                    // aufladen
+                    int take = Mathf.Min(D.knolliCarry, k.goal.stock);
+                    double each = k.goal.stock > 0 ? k.goal.stockValue / k.goal.stock : 0;
+                    k.goal.stock -= take; k.goal.stockValue -= each * take;
+                    if (k.goal.stock <= 0) { k.goal.stock = 0; k.goal.stockValue = 0; }
+                    k.carry += take; k.carryValue += each * take;
+                    var spr = plantViews.TryGetValue(new Cell(k.goal.x, k.goal.y), out var v) && v.sr != null ? v.sr.sprite : null;
+                    k.item.sprite = spr;
+                    Sfx.Play("tick", 1.6f, 0.3f);
+                    k.state = 2; k.goal = null; k.target = CrateDrop + UnityEngine.Random.insideUnitCircle * 0.15f;
+                }
+                else if (k.state == 2)
+                {
+                    Deposit(k.carry, k.carryValue, k.pos);
+                    k.carry = 0; k.carryValue = 0;
+                    k.state = 0; k.idleT = 0.3f;
+                }
+
+                // zeichnen: huepfen beim Laufen, Schatten, Ladung ueber dem Kopf
+                float hop = moving ? Mathf.Abs(Mathf.Sin(k.walkT)) * 0.06f : Mathf.Sin(Time.time * 2f + k.pos.x) * 0.01f;
+                float sq = moving ? Mathf.Sin(k.walkT * 2f) * 0.06f : 0f;
+                float s = 0.34f / Mathf.Max(0.01f, KnolliSprite.bounds.size.x);
+                k.body.transform.position = k.pos + new Vector2(0, hop);
+                k.body.transform.localScale = new Vector3(s * k.face * (1 + sq), s * (1 - sq), 1);
+                k.body.sortingOrder = Order(k.pos.y) + 1;
+                if (k.shadow != null) { k.shadow.transform.position = k.pos + new Vector2(0.03f, 0.01f); }
+                k.item.enabled = k.carry > 0 && k.item.sprite != null;
+                if (k.item.enabled)
+                {
+                    float isz = 0.2f / Mathf.Max(0.01f, k.item.sprite.bounds.size.x);
+                    k.item.transform.position = k.pos + new Vector2(0, 0.36f + hop);
+                    k.item.transform.localScale = Vector3.one * isz * (1f + 0.08f * Mathf.Min(4, k.carry));
+                    k.item.sortingOrder = k.body.sortingOrder + 1;
+                }
+            }
+
+            if (crate != null)
+            {
+                crateSquash = Mathf.MoveTowards(crateSquash, 0f, dt * 4f);
+                float csq = Mathf.Sin(crateSquash * Mathf.PI * 1.5f) * crateSquash * 0.12f;
+                crate.transform.localScale = new Vector3(crateScale * (1 + csq), crateScale * (1 - csq), 1);
+            }
+        }
+
+        // ------------------------------------------------------------------ Bilder
+
+        /// <summary>Knolli: kleiner brauner, runder Kerl mit hellem Bauch, grossen Augen und Fuesschen.</summary>
+        static Sprite KnolliSprite
+        {
+            get
+            {
+                if (knolliSprite != null) return knolliSprite;
+                const int n = 64;
+                var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                var px = new Color[n * n];
+                var brown = new Color(0.52f, 0.34f, 0.2f); var hi = new Color(0.72f, 0.5f, 0.3f); var dark = new Color(0.3f, 0.18f, 0.1f);
+                var belly = new Color(0.86f, 0.7f, 0.5f);
+                for (int y = 0; y < n; y++)
+                    for (int x = 0; x < n; x++)
+                    {
+                        Color c = Color.clear;
+                        float bx = (x - 32f) / 24f, by = (y - 30f) / 22f;
+                        float b = bx * bx + by * by;
+                        // Fuesschen
+                        float f1 = ((x - 23f) * (x - 23f)) / 30f + ((y - 7f) * (y - 7f)) / 12f, f2 = ((x - 41f) * (x - 41f)) / 30f + ((y - 7f) * (y - 7f)) / 12f;
+                        if (f1 < 1f || f2 < 1f) c = dark;
+                        if (b < 1f)
+                        {
+                            c = Color.Lerp(brown, hi, Mathf.Clamp01(1f - ((x - 24f) * (x - 24f) + (y - 40f) * (y - 40f)) / 500f) * 0.8f);
+                            if (((x - 32f) / 13f) * ((x - 32f) / 13f) + ((y - 22f) / 11f) * ((y - 22f) / 11f) < 1f) c = belly;   // Bauch
+                            if (b > 0.86f) c = dark;   // Kontur
+                            // Augen
+                            float e1 = (x - 25f) * (x - 25f) + (y - 36f) * (y - 36f), e2 = (x - 39f) * (x - 39f) + (y - 36f) * (y - 36f);
+                            if (e1 < 30f || e2 < 30f) c = Color.white;
+                            if ((x - 26.5f) * (x - 26.5f) + (y - 35f) * (y - 35f) < 9f || (x - 40.5f) * (x - 40.5f) + (y - 35f) * (y - 35f) < 9f) c = new Color(0.08f, 0.06f, 0.05f);
+                            if ((x - 27.5f) * (x - 27.5f) + (y - 36.5f) * (y - 36.5f) < 1.5f || (x - 41.5f) * (x - 41.5f) + (y - 36.5f) * (y - 36.5f) < 1.5f) c = Color.white;
+                            // Waengchen
+                            if ((x - 20f) * (x - 20f) + (y - 29f) * (y - 29f) < 7f || (x - 44f) * (x - 44f) + (y - 29f) * (y - 29f) < 7f) c = Color.Lerp(c, new Color(0.95f, 0.55f, 0.45f), 0.6f);
+                        }
+                        // kleiner Spross auf dem Kopf
+                        if (Mathf.Abs(x - 32f) < 1.6f && y >= 51 && y < 58) c = new Color(0.35f, 0.6f, 0.25f);
+                        if (((x - 36f) * (x - 36f)) / 14f + ((y - 58f) * (y - 58f)) / 5f < 1f) c = new Color(0.45f, 0.72f, 0.3f);
+                        if (c.a > 0f) c.a = 1f;
+                        px[y * n + x] = c;
+                    }
+                tex.SetPixels(px); tex.Apply();
+                knolliSprite = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.06f), n);
+                return knolliSprite;
+            }
+        }
+
+        /// <summary>Lieferkiste: Holzkiste mit Latten und einem Schild.</summary>
+        static Sprite CrateSprite
+        {
+            get
+            {
+                if (crateSprite != null) return crateSprite;
+                const int w = 96, h = 84;
+                var tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                var px = new Color[w * h];
+                var wood = new Color(0.62f, 0.42f, 0.24f); var woodHi = new Color(0.84f, 0.62f, 0.38f); var dark = new Color(0.35f, 0.22f, 0.12f);
+                for (int y = 0; y < h; y++)
+                    for (int x = 0; x < w; x++)
+                    {
+                        Color c = Color.clear;
+                        bool front = x >= 6 && x < w - 6 && y >= 2 && y < 52;
+                        bool lid = x >= 10 && x < w - 10 && y >= 52 && y < 74 - (Mathf.Abs(x - w / 2) < 30 ? 0 : 2);
+                        if (front)
+                        {
+                            float g = Mathf.PerlinNoise(x * 0.08f, y * 0.5f) * 0.3f;
+                            c = Color.Lerp(wood, woodHi, g + (y % 16) / 32f);
+                            if (y % 16 < 2) c = dark;                                       // Latten
+                            if (x < 9 || x >= w - 9) c = dark * 1.2f;                       // Pfosten
+                            if (Mathf.Abs((x - 6) - (y - 2) * 1.76f) < 2.2f) c = dark * 1.1f;   // Querstrebe
+                        }
+                        else if (lid) c = Color.Lerp(wood, woodHi, 0.5f + Mathf.PerlinNoise(x * 0.1f, y * 0.2f) * 0.3f);
+                        // Schild mit Muenze
+                        if (x >= 36 && x < 60 && y >= 20 && y < 38) c = new Color(0.95f, 0.88f, 0.7f);
+                        if ((x - 48f) * (x - 48f) + (y - 29f) * (y - 29f) < 26f) c = new Color(0.95f, 0.75f, 0.2f);
+                        if (c.a > 0f) c.a = 1f;
+                        px[y * w + x] = c;
+                    }
+                tex.SetPixels(px); tex.Apply();
+                crateSprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.02f), w);
+                return crateSprite;
+            }
+        }
+    }
+}
