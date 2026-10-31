@@ -50,6 +50,14 @@ namespace SeedClicker
     [Serializable] public class WallDef { public float wood = 2f; public float hp = 30f; }
     /// <summary>Steinpult: Preis in Muenzen (Abbauen gibt ihn zurueck).</summary>
     [Serializable] public class PedestalDef { public float cost = 20f; }
+    /// <summary>Runen-Altar: pro geopfertem Runenstein (Fluch-Stufe) werden Zombies staerker, groesser und zahlreicher,
+    /// dafuer gibt es mehr Muenzen pro Zombie, einen Bonus beim Ueberstehen (victoryBonus * Stufe * Welle) und oefter Runensteine.</summary>
+    [Serializable] public class AltarDef
+    {
+        public int maxLevel = 5, startRunes = 3;
+        public float hpPerLevel = 0.6f, damagePerLevel = 0.35f, sizePerLevel = 0.12f, countPerLevel = 0.25f;
+        public float coinsPerLevel = 1f, victoryBonus = 40f, runeDrop = 0.05f, runeDropPerLevel = 0.05f, rockRune = 0.2f;
+    }
     /// <summary>Verwandlungen: wie viele Holzmauern Steinmoos umwandelt, wie viel Stein haelt, hoechste Element-Stufe einer Waffe.</summary>
     [Serializable] public class TransformsDef
     {
@@ -169,6 +177,7 @@ namespace SeedClicker
         public FarmLevelDef[] farmLevels;
         public WallDef wall;
         public PedestalDef pedestal;
+        public AltarDef altar;
         public TransformsDef transforms;
         public BenchDef bench;
         public SupportDef support;
@@ -283,6 +292,7 @@ namespace SeedClicker
         public string RoleOf(string id) { var c = Plant(id); return c == null || string.IsNullOrEmpty(c.role) ? "combat" : c.role; }
         public WallDef Wall => wall ?? (wall = new WallDef());
         public PedestalDef Pedestal => pedestal ?? (pedestal = new PedestalDef());
+        public AltarDef Altar => altar ?? (altar = new AltarDef());
         public TransformsDef Transforms => transforms ?? (transforms = new TransformsDef());
         public BenchDef Bench => bench ?? (bench = new BenchDef());
         public StructureTapsDef StructureTaps => structureTaps ?? (structureTaps = new StructureTapsDef());

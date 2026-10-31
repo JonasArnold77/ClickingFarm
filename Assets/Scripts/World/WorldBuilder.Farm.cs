@@ -205,6 +205,7 @@ namespace SeedClicker
                 RemoveRock(best, true);
                 save.rocksGone.Add(best.id);
                 AddCoins(2 + rnd.Next(4), best.p + new Vector2(0, 0.5f));
+                if (rnd.NextDouble() < PlantBalance.I.Altar.rockRune) AddRunes(1, best.p + new Vector2(0, 0.9f));
                 save.Save();
                 RefreshGhosts();
             }

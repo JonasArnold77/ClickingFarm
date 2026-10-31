@@ -57,6 +57,7 @@ namespace SeedClicker
             PlaceHouse();
             PlaceWorkbench();
             PlaceBench();
+            PlaceAltar();
             ReserveBuildingSpots();
             PlaceRockIslands();
             PlaceNature();
@@ -360,6 +361,7 @@ namespace SeedClicker
             UpdateWatering(Time.deltaTime);
             UpdateSupport(Time.deltaTime);
             UpdateBench(Time.deltaTime);
+            UpdateAltar(Time.deltaTime);
             UpdateStructures(Time.deltaTime);
             UpdateHelpers(Time.deltaTime);
             UpdateSeason(Time.deltaTime);

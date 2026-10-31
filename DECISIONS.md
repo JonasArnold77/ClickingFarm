@@ -134,6 +134,14 @@
   - **Glutblüte, Frostdistel, Blitzkraut, Giftpilz** auf die Waffenbank: Die gerade gewählte Waffe bekommt Feuer (brennt nach), Eis (bremst), Blitz (springt auf 1 + Stufe/2 weitere Zombies über) oder Gift (wirkt nach, stapelt). Gleiches Element nochmal erhöht die Element-Stufe (max. 5); ein anderes ersetzt es. Das gilt für alle Waffen, auch Pfeil und Granate. Die Waffe auf der Bank glimmt in der Element-Farbe, das Icon in der Waffenleiste ist getönt, das Bank-Fenster zeigt das Element.
   - Werte in `plants.json` → `transforms` und `catalog[].transform`. Annahme: Das Element bleibt dauerhaft an der Waffe, bis es ersetzt wird.
 
+- **Runen-Altar** (`WorldBuilder.Altar.cs`, `WorldUI.Altar.cs`): Steinaltar links vor dem Haus. Antippen öffnet unten sein Fenster mit „Rune opfern“ und „Zurücknehmen“.
+  - Jeder geopferte **Runenstein** erhöht die Fluch-Stufe der *nächsten* Welle (max. 5). Die Runen kreisen leuchtend über dem Altar, der violett glüht. Mit Beginn der Nacht ist der Altar wieder leer.
+  - Je Stufe in dieser Nacht: Zombies +60 % Leben, +35 % Schaden, 12 % größer, +25 % Anzahl, violetter Schimmer unter den Füßen.
+  - Ertrag: Münzen pro Zombie ×(1 + Stufe), beim Überstehen 40 × Stufe × Welle Bonus, und Runensteine fallen öfter (5 % + 5 % je Stufe).
+  - Runensteine bekommt man von Zombies und mit 20 % aus Felsbrocken; zum Start gibt es 3. Es gibt sie nur hier, eine Anzeige im HUD fehlt noch.
+  - Das Ergebnisfenster der Welle zeigt Fluch, Beute, Bonus und gefundene Runen. Beim Start einer Fluchnacht kommt ein Banner.
+  - Werte in `plants.json` → `altar`. Annahme: Bei einer Niederlage ist die Opfergabe trotzdem verbraucht.
+
 ## Werbung
 - `Core/AdService.cs` ist die einzige Stelle für Werbung. Derzeit zeigt die UI ein 2-Sekunden-Platzhalter-Video und vergibt dann die Belohnung.
 - Belohnungsvideos: Energie auffüllen, Offline-Ertrag verdoppeln, alles wachsen lassen, Gratis-Samenpaket.

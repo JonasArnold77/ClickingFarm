@@ -37,6 +37,7 @@ namespace SeedClicker
             BuildPlantInfo();
             BuildBenchInfo();
             BuildStructureInfo();
+            BuildAltarInfo();
             BuildJuice();
             wb.EmptyFieldTapped += OpenPlantPicker;
             wb.BookTapped += OpenPlantBook;
@@ -295,6 +296,7 @@ namespace SeedClicker
             UpdatePlantInfo(dt);
             UpdateBenchInfo(dt);
             UpdateStructureInfo(dt);
+            UpdateAltarInfo(dt);
             if (nw == null || waveText == null) return;
             UpdateWeaponBar(dt);
             if (nw.Evening)
@@ -508,6 +510,8 @@ namespace SeedClicker
             Header(panel, r.victory ? "Nacht überstanden!" : "Der Hof wurde überrannt");
             string txt = $"Besiegte Zombies: {r.kills}";
             if (!r.victory) txt += $"\nVerlorenes Holz: {r.woodLost}";
+            if (r.curse > 0) txt += $"\nFluch {r.curse}: Beute {Num.Short(r.coins)}" + (r.victory ? $" + Bonus {Num.Short(r.bonus)}" : "");
+            if (r.runes > 0) txt += $"\nRunensteine gefunden: {r.runes}";
             foreach (var w in r.weapons) txt += "\nNeue Waffe: " + w.name + "!";
             if (r.weapons.Count > 0) { Banner("Neue Waffe: " + r.weapons[0].name, r.weapons[0].desc); }
             var t = Label(panel, txt, 40, Ink, TextAnchor.UpperCenter);

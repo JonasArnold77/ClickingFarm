@@ -19,6 +19,9 @@
 
 - [ ] Mondblume nutzt vorerst dasselbe Bild wie der Pustesamen – eigene Grafik für Verwandlungs-Pflanzen.
 
+- [ ] Runensteine im HUD anzeigen (bisher nur im Altar-Fenster und als schwebende Zahl).
+- [ ] Altar: eigene Grafik und Soundeffekt fürs Opfern.
+
 ## Später (laut CLAUDE.md nicht Teil der Basisversion)
 - [ ] Echte Werbe-SDK-Anbindung in `AdService` (Rewarded + seltene Interstitials).
 - [ ] WebGL-Build und Spieleportal-Anbindung.

@@ -1277,6 +1277,19 @@
     "stoneTowerDamage": 1.75,
     "stoneTowerRange": 1
   },
+  "altar": {
+    "maxLevel": 5,
+    "startRunes": 3,
+    "hpPerLevel": 0.6,
+    "damagePerLevel": 0.35,
+    "sizePerLevel": 0.12,
+    "countPerLevel": 0.25,
+    "coinsPerLevel": 1,
+    "victoryBonus": 40,
+    "runeDrop": 0.05,
+    "runeDropPerLevel": 0.05,
+    "rockRune": 0.2
+  },
   "bench": {
     "tapsBase": 12,
     "tapsGrowth": 1.3,

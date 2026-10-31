@@ -9,6 +9,7 @@ namespace SeedClicker
     public class WaveResult
     {
         public int wave; public bool victory; public int kills; public int woodLost;
+        public int curse, runes; public double coins, bonus;   // Fluch-Stufe vom Altar, gefundene Runen, Beute, Bonus
         public List<CatalogDef> unlocked = new List<CatalogDef>();
         public List<WeaponDef> weapons = new List<WeaponDef>();
     }
@@ -37,6 +38,7 @@ namespace SeedClicker
             public Vector2 knock;
             public bool dead;
             public float bashT;   // schlaegt gerade auf eine Mauer ein
+            public float power = 1f, size = 1f;   // Schaden- und Groessen-Faktor (Fluch vom Altar)
             public float Speed => def.speed * (slowT > 0 ? 1f - slowAmt : 1f);
         }
 
@@ -58,6 +60,8 @@ namespace SeedClicker
         public int WaveNumber => (wb != null ? wb.Save.wave : 0) + 1;
         public float Countdown { get; private set; }      // Zeit bis zum Abend
         public bool Evening { get; private set; }
+        /// <summary>Fluch-Stufe dieser Nacht (geopferte Runensteine).</summary>
+        public int Curse { get; private set; }
         public float EveningLeft { get; private set; }    // Zeit bis die Zombies kommen
         public float NightLeft { get; private set; }      // Zeit bis zum Morgen
         public float NightAmount { get; private set; }
@@ -118,12 +122,13 @@ namespace SeedClicker
         {
             Evening = false;
             Active = true;
-            toSpawn = B.waves.baseCount + B.waves.countPerWave * (WaveNumber - 1);
+            Curse = wb.ConsumeAltar();
+            toSpawn = Mathf.RoundToInt((B.waves.baseCount + B.waves.countPerWave * (WaveNumber - 1)) * (1f + B.Altar.countPerLevel * Curse));
             spawnT = 1.5f;
             HouseHp = B.waves.houseHp;
             cooldowns.Clear();
             NightLeft = B.waves.nightDuration > 0 ? B.waves.nightDuration : 60f;
-            result = new WaveResult { wave = WaveNumber };
+            result = new WaveResult { wave = WaveNumber, curse = Curse };
             Sfx.Play("sleep", 0.8f);
             WaveStarted?.Invoke(WaveNumber);
         }
@@ -142,6 +147,11 @@ namespace SeedClicker
             toSpawn = 0;
             if (victory)
             {
+                if (Curse > 0)
+                {
+                    result.bonus = B.Altar.victoryBonus * Curse * WaveNumber;
+                    wb.AddCoins(result.bonus, HouseTarget + new Vector2(0, 1.6f));
+                }
                 wb.Save.wave++;
                 result.unlocked = wb.UnlockForWave(wb.Save.wave);
                 if (B.weapons != null) foreach (var w in B.weapons) if (w.unlockWave == wb.Save.wave) result.weapons.Add(w);
@@ -277,13 +287,14 @@ namespace SeedClicker
 
             var root = new GameObject("Monster_" + def.id).transform;
             root.SetParent(transform, false);
-            float hp0 = def.hp * (1 + B.waves.hpGrowthPerWave * (wave - 1));
+            float hp0 = def.hp * (1 + B.waves.hpGrowthPerWave * (wave - 1)) * (1f + B.Altar.hpPerLevel * Curse);
             var zart = WorldArtSet.I;
             if (zart != null && zart.HasZombieWalk)
             {
                 var zm = BuildPixelZombie(def, root, zart.zombieWalk);
                 zm.pos = p; zm.hp = zm.maxHp = hp0; zm.hop = (float)rnd.NextDouble() * 6; zm.animT = (float)rnd.NextDouble() * 8f;
                 root.position = p;
+                Curse_(zm);
                 monsters.Add(zm);
                 Particles.I?.Burst(p, "square", new Color(0.35f, 0.26f, 0.18f), 10, 2.2f, 0.5f, 0.3f, 6f, 2f);
                 if (rnd.NextDouble() < 0.5) Sfx.Play("groan", 0.8f + (float)rnd.NextDouble() * 0.4f, 0.45f);
@@ -295,6 +306,7 @@ namespace SeedClicker
                 var zm = BuildZombie(def, root, zprefab);
                 zm.pos = p; zm.hp = zm.maxHp = hp0; zm.hop = (float)rnd.NextDouble() * 6;
                 root.position = p;
+                Curse_(zm);
                 monsters.Add(zm);
                 Particles.I?.Burst(p, "square", new Color(0.35f, 0.26f, 0.18f), 10, 2.2f, 0.5f, 0.3f, 6f, 2f);
                 if (rnd.NextDouble() < 0.5) Sfx.Play("groan", 0.8f + (float)rnd.NextDouble() * 0.4f, 0.45f);
@@ -323,8 +335,9 @@ namespace SeedClicker
                 e.transform.localPosition = new Vector3((i == 0 ? -1 : 1) * w * 0.14f, 0, 0);
             }
             float hp = def.hp * (1 + B.waves.hpGrowthPerWave * (wave - 1));
-            var m = new Monster { def = def, root = root, sr = sr, eyes = eyes, pos = p, hp = hp, maxHp = hp, hop = (float)rnd.NextDouble() * 6 };
+            var m = new Monster { def = def, root = root, sr = sr, eyes = eyes, pos = p, hp = hp0, maxHp = hp0, hop = (float)rnd.NextDouble() * 6 };
             root.position = p;
+            Curse_(m);
             monsters.Add(m);
             Particles.I?.Burst(p, "leaf", new Color(0.4f, 0.6f, 0.3f), 8, 2.5f, 0.5f, 0.6f, 4f, 1.5f);
         }
@@ -411,11 +424,11 @@ namespace SeedClicker
                 var to = toHouse;
                 if (dist < 0.7f)
                 {
-                    HouseHp -= m.def.damage;
+                    HouseHp -= m.def.damage * m.power;
                     WorldCamera.I?.Shake(0.12f);
                     Haptics.Tap(40);
                     Sfx.Play("error", 0.9f);
-                    wb.RaiseFloater(HouseTarget + new Vector2(0, 1.5f), "-" + Mathf.RoundToInt(m.def.damage), new Color(1f, 0.45f, 0.4f));
+                    wb.RaiseFloater(HouseTarget + new Vector2(0, 1.5f), "-" + Mathf.RoundToInt(m.def.damage * m.power), new Color(1f, 0.45f, 0.4f));
                     Poof(m, true);
                     continue;
                 }
@@ -427,7 +440,7 @@ namespace SeedClicker
                 if (wall != null)
                 {
                     m.bashT += dt;
-                    wb.HitWall(wall, m.def.damage * 0.5f * dt);
+                    wb.HitWall(wall, m.def.damage * m.power * 0.5f * dt);
                     // Dornen: wer zuschlaegt, verletzt sich
                     if (wall.thorns > 0)
                     {
@@ -453,7 +466,7 @@ namespace SeedClicker
                     m.animT += dt * fps;
                     m.sr.sprite = m.walk[DirIndex(face) * 8 + ((int)m.animT % 8)];
                     m.root.position = m.pos;
-                    m.root.localScale = new Vector3(1 + m.hitFlash * 0.15f, 1 - m.hitFlash * 0.1f, 1);
+                    m.root.localScale = new Vector3(1 + m.hitFlash * 0.15f, 1 - m.hitFlash * 0.1f, 1) * m.size;
                     m.sr.sortingOrder = WorldBuilder.Order(m.pos.y) + 1;
                     m.sr.color = Color.Lerp(Color.Lerp(m.tint, m.tint * c, 0.6f), new Color(1f, 0.35f, 0.3f), m.hitFlash);
                     if (rnd.NextDouble() < dt * 0.08) Sfx.Play("groan", 0.75f + (float)rnd.NextDouble() * 0.4f, 0.35f);
@@ -464,7 +477,7 @@ namespace SeedClicker
                     m.hop += dt * (2.2f + m.Speed * 1.5f);
                     m.root.position = m.pos + new Vector2(0, Mathf.Abs(Mathf.Sin(m.hop)) * 0.025f);
                     m.root.localRotation = Quaternion.Euler(0, 0, Mathf.Sin(m.hop * 0.5f) * 7f - dir.x * 7f);
-                    m.root.localScale = new Vector3(1 + m.hitFlash * 0.12f, 1 - m.hitFlash * 0.08f, 1);
+                    m.root.localScale = new Vector3(1 + m.hitFlash * 0.12f, 1 - m.hitFlash * 0.08f, 1) * m.size;
                     if (m.anim != null) { m.anim.SetFloat("DirX", dir.x); m.anim.SetFloat("DirY", dir.y); m.anim.SetFloat("Speed", 1f); }
                     m.group.sortingOrder = WorldBuilder.Order(m.pos.y) + 1;
                     for (int i = 0; i < m.parts.Length; i++)
@@ -478,7 +491,7 @@ namespace SeedClicker
                     float sq = (1 - Mathf.Abs(Mathf.Sin(m.hop))) * 0.15f;
                     m.root.position = m.pos + new Vector2(0, hopY);
                     float flip = dir.x < 0 ? -1 : 1;
-                    m.root.localScale = new Vector3((1 + sq + m.hitFlash * 0.15f) * flip, 1 - sq + m.hitFlash * 0.1f, 1);
+                    m.root.localScale = new Vector3((1 + sq + m.hitFlash * 0.15f) * flip, 1 - sq + m.hitFlash * 0.1f, 1) * m.size;
                     m.sr.sortingOrder = WorldBuilder.Order(m.pos.y) + 1;
                     foreach (Transform e in m.eyes) e.GetComponent<SpriteRenderer>().sortingOrder = m.sr.sortingOrder + 1;
                     m.sr.color = Color.Lerp(c, new Color(1f, 0.35f, 0.3f), m.hitFlash);
@@ -1054,10 +1067,28 @@ namespace SeedClicker
             if (m.hp <= 0) Kill(m);
         }
 
+        /// <summary>Fluch vom Altar: groesser, staerker, mit violettem Schimmer unter den Fuessen.</summary>
+        void Curse_(Monster m)
+        {
+            if (Curse <= 0) return;
+            m.power = 1f + B.Altar.damagePerLevel * Curse;
+            m.size = 1f + B.Altar.sizePerLevel * Curse;
+            m.root.localScale = Vector3.one * m.size;
+            var aura = new GameObject("CurseAura").AddComponent<SpriteRenderer>();
+            aura.transform.SetParent(m.root, false);
+            aura.sprite = WorldBuilder.Mist;
+            aura.color = new Color(0.65f, 0.25f, 0.9f, 0.25f + 0.07f * Curse);
+            aura.transform.localScale = new Vector3(0.9f, 0.35f, 1f);
+            aura.sortingOrder = -31000;
+        }
+
         void Kill(Monster m)
         {
             result.kills++;
-            wb.AddCoins(2 + WaveNumber * 2, m.pos + new Vector2(0, 0.8f));   // Beute
+            double loot = (2 + WaveNumber * 2) * (1f + B.Altar.coinsPerLevel * Curse);
+            result.coins += loot;
+            wb.AddCoins(loot, m.pos + new Vector2(0, 0.8f));   // Beute (mehr bei Fluch)
+            if (rnd.NextDouble() < B.Altar.runeDrop + B.Altar.runeDropPerLevel * Curse) { wb.AddRunes(1, m.pos + new Vector2(0, 1.2f)); result.runes++; }
             Poof(m, true);
         }
 
