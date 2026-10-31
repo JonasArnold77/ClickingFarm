@@ -185,7 +185,7 @@ namespace SeedClicker
             switch (def.role)
             {
                 case "harvest": case "bee":
-                    s = "1 " + WorldBuilder.ProductName(def) + " = " + Num.Short(wb.ItemValue(p)) + " Münzen · Vorrat " + p.stock + "/" + PlantBalance.I.Delivery.maxStock;
+                    s = "1 " + WorldBuilder.ProductName(def) + " = " + Num.Short(wb.ItemValue(p)) + " Münzen · Vorrat " + p.stock;
                     break;
                 case "water": s = "Gießt gerade " + wb.WaterTargetCount(p) + " Pflanzen"; break;
                 case "support": s = p.Grown ? wb.SupportSummary(p) : ""; break;

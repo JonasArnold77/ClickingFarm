@@ -21,7 +21,7 @@ namespace SeedClicker
 
         public static bool MakesProduct(PlantedState p) => p != null && (p.Role == "harvest" || p.Role == "bee");
         public static string ProductName(CatalogDef d) => d == null ? "" : !string.IsNullOrEmpty(d.product) ? d.product : d.name;
-        int MaxStock => PlantBalance.I.Delivery.maxStock;
+        const int RingSlots = 12, RingLayers = 4;   // Bild: 12 Stueck je Kreis, darueber weitere Lagen (der Vorrat selbst ist unbegrenzt)
 
         /// <summary>Wert eines Produkts dieser Pflanze (Ernte: wie frueher ein Tipp; Honig: ein Glas = einige Sekunden Honig).</summary>
         public double ItemValue(PlantedState p)
@@ -30,22 +30,17 @@ namespace SeedClicker
             return Math.Max(1, HarvestPerTap(p));
         }
 
-        /// <summary>Produkte in den Vorrat der Pflanze legen. false = Vorrat voll.</summary>
+        /// <summary>Produkte in den Vorrat der Pflanze legen (ohne Grenze – man kann so lange ernten, wie man will).</summary>
         public bool AddProduct(PlantedState p, int n, double valueEach, Vector2? fxFrom = null)
         {
-            if (p.stock >= MaxStock)
-            {
-                if (fxFrom.HasValue) Floater?.Invoke(fxFrom.Value + new Vector2(0, 0.3f), "Vorrat voll – Knollis holen ab", new Color(1f, 0.8f, 0.5f));
-                return false;
-            }
-            int add = Mathf.Min(n, MaxStock - p.stock);
+            int add = Mathf.Max(0, n);
             p.stock += add;
             p.stockValue += add * valueEach;
             if (fxFrom.HasValue)
             {
-                var pile = PilePos(p);
+                var pile = RingPos(p, Mathf.Min(p.stock - 1, RingSlots * RingLayers - 1));
                 var spr = plantViews.TryGetValue(new Cell(p.x, p.y), out var v) && v.sr != null ? v.sr.sprite : null;
-                StartCoroutine(Leaf(fxFrom.Value, pile + new Vector2(0, 0.1f), null, spr, null, 0.18f));
+                StartCoroutine(Leaf(fxFrom.Value, pile, null, spr, null, 0.18f));
                 Floater?.Invoke(fxFrom.Value + new Vector2(0.25f, 0.3f), "+" + add + " " + ProductName(PlantBalance.I.Plant(p.type)), new Color(1f, 0.92f, 0.6f));
             }
             return true;
@@ -53,12 +48,21 @@ namespace SeedClicker
 
         Vector2 PilePos(PlantedState p) => PlantBase(p) + new Vector2(CellSize * 0.32f, -CellSize * 0.1f);
 
+        /// <summary>Platz i im Kreis um die Pflanze (flach gedrueckt fuer die Schraegsicht; Platz 0 vorn, dann reihum).</summary>
+        Vector2 RingPos(PlantedState p, int i)
+        {
+            int layer = i / RingSlots, k = i % RingSlots;
+            // jede Lage leicht versetzt und etwas hoeher, damit es nach einem wachsenden Haufen aussieht
+            float a = -Mathf.PI / 2f + (k + layer * 0.5f) * Mathf.PI * 2f / RingSlots;
+            return PlantBase(p) + new Vector2(0, CellSize * 0.08f + layer * 0.045f) + new Vector2(Mathf.Cos(a) * CellSize * (0.42f - layer * 0.03f), Mathf.Sin(a) * CellSize * 0.26f);
+        }
+
         /// <summary>Von selbst nachproduzieren (vorher verdienten diese Pflanzen Muenzen pro Sekunde).</summary>
         void UpdateProducts(float dt)
         {
             foreach (var p in save.planted)
             {
-                if (!p.Grown || !MakesProduct(p) || p.stock >= MaxStock) continue;
+                if (!p.Grown || !MakesProduct(p)) continue;
                 prodFrac.TryGetValue(p, out var f);
                 f += PlantCps(p) * dt;
                 double val = ItemValue(p);
@@ -68,12 +72,12 @@ namespace SeedClicker
             UpdatePiles();
         }
 
-        /// <summary>Kleine Haeufchen neben der Pflanze: bis zu vier Mini-Bilder des Produkts.</summary>
+        /// <summary>Die Ernte liegt kreisrund um die Pflanze verteilt: ein Mini-Bild je Stueck im Vorrat.</summary>
         void UpdatePiles()
         {
             foreach (var p in save.planted)
             {
-                int show = Mathf.Min(4, p.stock);
+                int show = Mathf.Min(RingSlots * RingLayers, p.stock);
                 pileViews.TryGetValue(p, out var list);
                 if (list == null && show == 0) continue;
                 if (list == null) pileViews[p] = list = new List<SpriteRenderer>();
@@ -84,19 +88,22 @@ namespace SeedClicker
                     sr.transform.SetParent(objects, false);
                     list.Add(sr);
                 }
-                var basePos = PilePos(p);
                 for (int i = 0; i < list.Count; i++)
                 {
                     var sr = list[i];
                     sr.enabled = i < show && spr != null;
                     if (!sr.enabled) continue;
                     sr.sprite = spr;
-                    float s = 0.17f / Mathf.Max(0.01f, spr.bounds.size.x);
+                    float s = 0.15f / Mathf.Max(0.01f, spr.bounds.size.x);
                     sr.transform.localScale = Vector3.one * s;
-                    sr.transform.position = basePos + new Vector2((i % 2) * 0.1f - 0.05f, (i / 2) * 0.07f);
-                    sr.sortingOrder = Order(basePos.y) + 2 + i;
+                    var pos = RingPos(p, i);
+                    sr.transform.position = pos;
+                    // hinter der Pflanze liegende Stuecke werden von ihr verdeckt, vordere liegen davor
+                    int plantOrder = Order(PlantSortY(p, PlantBase(p).y));   // auch auf Mauer/Pult richtig
+                    bool behind = Mathf.Sin(-Mathf.PI / 2f + ((i % RingSlots) + (i / RingSlots) * 0.5f) * Mathf.PI * 2f / RingSlots) > 0.05f;
+                    sr.sortingOrder = plantOrder + (behind ? -3 : 12) + i / RingSlots;
                     // voller Vorrat wippt, damit man es sieht
-                    sr.transform.rotation = Quaternion.Euler(0, 0, p.stock >= MaxStock ? Mathf.Sin(Time.time * 6f + i) * 8f : (i - 1.5f) * 6f);
+                    sr.transform.rotation = Quaternion.Euler(0, 0, ((i * 37) % 21 - 10) * 1.2f);
                 }
             }
             // Haeufchen von Pflanzen, die es nicht mehr gibt
@@ -204,7 +211,7 @@ namespace SeedClicker
         void SpawnKnolli(bool fx)
         {
             var k = new Knolli { pos = CrateDrop + UnityEngine.Random.insideUnitCircle * 0.4f, idleT = UnityEngine.Random.Range(0f, 1f) };
-            k.shadow = Shadow(k.pos, 0.32f, 0.1f, 0.3f);
+            k.shadow = Shadow(k.pos, 0.48f, 0.14f, 0.3f);
             k.body = new GameObject("Knolli").AddComponent<SpriteRenderer>();
             k.body.transform.SetParent(objects, false);
             k.body.sprite = KnolliSprite;
@@ -283,7 +290,7 @@ namespace SeedClicker
                 // zeichnen: huepfen beim Laufen, Schatten, Ladung ueber dem Kopf
                 float hop = moving ? Mathf.Abs(Mathf.Sin(k.walkT)) * 0.06f : Mathf.Sin(Time.time * 2f + k.pos.x) * 0.01f;
                 float sq = moving ? Mathf.Sin(k.walkT * 2f) * 0.06f : 0f;
-                float s = 0.34f / Mathf.Max(0.01f, KnolliSprite.bounds.size.x);
+                float s = 0.52f / Mathf.Max(0.01f, KnolliSprite.bounds.size.x);
                 k.body.transform.position = k.pos + new Vector2(0, hop);
                 k.body.transform.localScale = new Vector3(s * k.face * (1 + sq), s * (1 - sq), 1);
                 k.body.sortingOrder = Order(k.pos.y) + 1;
@@ -292,7 +299,7 @@ namespace SeedClicker
                 if (k.item.enabled)
                 {
                     float isz = 0.2f / Mathf.Max(0.01f, k.item.sprite.bounds.size.x);
-                    k.item.transform.position = k.pos + new Vector2(0, 0.36f + hop);
+                    k.item.transform.position = k.pos + new Vector2(0, 0.55f + hop);
                     k.item.transform.localScale = Vector3.one * isz * (1f + 0.08f * Mathf.Min(4, k.carry));
                     k.item.sortingOrder = k.body.sortingOrder + 1;
                 }

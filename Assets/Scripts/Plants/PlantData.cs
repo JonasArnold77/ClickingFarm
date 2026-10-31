@@ -53,7 +53,7 @@ namespace SeedClicker
     /// <summary>Ernte-Lieferung: Vorrat je Pflanze, Knollis (Preis, Traglast, Tempo), Honigglas = so viele Sekunden Honig.</summary>
     [Serializable] public class DeliveryDef
     {
-        public int maxStock = 12, knolliCarry = 4, startKnollis = 1;
+        public int knolliCarry = 4, startKnollis = 1;
         public float knolliCost = 40f, knolliCostGrowth = 1.6f, knolliSpeed = 1.6f, beeJarSeconds = 6f;
     }
     /// <summary>Runen-Altar: pro geopfertem Runenstein (Fluch-Stufe) werden Zombies staerker, groesser und zahlreicher,
@@ -111,7 +111,7 @@ namespace SeedClicker
         public static string Desc(CatalogDef d) => d.role switch
         {
             "water" => "Gießt die Felder links, rechts, oben und unten: wachsen doppelt so schnell, Ernte +50 %.",
-            "harvest" => "Reif: jeder Tipp bringt " + (string.IsNullOrEmpty(d.product) ? d.name : d.product) + ", dazu wächst von selbst nach. Knollis tragen es zur Lieferkiste – Geld gibt es am nächsten Morgen.",
+            "harvest" => "Reif: jeder Tipp bringt " + (string.IsNullOrEmpty(d.product) ? d.name : d.product) + ", dazu wächst von selbst nach. Knollis tragen es zur Lieferkiste, Geld gibt es am nächsten Morgen.",
             "fert" => "Direkte Nachbarn wachsen schneller und bringen +50 % Münzen.",
             "boost" => "Tipps auf Pflanzen im Umkreis von 2 zählen doppelt.",
             "auto" => "Klickt von selbst das Feld vor sich – schneller mit jeder Stufe.",

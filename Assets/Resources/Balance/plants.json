@@ -1295,7 +1295,6 @@
     "rockRune": 0.2
   },
   "delivery": {
-    "maxStock": 12,
     "knolliCarry": 4,
     "startKnollis": 1,
     "knolliCost": 40,
