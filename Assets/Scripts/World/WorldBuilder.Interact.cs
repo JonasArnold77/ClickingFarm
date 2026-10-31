@@ -18,6 +18,8 @@ namespace SeedClicker
         public bool runesInit;
         public int depotCount, knollis; public double depotValue;   // depot*: alter Rest der Lieferkiste (wird morgens bezahlt)
         public int deliveredCount;   // insgesamt verkaufte Ernte
+        public string chType; public int chCount, chTier;   // Tagesaufgabe: Erntegut, abgeliefert, erreichte Stufen
+        public List<string> perks = new List<string>();   // einzigartige Gewinne aus Tagesaufgaben
         public bool knolliInit;
         public List<int> felled = new List<int>();       // gefaellte Baeume (Stumpf steht noch)
         public List<int> stumpsGone = new List<int>();   // auch der Stumpf ist weg

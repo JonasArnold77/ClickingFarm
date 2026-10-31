@@ -156,10 +156,15 @@
 
 - **Ernte als Produkte, Knollis und Lieferkiste** (`WorldBuilder.Delivery.cs`):
   - Ernte-Pflanzen (Radieschen → Radieschen-Bund, Weißrübe → Rübe, Bienenblume → Honigglas, `catalog[].product`) bringen keine Münzen mehr direkt. Jeder Ernte-Tipp legt ein Produkt in den Vorrat der Pflanze. Es gibt keine Grenze, man kann so lange ernten, wie man will. Die Ernte liegt wild verstreut im Feld und rund ums Feld herum, schräg gedreht (die Mitte mit der Pflanze bleibt frei). Gezeigt werden bis zu 48 Stück. Von selbst wächst langsam nach, so schnell wie früher die Münzen pro Sekunde. Der Wert eines Produkts ist der frühere Münzwert eines Tipps.
-  - **Knollis**, kleine braune, runde Wesen mit Spross auf dem Kopf (etwa halb so groß wie ein Feld breit), holen den Vorrat ab (bis 4 Stück) und tragen ihn zur **Lieferkiste** rechts vor dem Haus. Mehrere Knollis teilen sich die Arbeit. Zum Start gibt es 1, weitere im Laden (Reiter *Hof*), jeder teurer.
+  - **Knollis**, kleine braune, runde Wesen mit Spross auf dem Kopf (etwa halb so groß wie ein Feld breit), sammeln wie ein Magnet die ganze Ernte im Umkreis (1,6 Einheiten, `knolliRange`) auf einmal ein – die Stücke fliegen zu ihnen – und tragen alles zur **Lieferkiste** rechts vor dem Haus. Zwei Knollis steuern nie dieselbe Pflanze an. Mehrere Knollis teilen sich die Arbeit. Zum Start gibt es 1, weitere im Laden (Reiter *Hof*), jeder teurer.
   - **Geld gibt es sofort**, sobald ein Knolli die Ernte in die Kiste legt (Münzen fliegen aus der Kiste). Antippen der Kiste zeigt, wie viel schon verkauft wurde. Was in älteren Spielständen noch in der Kiste wartete, wird am nächsten Morgen ausbezahlt.
   - Die Rankenbahn bringt den Vorrat naher Ernte-Pflanzen direkt zur Lieferkiste (×1,5). Die Klopfwurz erntet halb so gut.
   - Ernte-Pflanzen zählen nicht mehr zu den Münzen pro Sekunde (Gebäude schon). Werte in `plants.json` → `delivery`.
+
+- **Tagesaufgabe** (`WorldBuilder.Challenge.cs`, `WorldUI.Challenge.cs`): Jeden Morgen (nach jeder Nacht) wird ein Erntegut gewählt, am liebsten eines, das gerade angebaut wird, nie zweimal hintereinander dasselbe. Gezählt wird, wie viel davon in der Lieferkiste ankommt (Knollis und Rankenbahn).
+  - Stufen 10 / 30 / 60 (`plants.json` → `challenge.tiers`), der Gewinn kommt sofort: Bronze = Münzen, Silber = 2 Runensteine, Gold = ein **einzigartiger Gewinn**, den es nur einmal gibt.
+  - Die einzigartigen Gewinne: Goldener Knolli (zusätzlich, 1,6× so schnell), Erntehorn (alle Ernte +25 % wert), Siebenmeilen-Stiefel (Knollis +30 % Tempo), Magnet-Amulett (Sammel-Umkreis +60 %), Glücksklee (15 % Chance auf doppelte Ernte pro Tipp), Erntekrone (goldene Lieferkiste + 3 Runensteine). Sind alle gewonnen, gibt es bei Gold einen großen Münzpreis.
+  - Anzeige oben links unter dem nächsten Ziel: Erntegut, Stückzahl/Ziel, Balken mit „nächste: Silber · Bronze geschafft“. Gewinne kommen als Banner.
 
 ## Werbung
 - `Core/AdService.cs` ist die einzige Stelle für Werbung. Derzeit zeigt die UI ein 2-Sekunden-Platzhalter-Video und vergibt dann die Belohnung.

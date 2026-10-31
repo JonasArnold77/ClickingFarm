@@ -26,14 +26,19 @@ namespace SeedClicker
         /// <summary>Wert eines Produkts dieser Pflanze (Ernte: wie frueher ein Tipp; Honig: ein Glas = einige Sekunden Honig).</summary>
         public double ItemValue(PlantedState p)
         {
-            if (p.Role == "bee") return Math.Max(1, PlantCps(p) * PlantBalance.I.Delivery.beeJarSeconds);
-            return Math.Max(1, HarvestPerTap(p));
+            double v = p.Role == "bee" ? Math.Max(1, PlantCps(p) * PlantBalance.I.Delivery.beeJarSeconds) : Math.Max(1, HarvestPerTap(p));
+            return HasPerk("horn") ? v * 1.25 : v;   // Erntehorn
         }
 
         /// <summary>Produkte in den Vorrat der Pflanze legen (ohne Grenze – man kann so lange ernten, wie man will).</summary>
         public bool AddProduct(PlantedState p, int n, double valueEach, Vector2? fxFrom = null)
         {
             int add = Mathf.Max(0, n);
+            if (fxFrom.HasValue && HasPerk("klee") && UnityEngine.Random.value < 0.15f)
+            {
+                add *= 2;   // Gluecksklee
+                Floater?.Invoke(fxFrom.Value + new Vector2(-0.3f, 0.5f), "Glücksklee!", new Color(0.6f, 1f, 0.5f));
+            }
             p.stock += add;
             p.stockValue += add * valueEach;
             if (fxFrom.HasValue)
@@ -161,8 +166,9 @@ namespace SeedClicker
                 : "Lieferkiste – Knollis bringen die Ernte her, Geld gibt es sofort", new Color(1f, 0.92f, 0.6f));
         }
 
-        void Deposit(int n, double value, Vector2 at)
+        void Deposit(int n, double value, Vector2 at, Dictionary<string, int> types = null)
         {
+            CountDelivered(types);
             // sofort bezahlt, sobald die Ernte in der Kiste liegt
             save.deliveredCount += n;
             crateSquash = 0.7f;
@@ -191,6 +197,7 @@ namespace SeedClicker
             public SpriteRenderer body, shadow, item;
             public Vector2 pos, target; public int state; public PlantedState goal;
             public int carry; public double carryValue; public float walkT, idleT, face = 1f;
+            public bool gold; public readonly Dictionary<string, int> types = new Dictionary<string, int>();
         }
 
         readonly List<Knolli> knollis = new List<Knolli>();
@@ -203,6 +210,8 @@ namespace SeedClicker
         {
             if (!save.knolliInit) { save.knollis = Mathf.Max(save.knollis, PlantBalance.I.Delivery.startKnollis); save.knolliInit = true; }
             for (int i = 0; i < save.knollis; i++) SpawnKnolli(false);
+            foreach (var pk in save.perks) ApplyPerk(pk, false);
+            EnsureChallenge();
         }
 
         public bool HireKnolli()
@@ -216,13 +225,14 @@ namespace SeedClicker
             return true;
         }
 
-        void SpawnKnolli(bool fx)
+        void SpawnKnolli(bool fx, bool gold = false)
         {
-            var k = new Knolli { pos = CrateDrop + UnityEngine.Random.insideUnitCircle * 0.4f, idleT = UnityEngine.Random.Range(0f, 1f) };
+            var k = new Knolli { pos = CrateDrop + UnityEngine.Random.insideUnitCircle * 0.4f, idleT = UnityEngine.Random.Range(0f, 1f), gold = gold };
             k.shadow = Shadow(k.pos, 0.48f, 0.14f, 0.3f);
             k.body = new GameObject("Knolli").AddComponent<SpriteRenderer>();
             k.body.transform.SetParent(objects, false);
             k.body.sprite = KnolliSprite;
+            if (gold) k.body.color = new Color(1f, 0.85f, 0.35f);
             k.item = new GameObject("KnolliLoad").AddComponent<SpriteRenderer>();
             k.item.transform.SetParent(objects, false);
             k.item.enabled = false;
@@ -237,9 +247,9 @@ namespace SeedClicker
             foreach (var p in save.planted)
             {
                 if (p.stock <= 0) continue;
-                int coming = 0;
-                foreach (var o in knollis) if (o != k && o.goal == p && o.state == 1) coming += PlantBalance.I.Delivery.knolliCarry;
-                if (coming >= p.stock) continue;
+                bool taken = false;
+                foreach (var o in knollis) if (o != k && o.goal == p && o.state == 1) taken = true;
+                if (taken) continue;
                 float d = (PilePos(p) - k.pos).sqrMagnitude;
                 if (d < bd) { bd = d; best = p; }
             }
@@ -267,7 +277,7 @@ namespace SeedClicker
 
                 var d = k.target - k.pos;
                 float dist = d.magnitude;
-                float speed = D.knolliSpeed * (k.state == 0 ? 0.4f : 1f);
+                float speed = D.knolliSpeed * (k.state == 0 ? 0.4f : 1f) * (k.gold ? 1.6f : 1f) * (HasPerk("stiefel") ? 1.3f : 1f);
                 bool moving = dist > 0.04f;
                 if (moving)
                 {
@@ -277,21 +287,27 @@ namespace SeedClicker
                 }
                 else if (k.state == 1)
                 {
-                    // aufladen
-                    int take = Mathf.Min(D.knolliCarry, k.goal.stock);
-                    double each = k.goal.stock > 0 ? k.goal.stockValue / k.goal.stock : 0;
-                    k.goal.stock -= take; k.goal.stockValue -= each * take;
-                    if (k.goal.stock <= 0) { k.goal.stock = 0; k.goal.stockValue = 0; }
-                    k.carry += take; k.carryValue += each * take;
-                    var spr = plantViews.TryGetValue(new Cell(k.goal.x, k.goal.y), out var v) && v.sr != null ? v.sr.sprite : null;
-                    k.item.sprite = spr;
-                    Sfx.Play("tick", 1.6f, 0.3f);
+                    // Magnet: alle Ernte im Umkreis fliegt zum Knolli
+                    float range = D.knolliRange * (HasPerk("magnet") ? 1.6f : 1f);
+                    int flies = 0;
+                    foreach (var q in save.planted)
+                    {
+                        if (q.stock <= 0 || (PilePos(q) - k.pos).sqrMagnitude > range * range) continue;
+                        var qspr = plantViews.TryGetValue(new Cell(q.x, q.y), out var qv) && qv.sr != null ? qv.sr.sprite : null;
+                        for (int i = 0; i < Mathf.Min(q.stock, 6) && flies < 18; i++, flies++)
+                            StartCoroutine(Leaf(ScatterPos(q, i), k.pos + new Vector2(0, 0.5f), null, qspr, null, 0.15f));
+                        k.carry += q.stock; k.carryValue += q.stockValue;
+                        k.types.TryGetValue(q.type, out int had); k.types[q.type] = had + q.stock;
+                        q.stock = 0; q.stockValue = 0;
+                        if (k.item.sprite == null || q == k.goal) k.item.sprite = qspr;
+                    }
+                    if (flies > 0) { Particles.I?.Ring(k.pos + new Vector2(0, 0.3f), new Color(1f, 0.92f, 0.6f, 0.6f), range * 1.2f, 0.4f); Sfx.Play("grow", 1.5f, 0.4f); }
                     k.state = 2; k.goal = null; k.target = CrateDrop + UnityEngine.Random.insideUnitCircle * 0.15f;
                 }
                 else if (k.state == 2)
                 {
-                    Deposit(k.carry, k.carryValue, k.pos);
-                    k.carry = 0; k.carryValue = 0;
+                    Deposit(k.carry, k.carryValue, k.pos, k.types);
+                    k.carry = 0; k.carryValue = 0; k.types.Clear(); k.item.sprite = null;
                     k.state = 0; k.idleT = 0.3f;
                 }
 
@@ -308,7 +324,7 @@ namespace SeedClicker
                 {
                     float isz = 0.2f / Mathf.Max(0.01f, k.item.sprite.bounds.size.x);
                     k.item.transform.position = k.pos + new Vector2(0, 0.55f + hop);
-                    k.item.transform.localScale = Vector3.one * isz * (1f + 0.08f * Mathf.Min(4, k.carry));
+                    k.item.transform.localScale = Vector3.one * isz * (1f + 0.06f * Mathf.Min(12, k.carry));   // grosse Ladung, grosses Buendel
                     k.item.sortingOrder = k.body.sortingOrder + 1;
                 }
             }

@@ -38,6 +38,7 @@ namespace SeedClicker
             BuildBenchInfo();
             BuildStructureInfo();
             BuildAltarInfo();
+            BuildChallengeHud();
             BuildJuice();
             wb.EmptyFieldTapped += OpenPlantPicker;
             wb.BookTapped += OpenPlantBook;
@@ -297,6 +298,7 @@ namespace SeedClicker
             UpdateBenchInfo(dt);
             UpdateStructureInfo(dt);
             UpdateAltarInfo(dt);
+            UpdateChallengeHud(dt);
             if (nw == null || waveText == null) return;
             UpdateWeaponBar(dt);
             if (nw.Evening)

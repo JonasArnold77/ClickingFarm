@@ -38,7 +38,8 @@ namespace SeedClicker
         public void NightPassed()
         {
             save.nights++;
-            PayDelivery();   // am Morgen: Lieferkiste wird bezahlt
+            PayDelivery();   // alte Spielstaende: Rest der Lieferkiste
+            NewChallenge();  // neuer Tag, neue Tagesaufgabe
             int n = 0;
             for (int i = save.fellNights.Count - 1; i >= 0; i--)
             {

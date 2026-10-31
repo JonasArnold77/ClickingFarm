@@ -1295,12 +1295,15 @@
     "rockRune": 0.2
   },
   "delivery": {
-    "knolliCarry": 4,
+    "knolliRange": 1.6,
     "startKnollis": 1,
     "knolliCost": 40,
     "knolliCostGrowth": 1.6,
     "knolliSpeed": 1.6,
     "beeJarSeconds": 6
+  },
+  "challenge": {
+    "tiers": [10, 30, 60]
   },
   "bench": {
     "tapsBase": 12,

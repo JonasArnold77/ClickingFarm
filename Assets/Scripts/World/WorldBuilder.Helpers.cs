@@ -97,7 +97,8 @@ namespace SeedClicker
             StartCoroutine(Leaf(from, mid, () =>
             {
                 Sfx.Play("tick", Random.Range(1.5f, 1.7f), 0.2f);
-                StartCoroutine(Leaf(mid, CrateDrop, () => Deposit(n, coins, CrateDrop), coin, new Color(1f, 0.85f, 0.3f), 0.2f));
+                var types = new Dictionary<string, int> { { pick.type, n } };
+                StartCoroutine(Leaf(mid, CrateDrop, () => Deposit(n, coins, CrateDrop, types), coin, new Color(1f, 0.85f, 0.3f), 0.2f));
             }, coin, new Color(1f, 0.85f, 0.3f), 0.18f));
         }
 

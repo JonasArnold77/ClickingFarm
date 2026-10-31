@@ -50,10 +50,13 @@ namespace SeedClicker
     [Serializable] public class WallDef { public float wood = 2f; public float hp = 30f; }
     /// <summary>Steinpult: Preis in Muenzen (Abbauen gibt ihn zurueck).</summary>
     [Serializable] public class PedestalDef { public float cost = 20f; }
+    /// <summary>Tagesaufgabe: so viele Stueck des Tages-Ernteguts fuer Bronze, Silber, Gold.</summary>
+    [Serializable] public class ChallengeDef { public int[] tiers = { 10, 30, 60 }; }
     /// <summary>Ernte-Lieferung: Vorrat je Pflanze, Knollis (Preis, Traglast, Tempo), Honigglas = so viele Sekunden Honig.</summary>
     [Serializable] public class DeliveryDef
     {
-        public int knolliCarry = 4, startKnollis = 1;
+        public int startKnollis = 1;
+        public float knolliRange = 1.6f;   // Umkreis, aus dem ein Knolli alle Ernte auf einmal einsammelt (Magnet)
         public float knolliCost = 40f, knolliCostGrowth = 1.6f, knolliSpeed = 1.6f, beeJarSeconds = 6f;
     }
     /// <summary>Runen-Altar: pro geopfertem Runenstein (Fluch-Stufe) werden Zombies staerker, groesser und zahlreicher,
@@ -185,6 +188,7 @@ namespace SeedClicker
         public WallDef wall;
         public PedestalDef pedestal;
         public DeliveryDef delivery;
+        public ChallengeDef challenge;
         public AltarDef altar;
         public TransformsDef transforms;
         public BenchDef bench;
@@ -302,6 +306,7 @@ namespace SeedClicker
         public WallDef Wall => wall ?? (wall = new WallDef());
         public PedestalDef Pedestal => pedestal ?? (pedestal = new PedestalDef());
         public DeliveryDef Delivery => delivery ?? (delivery = new DeliveryDef());
+        public ChallengeDef Challenge => challenge != null && challenge.tiers != null && challenge.tiers.Length > 0 ? challenge : (challenge = new ChallengeDef());
         public AltarDef Altar => altar ?? (altar = new AltarDef());
         public TransformsDef Transforms => transforms ?? (transforms = new TransformsDef());
         public BenchDef Bench => bench ?? (bench = new BenchDef());
