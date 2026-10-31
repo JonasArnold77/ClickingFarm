@@ -191,6 +191,9 @@ namespace SeedClicker
             var w = World(screen);
             var wb = WorldBuilder.I;
             if (wb == null) return;
+            // Knolli antippen (auswaehlen), dann ein Feld antippen (zuordnen)
+            if (wb.HitKnolli(w)) { wb.TapKnolli(); return; }
+            if (wb.KnolliSelected) { wb.AssignKnolli(wb.TapCell(w)); return; }
             if (wb.HitWorkbench(w)) { wb.TapWorkbench(); return; }
             var cell = wb.TapCell(w);
             // Felder werden gerade geplant: dieser Tipp legt sie an

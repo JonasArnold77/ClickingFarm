@@ -197,7 +197,7 @@ namespace SeedClicker
             public SpriteRenderer body, shadow, item;
             public Vector2 pos, target; public int state; public PlantedState goal;
             public int carry; public double carryValue; public float walkT, idleT, face = 1f;
-            public bool gold; public readonly Dictionary<string, int> types = new Dictionary<string, int>();
+            public bool gold; public int slot; public readonly Dictionary<string, int> types = new Dictionary<string, int>();
         }
 
         readonly List<Knolli> knollis = new List<Knolli>();
@@ -227,12 +227,13 @@ namespace SeedClicker
 
         void SpawnKnolli(bool fx, bool gold = false)
         {
-            var k = new Knolli { pos = CrateDrop + UnityEngine.Random.insideUnitCircle * 0.4f, idleT = UnityEngine.Random.Range(0f, 1f), gold = gold };
+            var k = new Knolli { pos = CrateDrop + UnityEngine.Random.insideUnitCircle * 0.4f, idleT = UnityEngine.Random.Range(0f, 1f), gold = gold, slot = knollis.Count };
             k.shadow = Shadow(k.pos, 0.48f, 0.14f, 0.3f);
             k.body = new GameObject("Knolli").AddComponent<SpriteRenderer>();
             k.body.transform.SetParent(objects, false);
             k.body.sprite = KnolliSprite;
             if (gold) k.body.color = new Color(1f, 0.85f, 0.35f);
+            if (fx) Floater?.Invoke(k.pos + new Vector2(0, 0.8f), "Tipp mich an, dann ein Feld!", new Color(0.8f, 1f, 0.7f));
             k.item = new GameObject("KnolliLoad").AddComponent<SpriteRenderer>();
             k.item.transform.SetParent(objects, false);
             k.item.enabled = false;
@@ -246,7 +247,7 @@ namespace SeedClicker
             PlantedState best = null; float bd = float.MaxValue;
             foreach (var p in save.planted)
             {
-                if (p.stock <= 0) continue;
+                if (p.stock <= 0 || !InBed(k, p)) continue;   // nur im eigenen Feld
                 bool taken = false;
                 foreach (var o in knollis) if (o != k && o.goal == p && o.state == 1) taken = true;
                 if (taken) continue;
@@ -258,6 +259,7 @@ namespace SeedClicker
 
         void UpdateKnollis(float dt)
         {
+            bedCache.Clear();   // Felder koennen sich aendern: Beete jeden Frame neu bestimmen
             var D = PlantBalance.I.Delivery;
             foreach (var k in knollis)
             {
@@ -292,7 +294,7 @@ namespace SeedClicker
                     int flies = 0;
                     foreach (var q in save.planted)
                     {
-                        if (q.stock <= 0 || (PilePos(q) - k.pos).sqrMagnitude > range * range) continue;
+                        if (q.stock <= 0 || !InBed(k, q) || (PilePos(q) - k.pos).sqrMagnitude > range * range) continue;
                         var qspr = plantViews.TryGetValue(new Cell(q.x, q.y), out var qv) && qv.sr != null ? qv.sr.sprite : null;
                         for (int i = 0; i < Mathf.Min(q.stock, 6) && flies < 18; i++, flies++)
                             StartCoroutine(Leaf(ScatterPos(q, i), k.pos + new Vector2(0, 0.5f), null, qspr, null, 0.15f));
@@ -329,6 +331,7 @@ namespace SeedClicker
                 }
             }
 
+            UpdateKnolliJobs(dt);
             if (crate != null)
             {
                 crateSquash = Mathf.MoveTowards(crateSquash, 0f, dt * 4f);
