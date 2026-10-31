@@ -47,6 +47,7 @@ namespace SeedClicker
         public List<WallState> walls = new List<WallState>();
         public List<PedestalState> pedestals = new List<PedestalState>();
         public List<RiverState> rivers = new List<RiverState>();
+        public List<int> junkGone = new List<int>();   // weggeklickte Steine, Steinhaufen, Baumstaemme
         public long lastSeen;
         public int season;            // 0 Sommer, 1 Herbst, 2 Winter
         public bool plantsCleared;
@@ -307,7 +308,6 @@ namespace SeedClicker
                 if (Mathf.Abs(p.x) > MapW / 2f - 0.5f || Mathf.Abs(p.y) > MapH / 2f - 0.5f) return false;
             }
             if (HasWall(c)) return false;                                     // dort steht eine Mauer
-            if (MaskAt(center).a > 0.15f) return false;                      // nicht aufs Pflaster
             // Baeume, Stuempfe, Felsen, Haus blockieren; Blumen/Gras/Buesche werden weggeraeumt
             for (int i = 0; i < occupied.Count; i++)
             {

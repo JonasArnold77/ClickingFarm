@@ -187,3 +187,9 @@
 ## Geboostete Felder sichtbar machen
 - `WorldBuilder.Boosts.cs`, `WorldUI.Boosts.cs`: Jedes Feld, das verstärkt wird (Totem, Bach, Tauschilf, Dünger, Verstärker, Vogelscheuche, Brunnen, Treibhaus), schimmert leicht in der Farbe seiner ersten Quelle; ein heller Schimmer wandert schräg über die Felder, vereinzelt glitzert es.
 - Maus über einem geboosteten Feld: pulsierender Rahmen ums Feld, von jeder Quelle eine leuchtende Raute und eine Linie aus Strichen, die zum Feld wandern; neben dem Zeiger eine Liste „Geboostet durch:“ mit jeder Quelle in ihrer Farbe. Ohne Maus (Handy) erscheinen die Linien für die gerade geöffnete Pflanze. Im Bau- und Platzier-Modus aus.
+
+## Freier bauen
+- `WorldBuilder.Clearing.cs`: Im ruhigen Umfeld um den Hof (Hoffläche der Ausbaustufe 2, also etwa x −7,2…7,2 / y −7,2…2,4, plus 1 Einheit Rand, nach oben 3) entstehen keine Bäume, Felsbrocken, Steine oder Baumstämme; gefällte Bäume wachsen dort nicht nach. Im Test waren dort 382 von 384 Zellen für Mauern frei (nur das Schild blockiert).
+- Jedes Hindernis lässt sich durch oft Antippen entfernen: Bäume und Stümpfe (wie bisher), Felsbrocken (wie bisher) und neu der lose Kram (Steine 3, großer Fels 5, mittlerer 3, kleiner 2, Baumstamm 4 Tipps). Kram gibt 1–3 Münzen bzw. 1 Holz; gespeichert in `junkGone`. Eine kleine Zahl zeigt, wie viele Tipps noch fehlen.
+- Gebäude-Plätze blockieren erst, wenn dort ein Gebäude steht. Felder dürfen jetzt auch aufs Pflaster.
+- Gilt weiter: Felder nur innerhalb der aktuellen Hoffläche (Hof-Ausbau bleibt ein Ziel); Haus, Werkbank, Waffenbank, Altar, Lieferkiste, Almanach und Klippe blockieren.

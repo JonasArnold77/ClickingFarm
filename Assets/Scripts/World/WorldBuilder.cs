@@ -65,6 +65,7 @@ namespace SeedClicker
             SetupLight();
             LoadWorldSave();
             LoadRocks();
+            ClearCalmZone();
             LoadDefense();
             LoadPlants();
             RefreshGhosts();
@@ -301,13 +302,15 @@ namespace SeedClicker
             {
                 var p = RandomPoint(1f);
                 if ((p - HousePos).magnitude < 3f || !OnBareGrass(p, 0f) || !Free(p, 0.4f) || NearStartArea(p, 0.6f, 0.6f)) continue;
+                int jocc = occupied.Count;
                 Reserve(p, 0.4f);
                 float roll = R();
-                if (roll < 0.35f) Place("sk_Stones", p, 0.6f + R() * 0.3f, R() < 0.5f, 0.04f);
-                else if (roll < 0.55f) { PlaceSized("hh_rock_big", p, 0.6f + R() * 0.2f, R() < 0.5f); Shadow(p, 0.9f, 0.2f); }
-                else if (roll < 0.75f) { PlaceSized("hh_rock_medium", p, 0.4f, R() < 0.5f); Shadow(p, 0.6f, 0.15f); }
-                else if (roll < 0.88f) { PlaceSized("hh_log", p, 0.3f, R() < 0.5f); Shadow(p, 0.9f, 0.15f); }
-                else { PlaceSized("hh_rock_small", p, 0.25f, R() < 0.5f); Shadow(p, 0.4f, 0.1f); }
+                // jedes Stueck laesst sich wegklicken (Anzahl Tipps nach Groesse)
+                if (roll < 0.35f) AddJunk(Place("sk_Stones", p, 0.6f + R() * 0.3f, R() < 0.5f, 0.04f), null, p, jocc, 3, false);
+                else if (roll < 0.55f) { var sr = PlaceSized("hh_rock_big", p, 0.6f + R() * 0.2f, R() < 0.5f); AddJunk(sr, Shadow(p, 0.9f, 0.2f), p, jocc, 5, false); }
+                else if (roll < 0.75f) { var sr = PlaceSized("hh_rock_medium", p, 0.4f, R() < 0.5f); AddJunk(sr, Shadow(p, 0.6f, 0.15f), p, jocc, 3, false); }
+                else if (roll < 0.88f) { var sr = PlaceSized("hh_log", p, 0.3f, R() < 0.5f); AddJunk(sr, Shadow(p, 0.9f, 0.15f), p, jocc, 4, true); }
+                else { var sr = PlaceSized("hh_rock_small", p, 0.25f, R() < 0.5f); AddJunk(sr, Shadow(p, 0.4f, 0.1f), p, jocc, 2, false); }
             }
 
             // Blumen, Gras, kleine Pflanzen
@@ -358,6 +361,7 @@ namespace SeedClicker
             UpdateWalls(Time.deltaTime);
             UpdatePedestals(Time.deltaTime);
             UpdateRocks(Time.deltaTime);
+            UpdateJunk(Time.deltaTime);
             UpdateEconomy(Time.deltaTime);
             UpdateWatering(Time.deltaTime);
             UpdateSupport(Time.deltaTime);

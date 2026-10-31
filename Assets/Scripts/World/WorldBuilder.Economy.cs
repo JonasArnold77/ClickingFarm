@@ -121,7 +121,8 @@ namespace SeedClicker
         readonly Dictionary<string, SpriteRenderer> buildingViews = new Dictionary<string, SpriteRenderer>();
         readonly Dictionary<string, float> buildingPop = new Dictionary<string, float>();
 
-        void ReserveBuildingSpots() { foreach (var s in BuildingSpots) Reserve(s, 1.1f); }
+        /// <summary>Gebaeude-Plaetze blockieren erst, wenn dort ein Gebaeude steht (siehe RefreshBuildingViews).</summary>
+        void ReserveBuildingSpots() { }
 
         void RefreshBuildingViews(string bumpId = null)
         {
@@ -139,6 +140,7 @@ namespace SeedClicker
                 sr.transform.position = new Vector3(BuildingSpots[i].x, BuildingSpots[i].y - spr.bounds.min.y * s, 0);
                 Shadow(BuildingSpots[i], 1.6f * d.scale, 0.35f, 0.3f);
                 buildingViews[d.id] = sr;
+                Reserve(BuildingSpots[i], 1.1f);
                 buildingBase[d.id] = sr.transform.localScale;
                 buildingPop[d.id] = 0f;
                 Particles.I?.Burst(BuildingSpots[i] + new Vector2(0, 0.5f), "star", new Color(1f, 0.9f, 0.5f), 18, 3f, 0.8f, 0.3f, 1f, 1.5f);

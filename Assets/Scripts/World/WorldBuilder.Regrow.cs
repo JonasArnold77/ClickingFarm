@@ -46,6 +46,7 @@ namespace SeedClicker
                 var f = save.fellNights[i];
                 if (save.nights - f.night < RegrowNights || f.id < 0 || f.id >= trees.Count) continue;
                 var t = trees[f.id];
+                if (InCalmZone(t.foot)) { save.fellNights.RemoveAt(i); continue; }   // ums Hofgelaende waechst nichts nach
                 if (TreeBlocked(t)) continue;   // spaeter nochmal versuchen
                 Regrow(t, n++ * 0.12f);
                 save.fellNights.RemoveAt(i);
