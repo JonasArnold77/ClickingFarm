@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -198,7 +199,11 @@ namespace SeedClicker
             public Vector2 pos, target; public int state; public PlantedState goal;
             public int carry; public double carryValue; public float walkT, idleT, face = 1f;
             public bool gold; public int slot; public readonly Dictionary<string, int> types = new Dictionary<string, int>();
+            public readonly List<Sprite> load = new List<Sprite>();                  // Bilder der Ladung (eins je schwebendem Stueck)
+            public readonly List<SpriteRenderer> orbit = new List<SpriteRenderer>(); // schweben um den Knolli herum
         }
+
+        const int OrbitMax = 12;
 
         readonly List<Knolli> knollis = new List<Knolli>();
         static Sprite knolliSprite;
@@ -298,6 +303,7 @@ namespace SeedClicker
                         var qspr = plantViews.TryGetValue(new Cell(q.x, q.y), out var qv) && qv.sr != null ? qv.sr.sprite : null;
                         for (int i = 0; i < Mathf.Min(q.stock, 6) && flies < 18; i++, flies++)
                             StartCoroutine(Leaf(ScatterPos(q, i), k.pos + new Vector2(0, 0.5f), null, qspr, null, 0.15f));
+                        for (int i = 0; i < q.stock && k.load.Count < OrbitMax; i++) k.load.Add(qspr);
                         k.carry += q.stock; k.carryValue += q.stockValue;
                         k.types.TryGetValue(q.type, out int had); k.types[q.type] = had + q.stock;
                         q.stock = 0; q.stockValue = 0;
@@ -308,9 +314,14 @@ namespace SeedClicker
                 }
                 else if (k.state == 2)
                 {
-                    Deposit(k.carry, k.carryValue, k.pos, k.types);
-                    k.carry = 0; k.carryValue = 0; k.types.Clear(); k.item.sprite = null;
-                    k.state = 0; k.idleT = 0.3f;
+                    Unload(k);
+                    k.state = 3; k.idleT = 0.9f;
+                }
+                else if (k.state == 3)
+                {
+                    // kurz stehen bleiben und zuschauen, wie die Ladung in die Kiste fliegt
+                    k.idleT -= dt;
+                    if (k.idleT <= 0f) { k.state = 0; k.idleT = 0.2f; }
                 }
 
                 // zeichnen: huepfen beim Laufen, Schatten, Ladung ueber dem Kopf
@@ -321,14 +332,8 @@ namespace SeedClicker
                 k.body.transform.localScale = new Vector3(s * k.face * (1 + sq), s * (1 - sq), 1);
                 k.body.sortingOrder = Order(k.pos.y) + 1;
                 if (k.shadow != null) { k.shadow.transform.position = k.pos + new Vector2(0.03f, 0.01f); }
-                k.item.enabled = k.carry > 0 && k.item.sprite != null;
-                if (k.item.enabled)
-                {
-                    float isz = 0.2f / Mathf.Max(0.01f, k.item.sprite.bounds.size.x);
-                    k.item.transform.position = k.pos + new Vector2(0, 0.55f + hop);
-                    k.item.transform.localScale = Vector3.one * isz * (1f + 0.06f * Mathf.Min(12, k.carry));   // grosse Ladung, grosses Buendel
-                    k.item.sortingOrder = k.body.sortingOrder + 1;
-                }
+                k.item.enabled = false;
+                DrawOrbit(k, hop);
             }
 
             UpdateKnolliJobs(dt);
@@ -338,6 +343,119 @@ namespace SeedClicker
                 float csq = Mathf.Sin(crateSquash * Mathf.PI * 1.5f) * crateSquash * 0.12f;
                 crate.transform.localScale = new Vector3(crateScale * (1 + csq), crateScale * (1 - csq), 1);
             }
+        }
+
+        // ------------------------------------------------------------------ Schwebende Ladung und Effektgewitter
+
+        Vector2 OrbitPos(Knolli k, int i, int n, float hop, out bool front)
+        {
+            float rx = 0.3f + 0.012f * n, ry = rx * 0.42f;
+            float a = Time.time * 2.4f + i * Mathf.PI * 2f / n + k.slot;
+            front = Mathf.Sin(a) < 0f;   // untere Haelfte der Bahn ist naeher am Betrachter
+            return k.pos + new Vector2(Mathf.Cos(a) * rx, 0.3f + hop + Mathf.Sin(a) * ry + Mathf.Sin(Time.time * 3f + i) * 0.03f);
+        }
+
+        /// <summary>Die Ernte schwebt beim Tragen im Kreis um den Knolli (vorn davor, hinten dahinter).</summary>
+        void DrawOrbit(Knolli k, float hop)
+        {
+            int n = k.carry > 0 ? k.load.Count : 0;
+            while (k.orbit.Count < n)
+            {
+                var sr = new GameObject("KnolliOrbit").AddComponent<SpriteRenderer>();
+                sr.transform.SetParent(objects, false);
+                k.orbit.Add(sr);
+            }
+            for (int i = 0; i < k.orbit.Count; i++)
+            {
+                var sr = k.orbit[i];
+                sr.enabled = i < n && k.load[i] != null;
+                if (!sr.enabled) continue;
+                sr.sprite = k.load[i];
+                var p = OrbitPos(k, i, n, hop, out bool front);
+                float s = (front ? 0.19f : 0.15f) / Mathf.Max(0.01f, sr.sprite.bounds.size.x);
+                sr.transform.position = p;
+                sr.transform.localScale = Vector3.one * s;
+                sr.transform.rotation = Quaternion.Euler(0, 0, Mathf.Sin(Time.time * 4f + i) * 20f);
+                sr.sortingOrder = k.body.sortingOrder + (front ? 2 : -1);
+                sr.color = front ? Color.white : new Color(0.85f, 0.85f, 0.85f);
+                if (UnityEngine.Random.value < 0.04f)
+                    Particles.I?.Spawn(p, "spark", new Color(1f, 0.92f, 0.55f, 0.8f), Vector3.up * 0.2f, 0.4f, 0.05f, 0f, 0f);
+            }
+        }
+
+        /// <summary>An der Kiste: jedes schwebende Stueck fliegt nacheinander hinein, das letzte loest Bezahlung und Effektgewitter aus.</summary>
+        void Unload(Knolli k)
+        {
+            int n = k.carry; double value = k.carryValue;
+            var types = new Dictionary<string, int>(k.types);
+            int m = 0;
+            for (int i = 0; i < k.load.Count; i++) if (k.load[i] != null) m++;
+            if (m == 0) { Deposit(n, value, k.pos, types); CrateStorm(n); }
+            else
+            {
+                int idx = 0;
+                for (int i = 0; i < k.load.Count; i++)
+                {
+                    if (k.load[i] == null) continue;
+                    var from = OrbitPos(k, i, k.load.Count, 0f, out _);
+                    bool last = ++idx == m;
+                    int step = idx;
+                    StartCoroutine(IntoCrate(from, k.load[i], (idx - 1) * 0.07f, step, last ? () => { Deposit(n, value, cratePos, types); CrateStorm(n); } : (Action)null));
+                }
+            }
+            k.carry = 0; k.carryValue = 0; k.types.Clear(); k.load.Clear(); k.item.sprite = null;
+            foreach (var sr in k.orbit) sr.enabled = false;
+        }
+
+        IEnumerator IntoCrate(Vector2 from, Sprite spr, float delay, int step, Action onHit)
+        {
+            if (delay > 0f) yield return new WaitForSeconds(delay);
+            var sr = new GameObject("IntoCrate").AddComponent<SpriteRenderer>();
+            sr.transform.SetParent(objects, false);
+            sr.sprite = spr;
+            sr.sortingOrder = 30005;
+            float size = 0.19f / Mathf.Max(0.01f, spr.bounds.size.x);
+            var to = cratePos + new Vector2(0, 0.45f);
+            float dur = 0.45f + Vector2.Distance(from, to) * 0.05f;
+            float h = 0.7f + Vector2.Distance(from, to) * 0.15f;
+            float spin = UnityEngine.Random.Range(-540f, 540f);
+            for (float t = 0f; t < 1f; t += Time.deltaTime / dur)
+            {
+                float e = t * t * (3f - 2f * t);
+                var pos = Vector2.Lerp(from, to, e) + Vector2.up * (4f * h * t * (1f - t));
+                sr.transform.position = pos;
+                sr.transform.rotation = Quaternion.Euler(0, 0, spin * t);
+                sr.transform.localScale = Vector3.one * size * (1f + 0.5f * Mathf.Sin(t * Mathf.PI)) * (t > 0.85f ? Mathf.Lerp(1f, 0.3f, (t - 0.85f) / 0.15f) : 1f);
+                // Glitzerspur
+                Particles.I?.Spawn(pos, UnityEngine.Random.value < 0.5f ? "spark" : "star", Color.HSVToRGB(Mathf.Repeat(t * 0.6f + step * 0.11f, 1f), 0.45f, 1f),
+                                   UnityEngine.Random.insideUnitCircle * 0.3f, 0.4f, 0.11f, 0f, 0f);
+                yield return null;
+            }
+            Destroy(sr.gameObject);
+            // jedes Stueck: kleiner Plopp, Kiste wippt, Ton steigt
+            crateSquash = Mathf.Max(crateSquash, 0.45f);
+            Particles.I?.Burst(to, "spark", new Color(1f, 0.95f, 0.6f), 5, 1.8f, 0.35f, 0.08f, 2f, 1f);
+            Sfx.Play("tick", Mathf.Min(2.2f, 1.1f + step * 0.07f), 0.45f);
+            onHit?.Invoke();
+        }
+
+        /// <summary>Effektgewitter an der Lieferkiste – je groesser die Lieferung, desto wilder.</summary>
+        void CrateStorm(int n)
+        {
+            var top = cratePos + new Vector2(0, 0.5f);
+            float k = Mathf.Clamp01(n / 20f);
+            crateSquash = 1f;
+            Shockwave(cratePos + new Vector2(0, 0.2f), 1.2f + 1.2f * k, 0.45f, new Color(1f, 0.88f, 0.4f, 0.9f));
+            Particles.I?.Ring(top, new Color(1f, 0.95f, 0.7f, 0.8f), 1.2f + k, 0.4f);
+            Particles.I?.Burst(top, "star", new Color(1f, 0.85f, 0.3f), 12 + Mathf.RoundToInt(20 * k), 3.5f, 0.9f, 0.3f, 2f, 2.5f);
+            Particles.I?.Burst(top, "spark", Color.white, 10 + Mathf.RoundToInt(14 * k), 4.5f, 0.5f, 0.12f, 1f, 2f);
+            Particles.I?.Burst(top, "square", new Color(1f, 0.75f, 0.2f), 8 + Mathf.RoundToInt(12 * k), 3f, 0.8f, 0.09f, 6f, 3f);
+            for (int i = 0; i < 3; i++)
+                Particles.I?.Burst(top + UnityEngine.Random.insideUnitCircle * 0.4f, "star", Color.HSVToRGB(UnityEngine.Random.value, 0.5f, 1f), 4, 2.5f, 0.7f, 0.2f, 1f, 1.5f);
+            WorldFx.Play("firework", top + new Vector2(0, 0.5f), 0.1f + 0.08f * k);
+            WorldPostFX.Punch(0.12f + 0.2f * k);
+            Sfx.Play("unlock", 1.5f, 0.35f + 0.3f * k);
+            Haptics.Tap(15 + Mathf.RoundToInt(20 * k));
         }
 
         // ------------------------------------------------------------------ Bilder
