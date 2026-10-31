@@ -13,6 +13,10 @@ namespace SeedClicker
     {
         Cell? wallAnchor;
         bool planFields;   // Vorschau fuer Felder statt Mauern
+        // Felder in drei Klicks: Anfang -> Reihe festlegen -> in die andere Richtung aufziehen -> anlegen
+        bool fieldRowFixed, fieldRowHoriz;
+        Cell fieldRowEnd;
+        const int MaxFieldSpan = 15;   // hoechstens so viele Felder je Richtung
         readonly List<SpriteRenderer> planViews = new List<SpriteRenderer>();
         readonly List<Cell> planOk = new List<Cell>();
         Cell planTo;
@@ -24,19 +28,31 @@ namespace SeedClicker
         /// <summary>Vorschau folgt Finger/Maus (Mauer im Mauer-Modus oder Felder).</summary>
         public bool PlanFollows => FieldPlanActive || (wallMode && WallAnchorActive);
 
-        /// <summary>Felder wie Mauern anlegen: erster Klick setzt den Anfang, die gruene Vorschau folgt, der zweite Klick
-        /// legt alle gruenen Felder an. false = hier geht kein Feld (dann macht der Tipp etwas anderes).</summary>
+        /// <summary>Felder anlegen: 1. Klick setzt die Ecke, eine gerade Reihe folgt der Maus; 2. Klick legt die Reihe fest,
+        /// die Vorschau waechst dann in die andere Richtung zu einer Flaeche (z. B. 4×4); 3. Klick legt alle gruenen Felder an.
+        /// false = hier geht kein Feld (dann macht der Tipp etwas anderes).</summary>
         public bool FieldClick(Vector2 w)
         {
             var c = TapCell(w);
             if (!wallAnchor.HasValue)
             {
                 if (!CanPlaceField(c)) return false;
-                wallAnchor = c; planFields = true;
+                wallAnchor = c; planFields = true; fieldRowFixed = false;
                 UpdateWallPlan(w);
-                Floater?.Invoke(CellCenter(c) + new Vector2(0, 0.6f), "Bis wohin? Nochmal tippen", new Color(0.75f, 1f, 0.7f));
+                Floater?.Invoke(CellCenter(c) + new Vector2(0, 0.6f), "Reihe aufziehen – nochmal tippen", new Color(0.75f, 1f, 0.7f));
                 Sfx.Play("tick", 1.2f, 0.5f);
                 Haptics.Tap(8);
+                return true;
+            }
+            if (!fieldRowFixed)
+            {
+                // Reihe steht: jetzt in die andere Richtung aufziehen
+                UpdateWallPlan(w);
+                fieldRowFixed = true;
+                Floater?.Invoke(CellCenter(fieldRowEnd) + new Vector2(0, 0.6f), "In die Breite ziehen – nochmal tippen", new Color(0.75f, 1f, 0.7f));
+                Sfx.Play("tick", 1.35f, 0.5f);
+                Haptics.Tap(8);
+                UpdateWallPlan(w);
                 return true;
             }
             UpdateWallPlan(w);
@@ -113,6 +129,7 @@ namespace SeedClicker
         {
             wallAnchor = null;
             planFields = false;
+            fieldRowFixed = false;
             planOk.Clear();
             foreach (var sr in planViews) if (sr != null) sr.enabled = false;
         }
@@ -123,14 +140,19 @@ namespace SeedClicker
             if (!wallAnchor.HasValue) return;
             var to = TapCell(w);
             planTo = to;
-            var path = new List<Cell> { wallAnchor.Value };
-            var cur = wallAnchor.Value;
-            int guard = 0;
-            while (!cur.Equals(to) && guard++ < 80)
+            List<Cell> path;
+            if (planFields) path = FieldPath(to);
+            else
             {
-                int dx = to.x - cur.x, dy = to.y - cur.y;
-                cur = Mathf.Abs(dx) >= Mathf.Abs(dy) ? new Cell(cur.x + System.Math.Sign(dx), cur.y) : new Cell(cur.x, cur.y + System.Math.Sign(dy));
-                path.Add(cur);
+                path = new List<Cell> { wallAnchor.Value };
+                var cur = wallAnchor.Value;
+                int guard = 0;
+                while (!cur.Equals(to) && guard++ < 80)
+                {
+                    int dx = to.x - cur.x, dy = to.y - cur.y;
+                    cur = Mathf.Abs(dx) >= Mathf.Abs(dy) ? new Cell(cur.x + System.Math.Sign(dx), cur.y) : new Cell(cur.x, cur.y + System.Math.Sign(dy));
+                    path.Add(cur);
+                }
             }
             planOk.Clear();
             float budget = WoodLeft;
@@ -160,6 +182,30 @@ namespace SeedClicker
                 sr.color = ok ? PlanGreen : PlanRed;
             }
             for (int i = n; i < planViews.Count; i++) if (planViews[i] != null) planViews[i].enabled = false;
+        }
+
+        /// <summary>Felder-Vorschau: erst eine gerade Reihe (waagerecht oder senkrecht, je nachdem wohin die Maus weiter weg ist),
+        /// nach dem 2. Klick ein Rechteck von der Reihe bis zur Maus in der anderen Richtung.</summary>
+        List<Cell> FieldPath(Cell to)
+        {
+            var a = wallAnchor.Value;
+            int Clamp(int from, int v) => from + Mathf.Clamp(v - from, -(MaxFieldSpan - 1), MaxFieldSpan - 1);
+            var list = new List<Cell>();
+            if (!fieldRowFixed)
+            {
+                fieldRowHoriz = Mathf.Abs(to.x - a.x) >= Mathf.Abs(to.y - a.y);
+                fieldRowEnd = fieldRowHoriz ? new Cell(Clamp(a.x, to.x), a.y) : new Cell(a.x, Clamp(a.y, to.y));
+                int n = Mathf.Max(Mathf.Abs(fieldRowEnd.x - a.x), Mathf.Abs(fieldRowEnd.y - a.y));
+                int sx = System.Math.Sign(fieldRowEnd.x - a.x), sy = System.Math.Sign(fieldRowEnd.y - a.y);
+                for (int i = 0; i <= n; i++) list.Add(new Cell(a.x + sx * i, a.y + sy * i));
+                return list;
+            }
+            // Rechteck: Reihe von a bis fieldRowEnd, aufgezogen bis zur Maus in der anderen Richtung
+            int x0 = a.x, x1 = fieldRowEnd.x, y0 = a.y, y1 = fieldRowEnd.y;
+            if (fieldRowHoriz) y1 = Clamp(a.y, to.y); else x1 = Clamp(a.x, to.x);
+            for (int y = Mathf.Min(y0, y1); y <= Mathf.Max(y0, y1); y++)
+                for (int x = Mathf.Min(x0, x1); x <= Mathf.Max(x0, x1); x++) list.Add(new Cell(x, y));
+            return list;
         }
 
         SpriteRenderer PlanView(int i)

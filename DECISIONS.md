@@ -150,7 +150,7 @@
   - Im Info-Fenster steht ein großer Knopf „Drehen“ neben dem Hauptknopf (der dafür schmaler wird). Er dreht die Pflanze im Uhrzeigersinn. Ein grüner Pfeil an der Pflanze und das grüne Zielfeld zeigen die Richtung, die Werte nennen sie („Richtung Osten“).
   - Die Richtung wird gespeichert (`PlantedState.dir`); neue Pflanzen schauen nach Norden. Das gilt auch beim Ziehen als Vorschau.
 
-- **Felder wie Mauern anlegen**: Ein Tipp auf freien Boden setzt den Anfang („Bis wohin? Nochmal tippen“), eine grüne Vorschau folgt Maus bzw. Finger, Rot heißt: dort geht kein Feld. Der nächste Tipp legt alle grünen Felder an. Der Weg wird wie bei Mauern ohne Diagonalen aufgefüllt. Ein zweiter Tipp auf den Anfang legt nur dieses eine Feld an.
+- **Felder als Fläche anlegen** (drei Klicks): 1. Klick auf freien Boden setzt die Ecke, eine gerade Reihe (waagerecht oder senkrecht, je nachdem wohin die Maus weiter weg ist) folgt der Maus. 2. Klick legt die Reihe fest, danach wächst die grüne Vorschau in die andere Richtung zu einer Fläche (z. B. 4×4). 3. Klick legt alle grünen Felder an; Rot heißt, dort geht kein Feld. Höchstens 15 Felder je Richtung. Hinweise: „Reihe aufziehen – nochmal tippen“, „In die Breite ziehen – nochmal tippen“.
 
 - **Bäume wachsen nach** (`WorldBuilder.Regrow.cs`): Ein gefällter Baum steht nach 3 Nächten wieder (`plants.json` → `treeRegrowNights`), egal ob der Stumpf noch da ist. Jede Nacht zählt, auch eine verlorene (`save.nights`). Er schießt mit kleinem Überschwingen und Blättern aus dem Boden und lässt sich wieder fällen. Steht inzwischen ein Feld, eine Mauer, ein Pult, ein Bauwerk oder eine Pflanze an seinem Fuß, wartet er, bis der Platz frei ist. Bereits gefällte Bäume aus alten Spielständen bekommen ab dem Laden ihre 3 Nächte.
 
