@@ -147,7 +147,7 @@
 - **Blickrichtung für Wasser- und Klick-Pflanzen**: Tauschilf und Klopfwurz wirken nur noch in eine Richtung (Nord/Ost/Süd/West).
   - Tauschilf gießt das nächste Feld in Blickrichtung. Es tropft gemächlicher (alle 2–2,8 s, schneller mit der Stufe), nur mit Tropfen, ohne Wasserstrahl und Fontäne. „Tiefe Wurzeln“ und Saftrohre verlängern die Linie um je 1 Feld.
   - Klopfwurz klickt nur das Feld davor.
-  - Solange das Info-Fenster offen ist, erscheint oben am Bildschirm ein sehr großer Knopf „Pflanze drehen“. Er dreht die Pflanze im Uhrzeigersinn. Ein grüner Pfeil an der Pflanze und das grüne Zielfeld zeigen die Richtung, die Werte nennen sie („Richtung Osten“).
+  - Im Info-Fenster steht ein großer Knopf „Drehen“ neben dem Hauptknopf (der dafür schmaler wird). Er dreht die Pflanze im Uhrzeigersinn. Ein grüner Pfeil an der Pflanze und das grüne Zielfeld zeigen die Richtung, die Werte nennen sie („Richtung Osten“).
   - Die Richtung wird gespeichert (`PlantedState.dir`); neue Pflanzen schauen nach Norden. Das gilt auch beim Ziehen als Vorschau.
 
 ## Werbung

@@ -78,9 +78,9 @@ namespace SeedClicker
             infoActImg = infoAct.GetComponent<Image>();
 
             // Wasser- und Klick-Pflanzen: Blickrichtung drehen
-            // sehr gross oben am Bildschirm (unter der Anzeige), solange das Fenster einer drehbaren Pflanze offen ist
-            infoTurn = Btn(safe, "Pflanze drehen", new Color(0.3f, 0.62f, 0.4f), () => { if (infoPlant != null) { infoTimer = InfoShowTime; wb.TurnPlant(infoPlant); } }, 54);
-            infoTurn.GetComponent<RectTransform>().Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -440), new Vector2(760, 170));
+            // gross im Fenster neben dem Hauptknopf; der wird dafuer schmaler (siehe FillPlantInfo)
+            infoTurn = Btn(root, "Drehen", new Color(0.3f, 0.62f, 0.4f), () => { if (infoPlant != null) { infoTimer = InfoShowTime; wb.TurnPlant(infoPlant); } }, 42);
+            infoTurn.GetComponent<RectTransform>().Place(new Vector2(1, 0), new Vector2(1, 0), new Vector2(1, 0), new Vector2(-30, 88), new Vector2(400, 104));
             infoTurn.gameObject.SetActive(false);
 
             var x = Btn(root, "X", new Color(0.8f, 0.45f, 0.35f), HidePlantInfo, 40);
@@ -113,7 +113,6 @@ namespace SeedClicker
             if (infoPlant != null && (!wb.Planted.Contains(infoPlant) || modal != null)) infoPlant = null;
             infoTimer -= dt;
             bool show = infoPlant != null && infoTimer > 0f;
-            if (!show && infoTurn != null) infoTurn.gameObject.SetActive(false);
             infoGroup.alpha = Mathf.MoveTowards(infoGroup.alpha, show ? 1f : 0f, dt * (show ? 8f : 2.5f));
             infoGroup.blocksRaycasts = show;
             wb.Inspected = show ? infoPlant : null;
@@ -148,7 +147,11 @@ namespace SeedClicker
             else infoRole.text = Roles.Name(def.role);
 
             infoStats.text = Stats(p, def, g);
-            infoTurn.gameObject.SetActive(p.Grown && WorldBuilder.HasDirection(p) && infoTimer > 0f && modal == null);
+            bool turn = p.Grown && WorldBuilder.HasDirection(p);
+            infoTurn.gameObject.SetActive(turn);
+            var ar = infoAct.GetComponent<RectTransform>();
+            ar.offsetMin = new Vector2(30, ar.offsetMin.y);
+            ar.offsetMax = new Vector2(turn ? -450 : -30, ar.offsetMax.y);
             if (WorldBuilder.HasDirection(p)) infoStats.text += (infoStats.text != "" ? " · " : "") + "Richtung " + WorldBuilder.DirName(p.dir);
 
             float f; string bar;

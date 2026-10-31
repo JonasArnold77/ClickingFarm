@@ -281,8 +281,8 @@ namespace SeedClicker
                 {
                     float t = i / (float)steps;
                     var p = a + d * t + nrm * Mathf.Sin(t * Mathf.PI * waves) * amp;
-                    Dot(p.x, p.y, 3f, vine);
-                    Dot(p.x + 0.7f, p.y + 1f, 1.2f, vineHi);
+                    Dot(p.x, p.y, 4.6f, vine);
+                    Dot(p.x + 1f, p.y + 1.6f, 2f, vineHi);
                 }
                 int spikes = Mathf.Max(2, Mathf.RoundToInt(len / 11f));
                 for (int k = 1; k < spikes; k++)
@@ -290,7 +290,7 @@ namespace SeedClicker
                     float t = k / (float)spikes;
                     var p = a + d * t + nrm * Mathf.Sin(t * Mathf.PI * waves) * amp;
                     var side = nrm * (k % 2 == 0 ? 1f : -1f);
-                    for (int q = 0; q < 9; q++) Dot(p.x + side.x * (2 + q), p.y + side.y * (2 + q), Mathf.Max(0.6f, 2.2f - q * 0.22f), q < 2 ? vine : thorn);
+                    for (int q = 0; q < 12; q++) Dot(p.x + side.x * (3 + q), p.y + side.y * (3 + q), Mathf.Max(0.7f, 3f - q * 0.24f), q < 3 ? vine : thorn);
                 }
             }
 
