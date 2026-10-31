@@ -67,21 +67,40 @@ namespace SeedClicker
             return 1f + StructValue(s) * TotemShare(s);
         }
 
-        /// <summary>Wo darf das Totem stehen? Auf einem freien Feld des Beets oder direkt daneben; das Beet braucht noch kein Totem.</summary>
+        /// <summary>Ein Totem hat keinen Pfahl mehr: man tippt ein Feld an (auch mit Pflanze), das Beet braucht noch kein Totem.</summary>
         public bool CanPlaceTotem(Cell c, out Cell anchor)
         {
             anchor = c;
-            if (!CanPlaceStructure(c)) return false;
+            if (!HasField(c)) return false;
             RefreshTotems();
-            var tries = new List<Cell>();
-            if (HasField(c)) tries.Add(c);
-            else foreach (var d in new[] { new Cell(c.x + 1, c.y), new Cell(c.x - 1, c.y), new Cell(c.x, c.y + 1), new Cell(c.x, c.y - 1) }) if (HasField(d)) tries.Add(d);
-            foreach (var t in tries)
+            return !totemMap.TryGetValue(c, out var o) || o == pendingStruct;
+        }
+
+        /// <summary>Mitte des Beets (dort erscheinen Zahlen und Effekte des Totems).</summary>
+        Vector2 TotemCenter(StructureState s)
+        {
+            var bed = TotemBed(s);
+            if (bed == null || bed.Count == 0) return CellCenter(new Cell(s.bx, s.by));
+            var sum = Vector2.zero;
+            foreach (var c in bed) sum += CellCenter(c);
+            return sum / bed.Count;
+        }
+
+        /// <summary>Tipp auf die Umrandung: knapp innerhalb oder etwas ausserhalb einer Aussenkante des Beets.</summary>
+        bool HitTotemEdge(StructureState s, Vector2 w)
+        {
+            var bed = TotemBed(s);
+            if (bed == null || bed.Count == 0) return false;
+            var c = CellAt(w);
+            bool inside = bed.Contains(c);
+            var local = w - CellCenter(c);
+            for (int d = 0; d < 4; d++)
             {
-                var mine = totemMap.TryGetValue(t, out var o) ? o : null;
-                if (mine != null && mine != pendingStruct) continue;
-                anchor = t;
-                return true;
+                var nb = Step(c, d, 1);
+                if (bed.Contains(nb) == inside) continue;   // nur Kanten zwischen Beet und aussen
+                var n = (CellCenter(nb) - CellCenter(c)).normalized;
+                float dist = CellSize * 0.5f - Vector2.Dot(local, n);
+                if (dist <= (inside ? 0.06f : 0.16f)) return true;
             }
             return false;
         }
@@ -163,6 +182,11 @@ namespace SeedClicker
                 var col = OutlineColor(str);
                 float k = Mathf.Clamp01(str / 3f);
                 float thick = 0.025f + 0.025f * k, speed = 0.6f + 1.4f * k;
+                var view = structViews.Find(x => x.st == s);
+                float flash = view != null ? view.squash : 0f;
+                if (OpenStructure == s) flash = Mathf.Max(flash, 0.25f + 0.1f * Mathf.Sin(Time.time * 6f));   // Fenster offen
+                thick *= 1f + flash;
+                col = Color.Lerp(col, Color.white, flash * 0.5f);
                 int dashes = 1 + Mathf.RoundToInt(2f * k);
                 float pulse = 0.55f + 0.2f * Mathf.Sin(Time.time * (2f + 3f * k) + s.x);
                 float t = Time.time * speed;

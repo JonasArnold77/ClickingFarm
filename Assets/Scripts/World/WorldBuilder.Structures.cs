@@ -25,7 +25,7 @@ namespace SeedClicker
         public StructureDef PlacingStructure => pendingStruct != null ? PlantBalance.I.Structure(pendingStruct.id) : null;
 
         public StructureState Struct(string id) => save.structures.Find(s => s.id == id);
-        public bool HasStructure(Cell c) { foreach (var s in save.structures) if (s.placed && s.x == c.x && s.y == c.y) return true; return false; }
+        public bool HasStructure(Cell c) { foreach (var s in save.structures) if (s.placed && s.x == c.x && s.y == c.y && !IsTotem(s)) return true; return false; }   // Totems belegen kein Feld
 
         // ------------------------------------------------------------------ Werte
 
@@ -50,7 +50,7 @@ namespace SeedClicker
 
         /// <summary>Bild eines Bauwerks (Wachturm aus Holz oder Stein).</summary>
         public static Sprite StructSprite(StructureState s) => StructureArt.Get(s.stone ? s.id + "_stone" : s.id);
-        Vector2 StructPos(StructureState s) => CellCenter(new Cell(s.x, s.y));
+        Vector2 StructPos(StructureState s) => s.anchored && IsTotem(s) ? TotemCenter(s) : CellCenter(new Cell(s.x, s.y));
 
         /// <summary>Summe der Wirkung aller Bauwerke dieser Art, deren Umkreis pos erreicht (radius 0 = ueberall).</summary>
         public float StructEffect(string effect, Vector2 pos)
@@ -159,14 +159,14 @@ namespace SeedClicker
             if (totem ? !CanPlaceTotem(c, out anchor) : !CanPlaceStructure(c))
             {
                 Sfx.Play("error", 1f, 0.5f);
-                Floater?.Invoke(CellCenter(c) + new Vector2(0, 0.6f), totem ? "Stell das Totem auf oder neben ein Feld ohne Totem" : "Hier ist kein Platz", new Color(1f, 0.6f, 0.5f));
+                Floater?.Invoke(CellCenter(c) + new Vector2(0, 0.6f), totem ? "Tippe auf ein Feld, das noch kein Totem hat" : "Hier ist kein Platz", new Color(1f, 0.6f, 0.5f));
                 return false;
             }
             var st = pendingStruct;
             pendingStruct = null;
             st.x = c.x; st.y = c.y; st.placed = true;
             if (totem) { st.anchored = true; st.bx = anchor.x; st.by = anchor.y; }
-            ClearDecorAround(CellCenter(c), CellSize * 0.6f);
+            if (!totem) ClearDecorAround(CellCenter(c), CellSize * 0.6f);
             CreateStructView(st, true);
             if (totem) TotemPlaced(st);
             StructurePlacing?.Invoke(null);
@@ -186,6 +186,21 @@ namespace SeedClicker
         {
             var d = PlantBalance.I.Structure(st.id);
             if (d == null) return;
+            if (IsTotem(d))
+            {
+                var tsr = new GameObject("Totem_" + st.id).AddComponent<SpriteRenderer>();   // unsichtbar, nur fuer Anker
+                tsr.transform.SetParent(objects, false);
+                tsr.transform.position = StructPos(st);
+                structViews.Add(new StructView { st = st, def = d, sr = tsr, scale = 1f, squash = pop ? 1f : 0f, timer = 3f });
+                if (pop)
+                {
+                    Shockwave(StructPos(st), 1.6f, 0.5f, new Color(1f, 0.95f, 0.7f, 0.8f));
+                    Particles.I?.Burst(StructPos(st), "star", new Color(1f, 0.9f, 0.5f), 18, 3f, 0.8f, 0.3f, 1f, 1.5f);
+                    Sfx.Play("unlock", 1.1f, 0.7f);
+                    Haptics.Tap(30);
+                }
+                return;
+            }
             var foot = StructPos(st) + new Vector2(0, -CellSize * 0.35f);
             var sr = new GameObject("Struct_" + st.id).AddComponent<SpriteRenderer>();
             sr.transform.SetParent(objects, false);
@@ -236,6 +251,7 @@ namespace SeedClicker
             var c = CellAt(w);
             foreach (var v in structViews)
             {
+                if (IsTotem(v.def)) { if (HitTotemEdge(v.st, w)) return v.st; continue; }
                 var sc = new Cell(v.st.x, v.st.y);
                 if (c.Equals(sc)) return v.st;
                 // das Bild ragt nach oben ueber das Feld hinaus
@@ -261,7 +277,7 @@ namespace SeedClicker
         {
             var v = structViews.Find(x => x.st == st);
             if (v == null) return;
-            var top = new Vector2(v.sr.bounds.center.x, v.sr.bounds.max.y);
+            var top = IsTotem(v.def) ? StructPos(st) + new Vector2(0, 0.3f) : new Vector2(v.sr.bounds.center.x, v.sr.bounds.max.y);
             if (StructMaxed(st))
             {
                 if (loud) { v.squash = 0.4f; Sfx.Play("dry", 1.2f, 0.4f); Floater?.Invoke(top + new Vector2(0, 0.3f), "Höchste Stufe!", new Color(1f, 0.9f, 0.6f)); }
@@ -301,7 +317,7 @@ namespace SeedClicker
             {
                 v.squash = Mathf.MoveTowards(v.squash, 0f, dt * 4f);
                 float sq = Mathf.Sin(v.squash * Mathf.PI * 1.5f) * v.squash * 0.14f;
-                v.sr.transform.localScale = new Vector3(v.scale * (1 + sq), v.scale * (1 - sq), 1);
+                if (!IsTotem(v.def)) v.sr.transform.localScale = new Vector3(v.scale * (1 + sq), v.scale * (1 - sq), 1);
                 if (v.light != null)
                 {
                     float want = dark ? (v.def.effect == "light" ? 1.3f : 0.7f) : 0f;

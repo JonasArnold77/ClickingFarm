@@ -88,7 +88,7 @@ namespace SeedClicker
             wb.StructureLeveled += (d, st) => Banner(d.name + " – Stufe " + st.lv + "!", wb.StructSummary(st));
             wb.StructurePlacing += d =>
             {
-                if (d != null) { CloseModal(); hintText.text = "Tippe auf einen freien Platz im Hof: " + d.name + " aufstellen"; }
+                if (d != null) { CloseModal(); hintText.text = WorldBuilder.IsTotem(d) ? "Tippe auf ein Feld: " + d.name + " umrahmt dieses Beet" : "Tippe auf einen freien Platz im Hof: " + d.name + " aufstellen"; }
                 else hintText.text = ToolHint(WorldCamera.Tool);
             };
         }
@@ -147,7 +147,7 @@ namespace SeedClicker
                 bool ok = wbi.Coins >= cost && wbi.Wood >= d.wood && wbi.PlacingStructure == null;
                 int have = d.multi ? wbi.StructCount(d.id) : 0;
                 string title = d.name + (have > 0 ? "  · " + have + " aufgestellt" : "");
-                string hint = WorldBuilder.IsTotem(dd) ? "Tippe auf ein Feld oder direkt daneben" : "Tippe auf einen freien Platz im Hof";
+                string hint = WorldBuilder.IsTotem(dd) ? "Tippe auf ein Feld – das Totem umrahmt das ganze Beet" : "Tippe auf einen freien Platz im Hof";
                 ShopRow(content, title, d.desc, price, ok, () => { if (wbi.BuyStructure(dd)) Banner(dd.name + " gekauft!", hint); });
             }
         }
