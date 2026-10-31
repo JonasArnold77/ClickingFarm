@@ -766,6 +766,7 @@ namespace SeedClicker
             if (Time.unscaledTime - lastTapTime > PlantBalance.I.comboWindow * 2f) combo = 0;
             UpdateShocks(udt);
             UpdateMerge(udt);
+            UpdateAreaView();
             foreach (var p in save.planted)
             {
                 var c = new Cell(p.x, p.y);

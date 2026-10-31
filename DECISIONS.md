@@ -142,6 +142,8 @@
   - Das Ergebnisfenster der Welle zeigt Fluch, Beute, Bonus und gefundene Runen. Beim Start einer Fluchnacht kommt ein Banner.
   - Werte in `plants.json` → `altar`. Annahme: Bei einer Niederlage ist die Opfergabe trotzdem verbraucht.
 
+- **Wirkungsbereich anzeigen** (`WorldBuilder.Area.cs`): Ist das Info-Fenster einer Pflanze offen, leuchten alle Felder in ihrer Reichweite grün und durchsichtig, auch auf Mauern und Pulten. Beim Ziehen wird der Bereich für den Platz unter dem Finger gezeigt. Das gilt für Wasser, Dünger, Verstärker, Automatik, Honig, Licht, Kampf (Schussweite), Stützranke und die Helfer.
+
 ## Werbung
 - `Core/AdService.cs` ist die einzige Stelle für Werbung. Derzeit zeigt die UI ein 2-Sekunden-Platzhalter-Video und vergibt dann die Belohnung.
 - Belohnungsvideos: Energie auffüllen, Offline-Ertrag verdoppeln, alles wachsen lassen, Gratis-Samenpaket.
