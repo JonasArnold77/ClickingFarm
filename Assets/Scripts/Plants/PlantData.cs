@@ -50,6 +50,8 @@ namespace SeedClicker
     [Serializable] public class WallDef { public float wood = 2f; public float hp = 30f; }
     /// <summary>Steinpult: Preis in Muenzen (Abbauen gibt ihn zurueck).</summary>
     [Serializable] public class PedestalDef { public float cost = 20f; }
+    /// <summary>Verwandlungen: wie viele Holzmauern Steinmoos umwandelt, wie viel Stein haelt, hoechste Element-Stufe einer Waffe.</summary>
+    [Serializable] public class TransformsDef { public int stoneCells = 4, stoneCellsPerLevel = 2; public float stoneHpMult = 3f; public int maxElementLevel = 5; }
     /// <summary>Waffenbank: Schlaege bis zur naechsten Waffenstufe (tapsBase * tapsGrowth^(Stufe-1)) und was eine Stufe bringt.</summary>
     [Serializable] public class BenchDef { public float tapsBase = 12f, tapsGrowth = 1.3f, damagePerLevel = 0.25f, cooldownPerLevel = 0.04f, minCooldown = 0.5f; public int maxLevel = 30; }
     /// <summary>Bauwerk zum Aufstellen (einmal kaufen, auf einen freien Platz im Hof setzen, per Klick verbessern).
@@ -84,7 +86,7 @@ namespace SeedClicker
         {
             "water" => "Wasser", "harvest" => "Ernte", "fert" => "Dünger", "boost" => "Verstärker", "auto" => "Automatik",
             "bee" => "Honig", "light" => "Licht", "support" => "Bauhelfer",
-            "transport" => "Transport", "carrier" => "Träger", "sower" => "Säer", "pipe" => "Leitung", _ => "Kampf"
+            "transport" => "Transport", "carrier" => "Träger", "sower" => "Säer", "pipe" => "Leitung", "transform" => "Verwandlung", _ => "Kampf"
         };
         public static string Desc(CatalogDef d) => d.role switch
         {
@@ -99,6 +101,15 @@ namespace SeedClicker
             "carrier" => "Trägt Holz aus dem Wald zum Haus, schneller mit jeder Stufe.",
             "sower" => "Sät die gewählte Pflanze auf leere Felder im Umkreis von 2.",
             "pipe" => "Tauschilf im Umkreis von 2 gießt 1 Feld weiter.",
+            "transform" => d.transform switch
+            {
+                "stone" => "Reif auf eine Holzmauer ziehen: sie und Mauern daneben werden zu Stein (3× so stabil).",
+                "fire" => "Reif auf die Waffenbank ziehen: die gewählte Waffe setzt Zombies in Brand.",
+                "ice" => "Reif auf die Waffenbank ziehen: Treffer der gewählten Waffe verlangsamen Zombies.",
+                "lightning" => "Reif auf die Waffenbank ziehen: Treffer springen als Blitz auf weitere Zombies über.",
+                "poison" => "Reif auf die Waffenbank ziehen: Treffer der gewählten Waffe vergiften Zombies.",
+                _ => "Reif auf ein Ziel ziehen – dort verwandelt sie etwas."
+            },
             "support" => "Hilft Gebäuden nebenan: +50 % Ertrag, hämmert an der Waffenbank, flickt Mauern.",
             _ => "Verteidigt den Hof in der Nacht."
         };
@@ -109,6 +120,7 @@ namespace SeedClicker
     public class CatalogDef
     {
         public string id, name, species; public bool starter; public int unlockWave;
+        public string transform;   // Rolle transform: stone (Holzmauer -> Stein) oder fire/ice/lightning/poison (Waffenbank)
         public string role = "combat";
         public float cost, value, unlockEarned;
         public int growTaps;   // 0 = Standard (growTaps)
@@ -148,6 +160,7 @@ namespace SeedClicker
         public FarmLevelDef[] farmLevels;
         public WallDef wall;
         public PedestalDef pedestal;
+        public TransformsDef transforms;
         public BenchDef bench;
         public SupportDef support;
         public StructureDef[] structures;
@@ -261,6 +274,7 @@ namespace SeedClicker
         public string RoleOf(string id) { var c = Plant(id); return c == null || string.IsNullOrEmpty(c.role) ? "combat" : c.role; }
         public WallDef Wall => wall ?? (wall = new WallDef());
         public PedestalDef Pedestal => pedestal ?? (pedestal = new PedestalDef());
+        public TransformsDef Transforms => transforms ?? (transforms = new TransformsDef());
         public BenchDef Bench => bench ?? (bench = new BenchDef());
         public StructureTapsDef StructureTaps => structureTaps ?? (structureTaps = new StructureTapsDef());
         public HelperDef Helpers => helpers ?? (helpers = new HelperDef());
@@ -355,7 +369,7 @@ namespace SeedClicker
     /// <summary>Ein Zaunstueck auf einer Rasterzelle (Spielstand).</summary>
 
     /// <summary>Ein Mauerstueck (Holz) auf einer Rasterzelle: blockiert Zombies, darauf kann eine Pflanze stehen.</summary>
-    [Serializable] public class WallState { public int x, y; public float hp; }
+    [Serializable] public class WallState { public int x, y; public float hp; public bool stone; }
     /// <summary>Ein Steinpult (Spielstand): auf dem Boden oder auf einer Mauer.</summary>
     [Serializable] public class PedestalState { public int x, y; }
 
@@ -363,7 +377,7 @@ namespace SeedClicker
     /// <summary>Stufe einer Waffe (an der Waffenbank geschmiedet) und Schlaege zur naechsten Stufe.</summary>
     /// <summary>Ein aufgestelltes Bauwerk (Spielstand). placed = false: gekauft, wartet auf seinen Platz.</summary>
     [Serializable] public class StructureState { public string id; public int x, y, lv = 1; public float xp; public bool placed; }
-    [Serializable] public class WeaponLevel { public string id; public int lv = 1; public float xp; }
+    [Serializable] public class WeaponLevel { public string id; public int lv = 1; public float xp; public string element; public int elementLv; }
 
     /// <summary>Eine gepflanzte Pflanze auf einem Feld oder Mauerplatz (Spielstand).</summary>
     [Serializable]

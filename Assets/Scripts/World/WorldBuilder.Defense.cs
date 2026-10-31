@@ -120,7 +120,7 @@ namespace SeedClicker
             var sr = new GameObject("Wall").AddComponent<SpriteRenderer>();
             sr.transform.SetParent(objects, false);
             sr.transform.position = WallFoot(c);
-            sr.sprite = WallSprite;
+            sr.sprite = st.stone ? StoneWallSprite : WallSprite;
             // sortiert knapp hinter der Vorderkante: Zombies davor bleiben vorn, alles in der Zelle dahinter liegt hinten;
             // Pflanzen obendrauf sortieren nach ihrem Fuss auf dem Boden (PlantSortY) und bleiben damit vorn
             sr.sortingOrder = Order(WallFoot(c).y + 0.1f);
@@ -192,7 +192,7 @@ namespace SeedClicker
                 float s = CellSize / Mathf.Max(0.01f, v.sr.sprite.bounds.size.x);
                 v.sr.transform.localScale = Vector3.one * s * e;
                 v.sr.transform.position = (Vector3)WallFoot(kv.Key) + (Vector3)(UnityEngine.Random.insideUnitCircle * v.shake * 0.03f);
-                float hp = Mathf.Clamp01(v.st.hp / Mathf.Max(1f, WallMaxHp));
+                float hp = Mathf.Clamp01(v.st.hp / Mathf.Max(1f, MaxHp(v.st)));
                 v.sr.color = Color.Lerp(new Color(0.6f, 0.5f, 0.45f), Color.white, hp);
             }
         }

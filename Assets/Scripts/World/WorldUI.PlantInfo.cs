@@ -177,6 +177,7 @@ namespace SeedClicker
                 case "water": s = "Gießt gerade " + wb.WaterTargetCount(p) + " Pflanzen"; break;
                 case "support": s = p.Grown ? wb.SupportSummary(p) : ""; break;
                 case "transport": case "carrier": case "sower": case "pipe": s = p.Grown ? wb.HelperSummary(p) : ""; break;
+                case "transform": s = p.Grown ? (def.transform == "stone" ? "Bereit – zieh sie auf eine Holzmauer" : "Bereit – zieh sie auf die Waffenbank") : ""; break;
                 case "combat": s = PlantGenome.Describe(g.projectile) + " · " + PlantGenome.Describe(g.element) + " · " + PlantGenome.Describe(g.range); break;
                 default: s = ""; break;
             }

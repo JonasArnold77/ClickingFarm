@@ -110,7 +110,7 @@ namespace SeedClicker
                             Beam(SkyPoint(p), p, new Color(1f, 0.85f, 0.5f));
                             Particles.I?.Burst(p, "square", new Color(0.55f, 0.45f, 0.32f), 2, 1.6f, 0.35f, 0.07f, 8f, 1.5f);
                             var hit = NearestTo(p, 0.36f);
-                            if (hit != null) { hit.knock += (hit.pos - aim).normalized * 0.3f + Vector2.up * 0.4f; Damage(hit, dmg, null); }
+                            if (hit != null) { hit.knock += (hit.pos - aim).normalized * 0.3f + Vector2.up * 0.4f; WeaponHit(w, hit, dmg); }
                         }
                         ImpactFx(aim, 1.3f);
                         Sfx.Play("shotgun", Random.Range(0.92f, 1.05f), 0.9f);
@@ -144,12 +144,46 @@ namespace SeedClicker
                         var p = aim + Random.insideUnitCircle * 0.06f;
                         Beam(SkyPoint(p), p, new Color(1f, 0.92f, 0.6f));
                         var hit = NearestTo(p, 0.38f);
-                        if (hit != null) { hit.knock += Vector2.up * 0.25f; Damage(hit, dmg, null); ImpactFx(p, 1f); }
+                        if (hit != null) { hit.knock += Vector2.up * 0.25f; WeaponHit(w, hit, dmg); ImpactFx(p, 1f); }
                         else MissFx(p);
                         Sfx.Play("shot", Random.Range(0.95f, 1.1f), 0.8f);
                         WorldCamera.I?.Shake(0.03f);
                         WorldCamera.I?.Punch(0.008f);
                         Haptics.Tap(15);
+                        break;
+                    }
+            }
+        }
+
+        /// <summary>Treffer einer Waffe: Schaden plus Element von der Waffenbank (Feuer brennt, Eis bremst, Gift wirkt nach,
+        /// Blitz springt auf weitere Zombies ueber).</summary>
+        void WeaponHit(WeaponDef w, Monster m, float dmg)
+        {
+            Damage(m, dmg, null);
+            if (w == null || wb == null || m == null) return;
+            string el = wb.WeaponElement(w.id);
+            int lv = wb.WeaponElementLv(w.id);
+            if (el == "" || lv <= 0) return;
+            var col = WorldBuilder.ElementCol(el);
+            Particles.I?.Burst(Center(m), "spark", col, 4, 2f, 0.3f, 0.12f, 0f, 0.5f);
+            switch (el)
+            {
+                case "fire": m.burnT = 2.5f; m.burnDps = Mathf.Max(m.burnDps, dmg * 0.25f * lv); break;
+                case "ice": m.slowT = 2f; m.slowAmt = Mathf.Max(m.slowAmt, Mathf.Min(0.75f, 0.2f + 0.1f * lv)); break;
+                case "poison": AddPoison(m, dmg * 0.12f * lv, 1); break;
+                case "lightning":
+                    {
+                        var ex = new HashSet<Monster> { m };
+                        var cur = m;
+                        for (int i = 0; i < 1 + lv / 2; i++)
+                        {
+                            var next = Nearest(cur.pos, 2.4f, ex);
+                            if (next == null) break;
+                            ex.Add(next);
+                            Beam(Center(cur), Center(next), col);
+                            Damage(next, dmg * 0.5f, null);
+                            cur = next;
+                        }
                         break;
                     }
             }
@@ -248,13 +282,13 @@ namespace SeedClicker
                     if (Random.value < dt * 30) Particles.I?.Spawn(pos, "square", new Color(0.75f, 0.75f, 0.72f, 0.5f), Vector3.zero, 0.4f, 0.08f, 0.2f, 0f, 0f);
                 }
                 if (k < 1f) continue;
-                if (s.w.kind == "grenade") { Explode(s.to, s.w.radius, s.dmg); Finish(s); continue; }
+                if (s.w.kind == "grenade") { Explode(s.to, s.w.radius, s.dmg, s.w); Finish(s); continue; }
 
                 // Pfeil: trifft alle nahe beieinander (bis 1 + Durchschlag) und bleibt kurz stecken
                 var targets = new List<Monster>();
                 foreach (var m in monsters) if (!m.dead && (Center(m) - s.to).sqrMagnitude < 0.5f * 0.5f) targets.Add(m);
                 targets.Sort((a, b) => (Center(a) - s.to).sqrMagnitude.CompareTo((Center(b) - s.to).sqrMagnitude));
-                for (int i = 0; i < targets.Count && i <= s.w.pierce; i++) { targets[i].knock += dir.normalized * 0.3f; Damage(targets[i], s.dmg, null); }
+                for (int i = 0; i < targets.Count && i <= s.w.pierce; i++) { targets[i].knock += dir.normalized * 0.3f; WeaponHit(s.w, targets[i], s.dmg); }
                 ImpactFx(s.to, 0.7f);
                 Sfx.Play("chop", 1.3f, 0.6f);
                 WorldCamera.I?.Shake(0.02f);
@@ -274,7 +308,7 @@ namespace SeedClicker
             if (s.shadow != null) Destroy(s.shadow.gameObject);
         }
 
-        void Explode(Vector2 at, float radius, float dmg)
+        void Explode(Vector2 at, float radius, float dmg, WeaponDef w = null)
         {
             var P = Particles.I;
             WorldFx.Play("explosionBig", at, 0.26f);
@@ -294,7 +328,7 @@ namespace SeedClicker
                 float d = (m.pos - at).magnitude;
                 if (d > radius) continue;
                 m.knock += (m.pos - at).normalized * 1.2f * (1f - d / radius);
-                Damage(m, dmg * Mathf.Lerp(1f, 0.5f, d / radius), null);
+                WeaponHit(w, m, dmg * Mathf.Lerp(1f, 0.5f, d / radius));
             }
         }
 

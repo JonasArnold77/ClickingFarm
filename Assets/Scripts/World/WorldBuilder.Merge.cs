@@ -61,6 +61,7 @@ namespace SeedClicker
             if (IsMergeTarget(t) && hoverTarget != t) { Sfx.Play("tick", 1.3f, 0.5f); Haptics.Tap(8); }
             hoverTarget = IsMergeTarget(t) ? t : null;
             hoverSlot = t == null && IsSlot(cell) && (carrying == null || Fits(cell, carrying.type, false)) ? cell : (Cell?)null;
+            if (TransformHover(carrying, w)) hoverTarget = null;   // Verwandlung: Ziel (Holzmauer / Waffenbank) hervorheben
         }
 
         /// <summary>Finger loslassen: gleiche Pflanze unter dem Finger -> ablegen, sonst zurueck.</summary>
@@ -71,6 +72,8 @@ namespace SeedClicker
             hoverSlot = null;
             var cell = TapCell(w);
             var p = carrying;
+            // reife Verwandlungs-Pflanze auf ihrem Ziel: wirkt und ist verbraucht
+            if (p != null && TryTransform(p, w)) { carrying = null; PlacingChanged?.Invoke(null); return; }
             if (p != null && PlantAt(cell) == null && IsSlot(cell) && Fits(cell, p.type, true))
             {
                 carrying = null;

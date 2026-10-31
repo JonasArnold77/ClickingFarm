@@ -148,6 +148,7 @@ namespace SeedClicker
             benchIcon.transform.position = top + new Vector2(0, 0.12f + benchSquash * 0.18f);
             benchIcon.transform.rotation = Quaternion.Euler(0, 0, 8f + benchSquash * 14f);
             benchIcon.transform.localScale = Vector3.one * benchIconScale * (1f + benchSquash * 0.1f);
+            UpdateBenchElement();
         }
 
         // ------------------------------------------------------------------ Stuetzranken
@@ -208,10 +209,10 @@ namespace SeedClicker
                 any = true;
                 StartCoroutine(Leaf(from, BenchTop, () => Hammer(s.hammer * p.Lv, false)));
             }
-            float maxHp = WallMaxHp;
             foreach (var kv in walls)
             {
                 var v = kv.Value;
+                float maxHp = MaxHp(v.st);
                 if (v.st.hp >= maxHp || !InSupport(p, CellCenter(kv.Key))) continue;
                 any = true;
                 var at = CellCenter(kv.Key);
