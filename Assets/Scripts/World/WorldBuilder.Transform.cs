@@ -212,61 +212,105 @@ namespace SeedClicker
                 Particles.I?.Burst(at, "leaf", new Color(0.35f, 0.6f, 0.25f), 8, 2.2f, 0.6f, 0.3f, 3f, 1.2f);
                 n++;
             }
+            foreach (var c in WallSegment(start)) RefreshThornsAround(c);   // Ranken mit den Nachbarn verbinden
             Sfx.Play("grow", 0.8f, 0.8f);
             return n;
         }
 
         void ApplyThornLook(WallView v)
         {
-            if (v.st.thorns <= 0 || v.sr == null) return;
+            if (v.st.thorns <= 0 || v.sr == null) { if (v.thornSr != null) v.thornSr.enabled = false; return; }
             if (v.thornSr == null)
             {
                 v.thornSr = new GameObject("Thorns").AddComponent<SpriteRenderer>();
                 v.thornSr.transform.SetParent(v.sr.transform, false);
-                v.thornSr.sprite = ThornSprite;
                 v.thornSr.sortingOrder = v.sr.sortingOrder + 1;
             }
+            v.thornSr.enabled = true;
+            // die Ranke laeuft zu den Nachbarmauern weiter, die auch Dornen haben
+            var c = new Cell(v.st.x, v.st.y);
+            int mask = 0;
+            if (Thorny(new Cell(c.x + 1, c.y))) mask |= 1;
+            if (Thorny(new Cell(c.x - 1, c.y))) mask |= 2;
+            if (Thorny(new Cell(c.x, c.y + 1))) mask |= 4;
+            if (Thorny(new Cell(c.x, c.y - 1))) mask |= 8;
+            v.thornSr.sprite = ThornSprite(mask);
             // mehr Stufen: dichtere, dunklere Ranken
-            v.thornSr.color = Color.Lerp(new Color(1f, 1f, 1f, 0.85f), new Color(0.75f, 0.9f, 0.7f, 1f), (v.st.thorns - 1) / 4f);
+            v.thornSr.color = Color.Lerp(new Color(1f, 1f, 1f, 0.9f), new Color(0.75f, 0.9f, 0.7f, 1f), (v.st.thorns - 1) / 4f);
         }
 
-        static Sprite thornSprite;
+        bool Thorny(Cell c) => walls.TryGetValue(c, out var v) && v.st.thorns > 0;
 
-        /// <summary>Dornenranken ueber der Mauer-Vorderseite (gleiche Groesse wie das Mauerbild).</summary>
-        static Sprite ThornSprite
+        /// <summary>Nach Bauen/Abreissen: Ranken dieser Zelle und der Nachbarn neu verbinden.</summary>
+        void RefreshThornsAround(Cell c)
         {
-            get
+            foreach (var d in new[] { c, new Cell(c.x + 1, c.y), new Cell(c.x - 1, c.y), new Cell(c.x, c.y + 1), new Cell(c.x, c.y - 1) })
+                if (walls.TryGetValue(d, out var v)) ApplyThornLook(v);
+        }
+
+        static readonly Dictionary<int, Sprite> thornSprites = new Dictionary<int, Sprite>();
+
+        /// <summary>
+        /// Dornenranke fuer eine Mauerzelle, verbunden je nach Nachbarn (mask: 1 Ost, 2 West, 4 Nord, 8 Sued).
+        /// Sie rankt vorn an der Mauer (zwei geflochtene Straenge) und laeuft nach Ost/West nahtlos weiter; nur wo die
+        /// Mauer nach hinten laeuft, zieht ein Strang ueber den Wehrgang zur Nachbarzelle. Die Wellen beginnen und enden an den Raendern
+        /// immer gleich – so gehen die Ranken von Zelle zu Zelle nahtlos ineinander ueber.
+        /// </summary>
+        static Sprite ThornSprite(int mask)
+        {
+            if (thornSprites.TryGetValue(mask, out var cached) && cached != null) return cached;
+            const int w = 96;
+            int front = Mathf.RoundToInt(WallH / CellSize * w), h = front + w;
+            var px = new Color[w * h];
+            for (int i = 0; i < px.Length; i++) px[i] = Color.clear;
+            var vine = new Color(0.2f, 0.42f, 0.15f); var vineHi = new Color(0.38f, 0.62f, 0.25f); var thorn = new Color(0.62f, 0.22f, 0.16f);   // roetlich: auf hellem Holz und Stein gut zu sehen
+
+            void Dot(float x, float y, float r, Color col)
             {
-                if (thornSprite != null) return thornSprite;
-                const int w = 96;
-                int front = Mathf.RoundToInt(WallH / CellSize * w), h = front + w;
-                var tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
-                var px = new Color[w * h];
-                var vine = new Color(0.22f, 0.42f, 0.16f); var thorn = new Color(0.9f, 0.85f, 0.7f);
-                for (int i = 0; i < px.Length; i++) px[i] = Color.clear;
-                // zwei gewellte Ranken quer ueber die Vorderseite, mit Dornen nach oben und unten
-                for (int k = 0; k < 2; k++)
-                {
-                    float baseY = front * (0.32f + 0.38f * k), amp = front * 0.12f, ph = k * 2.1f;
-                    for (int x = 0; x < w; x++)
-                    {
-                        float y = baseY + Mathf.Sin(x * 0.13f + ph) * amp;
-                        for (int dy = -2; dy <= 2; dy++) { int yy = Mathf.RoundToInt(y) + dy; if (yy >= 0 && yy < h) px[yy * w + x] = vine * (1f - Mathf.Abs(dy) * 0.12f); }
-                        if ((x + k * 7) % 12 == 0)
-                        {
-                            float dir = ((x / 12) % 2 == 0) ? 1f : -1f;
-                            for (int t = 0; t < 7; t++)
-                            {
-                                int yy = Mathf.RoundToInt(y + dir * (3 + t)), half = (6 - t) / 3;
-                                for (int dx = -half; dx <= half; dx++) { int xx = x + dx; if (xx >= 0 && xx < w && yy >= 0 && yy < h) px[yy * w + xx] = t < 2 ? vine : thorn; }
-                            }
-                        }
-                    }
-                }
-                tex.SetPixels(px); tex.Apply();
-                thornSprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0f), w);
-                return thornSprite;
+                for (int yy = Mathf.FloorToInt(y - r); yy <= Mathf.CeilToInt(y + r); yy++)
+                    for (int xx = Mathf.FloorToInt(x - r); xx <= Mathf.CeilToInt(x + r); xx++)
+                        if (xx >= 0 && xx < w && yy >= 0 && yy < h && (xx - x) * (xx - x) + (yy - y) * (yy - y) <= r * r) px[yy * w + xx] = col;
             }
+            // Ranke von a nach b mit Wellen (an beiden Enden ohne Ausschlag) und Dornen abwechselnd links/rechts
+            void Vine(Vector2 a, Vector2 b, float amp, int waves)
+            {
+                var d = b - a; float len = d.magnitude; if (len < 1f) return;
+                var dir = d / len; var nrm = new Vector2(-dir.y, dir.x);
+                int steps = Mathf.CeilToInt(len * 2f);
+                for (int i = 0; i <= steps; i++)
+                {
+                    float t = i / (float)steps;
+                    var p = a + d * t + nrm * Mathf.Sin(t * Mathf.PI * waves) * amp;
+                    Dot(p.x, p.y, 3f, vine);
+                    Dot(p.x + 0.7f, p.y + 1f, 1.2f, vineHi);
+                }
+                int spikes = Mathf.Max(2, Mathf.RoundToInt(len / 11f));
+                for (int k = 1; k < spikes; k++)
+                {
+                    float t = k / (float)spikes;
+                    var p = a + d * t + nrm * Mathf.Sin(t * Mathf.PI * waves) * amp;
+                    var side = nrm * (k % 2 == 0 ? 1f : -1f);
+                    for (int q = 0; q < 9; q++) Dot(p.x + side.x * (2 + q), p.y + side.y * (2 + q), Mathf.Max(0.6f, 2.2f - q * 0.22f), q < 2 ? vine : thorn);
+                }
+            }
+
+            // Vorderseite (die man von vorn sieht): zwei geflochtene Straenge quer ueber die Staemme. Geht die Mauer nach
+            // Ost/West weiter, laufen sie bis an den Rand (dort ohne Ausschlag) und setzen sich nahtlos fort.
+            float x0 = (mask & 2) != 0 ? 0 : 10, x1 = (mask & 1) != 0 ? w : w - 10;
+            float fy = front * 0.5f;
+            Vine(new Vector2(x0, fy), new Vector2(x1, fy), front * 0.26f, 2);
+            Vine(new Vector2(x0, fy), new Vector2(x1, fy), -front * 0.26f, 2);
+            // Wehrgang nur dort, wo die Mauer nach hinten laeuft (von vorn sieht man da nichts): Strang zur Nachbarzelle
+            var ctr = new Vector2(w / 2f, front + w / 2f);
+            if ((mask & 4) != 0) Vine(ctr, new Vector2(ctr.x, h), 5f, 2);
+            if ((mask & 8) != 0) Vine(ctr, new Vector2(ctr.x, front), 5f, 2);
+            if ((mask & 12) != 0) Dot(ctr.x, ctr.y, 4f, vine);
+
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            tex.SetPixels(px); tex.Apply();
+            var spr = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0f), w);
+            thornSprites[mask] = spr;
+            return spr;
         }
 
         // ------------------------------------------------------------------ Steinmauer

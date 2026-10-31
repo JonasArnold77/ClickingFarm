@@ -127,6 +127,7 @@ namespace SeedClicker
             var v = new WallView { st = st, sr = sr, pop = fx ? 0f : 1f };
             ApplyThornLook(v);
             walls[c] = v;
+            RefreshThornsAround(c);
             ClearDecorAround(CellCenter(c), CellSize * 0.6f);
             if (fx)
             {
@@ -147,6 +148,7 @@ namespace SeedClicker
             RemovePedestal(c, false);    // ein Pult obendrauf auch
             if (v.sr != null) Destroy(v.sr.gameObject);
             walls.Remove(c);
+            RefreshThornsAround(c);
             save.walls.Remove(v.st);
             RefreshGhosts();
             save.Save();
