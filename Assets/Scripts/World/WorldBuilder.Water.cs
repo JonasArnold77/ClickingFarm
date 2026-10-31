@@ -68,7 +68,7 @@ namespace SeedClicker
                 if (t <= 0f)
                 {
                     WaterPulse(p, false);
-                    t = UnityEngine.Random.Range(1.1f, 1.6f) / Mathf.Max(1f, 0.6f + 0.4f * p.Lv);
+                    t = UnityEngine.Random.Range(2f, 2.8f) / Mathf.Max(1f, 0.6f + 0.4f * p.Lv);   // gemaechlich tropfen
                 }
                 waterTimers[p] = t;
             }
@@ -111,14 +111,7 @@ namespace SeedClicker
             var targets = WaterTargets(p);
             if (targets.Count == 0 && !big) return;   // nichts zu giessen: still bleiben
             var top = PlantBase(p) + new Vector2(0, CellSize * 0.75f);
-            StartCoroutine(Fountain(top, big ? 0.22f : 0.14f, big ? 0.6f : 0.3f));
-            // Giessstrahl (2D, Happy Harvest) in Richtung der Ziele
-            if (targets.Count > 0)
-            {
-                Vector2 avg = Vector2.zero; foreach (var c in targets) avg += CellCenter(c); avg /= targets.Count;
-                bool left = avg.x < top.x - 0.05f;
-                WorldVfx.Play("water", top + new Vector2(left ? -0.1f : 0.1f, 0.05f), big ? 1.2f : 0.9f, 30010, null, 2f, left);
-            }
+            // nur Tropfen – kein Strahl und keine Fontaene
             Shockwave(PlantBase(p), big ? 1.4f : 0.8f, big ? 0.7f : 0.5f, new Color(0.6f, 0.85f, 1f, big ? 0.8f : 0.5f));
             if (big) for (int i = 0; i < 14; i++)
                 Particles.I?.Spawn(top, "drop", WaterCol, new Vector3(UnityEngine.Random.Range(-1.6f, 1.6f), UnityEngine.Random.Range(2.2f, 4f), 0), 0.7f, 0.09f, 0.05f, 8f);
@@ -152,19 +145,6 @@ namespace SeedClicker
             p.xp += gain;
             Floater?.Invoke(top + new Vector2(0.2f, 0.15f), "+" + gain, new Color(0.75f, 0.65f, 1f));
             if (p.xp >= Mathf.Max(1, PlantBalance.I.levelTaps)) LevelUp(p, v, basePos, top);
-        }
-
-        IEnumerator Fountain(Vector2 at, float scale, float keep)
-        {
-            var go = WorldFx.Play("waterFountain", at, scale, 30010, null, objects, 999f);
-            if (go == null)
-            {
-                for (int i = 0; i < 10; i++)
-                    Particles.I?.Spawn(at, "drop", WaterCol, new Vector3(UnityEngine.Random.Range(-0.8f, 0.8f), UnityEngine.Random.Range(2.5f, 3.5f), 0), 0.6f, 0.07f, 0.04f, 7f);
-                yield break;
-            }
-            yield return new WaitForSeconds(keep);
-            WorldFx.Release(go, 1.6f);
         }
 
         /// <summary>Ein Wassertropfen fliegt im Bogen von der Pflanze aufs Feld und platscht dort auf.</summary>

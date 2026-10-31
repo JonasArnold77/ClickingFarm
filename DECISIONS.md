@@ -145,9 +145,9 @@
 - **Wirkungsbereich anzeigen** (`WorldBuilder.Area.cs`): Ist das Info-Fenster einer Pflanze offen, leuchten alle Felder in ihrer Reichweite grün und durchsichtig, auch auf Mauern und Pulten. Beim Ziehen wird der Bereich für den Platz unter dem Finger gezeigt. Das gilt für Wasser, Dünger, Verstärker, Automatik, Honig, Licht, Kampf (Schussweite), Stützranke und die Helfer.
 
 - **Blickrichtung für Wasser- und Klick-Pflanzen**: Tauschilf und Klopfwurz wirken nur noch in eine Richtung (Nord/Ost/Süd/West).
-  - Tauschilf gießt das nächste Feld in Blickrichtung. „Tiefe Wurzeln“ und Saftrohre verlängern die Linie um je 1 Feld.
+  - Tauschilf gießt das nächste Feld in Blickrichtung. Es tropft gemächlicher (alle 2–2,8 s, schneller mit der Stufe), nur mit Tropfen, ohne Wasserstrahl und Fontäne. „Tiefe Wurzeln“ und Saftrohre verlängern die Linie um je 1 Feld.
   - Klopfwurz klickt nur das Feld davor.
-  - Im Info-Fenster dreht der Knopf „Drehen“ (unter dem Bild) die Pflanze im Uhrzeigersinn. Ein grüner Pfeil an der Pflanze und das grüne Zielfeld zeigen die Richtung, die Werte nennen sie („Richtung Osten“).
+  - Solange das Info-Fenster offen ist, erscheint oben am Bildschirm ein sehr großer Knopf „Pflanze drehen“. Er dreht die Pflanze im Uhrzeigersinn. Ein grüner Pfeil an der Pflanze und das grüne Zielfeld zeigen die Richtung, die Werte nennen sie („Richtung Osten“).
   - Die Richtung wird gespeichert (`PlantedState.dir`); neue Pflanzen schauen nach Norden. Das gilt auch beim Ziehen als Vorschau.
 
 ## Werbung

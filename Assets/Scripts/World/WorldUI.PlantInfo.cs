@@ -78,8 +78,10 @@ namespace SeedClicker
             infoActImg = infoAct.GetComponent<Image>();
 
             // Wasser- und Klick-Pflanzen: Blickrichtung drehen
-            infoTurn = Btn(root, "Drehen", new Color(0.35f, 0.6f, 0.4f), () => { if (infoPlant != null) { infoTimer = InfoShowTime; wb.TurnPlant(infoPlant); } }, 28);
-            infoTurn.GetComponent<RectTransform>().Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0.5f, 1), new Vector2(125, -222), new Vector2(200, 56));
+            // sehr gross oben am Bildschirm (unter der Anzeige), solange das Fenster einer drehbaren Pflanze offen ist
+            infoTurn = Btn(safe, "Pflanze drehen", new Color(0.3f, 0.62f, 0.4f), () => { if (infoPlant != null) { infoTimer = InfoShowTime; wb.TurnPlant(infoPlant); } }, 54);
+            infoTurn.GetComponent<RectTransform>().Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -440), new Vector2(760, 170));
+            infoTurn.gameObject.SetActive(false);
 
             var x = Btn(root, "X", new Color(0.8f, 0.45f, 0.35f), HidePlantInfo, 40);
             x.GetComponent<RectTransform>().Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-18, -18), new Vector2(96, 84));
@@ -111,6 +113,7 @@ namespace SeedClicker
             if (infoPlant != null && (!wb.Planted.Contains(infoPlant) || modal != null)) infoPlant = null;
             infoTimer -= dt;
             bool show = infoPlant != null && infoTimer > 0f;
+            if (!show && infoTurn != null) infoTurn.gameObject.SetActive(false);
             infoGroup.alpha = Mathf.MoveTowards(infoGroup.alpha, show ? 1f : 0f, dt * (show ? 8f : 2.5f));
             infoGroup.blocksRaycasts = show;
             wb.Inspected = show ? infoPlant : null;
@@ -145,7 +148,7 @@ namespace SeedClicker
             else infoRole.text = Roles.Name(def.role);
 
             infoStats.text = Stats(p, def, g);
-            infoTurn.gameObject.SetActive(p.Grown && WorldBuilder.HasDirection(p));
+            infoTurn.gameObject.SetActive(p.Grown && WorldBuilder.HasDirection(p) && infoTimer > 0f && modal == null);
             if (WorldBuilder.HasDirection(p)) infoStats.text += (infoStats.text != "" ? " · " : "") + "Richtung " + WorldBuilder.DirName(p.dir);
 
             float f; string bar;

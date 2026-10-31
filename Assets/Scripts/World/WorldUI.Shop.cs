@@ -39,10 +39,10 @@ namespace SeedClicker
             row.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(-56, 150));
             dayButtons = row.gameObject.AddComponent<CanvasGroup>();
             var wall = Btn(row, "Mauer bauen", new Color(0.62f, 0.45f, 0.28f), () => wbi.SetWallMode(!wbi.WallMode), 36);
-            wall.GetComponent<RectTransform>().Place(new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(0, 0), new Vector2(380, 0));
+            wall.GetComponent<RectTransform>().Place(new Vector2(0, 0), new Vector2(0.37f, 1), new Vector2(0, 0.5f), new Vector2(0, 0), new Vector2(0, 0));   // Breite anteilig: passt auf jedes Format
             wallBtnImg = wall.GetComponent<Image>(); wallBtnText = wall.GetComponentInChildren<Text>();
             var ped = Btn(row, "Steinpult", new Color(0.55f, 0.55f, 0.58f), () => wbi.SetPedestalMode(!wbi.PedestalMode), 32);
-            ped.GetComponent<RectTransform>().Place(new Vector2(0.5f, 0), new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, 0), new Vector2(200, 0));
+            ped.GetComponent<RectTransform>().Place(new Vector2(0.39f, 0), new Vector2(0.61f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, 0), new Vector2(0, 0));
             var pedImg = ped.GetComponent<Image>(); var pedText = ped.GetComponentInChildren<Text>();
             wbi.PedestalModeChanged += on =>
             {
@@ -51,7 +51,7 @@ namespace SeedClicker
                 hintText.text = on ? "Steinpult (" + Num.Short(PlantBalance.I.Pedestal.cost) + " Münzen) auf Boden oder Mauer setzen – halten und ziehen setzt viele. Ins Loch passen Kampfpflanzen" : ToolHint(WorldCamera.Tool);
             };
             var shop = Btn(row, "Laden", new Color(0.36f, 0.62f, 0.3f), () => OpenShop(shopTab), 44);
-            shop.GetComponent<RectTransform>().Place(new Vector2(1, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(0, 0), new Vector2(380, 0));
+            shop.GetComponent<RectTransform>().Place(new Vector2(0.63f, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(0, 0), new Vector2(0, 0));
             wbi.WallModeChanged += on =>
             {
                 wallBtnText.text = on ? "Fertig" : "Mauer bauen";

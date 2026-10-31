@@ -104,11 +104,11 @@ namespace SeedClicker
         };
         public static string Desc(CatalogDef d) => d.role switch
         {
-            "water" => "Gießt das Feld in Blickrichtung: dort wächst alles doppelt so schnell und Ernte bringt +50 %. Richtung mit „Drehen“ ändern.",
+            "water" => "Gießt das Feld vor sich: wächst doppelt so schnell, Ernte +50 %.",
             "harvest" => "Reif: jeder Tipp bringt " + d.value + " Münzen, dazu verdient sie von selbst.",
             "fert" => "Direkte Nachbarn wachsen schneller und bringen +50 % Münzen.",
             "boost" => "Tipps auf Pflanzen im Umkreis von 2 zählen doppelt.",
-            "auto" => "Klickt von selbst auf das Feld in Blickrichtung – je höher die Stufe, desto schneller. Richtung mit „Drehen“ ändern.",
+            "auto" => "Klickt von selbst das Feld vor sich – schneller mit jeder Stufe.",
             "bee" => "Macht Honig: verdient von selbst, mehr mit Blumen in der Nähe.",
             "light" => "Leuchtet nachts: Zombies in ihrem Licht nehmen +50 % Schaden.",
             "transport" => "Erntet reife Ernte-Pflanzen im Umkreis von 2 – Münzen +50 %.",
