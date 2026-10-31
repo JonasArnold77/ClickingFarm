@@ -39,10 +39,19 @@ namespace SeedClicker
             row.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(-56, 150));
             dayButtons = row.gameObject.AddComponent<CanvasGroup>();
             var wall = Btn(row, "Mauer bauen", new Color(0.62f, 0.45f, 0.28f), () => wbi.SetWallMode(!wbi.WallMode), 36);
-            wall.GetComponent<RectTransform>().Place(new Vector2(0, 0), new Vector2(0.37f, 1), new Vector2(0, 0.5f), new Vector2(0, 0), new Vector2(0, 0));   // Breite anteilig: passt auf jedes Format
+            wall.GetComponent<RectTransform>().Place(new Vector2(0, 0), new Vector2(0.28f, 1), new Vector2(0, 0.5f), new Vector2(0, 0), new Vector2(0, 0));   // Breite anteilig: passt auf jedes Format
             wallBtnImg = wall.GetComponent<Image>(); wallBtnText = wall.GetComponentInChildren<Text>();
             var ped = Btn(row, "Steinpult", new Color(0.55f, 0.55f, 0.58f), () => wbi.SetPedestalMode(!wbi.PedestalMode), 32);
-            ped.GetComponent<RectTransform>().Place(new Vector2(0.39f, 0), new Vector2(0.61f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, 0), new Vector2(0, 0));
+            ped.GetComponent<RectTransform>().Place(new Vector2(0.295f, 0), new Vector2(0.49f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, 0), new Vector2(0, 0));
+            var riv = Btn(row, "Bach", new Color(0.3f, 0.6f, 0.85f), () => wbi.SetRiverMode(!wbi.RiverMode), 34);
+            riv.GetComponent<RectTransform>().Place(new Vector2(0.505f, 0), new Vector2(0.685f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, 0), new Vector2(0, 0));
+            var rivImg = riv.GetComponent<Image>(); var rivText = riv.GetComponentInChildren<Text>();
+            wbi.RiverModeChanged += on =>
+            {
+                rivText.text = on ? "Fertig" : "Bach";
+                rivImg.color = on ? new Color(0.85f, 0.6f, 0.25f) : new Color(0.3f, 0.6f, 0.85f);
+                hintText.text = on ? "Bach: Klick setzt den Anfang, das blaue Wasser folgt dir – nächster Klick gräbt ihn (" + Num.Short(PlantBalance.I.River.cost) + " Münzen je Stück). Felder am Bach sind gegossen und wachsen schneller" : ToolHint(WorldCamera.Tool);
+            };
             var pedImg = ped.GetComponent<Image>(); var pedText = ped.GetComponentInChildren<Text>();
             wbi.PedestalModeChanged += on =>
             {
@@ -51,7 +60,7 @@ namespace SeedClicker
                 hintText.text = on ? "Steinpult (" + Num.Short(PlantBalance.I.Pedestal.cost) + " Münzen) auf Boden oder Mauer setzen – halten und ziehen setzt viele. Ins Loch passen Kampfpflanzen" : ToolHint(WorldCamera.Tool);
             };
             var shop = Btn(row, "Laden", new Color(0.36f, 0.62f, 0.3f), () => OpenShop(shopTab), 44);
-            shop.GetComponent<RectTransform>().Place(new Vector2(0.63f, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(0, 0), new Vector2(0, 0));
+            shop.GetComponent<RectTransform>().Place(new Vector2(0.70f, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(0, 0), new Vector2(0, 0));
             wbi.WallModeChanged += on =>
             {
                 wallBtnText.text = on ? "Fertig" : "Mauer bauen";
@@ -86,6 +95,7 @@ namespace SeedClicker
                 dayButtons.blocksRaycasts = dayButtons.alpha > 0.5f;
                 if (night && wbi.WallMode) wbi.SetWallMode(false);
                 if (night && wbi.PedestalMode) wbi.SetPedestalMode(false);
+                if (night && wbi.RiverMode) wbi.SetRiverMode(false);
             }
         }
 

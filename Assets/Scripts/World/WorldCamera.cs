@@ -214,6 +214,7 @@ namespace SeedClicker
             // ein Tipp macht das Naheliegende: Mauer bauen (Mauer-Modus), Pflanzen-Info oeffnen, leeren Platz bepflanzen,
             // Feld anlegen, Baum faellen, Fels abbauen
             if (wb.WallMode) { if (!wb.WallClick(w)) { if (!wb.TryChop(w)) wb.TryMine(w); } return; }
+            if (wb.RiverMode) { if (!wb.RiverClick(w)) { if (!wb.TryChop(w)) wb.TryMine(w); } return; }
             if (wb.PedestalMode) { if (!wb.TapPedestalMode(cell)) { if (!wb.TryChop(w)) wb.TryMine(w); } return; }
             if (wb.PlantAt(cell) != null) { wb.InspectPlant(cell); return; }
             if (wb.IsSlot(cell)) { wb.TapEmptyField(cell); return; }

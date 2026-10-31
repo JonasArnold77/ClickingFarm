@@ -46,6 +46,7 @@ namespace SeedClicker
         public List<int> rocksGone = new List<int>();
         public List<WallState> walls = new List<WallState>();
         public List<PedestalState> pedestals = new List<PedestalState>();
+        public List<RiverState> rivers = new List<RiverState>();
         public long lastSeen;
         public int season;            // 0 Sommer, 1 Herbst, 2 Winter
         public bool plantsCleared;
@@ -295,7 +296,7 @@ namespace SeedClicker
 
         public bool CanPlaceField(Cell c)
         {
-            if (fields.ContainsKey(c) || HasStructure(c)) return false;
+            if (fields.ContainsKey(c) || HasStructure(c) || HasRiver(c)) return false;
             var center = CellCenter(c);
             if (!IsBuildable(c)) return false;                                // nur im Hof
             float hc = CellSize / 2f;

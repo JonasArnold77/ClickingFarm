@@ -177,3 +177,9 @@
 - `Core/AdService.cs` ist die einzige Stelle für Werbung. Derzeit zeigt die UI ein 2-Sekunden-Platzhalter-Video und vergibt dann die Belohnung.
 - Belohnungsvideos: Energie auffüllen, Offline-Ertrag verdoppeln, alles wachsen lassen, Gratis-Samenpaket.
 - Interstitial-Platz: nur beim Tageswechsel, frühestens nach 5 Min. Spielzeit, max. alle 10 Min. (nur Log, nicht angebunden).
+
+## Bäche
+- **Bach** (`WorldBuilder.Rivers.cs`, Knopf „Bach“ unten): wie Mauern ziehen (Klick Anfang, blaue Vorschau folgt, Klick gräbt), 10 Münzen je Stück (`plants.json -> river.cost`). Zweimal auf dasselbe Bachstück schüttet es zu (halbe Münzen zurück).
+- Bäche fließen nur um Gärten herum: nie auf ein Feld, und die Vorschau endet am ersten Feld oder Hindernis (springt nicht darüber). Felder lassen sich nicht auf einen Bach legen.
+- Pflanzen auf Feldern direkt am Bach (auch schräg) gelten als gegossen und wachsen ×1,5 schneller und produzieren ×1,5 mehr von selbst (`growth`, `produce`).
+- Look: comichaft – dicke dunkelblaue Kontur, kräftiges Türkis, heller Schaumrand, grasiger Uferstreifen, Glanzflecken. Bewegung: Helligkeitswellen laufen den Bach entlang, weiße Strömungsstriche ziehen in Fließrichtung (Richtung, in die gezogen wurde), ab und zu glitzert es.

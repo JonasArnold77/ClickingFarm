@@ -53,6 +53,9 @@ namespace SeedClicker
     /// <summary>Tagesaufgabe: so viele Stueck des Tages-Ernteguts fuer Bronze, Silber, Gold.</summary>
     [Serializable] public class ChallengeDef { public int[] tiers = { 10, 30, 60 }; }
     /// <summary>Ernte-Lieferung: Vorrat je Pflanze, Knollis (Preis, Traglast, Tempo), Honigglas = so viele Sekunden Honig.</summary>
+    /// <summary>Bach: Muenzen je Stueck; Pflanzen am Bach gelten als gegossen und wachsen/produzieren schneller.</summary>
+    [Serializable] public class RiverDef { public float cost = 10f, growth = 1.5f, produce = 1.5f; }
+    [Serializable] public class RiverState { public int x, y, dir, seq; }
     [Serializable] public class DeliveryDef
     {
         public int startKnollis = 1;
@@ -191,6 +194,7 @@ namespace SeedClicker
         public WallDef wall;
         public PedestalDef pedestal;
         public DeliveryDef delivery;
+        public RiverDef river;
         public ChallengeDef challenge;
         public AltarDef altar;
         public TransformsDef transforms;
@@ -309,6 +313,7 @@ namespace SeedClicker
         public WallDef Wall => wall ?? (wall = new WallDef());
         public PedestalDef Pedestal => pedestal ?? (pedestal = new PedestalDef());
         public DeliveryDef Delivery => delivery ?? (delivery = new DeliveryDef());
+        public RiverDef River => river ?? (river = new RiverDef());
         public ChallengeDef Challenge => challenge != null && challenge.tiers != null && challenge.tiers.Length > 0 ? challenge : (challenge = new ChallengeDef());
         public AltarDef Altar => altar ?? (altar = new AltarDef());
         public TransformsDef Transforms => transforms ?? (transforms = new TransformsDef());

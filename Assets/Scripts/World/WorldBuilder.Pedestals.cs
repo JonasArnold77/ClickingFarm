@@ -25,7 +25,7 @@ namespace SeedClicker
         const float PedTop = CellSize;   // Platte ist ein ganzes Feld tief
 
         public bool PedestalMode => pedestalMode;
-        public bool BuildMode => wallMode || pedestalMode;
+        public bool BuildMode => wallMode || pedestalMode || riverMode;
         public event System.Action<bool> PedestalModeChanged;
 
         public bool HasPedestal(Cell c) => pedestals.ContainsKey(c);
@@ -38,6 +38,7 @@ namespace SeedClicker
         public void SetPedestalMode(bool on)
         {
             if (on && wallMode) { wallMode = false; WallModeChanged?.Invoke(false); }
+            if (on && riverMode) { riverMode = false; RiverModeChanged?.Invoke(false); }
             CancelWallPlan();
             pedestalMode = on;
             RefreshGhosts();

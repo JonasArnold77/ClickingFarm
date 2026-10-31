@@ -100,7 +100,7 @@ namespace SeedClicker
             foreach (var c in PedestalMode ? VisibleCells() : FarmCells())
             {
                 seen.Add(c);
-                bool show = WallMode ? false : PedestalMode ? CanPlacePedestal(c) : CanPlaceField(c) && !HasWall(c);
+                bool show = WallMode || riverMode ? false : PedestalMode ? CanPlacePedestal(c) : CanPlaceField(c) && !HasWall(c);
                 ghosts.TryGetValue(c, out var sr);
                 if (show && sr == null)
                 {

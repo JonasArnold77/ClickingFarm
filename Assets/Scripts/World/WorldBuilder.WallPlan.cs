@@ -27,7 +27,7 @@ namespace SeedClicker
         public bool WallAnchorActive => wallAnchor.HasValue && !planFields;
         public bool FieldPlanActive => wallAnchor.HasValue && planFields;
         /// <summary>Vorschau folgt Finger/Maus (Mauer im Mauer-Modus oder Felder).</summary>
-        public bool PlanFollows => FieldPlanActive || (wallMode && WallAnchorActive);
+        public bool PlanFollows => FieldPlanActive || ((wallMode || riverMode) && WallAnchorActive);
 
         /// <summary>Felder anlegen: 1. Klick setzt die Ecke, eine gerade Reihe folgt der Maus; 2. Klick legt die Reihe fest,
         /// die Vorschau waechst dann in die andere Richtung zu einer Flaeche (z. B. 4×4); 3. Klick legt alle gruenen Felder an.
@@ -159,17 +159,22 @@ namespace SeedClicker
             }
             planOk.Clear();
             float budget = WoodLeft;
+            double coinBudget = save.coins;
+            bool river = riverMode && !planFields;
+            bool riverStop = false;   // ein Bach fliesst nur um Gaerten herum: am ersten Hindernis (z. B. Feld) endet er
             int n = 0;
             foreach (var c in path)
             {
-                if (!planTotem && (planFields ? HasField(c) : HasWall(c))) continue;   // schon da: nichts zeigen
-                bool ok = planTotem ? !TotemTaken(c) : planFields ? CanPlaceField(c) : CanPlaceWall(c) && budget >= WallWood - 0.0001f;
-                if (ok) { if (!planFields) budget -= WallWood; planOk.Add(c); }
+                if (!planTotem && (river ? HasRiver(c) : planFields ? HasField(c) : HasWall(c))) continue;   // schon da: nichts zeigen
+                bool ok = planTotem ? !TotemTaken(c) : river ? !riverStop && CanPlaceRiver(c) && coinBudget >= PlantBalance.I.River.cost
+                        : planFields ? CanPlaceField(c) : CanPlaceWall(c) && budget >= WallWood - 0.0001f;
+                if (river && !ok) riverStop = true;
+                if (ok) { if (river) coinBudget -= PlantBalance.I.River.cost; else if (!planFields) budget -= WallWood; planOk.Add(c); }
                 var sr = PlanView(n++);
                 sr.enabled = true;
-                if (planFields)
+                if (planFields || river)
                 {
-                    // flaches, deutlich gruenes Feld auf dem Boden
+                    // flaches, deutlich gruenes (beim Bach blaues) Feld auf dem Boden
                     sr.sprite = Art.Get("white");
                     sr.transform.localScale = Vector3.one * CellSize * 0.9f / Mathf.Max(0.01f, sr.sprite.bounds.size.x);
                     sr.transform.position = CellCenter(c);
@@ -182,7 +187,7 @@ namespace SeedClicker
                     sr.transform.position = WallFoot(c);
                     sr.sortingOrder = Order(WallFoot(c).y + 0.1f) + 3;
                 }
-                sr.color = ok ? (planTotem ? PlanGold : PlanGreen) : PlanRed;
+                sr.color = ok ? (planTotem ? PlanGold : river ? PlanBlue : PlanGreen) : PlanRed;
             }
             for (int i = n; i < planViews.Count; i++) if (planViews[i] != null) planViews[i].enabled = false;
         }
@@ -233,7 +238,7 @@ namespace SeedClicker
             foreach (var sr in planViews)
             {
                 if (sr == null || !sr.enabled) continue;
-                var c = sr.color; c.a = (c.g > 0.8f ? PlanGreen.a : PlanRed.a) * k; sr.color = c;
+                var c = sr.color; c.a = (c.g > 0.7f ? PlanGreen.a : PlanRed.a) * k; sr.color = c;
             }
         }
     }

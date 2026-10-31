@@ -1302,6 +1302,11 @@
     "knolliSpeed": 1.6,
     "beeJarSeconds": 6
   },
+  "river": {
+    "cost": 10,
+    "growth": 1.5,
+    "produce": 1.5
+  },
   "challenge": {
     "tiers": [10, 30, 60]
   },

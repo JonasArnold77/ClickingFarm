@@ -180,6 +180,7 @@ namespace SeedClicker
         public bool IsWatered(PlantedState p)
         {
             foreach (var q in save.planted) if (q != p && q.Grown && q.Role == "water" && InCross(new Cell(q.x, q.y), new Cell(p.x, p.y), WaterRadiusOf(q))) return true;
+            if (NearRiver(p)) return true;   // am Bach
             return StructEffect("water", CellCenter(new Cell(p.x, p.y))) > 0f;
         }
         float FertMult(PlantedState p) => 1f + 0.5f * GrownNear(p, "fert", 1) * UpgradeMult("fert");
@@ -190,7 +191,7 @@ namespace SeedClicker
         public int TapPower(PlantedState p, bool growing)
         {
             float m = UpgradeMult("click") * BoostMult(p) * (1f + StructEffect("scare", CellCenter(new Cell(p.x, p.y))));
-            if (growing) m *= UpgradeMult("growth") * (IsWatered(p) ? 2f : 1f) * (1f + 0.5f * GrownNear(p, "fert", 1)) * TotemMult(p, "growth");
+            if (growing) m *= UpgradeMult("growth") * (IsWatered(p) ? 2f : 1f) * (1f + 0.5f * GrownNear(p, "fert", 1)) * TotemMult(p, "growth") * RiverMult(p, "growth");
             return Mathf.Max(1, Mathf.RoundToInt(m));
         }
 
@@ -207,14 +208,14 @@ namespace SeedClicker
             if (!p.Grown) return 0f;
             var c = PlantBalance.I.Plant(p.type);
             if (c == null) return 0f;
-            if (p.Role == "harvest") return c.value * p.Lv * 0.15f * UpgradeMult("harvest") * FertMult(p) * WaterMult(p) * TotemMult(p, "produce");
+            if (p.Role == "harvest") return c.value * p.Lv * 0.15f * UpgradeMult("harvest") * FertMult(p) * WaterMult(p) * TotemMult(p, "produce") * RiverMult(p, "produce");
             if (p.Role == "bee")
             {
                 int flowers = 0;
                 var pos = CellCenter(new Cell(p.x, p.y));
                 foreach (var d in decor) if (d.go != null && d.go.name.ToLower().Contains("flower") && (d.p - pos).sqrMagnitude < 2.2f * 2.2f) flowers++;
                 flowers += GrownNear(p, "bee", 2);
-                return c.value * p.Lv * (1f + 0.25f * flowers) * UpgradeMult("bee") * FertMult(p) * (1f + StructGlobal("bee")) * TotemMult(p, "produce");
+                return c.value * p.Lv * (1f + 0.25f * flowers) * UpgradeMult("bee") * FertMult(p) * (1f + StructGlobal("bee")) * TotemMult(p, "produce") * RiverMult(p, "produce");
             }
             return 0f;
         }

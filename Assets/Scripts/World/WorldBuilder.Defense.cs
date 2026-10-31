@@ -27,6 +27,7 @@ namespace SeedClicker
         public void SetWallMode(bool on)
         {
             if (on && pedestalMode) { pedestalMode = false; PedestalModeChanged?.Invoke(false); }
+            if (on && riverMode) { riverMode = false; RiverModeChanged?.Invoke(false); }
             CancelWallPlan();   // auch eine angefangene Feld-Vorschau
             wallMode = on;
             RefreshGhosts();
@@ -37,6 +38,7 @@ namespace SeedClicker
         {
             foreach (var w in save.walls) CreateWallView(w, false);
             LoadPedestals();
+            LoadRivers();
             RefreshGhosts();
         }
 
@@ -44,7 +46,7 @@ namespace SeedClicker
         /// Bauwerken oder Pflanzen. Auch ausserhalb des Hofs und auf leeren Feldern.</summary>
         public bool CanPlaceWall(Cell c)
         {
-            if (HasWall(c) || HasStructure(c) || HasPedestal(c) || PlantAt(c) != null) return false;
+            if (HasWall(c) || HasStructure(c) || HasPedestal(c) || HasRiver(c) || PlantAt(c) != null) return false;
             var center = CellCenter(c);
             float hc = CellSize / 2f;
             foreach (var corner in new[] { new Vector2(-hc, -hc), new Vector2(hc, -hc), new Vector2(-hc, hc), new Vector2(hc, hc) })
