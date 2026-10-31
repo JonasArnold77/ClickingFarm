@@ -55,7 +55,7 @@ namespace SeedClicker
             }
         }
 
-        int WaterRadius => 2 + (int)UpgradeAdd("water");
+        int WaterRadius => 1 + (int)UpgradeAdd("water");   // Felder in Blickrichtung (Tiefe Wurzeln/Saftrohr: weiter)
 
         void UpdateWatering(float dt)
         {
@@ -82,23 +82,19 @@ namespace SeedClicker
             }
         }
 
-        /// <summary>Felder (mit oder ohne Pflanze) und Mauer-Pflanzen im Umkreis der Wasserpflanze.</summary>
+        /// <summary>Pflanzen in Blickrichtung der Wasserpflanze (so weit sie reicht).</summary>
         List<Cell> WaterTargets(PlantedState w)
         {
             var list = new List<Cell>();
-            int r = WaterRadiusOf(w);
-            for (int dx = -r; dx <= r; dx++)
-                for (int dy = -r; dy <= r; dy++)
-                {
-                    if (dx == 0 && dy == 0) continue;
-                    var c = new Cell(w.x + dx, w.y + dy);
-                    // nur dort giessen, wo es etwas bringt: wachsende Saat und reife Pflanzen, die weiter leveln
-                    // (nicht in der kurzen Sperre direkt nach dem Reif-Moment)
-                    var t = PlantAt(c);
-                    if (t == null || t == w || t.x != c.x || t.y != c.y) continue;
-                    if (t.Grown && plantViews.TryGetValue(c, out var tv) && Time.unscaledTime < tv.readyAt) continue;
-                    list.Add(c);
-                }
+            foreach (var c in DirCells(w, new Cell(w.x, w.y), WaterRadiusOf(w)))
+            {
+                // nur dort giessen, wo es etwas bringt: wachsende Saat und reife Pflanzen, die weiter leveln
+                // (nicht in der kurzen Sperre direkt nach dem Reif-Moment)
+                var t = PlantAt(c);
+                if (t == null || t == w || t.x != c.x || t.y != c.y) continue;
+                if (t.Grown && plantViews.TryGetValue(c, out var tv) && Time.unscaledTime < tv.readyAt) continue;
+                list.Add(c);
+            }
             return list;
         }
 

@@ -20,7 +20,7 @@ namespace SeedClicker
         float infoTimer;
         string infoBuiltFor;
 
-        Button infoAct;
+        Button infoAct, infoTurn;
         Text infoActText;
         Image infoActImg;
 
@@ -76,6 +76,10 @@ namespace SeedClicker
             infoAct.GetComponent<RectTransform>().Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 88), new Vector2(-60, 104));
             infoActText = infoAct.GetComponentInChildren<Text>();
             infoActImg = infoAct.GetComponent<Image>();
+
+            // Wasser- und Klick-Pflanzen: Blickrichtung drehen
+            infoTurn = Btn(root, "Drehen", new Color(0.35f, 0.6f, 0.4f), () => { if (infoPlant != null) { infoTimer = InfoShowTime; wb.TurnPlant(infoPlant); } }, 28);
+            infoTurn.GetComponent<RectTransform>().Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0.5f, 1), new Vector2(125, -222), new Vector2(200, 56));
 
             var x = Btn(root, "X", new Color(0.8f, 0.45f, 0.35f), HidePlantInfo, 40);
             x.GetComponent<RectTransform>().Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-18, -18), new Vector2(96, 84));
@@ -141,6 +145,8 @@ namespace SeedClicker
             else infoRole.text = Roles.Name(def.role);
 
             infoStats.text = Stats(p, def, g);
+            infoTurn.gameObject.SetActive(p.Grown && WorldBuilder.HasDirection(p));
+            if (WorldBuilder.HasDirection(p)) infoStats.text += (infoStats.text != "" ? " · " : "") + "Richtung " + WorldBuilder.DirName(p.dir);
 
             float f; string bar;
             if (!p.Grown) { f = p.growth / Mathf.Max(1f, p.GrowTaps); bar = "Wächst: " + Mathf.FloorToInt(p.growth) + " / " + p.GrowTaps; }

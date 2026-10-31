@@ -104,11 +104,11 @@ namespace SeedClicker
         };
         public static string Desc(CatalogDef d) => d.role switch
         {
-            "water" => "Gießt Felder im Umkreis von 2: dort wächst alles doppelt so schnell und Ernte bringt +50 %.",
+            "water" => "Gießt das Feld in Blickrichtung: dort wächst alles doppelt so schnell und Ernte bringt +50 %. Richtung mit „Drehen“ ändern.",
             "harvest" => "Reif: jeder Tipp bringt " + d.value + " Münzen, dazu verdient sie von selbst.",
             "fert" => "Direkte Nachbarn wachsen schneller und bringen +50 % Münzen.",
             "boost" => "Tipps auf Pflanzen im Umkreis von 2 zählen doppelt.",
-            "auto" => "Klickt von selbst auf ihre direkten Nachbarn – je höher die Stufe, desto schneller.",
+            "auto" => "Klickt von selbst auf das Feld in Blickrichtung – je höher die Stufe, desto schneller. Richtung mit „Drehen“ ändern.",
             "bee" => "Macht Honig: verdient von selbst, mehr mit Blumen in der Nähe.",
             "light" => "Leuchtet nachts: Zombies in ihrem Licht nehmen +50 % Schaden.",
             "transport" => "Erntet reife Ernte-Pflanzen im Umkreis von 2 – Münzen +50 %.",
@@ -407,6 +407,7 @@ namespace SeedClicker
         public int growth;        // Tipps bisher
         public int level, w, h;   // Stufe (Klicken / Zusammenfuehren) und Flaechenbedarf in Feldern (0 = 1)
         public int xp;            // Klicks seit der letzten Stufe (reife Pflanze)
+        public int dir;           // Blickrichtung von Wasser- und Klick-Pflanzen: 0 Nord, 1 Ost, 2 Sued, 3 West
         public int Lv => Mathf.Max(1, level);
         public int W => Mathf.Max(1, w);
         public int H => Mathf.Max(1, h);

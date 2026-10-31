@@ -179,7 +179,7 @@ namespace SeedClicker
         /// <summary>Gegossen: ein Tauschilf erreicht das Feld (Saftrohre verlaengern) oder ein Brunnen steht in der Naehe.</summary>
         public bool IsWatered(PlantedState p)
         {
-            foreach (var q in save.planted) if (q != p && q.Grown && q.Role == "water" && Cheb(p, q) <= WaterRadiusOf(q)) return true;
+            foreach (var q in save.planted) if (q != p && q.Grown && q.Role == "water" && InLine(q, new Cell(p.x, p.y), WaterRadiusOf(q))) return true;
             return StructEffect("water", CellCenter(new Cell(p.x, p.y))) > 0f;
         }
         float FertMult(PlantedState p) => 1f + 0.5f * GrownNear(p, "fert", 1) * UpgradeMult("fert");
@@ -275,10 +275,9 @@ namespace SeedClicker
                 if (t <= 0f)
                 {
                     t = 1.4f / (p.Lv * UpgradeMult("auto"));
-                    PlantedState target = null; int seen = 0;
-                    foreach (var q in save.planted)
-                        if (q != p && q.Role != "auto" && Cheb(p, q) <= 1 && UnityEngine.Random.Range(0, ++seen) == 0) target = q;
-                    if (target != null) SoftTap(target, p);
+                    // klickt nur das Feld in Blickrichtung
+                    var target = PlantAt(Step(new Cell(p.x, p.y), p.dir, 1));
+                    if (target != null && target != p && target.Role != "auto") SoftTap(target, p);
                 }
                 autoTimers[p] = t;
             }
