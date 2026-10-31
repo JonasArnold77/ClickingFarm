@@ -88,7 +88,7 @@ namespace SeedClicker
 
             // Maus ohne Druck: geplante Mauer folgt dem Zeiger
             var wbh = WorldBuilder.I;
-            if (!down && wbh != null && wbh.WallMode && wbh.WallAnchorActive && !OverUI(-1)) wbh.UpdateWallPlan(World(Input.mousePosition));
+            if (!down && wbh != null && wbh.PlanFollows && !OverUI(-1)) wbh.UpdateWallPlan(World(Input.mousePosition));
             if (Input.GetMouseButtonDown(0)) PointerDown(Input.mousePosition, -1);
             else if (Input.GetMouseButton(0) && down) PointerMove(Input.mousePosition);
             if (Input.GetMouseButtonUp(0) && down) PointerUp(Input.mousePosition);
@@ -165,7 +165,7 @@ namespace SeedClicker
             if (overUI || consumed) return;
             if (painting) { var wbp = WorldBuilder.I; wbp?.ContinueBuildStroke(wbp.TapCell(World(screen))); lastScreen = screen; return; }
             // Mauer wird geplant: Finger zieht die gruene Vorschau mit (statt die Karte zu schieben)
-            if (WorldBuilder.I != null && WorldBuilder.I.WallMode && WorldBuilder.I.WallAnchorActive) { WorldBuilder.I.UpdateWallPlan(World(screen)); lastScreen = screen; return; }
+            if (WorldBuilder.I != null && WorldBuilder.I.PlanFollows) { WorldBuilder.I.UpdateWallPlan(World(screen)); lastScreen = screen; return; }
             if (dragCand != null)
             {
                 var wbd = WorldBuilder.I;
@@ -193,6 +193,8 @@ namespace SeedClicker
             if (wb == null) return;
             if (wb.HitWorkbench(w)) { wb.TapWorkbench(); return; }
             var cell = wb.TapCell(w);
+            // Felder werden gerade geplant: dieser Tipp legt sie an
+            if (wb.FieldPlanActive) { wb.FieldClick(w); return; }
             if (wb.PlacingStructure != null) { wb.TryPlaceStructure(cell); return; }
             if (wb.HitBench(w)) { wb.TapBench(); return; }
             if (wb.HitAltar(w)) { wb.TapAltar(); return; }
@@ -212,7 +214,7 @@ namespace SeedClicker
             if (wb.PlantAt(cell) != null) { wb.InspectPlant(cell); return; }
             if (wb.IsSlot(cell)) { wb.TapEmptyField(cell); return; }
             if (wb.TryChop(w) || wb.TryMine(w)) return;
-            if (wb.CanPlaceField(cell)) wb.PlaceField(cell, true);
+            if (wb.CanPlaceField(cell)) wb.FieldClick(w);   // Anfang setzen, gruene Vorschau folgt
 
         }
 

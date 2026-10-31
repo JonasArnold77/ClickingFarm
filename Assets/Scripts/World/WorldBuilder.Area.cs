@@ -27,7 +27,7 @@ namespace SeedClicker
                 var h = PlantBalance.I.Helpers;
                 switch (p.Role)
                 {
-                    case "water": list.AddRange(DirCells(p, at, WaterRadiusOf(p))); break;
+                    case "water": list.AddRange(CrossCells(at, WaterRadiusOf(p))); break;
                     case "auto": list.AddRange(DirCells(p, at, 1)); break;
                     case "fert": Square(list, at, 1); break;
                     case "boost": case "bee": Square(list, at, 2); break;
@@ -51,7 +51,21 @@ namespace SeedClicker
 
         // ------------------------------------------------------------------ Blickrichtung (Wasser- und Klick-Pflanzen)
 
-        public static bool HasDirection(PlantedState p) => p != null && (p.Role == "water" || p.Role == "auto");
+        public static bool HasDirection(PlantedState p) => p != null && p.Role == "auto";
+
+        /// <summary>Kreuz um at: je len Felder nach links, rechts, oben und unten (Tauschilf).</summary>
+        static List<Cell> CrossCells(Cell at, int len)
+        {
+            var list = new List<Cell>();
+            for (int d = 0; d < 4; d++) for (int i = 1; i <= len; i++) list.Add(Step(at, d, i));
+            return list;
+        }
+
+        static bool InCross(Cell from, Cell target, int len)
+        {
+            int dx = Mathf.Abs(target.x - from.x), dy = Mathf.Abs(target.y - from.y);
+            return (dx == 0 && dy >= 1 && dy <= len) || (dy == 0 && dx >= 1 && dx <= len);
+        }
         static readonly string[] DirNames = { "Norden", "Osten", "Süden", "Westen" };
         public static string DirName(int d) => DirNames[((d % 4) + 4) % 4];
 

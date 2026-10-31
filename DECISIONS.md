@@ -131,8 +131,8 @@
   - **Dornenranke** auf einen Mauerabschnitt: Der ganze Abschnitt bekommt Dornen, ebenfalls grün angezeigt. Zombies, die darauf einschlagen, nehmen 2,5 Schaden/s je Dornen-Stufe; die Stufe der Ranke wird addiert, höchstens 5. Die Ranke läuft sichtbar vorn an der Mauer entlang (zwei geflochtene Stränge mit rötlichen Dornen) und verbindet sich nahtlos mit benachbarten Dornenmauern. Wo die Mauer nach hinten läuft, zieht ein Strang über den Wehrgang. Neue Mauern ohne Dornen unterbrechen die Ranke.
   - **Wurzelherz** in ein Steinpult: Das Pult glüht im Herzschlag, die Kampfpflanze darin schießt 0,6 Felder weiter je Herz (max. 3). Das Herz bleibt am Pult, auch wenn die Pflanze wechselt.
   - **Mondblume** auf Laterne oder Wachturm: Die Laterne leuchtet doppelt so weit, der Turm schießt pro Takt auf zwei verschiedene Zombies; beide bekommen kühles Mondlicht.
-  - **Glutblüte, Frostdistel, Blitzkraut, Giftpilz** auf die Waffenbank: Die gerade gewählte Waffe bekommt Feuer (brennt nach), Eis (bremst), Blitz (springt auf 1 + Stufe/2 weitere Zombies über) oder Gift (wirkt nach, stapelt). Gleiches Element nochmal erhöht die Element-Stufe (max. 5); ein anderes ersetzt es. Das gilt für alle Waffen, auch Pfeil und Granate. Die Waffe auf der Bank glimmt in der Element-Farbe, das Icon in der Waffenleiste ist getönt, das Bank-Fenster zeigt das Element.
-  - Werte in `plants.json` → `transforms` und `catalog[].transform`. Annahme: Das Element bleibt dauerhaft an der Waffe, bis es ersetzt wird.
+  - **Glutblüte, Frostdistel, Blitzkraut, Giftpilz** auf die Waffenbank: Die gerade gewählte Waffe bekommt Feuer (brennt nach), Eis (bremst), Blitz (springt auf 1 + Stufe/2 weitere Zombies über) oder Gift (wirkt nach, stapelt). Elemente bleiben für immer und sammeln sich: Ein neues Element kommt dazu (alle wirken zusammen), gleiches Element nochmal erhöht dessen Stufe (max. 5). Ältere Spielstände mit einem Element werden übernommen. Das gilt für alle Waffen, auch Pfeil und Granate. Die Waffe auf der Bank glimmt in der Element-Farbe, das Icon in der Waffenleiste ist getönt, das Bank-Fenster zeigt das Element.
+  - Werte in `plants.json` → `transforms` und `catalog[].transform`. 
 
 - **Runen-Altar** (`WorldBuilder.Altar.cs`, `WorldUI.Altar.cs`): Steinaltar links vor dem Haus. Antippen öffnet unten sein Fenster mit „Rune opfern“ und „Zurücknehmen“.
   - Jeder geopferte **Runenstein** erhöht die Fluch-Stufe der *nächsten* Welle (max. 5). Die Runen kreisen leuchtend über dem Altar, der violett glüht. Mit Beginn der Nacht ist der Altar wieder leer.
@@ -144,11 +144,13 @@
 
 - **Wirkungsbereich anzeigen** (`WorldBuilder.Area.cs`): Ist das Info-Fenster einer Pflanze offen, leuchten alle Felder in ihrer Reichweite grün und durchsichtig, auch auf Mauern und Pulten. Beim Ziehen wird der Bereich für den Platz unter dem Finger gezeigt. Das gilt für Wasser, Dünger, Verstärker, Automatik, Honig, Licht, Kampf (Schussweite), Stützranke und die Helfer.
 
-- **Blickrichtung für Wasser- und Klick-Pflanzen**: Tauschilf und Klopfwurz wirken nur noch in eine Richtung (Nord/Ost/Süd/West).
-  - Tauschilf gießt das nächste Feld in Blickrichtung. Es tropft gemächlicher (alle 2–2,8 s, schneller mit der Stufe), nur mit Tropfen, ohne Wasserstrahl und Fontäne. „Tiefe Wurzeln“ und Saftrohre verlängern die Linie um je 1 Feld.
+- **Blickrichtung für Klick-Pflanzen**: Klopfwurz wirkt nur in eine Richtung (Nord/Ost/Süd/West). Der Tauschilf gießt stattdessen das Kreuz um sich, also je ein Feld links, rechts, oben und unten (nicht diagonal); „Tiefe Wurzeln“ und Saftrohre verlängern jeden Arm um 1.
+  - (frühere Fassung: nur in Blickrichtung – ersetzt durch das Kreuz) Es tropft gemächlicher (alle 2–2,8 s, schneller mit der Stufe), nur mit Tropfen, ohne Wasserstrahl und Fontäne. „Tiefe Wurzeln“ und Saftrohre verlängern die Linie um je 1 Feld.
   - Klopfwurz klickt nur das Feld davor.
   - Im Info-Fenster steht ein großer Knopf „Drehen“ neben dem Hauptknopf (der dafür schmaler wird). Er dreht die Pflanze im Uhrzeigersinn. Ein grüner Pfeil an der Pflanze und das grüne Zielfeld zeigen die Richtung, die Werte nennen sie („Richtung Osten“).
   - Die Richtung wird gespeichert (`PlantedState.dir`); neue Pflanzen schauen nach Norden. Das gilt auch beim Ziehen als Vorschau.
+
+- **Felder wie Mauern anlegen**: Ein Tipp auf freien Boden setzt den Anfang („Bis wohin? Nochmal tippen“), eine grüne Vorschau folgt Maus bzw. Finger, Rot heißt: dort geht kein Feld. Der nächste Tipp legt alle grünen Felder an. Der Weg wird wie bei Mauern ohne Diagonalen aufgefüllt. Ein zweiter Tipp auf den Anfang legt nur dieses eine Feld an.
 
 ## Werbung
 - `Core/AdService.cs` ist die einzige Stelle für Werbung. Derzeit zeigt die UI ein 2-Sekunden-Platzhalter-Video und vergibt dann die Belohnung.

@@ -55,7 +55,7 @@ namespace SeedClicker
             }
         }
 
-        int WaterRadius => 1 + (int)UpgradeAdd("water");   // Felder in Blickrichtung (Tiefe Wurzeln/Saftrohr: weiter)
+        int WaterRadius => 1 + (int)UpgradeAdd("water");   // Felder je Richtung im Kreuz (Tiefe Wurzeln/Saftrohr: weiter)
 
         void UpdateWatering(float dt)
         {
@@ -82,11 +82,11 @@ namespace SeedClicker
             }
         }
 
-        /// <summary>Pflanzen in Blickrichtung der Wasserpflanze (so weit sie reicht).</summary>
+        /// <summary>Pflanzen links, rechts, oberhalb und unterhalb der Wasserpflanze (so weit sie reicht).</summary>
         List<Cell> WaterTargets(PlantedState w)
         {
             var list = new List<Cell>();
-            foreach (var c in DirCells(w, new Cell(w.x, w.y), WaterRadiusOf(w)))
+            foreach (var c in CrossCells(new Cell(w.x, w.y), WaterRadiusOf(w)))
             {
                 // nur dort giessen, wo es etwas bringt: wachsende Saat und reife Pflanzen, die weiter leveln
                 // (nicht in der kurzen Sperre direkt nach dem Reif-Moment)

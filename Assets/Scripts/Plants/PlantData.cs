@@ -104,7 +104,7 @@ namespace SeedClicker
         };
         public static string Desc(CatalogDef d) => d.role switch
         {
-            "water" => "Gießt das Feld vor sich: wächst doppelt so schnell, Ernte +50 %.",
+            "water" => "Gießt die Felder links, rechts, oben und unten: wachsen doppelt so schnell, Ernte +50 %.",
             "harvest" => "Reif: jeder Tipp bringt " + d.value + " Münzen, dazu verdient sie von selbst.",
             "fert" => "Direkte Nachbarn wachsen schneller und bringen +50 % Münzen.",
             "boost" => "Tipps auf Pflanzen im Umkreis von 2 zählen doppelt.",
@@ -396,7 +396,14 @@ namespace SeedClicker
     /// <summary>Stufe einer Waffe (an der Waffenbank geschmiedet) und Schlaege zur naechsten Stufe.</summary>
     /// <summary>Ein aufgestelltes Bauwerk (Spielstand). placed = false: gekauft, wartet auf seinen Platz.</summary>
     [Serializable] public class StructureState { public string id; public int x, y, lv = 1; public float xp; public bool placed, stone, moon; }
-    [Serializable] public class WeaponLevel { public string id; public int lv = 1; public float xp; public string element; public int elementLv; }
+    [Serializable] public class WeaponLevel
+    {
+        public string id; public int lv = 1; public float xp;
+        public string element; public int elementLv;   // alt (ein Element); wird beim Laden in elements uebernommen
+        public List<WeaponElementLv> elements = new List<WeaponElementLv>();   // alle Elemente, die die Waffe je bekommen hat
+    }
+    /// <summary>Ein Element an einer Waffe und seine Stufe (bleibt fuer immer).</summary>
+    [Serializable] public class WeaponElementLv { public string id; public int lv; }
 
     /// <summary>Eine gepflanzte Pflanze auf einem Feld oder Mauerplatz (Spielstand).</summary>
     [Serializable]

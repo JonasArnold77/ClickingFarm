@@ -38,6 +38,7 @@ namespace SeedClicker
         public void SetPedestalMode(bool on)
         {
             if (on && wallMode) { wallMode = false; WallModeChanged?.Invoke(false); }
+            CancelWallPlan();
             pedestalMode = on;
             RefreshGhosts();
             PedestalModeChanged?.Invoke(on);

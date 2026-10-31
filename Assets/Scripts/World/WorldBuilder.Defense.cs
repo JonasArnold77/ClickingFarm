@@ -27,7 +27,7 @@ namespace SeedClicker
         public void SetWallMode(bool on)
         {
             if (on && pedestalMode) { pedestalMode = false; PedestalModeChanged?.Invoke(false); }
-            if (!on) CancelWallPlan();
+            CancelWallPlan();   // auch eine angefangene Feld-Vorschau
             wallMode = on;
             RefreshGhosts();
             WallModeChanged?.Invoke(on);

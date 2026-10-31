@@ -167,9 +167,13 @@ namespace SeedClicker
         {
             Damage(m, dmg, null);
             if (w == null || wb == null || m == null) return;
-            string el = wb.WeaponElement(w.id);
-            int lv = wb.WeaponElementLv(w.id);
-            if (el == "" || lv <= 0) return;
+            foreach (var e in wb.WeaponElements(w.id)) ApplyWeaponElement(m, e.id, e.lv, dmg);
+        }
+
+        /// <summary>Ein Element der Waffe auf einen getroffenen Zombie anwenden (alle Elemente wirken zusammen).</summary>
+        void ApplyWeaponElement(Monster m, string el, int lv, float dmg)
+        {
+            if (lv <= 0) return;
             var col = WorldBuilder.ElementCol(el);
             Particles.I?.Burst(Center(m), "spark", col, 4, 2f, 0.3f, 0.12f, 0f, 0.5f);
             switch (el)

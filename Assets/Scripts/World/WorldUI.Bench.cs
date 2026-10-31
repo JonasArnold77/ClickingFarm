@@ -118,7 +118,7 @@ namespace SeedClicker
             bool maxed = wb.WeaponMaxed(w.id);
             benchLevel.text = "Stufe " + lv;
             benchStats.text = "Schaden ×" + wb.WeaponDamageMult(w.id).ToString("0.##") + " · Nachladen " + (w.cooldown * wb.WeaponCooldownMult(w.id)).ToString("0.00") + " s"
-                + (wb.WeaponElement(w.id) != "" ? " · " + WorldBuilder.ElementName(wb.WeaponElement(w.id)) + " " + wb.WeaponElementLv(w.id) : "");
+                + (wb.WeaponElements(w.id).Count > 0 ? " · " + wb.ElementsText(w.id) : "");
             int need = wb.WeaponTapsNeeded(w.id);
             float xp = wb.WeaponXp(w.id);
             benchBarFill.rectTransform.anchorMax = new Vector2(maxed ? 1f : Mathf.Clamp01(xp / need), 1f);

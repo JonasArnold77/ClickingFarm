@@ -69,8 +69,8 @@ namespace SeedClicker
                 bool unlocked = nw.IsWeaponUnlocked(s.def);
                 bool sel = cur != null && cur.id == s.def.id;
                 s.frame.color = !unlocked ? new Color(0.55f, 0.52f, 0.5f, 0.8f) : sel ? new Color(1f, 0.9f, 0.6f) : new Color(1f, 1f, 1f, 0.9f);
-                string el = WorldBuilder.I != null ? WorldBuilder.I.WeaponElement(s.def.id) : "";
-                s.icon.color = !unlocked ? new Color(0.1f, 0.1f, 0.1f, 0.55f) : el != "" ? Color.Lerp(Color.white, WorldBuilder.ElementCol(el), 0.55f) : Color.white;
+                bool hasEl = WorldBuilder.I != null && WorldBuilder.I.WeaponElements(s.def.id).Count > 0;
+                s.icon.color = !unlocked ? new Color(0.1f, 0.1f, 0.1f, 0.55f) : hasEl ? Color.Lerp(Color.white, WorldBuilder.I.ElementTint(s.def.id), 0.55f) : Color.white;
                 s.label.text = unlocked ? s.def.name : "nach Welle " + s.def.unlockWave;
                 s.cd.fillAmount = sel ? nw.WeaponCooldown01 : 0f;
                 s.rt.localScale = Vector3.one * (sel ? 1.06f : 0.96f);

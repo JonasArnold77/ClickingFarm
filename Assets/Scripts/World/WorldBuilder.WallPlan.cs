@@ -12,13 +12,41 @@ namespace SeedClicker
     public partial class WorldBuilder
     {
         Cell? wallAnchor;
+        bool planFields;   // Vorschau fuer Felder statt Mauern
         readonly List<SpriteRenderer> planViews = new List<SpriteRenderer>();
         readonly List<Cell> planOk = new List<Cell>();
         Cell planTo;
 
         static readonly Color PlanGreen = new Color(0.45f, 1f, 0.45f, 0.55f), PlanRed = new Color(1f, 0.4f, 0.35f, 0.45f);
 
-        public bool WallAnchorActive => wallAnchor.HasValue;
+        public bool WallAnchorActive => wallAnchor.HasValue && !planFields;
+        public bool FieldPlanActive => wallAnchor.HasValue && planFields;
+        /// <summary>Vorschau folgt Finger/Maus (Mauer im Mauer-Modus oder Felder).</summary>
+        public bool PlanFollows => FieldPlanActive || (wallMode && WallAnchorActive);
+
+        /// <summary>Felder wie Mauern anlegen: erster Klick setzt den Anfang, die gruene Vorschau folgt, der zweite Klick
+        /// legt alle gruenen Felder an. false = hier geht kein Feld (dann macht der Tipp etwas anderes).</summary>
+        public bool FieldClick(Vector2 w)
+        {
+            var c = TapCell(w);
+            if (!wallAnchor.HasValue)
+            {
+                if (!CanPlaceField(c)) return false;
+                wallAnchor = c; planFields = true;
+                UpdateWallPlan(w);
+                Floater?.Invoke(CellCenter(c) + new Vector2(0, 0.6f), "Bis wohin? Nochmal tippen", new Color(0.75f, 1f, 0.7f));
+                Sfx.Play("tick", 1.2f, 0.5f);
+                Haptics.Tap(8);
+                return true;
+            }
+            UpdateWallPlan(w);
+            var ok = new List<Cell>(planOk);
+            CancelWallPlan();
+            if (ok.Count == 0) { Sfx.Play("error", 1f, 0.5f); return true; }
+            foreach (var pc in ok) PlaceField(pc, true);
+            save.Save();
+            return true;
+        }
 
         // ------------------------------------------------------------------ Holz (auch Bruchteile)
 
@@ -84,6 +112,7 @@ namespace SeedClicker
         public void CancelWallPlan()
         {
             wallAnchor = null;
+            planFields = false;
             planOk.Clear();
             foreach (var sr in planViews) if (sr != null) sr.enabled = false;
         }
@@ -108,13 +137,26 @@ namespace SeedClicker
             int n = 0;
             foreach (var c in path)
             {
-                if (HasWall(c)) continue;   // schon da: nichts zeigen
-                bool ok = CanPlaceWall(c) && budget >= WallWood - 0.0001f;
-                if (ok) { budget -= WallWood; planOk.Add(c); }
+                if (planFields ? HasField(c) : HasWall(c)) continue;   // schon da: nichts zeigen
+                bool ok = planFields ? CanPlaceField(c) : CanPlaceWall(c) && budget >= WallWood - 0.0001f;
+                if (ok) { if (!planFields) budget -= WallWood; planOk.Add(c); }
                 var sr = PlanView(n++);
                 sr.enabled = true;
-                sr.transform.position = WallFoot(c);
-                sr.sortingOrder = Order(WallFoot(c).y + 0.1f) + 3;
+                if (planFields)
+                {
+                    // flaches, deutlich gruenes Feld auf dem Boden
+                    sr.sprite = Art.Get("white");
+                    sr.transform.localScale = Vector3.one * CellSize * 0.9f / Mathf.Max(0.01f, sr.sprite.bounds.size.x);
+                    sr.transform.position = CellCenter(c);
+                    sr.sortingOrder = -32288;
+                }
+                else
+                {
+                    sr.sprite = WallSprite;
+                    sr.transform.localScale = Vector3.one * CellSize / Mathf.Max(0.01f, WallSprite.bounds.size.x);
+                    sr.transform.position = WallFoot(c);
+                    sr.sortingOrder = Order(WallFoot(c).y + 0.1f) + 3;
+                }
                 sr.color = ok ? PlanGreen : PlanRed;
             }
             for (int i = n; i < planViews.Count; i++) if (planViews[i] != null) planViews[i].enabled = false;

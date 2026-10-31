@@ -10,7 +10,7 @@ namespace SeedClicker
     /// auf einen hoelzernen Wachturm: Steinturm. Dornenranke: ganzer Abschnitt bekommt Dornen. Beim Ziehen leuchtet
     /// der ganze Abschnitt gruen. Wurzelherz ins Pult: mehr Reichweite. Mondblume: Laterne doppelt weit, Turm doppelt.
     /// Glutbluete / Frostdistel / Blitzkraut / Giftpilz auf die Waffenbank: die gewaehlte Waffe bekommt Feuer, Eis,
-    /// Blitz oder Gift (gleiches Element nochmal = staerker). Werte in plants.json -> transforms und catalog.transform.
+    /// Blitz oder Gift – fuer immer; Elemente sammeln sich (gleiches Element nochmal = staerker). Werte in plants.json -> transforms und catalog.transform.
     /// </summary>
     public partial class WorldBuilder
     {
@@ -35,8 +35,37 @@ namespace SeedClicker
         /// <summary>Haltbarkeit einer Mauer: Stein haelt ein Vielfaches.</summary>
         float MaxHp(WallState st) => WallMaxHp * (st.stone ? PlantBalance.I.Transforms.stoneHpMult : 1f);
 
-        public string WeaponElement(string id) => WLevel(id).element ?? "";
-        public int WeaponElementLv(string id) => WLevel(id).elementLv;
+        /// <summary>Alle Elemente der Waffe – sie bleiben fuer immer und sammeln sich.</summary>
+        public List<WeaponElementLv> WeaponElements(string id)
+        {
+            var e = WLevel(id);
+            if (e.elements == null) e.elements = new List<WeaponElementLv>();
+            if (!string.IsNullOrEmpty(e.element))
+            {
+                // alter Spielstand: ein einzelnes Element uebernehmen
+                if (e.elements.Find(x => x.id == e.element) == null) e.elements.Add(new WeaponElementLv { id = e.element, lv = Mathf.Max(1, e.elementLv) });
+                e.element = null; e.elementLv = 0;
+            }
+            return e.elements;
+        }
+
+        public string ElementsText(string id)
+        {
+            var parts = new List<string>();
+            foreach (var x in WeaponElements(id)) parts.Add(ElementName(x.id) + " " + x.lv);
+            return string.Join(" · ", parts);
+        }
+
+        /// <summary>Mischfarbe aller Elemente der Waffe (weiss ohne Element).</summary>
+        public Color ElementTint(string id)
+        {
+            var list = WeaponElements(id);
+            if (list.Count == 0) return Color.white;
+            var c = Color.black;
+            foreach (var x in list) c += ElementCol(x.id);
+            c /= list.Count; c.a = 1f;
+            return c;
+        }
 
         // ------------------------------------------------------------------ Ziehen und Ablegen
 
@@ -348,9 +377,11 @@ namespace SeedClicker
         {
             var w = PlantBalance.I.Weapon(save.weapon);
             if (w == null) return;
-            var e = WLevel(w.id);
-            if (e.element == element) e.elementLv = Mathf.Min(PlantBalance.I.Transforms.maxElementLevel, e.elementLv + lv);
-            else { e.element = element; e.elementLv = Mathf.Min(PlantBalance.I.Transforms.maxElementLevel, lv); }
+            // dazu, nicht statt: jedes Element bleibt fuer immer; gleiches Element nochmal = staerker
+            var list = WeaponElements(w.id);
+            var e = list.Find(x => x.id == element);
+            if (e == null) list.Add(e = new WeaponElementLv { id = element, lv = 0 });
+            e.lv = Mathf.Min(PlantBalance.I.Transforms.maxElementLevel, e.lv + lv);
             var col = ElementCol(element);
             var top = BenchTop;
             benchSquash = 1f;
@@ -359,7 +390,7 @@ namespace SeedClicker
             WorldFx.Play(element == "lightning" ? "electrified" : element == "fire" ? "flame" : "magicPoof", top + new Vector2(0, 0.2f), 0.12f);
             Sfx.Play(element == "lightning" ? "zap" : "unlock", 1.1f, 0.8f);
             WorldPostFX.Punch(0.4f);
-            WeaponInfused?.Invoke(w, element, e.elementLv);
+            WeaponInfused?.Invoke(w, element, e.lv);
         }
 
         public event System.Action<WeaponDef, string, int> WeaponInfused;
@@ -368,10 +399,10 @@ namespace SeedClicker
         void UpdateBenchElement()
         {
             if (benchIcon == null) return;
-            var el = WeaponElement(save.weapon);
-            benchIcon.color = el == "" ? Color.white : Color.Lerp(Color.white, ElementCol(el), 0.45f);
-            if (el != "" && Random.value < Time.deltaTime * 6f)
-                Particles.I?.Spawn(benchIcon.transform.position + (Vector3)(Random.insideUnitCircle * 0.25f), "spark", ElementCol(el), Vector3.up * 0.4f, 0.6f, 0.08f, 0f, 0f);
+            var list = WeaponElements(save.weapon);
+            benchIcon.color = Color.Lerp(Color.white, ElementTint(save.weapon), list.Count > 0 ? 0.45f : 0f);
+            if (list.Count > 0 && Random.value < Time.deltaTime * (4f + 2f * list.Count))
+                Particles.I?.Spawn(benchIcon.transform.position + (Vector3)(Random.insideUnitCircle * 0.25f), "spark", ElementCol(list[Random.Range(0, list.Count)].id), Vector3.up * 0.4f, 0.6f, 0.08f, 0f, 0f);
         }
 
         // ------------------------------------------------------------------ Bild

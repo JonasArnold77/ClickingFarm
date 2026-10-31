@@ -179,7 +179,7 @@ namespace SeedClicker
         /// <summary>Gegossen: ein Tauschilf erreicht das Feld (Saftrohre verlaengern) oder ein Brunnen steht in der Naehe.</summary>
         public bool IsWatered(PlantedState p)
         {
-            foreach (var q in save.planted) if (q != p && q.Grown && q.Role == "water" && InLine(q, new Cell(p.x, p.y), WaterRadiusOf(q))) return true;
+            foreach (var q in save.planted) if (q != p && q.Grown && q.Role == "water" && InCross(new Cell(q.x, q.y), new Cell(p.x, p.y), WaterRadiusOf(q))) return true;
             return StructEffect("water", CellCenter(new Cell(p.x, p.y))) > 0f;
         }
         float FertMult(PlantedState p) => 1f + 0.5f * GrownNear(p, "fert", 1) * UpgradeMult("fert");
