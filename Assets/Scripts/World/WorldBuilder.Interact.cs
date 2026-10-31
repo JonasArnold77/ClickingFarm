@@ -18,6 +18,8 @@ namespace SeedClicker
         public bool runesInit;
         public List<int> felled = new List<int>();       // gefaellte Baeume (Stumpf steht noch)
         public List<int> stumpsGone = new List<int>();   // auch der Stumpf ist weg
+        public List<TreeFell> fellNights = new List<TreeFell>();   // wann gefaellt (fuers Nachwachsen)
+        public int nights;   // vergangene Naechte (auch verlorene)
         public List<Cell> fields = new List<Cell>();
         // Angriffspflanzen, Samen, Wellen
         public List<PlantedState> planted = new List<PlantedState>();
@@ -70,6 +72,8 @@ namespace SeedClicker
             public Vector2 foot;
             public int hp, maxHp, stumpHp;
             public float shake, fallT = -1f, fallDir = 1f, pop = 1f, hpShowT;
+            // zum Nachwachsen: wie der Baum aussah und wie viel Platz er belegt
+            public Sprite sprite; public Vector3 srScale, srLocalPos; public int srOrder; public float occR, growT;
             public bool gone;
         }
 
@@ -145,7 +149,12 @@ namespace SeedClicker
             pivot.position = foot;
             sr.transform.SetParent(pivot, true);   // Drehpunkt am Stammfuss: wackeln und umfallen
             int hp = big ? TreeHpBig : TreeHpSmall;
-            trees.Add(new TreeObj { id = trees.Count, pivot = pivot, sr = sr, foot = foot, big = big, occ = occ, hp = hp, maxHp = hp });
+            trees.Add(new TreeObj
+            {
+                id = trees.Count, pivot = pivot, sr = sr, foot = foot, big = big, occ = occ, hp = hp, maxHp = hp,
+                sprite = sr.sprite, srScale = sr.transform.localScale, srLocalPos = sr.transform.localPosition, srOrder = sr.sortingOrder,
+                occR = occ >= 0 && occ < occupiedR.Count ? occupiedR[occ] : 0f
+            });
         }
 
         void AddDecor(SpriteRenderer sr, Vector2 p, int occ)
@@ -157,6 +166,7 @@ namespace SeedClicker
         {
             foreach (var id in save.felled)
                 if (id >= 0 && id < trees.Count) FellImmediate(trees[id], save.stumpsGone.Contains(id));
+            InitRegrow();
             foreach (var c in save.fields) PlaceField(c, false, false);
             if (PlantBalance.I.testUnlockAll)
                 foreach (var d in PlantBalance.I.catalog) if (!save.unlocked.Contains(d.id)) save.unlocked.Add(d.id);
@@ -391,6 +401,7 @@ namespace SeedClicker
                         CreateStump(t, true);
                         AddWood(t.big ? WoodBig : WoodSmall, t.foot + new Vector2(0, 1f));
                         save.felled.Add(t.id);
+                        RememberFell(t);
                         save.Save();
                     }
                 }

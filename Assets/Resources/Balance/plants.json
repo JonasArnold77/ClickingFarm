@@ -1260,6 +1260,7 @@
   ],
   "startCoins": 30,
   "testUnlockAll": true,
+  "treeRegrowNights": 3,
   "wall": {
     "wood": 0.2,
     "hp": 30

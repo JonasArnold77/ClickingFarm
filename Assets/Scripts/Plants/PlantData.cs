@@ -186,6 +186,7 @@ namespace SeedClicker
         public HelperDef helpers;
         public float startCoins = 30f;
         public bool testUnlockAll;   // Test: alle Pflanzenarten sofort freigeschaltet
+        public int treeRegrowNights = 3;   // nach so vielen Naechten steht ein gefaellter Baum wieder
         public LevelDef levels;
         public MergeSizeDef[] mergeSizes;
         public int[] mutationLevels;   // ab welcher Stufe Mutation 2, 3, 4 beginnt (erste Zahl = Mutation 1)
@@ -388,6 +389,9 @@ namespace SeedClicker
     /// <summary>Ein Zaunstueck auf einer Rasterzelle (Spielstand).</summary>
 
     /// <summary>Ein Mauerstueck (Holz) auf einer Rasterzelle: blockiert Zombies, darauf kann eine Pflanze stehen.</summary>
+    /// <summary>Wann ein Baum gefaellt wurde (Nacht-Zaehler), fuers Nachwachsen.</summary>
+    [Serializable] public class TreeFell { public int id, night; }
+
     [Serializable] public class WallState { public int x, y; public float hp; public bool stone; public int thorns; }
     /// <summary>Ein Steinpult (Spielstand): auf dem Boden oder auf einer Mauer.</summary>
     [Serializable] public class PedestalState { public int x, y; public int heart; }

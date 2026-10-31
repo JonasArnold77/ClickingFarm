@@ -42,7 +42,7 @@ namespace SeedClicker
             {
                 // alter Spielstand ohne Karten-Seed: Baumstuempfe passen nicht zur neuen Karte
                 save.mapSeed = new System.Random().Next(1, int.MaxValue);
-                save.felled.Clear(); save.stumpsGone.Clear();
+                save.felled.Clear(); save.stumpsGone.Clear(); save.fellNights.Clear();
                 save.Save();
             }
             rnd = new System.Random(save.mapSeed);
@@ -362,6 +362,7 @@ namespace SeedClicker
             UpdateSupport(Time.deltaTime);
             UpdateBench(Time.deltaTime);
             UpdateAltar(Time.deltaTime);
+            UpdateRegrow(Time.deltaTime);
             UpdateStructures(Time.deltaTime);
             UpdateHelpers(Time.deltaTime);
             UpdateSeason(Time.deltaTime);

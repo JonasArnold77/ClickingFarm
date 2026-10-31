@@ -145,6 +145,7 @@ namespace SeedClicker
             foreach (var c in gasClouds) { foreach (var p in c.puffs) if (p != null) Destroy(p.gameObject); WorldFx.Release(c.fx, 2f); }
             gasClouds.Clear();
             toSpawn = 0;
+            wb.NightPassed();   // Naechte zaehlen: gefaellte Baeume wachsen nach
             if (victory)
             {
                 if (Curse > 0)

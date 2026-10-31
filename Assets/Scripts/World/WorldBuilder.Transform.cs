@@ -288,14 +288,19 @@ namespace SeedClicker
         static Sprite ThornSprite(int mask)
         {
             if (thornSprites.TryGetValue(mask, out var cached) && cached != null) return cached;
-            const int w = 96;
-            int front = Mathf.RoundToInt(WallH / CellSize * w), h = front + w;
+            // B/T: Rand unten und oben, damit die violetten Stacheln ueber die Mauer hinausragen koennen
+            const int w = 96, B = 20, T = 18;
+            int front = Mathf.RoundToInt(WallH / CellSize * w), top = front + w, h = B + top + T;
             var px = new Color[w * h];
             for (int i = 0; i < px.Length; i++) px[i] = Color.clear;
-            var vine = new Color(0.2f, 0.42f, 0.15f); var vineHi = new Color(0.38f, 0.62f, 0.25f); var thorn = new Color(0.62f, 0.22f, 0.16f);   // roetlich: auf hellem Holz und Stein gut zu sehen
+            var vine = new Color(0.2f, 0.42f, 0.15f); var vineHi = new Color(0.38f, 0.62f, 0.25f);
+            var thorn = new Color(0.62f, 0.25f, 0.85f);   // violett
+            var spikeDark = new Color(0.32f, 0.1f, 0.45f); var spikeHi = new Color(0.86f, 0.62f, 1f);
 
+            // Koordinaten: 0 = Fuss der Mauer (Vorderkante unten), top = hinterer Rand des Wehrgangs
             void Dot(float x, float y, float r, Color col)
             {
+                y += B;
                 for (int yy = Mathf.FloorToInt(y - r); yy <= Mathf.CeilToInt(y + r); yy++)
                     for (int xx = Mathf.FloorToInt(x - r); xx <= Mathf.CeilToInt(x + r); xx++)
                         if (xx >= 0 && xx < w && yy >= 0 && yy < h && (xx - x) * (xx - x) + (yy - y) * (yy - y) <= r * r) px[yy * w + xx] = col;
@@ -331,13 +336,35 @@ namespace SeedClicker
             Vine(new Vector2(x0, fy), new Vector2(x1, fy), -front * 0.26f, 2);
             // Wehrgang nur dort, wo die Mauer nach hinten laeuft (von vorn sieht man da nichts): Strang zur Nachbarzelle
             var ctr = new Vector2(w / 2f, front + w / 2f);
-            if ((mask & 4) != 0) Vine(ctr, new Vector2(ctr.x, h), 5f, 2);
+            if ((mask & 4) != 0) Vine(ctr, new Vector2(ctr.x, top), 5f, 2);
             if ((mask & 8) != 0) Vine(ctr, new Vector2(ctr.x, front), 5f, 2);
             if ((mask & 12) != 0) Dot(ctr.x, ctr.y, 4f, vine);
 
+            // grosse violette Stacheln, die aus der Mauer ragen: unten aus der Vorderseite (wenn davor keine Mauer ist)
+            // und oben ueber den Wehrgang hinaus (wenn dahinter keine Mauer ist). Abstand 16 px: nahtlos zur Nachbarzelle.
+            void Spike(float x, float yBase, float yTip, float half)
+            {
+                float len = Mathf.Abs(yTip - yBase); if (len < 1f) return;
+                for (int i = 0; i <= Mathf.CeilToInt(len); i++)
+                {
+                    float k = i / len, y = Mathf.Lerp(yBase, yTip, k), hw = half * (1f - k);
+                    for (float dx = -hw; dx <= hw; dx += 0.5f)
+                    {
+                        var col = dx < -hw * 0.35f ? spikeDark : dx > hw * 0.45f ? spikeHi : thorn;
+                        Dot(x + dx, y, 0.6f, col);
+                    }
+                }
+            }
+            for (int sx = 8; sx < w; sx += 16)
+            {
+                float jitter = ((sx / 16) % 2 == 0) ? 0f : 4f;
+                if ((mask & 8) == 0) Spike(sx, front * 0.3f, -B + 3 + jitter, 5.5f);                  // nach unten/vorn heraus
+                if ((mask & 4) == 0) Spike(sx + 8, top - 10, top + T - 3 - jitter, 4.5f);            // hinten nach oben heraus
+            }
+
             var tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
             tex.SetPixels(px); tex.Apply();
-            var spr = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0f), w);
+            var spr = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, B / (float)h), w);
             thornSprites[mask] = spr;
             return spr;
         }
