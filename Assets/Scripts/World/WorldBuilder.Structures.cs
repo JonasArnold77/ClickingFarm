@@ -145,6 +145,7 @@ namespace SeedClicker
         {
             var v = structViews.Find(x => x.st == st);
             if (v != null) { Particles.I?.Burst(StructPos(st) + new Vector2(0, 0.3f), "square", new Color(0.7f, 0.6f, 0.45f), 8, 2f, 0.5f, 0.1f, 6f, 1.5f); Destroy(v.sr.gameObject); structViews.Remove(v); }
+            RemoveTotemPath(st);
             if (OpenStructure == st) OpenStructure = null;
             BeginPlacing(st);
         }
@@ -188,10 +189,15 @@ namespace SeedClicker
             if (d == null) return;
             if (IsTotem(d))
             {
-                var tsr = new GameObject("Totem_" + st.id).AddComponent<SpriteRenderer>();   // unsichtbar, nur fuer Anker
+                // kleiner Totempfahl auf einem schmalen Pfad oben links ueber der Flaeche
+                var tsr = new GameObject("Totem_" + st.id).AddComponent<SpriteRenderer>();
                 tsr.transform.SetParent(objects, false);
-                tsr.transform.position = StructPos(st);
-                structViews.Add(new StructView { st = st, def = d, sr = tsr, scale = 1f, squash = pop ? 1f : 0f, timer = 3f });
+                tsr.sprite = StructSprite(st);
+                float tscale = CellSize * 0.75f * d.scale / Mathf.Max(0.01f, tsr.sprite.bounds.size.x);
+                tsr.transform.localScale = Vector3.one * tscale;
+                CreateTotemPath(st);
+                structViews.Add(new StructView { st = st, def = d, sr = tsr, scale = tscale, squash = pop ? 1f : 0f, timer = 3f });
+                PlaceTotemPole(structViews[structViews.Count - 1]);
                 if (pop)
                 {
                     Shockwave(StructPos(st), 1.6f, 0.5f, new Color(1f, 0.95f, 0.7f, 0.8f));
@@ -251,7 +257,12 @@ namespace SeedClicker
             var c = CellAt(w);
             foreach (var v in structViews)
             {
-                if (IsTotem(v.def)) { if (HitTotemEdge(v.st, w)) return v.st; continue; }
+                if (IsTotem(v.def))
+                {
+                    var tb = v.sr.bounds; tb.Expand(new Vector3(0.1f, 0.05f, 0));
+                    if (HitTotemEdge(v.st, w) || tb.Contains(new Vector3(w.x, w.y, tb.center.z))) return v.st;
+                    continue;
+                }
                 var sc = new Cell(v.st.x, v.st.y);
                 if (c.Equals(sc)) return v.st;
                 // das Bild ragt nach oben ueber das Feld hinaus
@@ -277,7 +288,7 @@ namespace SeedClicker
         {
             var v = structViews.Find(x => x.st == st);
             if (v == null) return;
-            var top = IsTotem(v.def) ? StructPos(st) + new Vector2(0, 0.3f) : new Vector2(v.sr.bounds.center.x, v.sr.bounds.max.y);
+            var top = new Vector2(v.sr.bounds.center.x, v.sr.bounds.max.y);
             if (StructMaxed(st))
             {
                 if (loud) { v.squash = 0.4f; Sfx.Play("dry", 1.2f, 0.4f); Floater?.Invoke(top + new Vector2(0, 0.3f), "Höchste Stufe!", new Color(1f, 0.9f, 0.6f)); }
@@ -317,7 +328,8 @@ namespace SeedClicker
             {
                 v.squash = Mathf.MoveTowards(v.squash, 0f, dt * 4f);
                 float sq = Mathf.Sin(v.squash * Mathf.PI * 1.5f) * v.squash * 0.14f;
-                if (!IsTotem(v.def)) v.sr.transform.localScale = new Vector3(v.scale * (1 + sq), v.scale * (1 - sq), 1);
+                v.sr.transform.localScale = new Vector3(v.scale * (1 + sq), v.scale * (1 - sq), 1);
+                if (IsTotem(v.def)) PlaceTotemPole(v);   // Flaeche kann sich aendern (alte Beet-Totems)
                 if (v.light != null)
                 {
                     float want = dark ? (v.def.effect == "light" ? 1.3f : 0.7f) : 0f;

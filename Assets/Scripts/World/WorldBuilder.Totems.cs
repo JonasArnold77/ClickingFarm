@@ -178,6 +178,81 @@ namespace SeedClicker
             Floater?.Invoke(StructPos(st) + new Vector2(0, 1.2f), msg, share >= 1f ? new Color(0.8f, 1f, 0.7f) : new Color(1f, 0.8f, 0.5f));
         }
 
+        // ------------------------------------------------------------------ Totempfahl auf schmalem Pfad
+
+        readonly Dictionary<StructureState, SpriteRenderer> totemPaths = new Dictionary<StructureState, SpriteRenderer>();
+        static Sprite totemPathSprite;
+
+        /// <summary>Fusspunkt des Pfahls: oben links knapp ueber der Flaeche.</summary>
+        Vector2 TotemFoot(StructureState s)
+        {
+            var bed = TotemBed(s);
+            if (bed == null || bed.Count == 0) return CellCenter(new Cell(s.x, s.y));
+            int minX = int.MaxValue, maxY = int.MinValue;
+            foreach (var c in bed) { minX = Mathf.Min(minX, c.x); maxY = Mathf.Max(maxY, c.y); }
+            return new Vector2(minX * CellSize + CellSize * 0.3f, (maxY + 1) * CellSize + 0.08f);
+        }
+
+        void PlaceTotemPole(StructView v)
+        {
+            var foot = TotemFoot(v.st);
+            v.sr.transform.position = foot;
+            v.sr.sortingOrder = Order(foot.y);
+            if (totemPaths.TryGetValue(v.st, out var p) && p != null)
+            {
+                p.transform.position = foot + new Vector2(CellSize * 0.25f, -0.01f);
+                p.sortingOrder = -32293;   // flach auf dem Boden, unter allem Stehenden
+            }
+        }
+
+        void CreateTotemPath(StructureState st)
+        {
+            RemoveTotemPath(st);
+            var sr = new GameObject("TotemPfad").AddComponent<SpriteRenderer>();
+            sr.transform.SetParent(objects, false);
+            sr.sprite = TotemPathSprite;
+            float k = CellSize * 1.4f / Mathf.Max(0.01f, sr.sprite.bounds.size.x);
+            sr.transform.localScale = Vector3.one * k;
+            totemPaths[st] = sr;
+        }
+
+        void RemoveTotemPath(StructureState st)
+        {
+            if (totemPaths.TryGetValue(st, out var p) && p != null) Destroy(p.gameObject);
+            totemPaths.Remove(st);
+        }
+
+        /// <summary>Schmaler Pfad aus flachen Trittsteinen mit etwas Erde dazwischen.</summary>
+        static Sprite TotemPathSprite
+        {
+            get
+            {
+                if (totemPathSprite != null) return totemPathSprite;
+                const int w = 96, h = 22;
+                var tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                var px = new Color[w * h];
+                var dirt = new Color(0.55f, 0.42f, 0.28f); var stone = new Color(0.72f, 0.7f, 0.64f); var stoneHi = new Color(0.86f, 0.84f, 0.78f); var ink = new Color(0.32f, 0.28f, 0.24f);
+                float[] sx = { 10f, 27f, 44f, 61f, 79f };
+                for (int y = 0; y < h; y++)
+                    for (int x = 0; x < w; x++)
+                    {
+                        float fy = (y - h * 0.5f) / (h * 0.5f);
+                        // Erdband, an den Enden ausgefranst
+                        float fade = Mathf.Min(x, w - 1 - x) / 10f;
+                        Color c = Mathf.Abs(fy) < 0.75f * Mathf.Clamp01(fade) + Mathf.PerlinNoise(x * 0.3f, y * 0.3f) * 0.15f ? dirt : Color.clear;
+                        foreach (var cx in sx)
+                        {
+                            float dx = (x - cx) / 8.5f, dy = (y - h * 0.5f) / 7.5f, d = dx * dx + dy * dy;
+                            if (d < 1f) c = d > 0.72f ? ink : Color.Lerp(stone, stoneHi, Mathf.Clamp01(0.6f - dy * 0.5f - dx * 0.3f));
+                        }
+                        if (c.a > 0f) c.a = 1f;
+                        px[y * w + x] = c;
+                    }
+                tex.SetPixels(px); tex.Apply();
+                return totemPathSprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), w);
+            }
+        }
+
         // ------------------------------------------------------------------ Leuchtende Umrandung des Beets
 
         readonly List<SpriteRenderer> outlinePool = new List<SpriteRenderer>();
