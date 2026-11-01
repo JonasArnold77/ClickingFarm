@@ -42,6 +42,13 @@ namespace SeedClicker
             }
             p.stock += add;
             p.stockValue += add * valueEach;
+            // die Pflanze schuettelt sich und blitzt auf, wenn Ernte herausfaellt
+            if (add > 0 && plantViews.TryGetValue(new Cell(p.x, p.y), out var dv))
+            {
+                dv.flash = Mathf.Max(dv.flash, 0.9f);
+                dv.tiltVel += (UnityEngine.Random.value < 0.5f ? -1f : 1f) * UnityEngine.Random.Range(45f, 70f);
+                dv.syVel -= 4f;
+            }
             if (fxFrom.HasValue)
             {
                 var pile = ScatterPos(p, Mathf.Min(p.stock - 1, PileShown - 1));

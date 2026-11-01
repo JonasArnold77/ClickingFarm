@@ -127,6 +127,20 @@ namespace SeedClicker
             return true;
         }
 
+        /// <summary>Escape: erst das angefangene Ziehen abbrechen, beim zweiten Mal den Bau-Modus verlassen.</summary>
+        public void EscapePressed()
+        {
+            if (wallAnchor.HasValue)
+            {
+                CancelWallPlan();
+                Sfx.Play("pop", 0.8f, 0.4f);
+                return;
+            }
+            if (wallMode) SetWallMode(false);
+            else if (riverMode) SetRiverMode(false);
+            else if (pedestalMode) SetPedestalMode(false);
+        }
+
         public void CancelWallPlan()
         {
             wallAnchor = null;

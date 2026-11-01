@@ -88,6 +88,8 @@ namespace SeedClicker
 
             // Maus ohne Druck: geplante Mauer folgt dem Zeiger
             var wbh = WorldBuilder.I;
+            // Escape: angefangenes Ziehen (Felder, Mauer, Bach, Totemflaeche) abbrechen, nochmal Escape verlaesst den Bau-Modus
+            if (wbh != null && Input.GetKeyDown(KeyCode.Escape)) wbh.EscapePressed();
             if (!down && wbh != null && wbh.PlanFollows && !OverUI(-1)) wbh.UpdateWallPlan(World(Input.mousePosition));
             // Maus ueber einem Feld: zeigen, woher es geboostet wird (auch waehrend geklickt wird)
             if (wbh != null) wbh.HoverCell = !OverUI(-1) && !wbh.BuildMode && !wbh.Placing && wbh.PlacingStructure == null && !wbh.FieldPlanActive

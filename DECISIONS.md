@@ -209,3 +209,7 @@
   - Weizen: Tipps bringen wenig, macht aber 3× so viel von selbst
   - Mais: kaum etwas von selbst, aber wertvolle Ernte-Tipps
 - Die 6 Münz-Gebäude (Marktstand bis Goldmine) und der Laden-Reiter „Gebäude“ sind raus; Geld kommt jetzt aus Ernte (Knollis → Lieferkiste) und Zombies. Die Stützranke hämmert nur noch an der Waffenbank und flickt Mauern. Alte Spielstände: gekaufte Gebäude verfallen ohne Erstattung.
+
+## Kleinigkeiten
+- Fällt Ernte aus einer Pflanze (Tipp, von selbst, Klopfwurz), schüttelt sie sich und blitzt kurz auf.
+- Escape bricht angefangenes Ziehen (Felder, Mauer, Bach, Totemfläche) ab; ein zweites Escape verlässt den Mauer-, Bach- oder Steinpult-Modus. (Auf Android ist das die Zurück-Taste.)
