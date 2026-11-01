@@ -43,7 +43,6 @@ namespace SeedClicker
     /// <summary>Verbesserung im Laden (wie bei Cookie Clicker). effect: click, harvest, growth, water, fert, auto, bee, light, wall, cps, offline, golden.</summary>
     [Serializable] public class ShopUpgradeDef { public string id, name, desc, effect; public float value, cost, unlockEarned; }
     /// <summary>Gebaeude: erzeugt dauerhaft Muenzen pro Sekunde, Preis steigt mit jedem Kauf.</summary>
-    [Serializable] public class BuildingDef { public string id, name, desc, art; public float baseCost, cps, scale = 1f; }
     /// <summary>Hof erweitern: Kosten der naechsten Stufe.</summary>
     [Serializable] public class FarmLevelDef { public float cost; public int wood; }
     /// <summary>Mauer: Holz pro Stueck (darf ein Bruchteil sein, z. B. 0,2 = fuenf Mauern pro Holz) und Haltbarkeit.</summary>
@@ -103,7 +102,7 @@ namespace SeedClicker
         public int pipeRadius = 2, pipeBonus = 1;
     }
     /// <summary>Stuetzranke: Reichweite, Gebaeude-Bonus, Hammerschlaege an der Waffenbank, Mauer-Reparatur (Anteil der vollen Haltbarkeit).</summary>
-    [Serializable] public class SupportDef { public float radius = 2.6f, radiusPerLevel = 0.2f, buildingBonus = 0.5f, buildingBonusPerLevel = 0.1f, interval = 2.4f, hammer = 1f, repair = 0.1f; }
+    [Serializable] public class SupportDef { public float radius = 2.6f, radiusPerLevel = 0.2f, interval = 2.4f, hammer = 1f, repair = 0.1f; }
 
     /// <summary>Rollen der Pflanzen: combat (verteidigt), water (giesst Nachbarn), harvest (bringt Muenzen),
     /// fert (Duenger fuer Nachbarn), boost (Klicks in der Naehe zaehlen doppelt), auto (klickt selbst Nachbarn an),
@@ -149,7 +148,7 @@ namespace SeedClicker
                 "poison" => "Reif auf die Waffenbank ziehen: Treffer der gewählten Waffe vergiften Zombies.",
                 _ => "Reif auf ein Ziel ziehen – dort verwandelt sie etwas."
             },
-            "support" => "Hilft Gebäuden nebenan: +50 % Ertrag, hämmert an der Waffenbank, flickt Mauern.",
+            "support" => "Hämmert an der Waffenbank und flickt Mauern in ihrer Nähe.",
             _ => "Verteidigt den Hof in der Nacht."
         };
     }
@@ -199,7 +198,6 @@ namespace SeedClicker
         public WaveDef waves;
         public WeaponDef[] weapons;
         public ShopUpgradeDef[] upgrades;
-        public BuildingDef[] buildings;
         public FarmLevelDef[] farmLevels;
         public WallDef wall;
         public PedestalDef pedestal;

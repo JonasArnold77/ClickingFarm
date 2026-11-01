@@ -1400,8 +1400,6 @@
   "support": {
     "radius": 2.6,
     "radiusPerLevel": 0.2,
-    "buildingBonus": 0.5,
-    "buildingBonusPerLevel": 0.1,
     "interval": 2.4,
     "hammer": 1,
     "repair": 0.1
@@ -1430,62 +1428,6 @@
     {
       "cost": 600000,
       "wood": 250
-    }
-  ],
-  "buildings": [
-    {
-      "id": "stand",
-      "name": "Marktstand",
-      "desc": "Verkauft Gemüse am Wegrand",
-      "art": "hh_barrel",
-      "baseCost": 15,
-      "cps": 0.3,
-      "scale": 0.8
-    },
-    {
-      "id": "holz",
-      "name": "Holzlager",
-      "desc": "Verarbeitet Holz zu Brettern",
-      "art": "hh_logpile",
-      "baseCost": 120,
-      "cps": 2,
-      "scale": 0.9
-    },
-    {
-      "id": "keller",
-      "name": "Pilzkeller",
-      "desc": "Züchtet Pilze im Dunkeln",
-      "art": "sk_Cave",
-      "baseCost": 1100,
-      "cps": 12,
-      "scale": 0.9
-    },
-    {
-      "id": "scheune",
-      "name": "Scheune",
-      "desc": "Lagert und verkauft große Ernten",
-      "art": "sk_House_1",
-      "baseCost": 12000,
-      "cps": 70,
-      "scale": 1.1
-    },
-    {
-      "id": "gut",
-      "name": "Gutshof",
-      "desc": "Ein ganzer Betrieb arbeitet für dich",
-      "art": "sk_House_2",
-      "baseCost": 130000,
-      "cps": 400,
-      "scale": 1.2
-    },
-    {
-      "id": "mine",
-      "name": "Goldmine",
-      "desc": "Gold aus dem Berg",
-      "art": "sk_Stones",
-      "baseCost": 1400000,
-      "cps": 2500,
-      "scale": 1.3
     }
   ],
   "upgrades": [

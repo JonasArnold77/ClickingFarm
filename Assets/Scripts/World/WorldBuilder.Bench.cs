@@ -156,29 +156,14 @@ namespace SeedClicker
         public float SupportRadius(PlantedState p) => PlantBalance.I.Support.radius + PlantBalance.I.Support.radiusPerLevel * (p.Lv - 1);
         bool InSupport(PlantedState p, Vector2 at) { float r = SupportRadius(p); return (CellCenter(new Cell(p.x, p.y)) - at).sqrMagnitude < r * r; }
 
-        /// <summary>Ertrags-Faktor eines Gebaeudes (Platz i): jede Stuetzranke in Reichweite gibt einen Bonus.</summary>
-        float BuildingMult(int i)
-        {
-            if (i >= BuildingSpots.Length) return 1f;
-            var s = PlantBalance.I.Support;
-            float m = 1f;
-            foreach (var p in save.planted)
-                if (p.Grown && p.Role == "support" && InSupport(p, BuildingSpots[i])) m += s.buildingBonus + s.buildingBonusPerLevel * (p.Lv - 1);
-            return m;
-        }
-
         /// <summary>Was eine Stuetzranke gerade stuetzt (fuer das Info-Fenster).</summary>
         public string SupportSummary(PlantedState p)
         {
             var parts = new List<string>();
-            var defs = PlantBalance.I.buildings;
-            int nb = 0;
-            if (defs != null) for (int i = 0; i < defs.Length && i < BuildingSpots.Length; i++) if (BuildingCount(defs[i].id) > 0 && InSupport(p, BuildingSpots[i])) nb++;
-            if (nb > 0) parts.Add(nb + (nb == 1 ? " Gebäude" : " Gebäude") + " +" + Mathf.RoundToInt((PlantBalance.I.Support.buildingBonus + PlantBalance.I.Support.buildingBonusPerLevel * (p.Lv - 1)) * 100) + " %");
             if (bench != null && InSupport(p, benchPos)) parts.Add("hämmert an der Waffenbank");
             int nw = 0; foreach (var kv in walls) if (InSupport(p, CellCenter(kv.Key))) nw++;
             if (nw > 0) parts.Add("flickt " + nw + (nw == 1 ? " Mauer" : " Mauern"));
-            return parts.Count > 0 ? string.Join(" · ", parts) : "Nichts in Reichweite – setz sie an ein Gebäude";
+            return parts.Count > 0 ? string.Join(" · ", parts) : "Nichts in Reichweite – setz sie an Waffenbank oder Mauern";
         }
 
         void UpdateSupport(float dt)
@@ -198,7 +183,7 @@ namespace SeedClicker
             }
         }
 
-        /// <summary>Die Ranke greift nach allem in Reichweite: Blaetter fliegen zu Bank, Mauern und Gebaeuden.</summary>
+        /// <summary>Die Ranke greift nach allem in Reichweite: Blaetter fliegen zu Bank und Mauern.</summary>
         void SupportPulse(PlantedState p)
         {
             var s = PlantBalance.I.Support;
@@ -225,20 +210,6 @@ namespace SeedClicker
                     Floater?.Invoke(at + new Vector2(0, 0.45f), "geflickt", new Color(0.65f, 1f, 0.55f));
                 }));
             }
-            var defs = PlantBalance.I.buildings;
-            if (defs != null)
-                for (int i = 0; i < defs.Length && i < BuildingSpots.Length; i++)
-                {
-                    if (BuildingCount(defs[i].id) <= 0 || !InSupport(p, BuildingSpots[i])) continue;
-                    any = true;
-                    string id = defs[i].id;
-                    var at = BuildingSpots[i] + new Vector2(0, 0.6f);
-                    StartCoroutine(Leaf(from, at, () =>
-                    {
-                        if (buildingPop.ContainsKey(id)) buildingPop[id] = Mathf.Min(buildingPop[id], 0.8f);
-                        Particles.I?.Burst(at, "square", new Color(1f, 0.88f, 0.35f), 4, 1.2f, 0.6f, 0.05f, -0.4f, 0.5f);
-                    }));
-                }
             if (any && plantViews.TryGetValue(new Cell(p.x, p.y), out var pv)) pv.sy = Mathf.Min(pv.sy, -0.05f);
         }
 

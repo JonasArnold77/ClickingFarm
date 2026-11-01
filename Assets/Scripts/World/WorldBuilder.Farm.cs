@@ -136,7 +136,6 @@ namespace SeedClicker
             if (p.y > -1f || Mathf.Abs(p.x) > hw - 0.8f || p.y < -hh + 0.8f) return 0f;
             var a = StartArea;
             if (p.x > a.xMin - 1.2f && p.x < a.xMax + 1.2f && p.y > a.yMin - 1.4f) return 0f;   // Start-Hof frei
-            foreach (var s in BuildingSpots) if ((p - s).sqrMagnitude < 2.2f * 2.2f) return 0f;
             float v = Fbm(p.x * 0.3f, p.y * 0.3f, 51 + salt);
             return Mathf.InverseLerp(0.66f, 0.74f, v);
         }

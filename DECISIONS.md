@@ -208,3 +208,4 @@
   - Salat: +25 % je reifem Salat daneben (auch schräg) – lohnt Salat-Beete; erscheint in „Geboostet durch“
   - Weizen: Tipps bringen wenig, macht aber 3× so viel von selbst
   - Mais: kaum etwas von selbst, aber wertvolle Ernte-Tipps
+- Die 6 Münz-Gebäude (Marktstand bis Goldmine) und der Laden-Reiter „Gebäude“ sind raus; Geld kommt jetzt aus Ernte (Knollis → Lieferkiste) und Zombies. Die Stützranke hämmert nur noch an der Waffenbank und flickt Mauern. Alte Spielstände: gekaufte Gebäude verfallen ohne Erstattung.

@@ -59,7 +59,6 @@ namespace SeedClicker
             PlaceBench();
             PlaceAltar();
             PlaceCrate();
-            ReserveBuildingSpots();
             PlaceRockIslands();
             PlaceNature();
             SetupLight();

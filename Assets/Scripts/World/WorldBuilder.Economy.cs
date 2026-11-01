@@ -8,7 +8,7 @@ namespace SeedClicker
     /// Wirtschaft wie bei Cookie Clicker: Muenzen durch Ernte-Tipps und von selbst (Muenzen pro Sekunde),
     /// Verbesserungen und Gebaeude im Laden, Hof-Ausbau, Offline-Ertrag und goldene Schmetterlinge.
     /// Hier sitzen auch die Rollen der Nutzpflanzen: Wasser, Ernte, Duenger, Verstaerker, Automatik, Licht.
-    /// Alle Zahlen stehen in plants.json (upgrades, buildings, farmLevels, catalog.role/value/cost).
+    /// Alle Zahlen stehen in plants.json (upgrades, farmLevels, catalog.role/value/cost).
     /// </summary>
     public partial class WorldBuilder
     {
@@ -94,59 +94,6 @@ namespace SeedClicker
             return true;
         }
 
-        // ------------------------------------------------------------------ Gebaeude
-
-        public int BuildingCount(string id) { foreach (var b in save.buildings) if (b.id == id) return b.n; return 0; }
-        public double BuildingCost(BuildingDef d) => Math.Ceiling(d.baseCost * Math.Pow(1.15, BuildingCount(d.id)));
-
-        public bool BuyBuilding(BuildingDef d)
-        {
-            if (d == null || !TrySpend(BuildingCost(d))) return false;
-            var e = save.buildings.Find(b => b.id == d.id);
-            if (e == null) save.buildings.Add(e = new BuildingCount { id = d.id });
-            e.n++;
-            RefreshBuildingViews(d.id);
-            Sfx.Play("levelup", 1.2f, 0.7f);
-            Haptics.Tap(25);
-            save.Save();
-            return true;
-        }
-
-        /// <summary>Feste Plaetze fuer die Gebaeude rund um den Hof (werden beim Aufbau frei gehalten).</summary>
-        static readonly Vector2[] BuildingSpots =
-        {
-            new Vector2(-5.9f, 3.3f), new Vector2(5.9f, 3.3f), new Vector2(-9.9f, -1.2f),
-            new Vector2(9.9f, -1.2f), new Vector2(-9.9f, -7.5f), new Vector2(9.9f, -7.5f),
-        };
-        readonly Dictionary<string, SpriteRenderer> buildingViews = new Dictionary<string, SpriteRenderer>();
-        readonly Dictionary<string, float> buildingPop = new Dictionary<string, float>();
-
-        /// <summary>Gebaeude-Plaetze blockieren erst, wenn dort ein Gebaeude steht (siehe RefreshBuildingViews).</summary>
-        void ReserveBuildingSpots() { }
-
-        void RefreshBuildingViews(string bumpId = null)
-        {
-            var defs = PlantBalance.I.buildings;
-            if (defs == null) return;
-            for (int i = 0; i < defs.Length && i < BuildingSpots.Length; i++)
-            {
-                var d = defs[i];
-                if (BuildingCount(d.id) <= 0 || buildingViews.ContainsKey(d.id)) continue;
-                var spr = art.Get(d.art);
-                if (spr == null) continue;
-                var sr = Place(d.art, BuildingSpots[i], 1f, false, 0.02f);
-                float s = 1.6f * d.scale / Mathf.Max(0.01f, spr.bounds.size.x);
-                sr.transform.localScale = Vector3.one * s;
-                sr.transform.position = new Vector3(BuildingSpots[i].x, BuildingSpots[i].y - spr.bounds.min.y * s, 0);
-                Shadow(BuildingSpots[i], 1.6f * d.scale, 0.35f, 0.3f);
-                buildingViews[d.id] = sr;
-                Reserve(BuildingSpots[i], 1.1f);
-                buildingBase[d.id] = sr.transform.localScale;
-                buildingPop[d.id] = 0f;
-                Particles.I?.Burst(BuildingSpots[i] + new Vector2(0, 0.5f), "star", new Color(1f, 0.9f, 0.5f), 18, 3f, 0.8f, 0.3f, 1f, 1.5f);
-            }
-            if (bumpId != null && buildingViews.ContainsKey(bumpId)) buildingPop[bumpId] = 0f;
-        }
 
         // ------------------------------------------------------------------ Hof-Ausbau
 
@@ -238,8 +185,6 @@ namespace SeedClicker
         {
             float sum = 0f;
             foreach (var p in save.planted) if (!MakesProduct(p)) sum += PlantCps(p);   // Ernte-Pflanzen machen Produkte statt Muenzen
-            var defs = PlantBalance.I.buildings;
-            if (defs != null) for (int i = 0; i < defs.Length; i++) sum += defs[i].cps * BuildingCount(defs[i].id) * BuildingMult(i);
             return sum * UpgradeMult("cps");
         }
 
@@ -291,7 +236,6 @@ namespace SeedClicker
         {
             if (!save.economyInit) { save.coins = Math.Max(save.coins, PlantBalance.I.startCoins); save.economyInit = true; }
             CheckEarnedUnlocks();
-            RefreshBuildingViews();
             InitStructures();
             InitKnollis();
             cps = ComputeCps();
@@ -351,23 +295,11 @@ namespace SeedClicker
                     kv.Value.color = wet ? new Color(0.7f, 0.68f, 0.8f) : Color.white;
                 }
             }
-            // Gebaeude ploppen beim Kauf
-            foreach (var id in new List<string>(buildingPop.Keys))
-            {
-                float k = Mathf.MoveTowards(buildingPop[id], 1f, dt * 3f);
-                buildingPop[id] = k;
-                if (buildingViews.TryGetValue(id, out var sr) && sr != null)
-                {
-                    float e = 1 + 2.70158f * Mathf.Pow(k - 1, 3) + 1.70158f * Mathf.Pow(k - 1, 2);
-                    if (buildingBase.TryGetValue(id, out var bs)) sr.transform.localScale = bs * e;
-                }
-            }
             UpdateButterfly(dt);
             saveTimer -= dt;
             if (saveTimer <= 0f) { saveTimer = 5f; save.lastSeen = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); save.Save(); }
         }
 
-        readonly Dictionary<string, Vector3> buildingBase = new Dictionary<string, Vector3>();
 
         // ------------------------------------------------------------------ Goldener Schmetterling
 

@@ -110,11 +110,13 @@ namespace SeedClicker
             // Reiter
             var tabs = UIKit.HRow(panel, "Tabs", 12, TextAnchor.MiddleCenter, new RectOffset(20, 20, 0, 0));
             tabs.GetComponent<RectTransform>().Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -120), new Vector2(0, 90));
-            string[] names = { "Verbesserungen", "Gebäude", "Hof", "Bauwerke" };
+            if (tab == 1) tab = shopTab = 0;   // frueher "Gebaeude" – gibt es nicht mehr
+            string[] names = { "Verbesserungen", "Hof", "Bauwerke" };
+            int[] ids = { 0, 2, 3 };
             for (int i = 0; i < names.Length; i++)
             {
-                int k = i;
-                var b = Btn(tabs.transform, names[i], i == tab ? AccentWarm : new Color(0.55f, 0.5f, 0.45f), () => OpenShop(k), names[i].Length > 10 ? 22 : 27);
+                int k = ids[i];
+                var b = Btn(tabs.transform, names[i], k == tab ? AccentWarm : new Color(0.55f, 0.5f, 0.45f), () => OpenShop(k), names[i].Length > 10 ? 22 : 27);
                 b.GetComponent<RectTransform>().LE(0, 80, 1);   // Reiter teilen sich die Breite
             }
             var coins = Label(panel, "Münzen: " + Num.Short(wbi.Coins) + "   Holz: " + wbi.Wood + "   (+" + Num.Short(wbi.Cps) + "/s)", 32, InkSoft, TextAnchor.MiddleCenter, true);
@@ -135,17 +137,6 @@ namespace SeedClicker
                 if (!any) Label(content, "Gerade nichts – verdiene mehr Münzen, dann gibt es neue Verbesserungen.", 30, InkSoft, TextAnchor.MiddleCenter).LE(-1, 120);
                 int owned = wbi.Save.upgrades.Count;
                 if (owned > 0) Label(content, "Gekauft: " + owned, 28, InkSoft, TextAnchor.MiddleCenter).LE(-1, 60);
-            }
-            else if (tab == 1)
-            {
-                foreach (var d in PlantBalance.I.buildings)
-                {
-                    var dd = d;
-                    double cost = wbi.BuildingCost(d);
-                    int n = wbi.BuildingCount(d.id);
-                    ShopRow(content, d.name + (n > 0 ? "  ×" + n : ""), d.desc + " – +" + Num.Short(d.cps) + " Münzen/s", Num.Short(cost), wbi.Coins >= cost,
-                        () => { if (wbi.BuyBuilding(dd)) OpenShop(1); });
-                }
             }
             else if (tab == 3) StructureShop(content);
             else

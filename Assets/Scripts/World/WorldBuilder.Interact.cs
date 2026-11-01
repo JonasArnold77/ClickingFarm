@@ -39,7 +39,7 @@ namespace SeedClicker
         public double coins, earned;
         public bool economyInit;
         public List<string> upgrades = new List<string>();
-        public List<BuildingCount> buildings = new List<BuildingCount>();
+        public List<BuildingCount> buildings = new List<BuildingCount>();   // alt: Gebaeude gibt es nicht mehr
         public List<StructureState> structures = new List<StructureState>();
         public List<WeaponLevel> weaponLevels = new List<WeaponLevel>();   // an der Waffenbank geschmiedet
         public int farmLevel;
