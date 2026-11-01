@@ -129,7 +129,7 @@ namespace SeedClicker
         public bool IsWatered(PlantedState p)
         {
             foreach (var q in save.planted) if (q != p && q.Grown && q.Role == "water" && InCross(new Cell(q.x, q.y), new Cell(p.x, p.y), WaterRadiusOf(q))) return true;
-            return NearRiver(p);   // am Bach
+            return NearRiver(p) || WetByKnolli(p);   // am Bach oder von einem Giesser-Knolli gegossen
         }
         /// <summary>Gruppen-Pflanzen (z. B. Salat): je reifer gleicher Nachbar (auch schraeg) mehr Ertrag.</summary>
         float GroupMult(PlantedState p, CatalogDef c)

@@ -147,7 +147,10 @@ namespace SeedClicker
                         Num.Short(next.cost), wbi.Coins >= next.cost && wbi.Wood >= next.wood, () => { if (wbi.BuyFarm()) { CloseModal(); Banner("Der Hof wächst!", "Neue Fläche zum Bebauen"); } });
                 else Label(content, "Der Hof ist voll ausgebaut.", 32, InkSoft, TextAnchor.MiddleCenter).LE(-1, 120);
                 double kc = wbi.KnolliCost;
-                ShopRow(content, "Knolli anheuern (" + wbi.KnolliCount + ")", "Trägt die Ernte zur Lieferkiste – je mehr Knollis, desto schneller", Num.Short(kc), wbi.Coins >= kc,
+                bool full = wbi.HousingFull;
+                ShopRow(content, "Knolli anheuern (" + wbi.KnolliCount + "/" + wbi.Housing + " Plätze)",
+                    full ? "Alle Plätze belegt – bau eine Knolli-Hütte (Bauwerke)" : "Ein neuer Helfer – antippen und Beruf wählen: Träger, Gießer, Holzfäller, Maurer oder Wache",
+                    Num.Short(kc), wbi.Coins >= kc && !full,
                     () => { if (wbi.HireKnolli()) OpenShop(2); });
                 Label(content, "Tipp: Bäume fällen gibt Holz, Felsbrocken antippen gibt Münzen und macht Platz.", 28, InkSoft, TextAnchor.MiddleCenter).LE(-1, 110);
             }

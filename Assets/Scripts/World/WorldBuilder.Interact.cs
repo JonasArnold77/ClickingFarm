@@ -211,7 +211,7 @@ namespace SeedClicker
             return true;
         }
 
-        void Chop(TreeObj t, Vector2 hitPoint)
+        void Chop(TreeObj t, Vector2 hitPoint, bool quiet = false)
         {
             var P = Particles.I;
             if (t.sr == null)
@@ -242,8 +242,7 @@ namespace SeedClicker
             for (int i = 0; i < 3; i++)
                 P?.Spawn(canopy + UnityEngine.Random.insideUnitCircle * 0.6f, "leaf", new Color(0.45f, 0.72f, 0.3f), new Vector3(UnityEngine.Random.Range(-0.6f, 0.6f), -0.3f, 0), 1.4f, 0.55f, 0.4f, 0.8f, 240f, 0.5f);
             Sfx.Play("chop", UnityEngine.Random.Range(0.95f, 1.1f));
-            Haptics.Tap(12);
-            WorldCamera.I?.Shake(0.02f);
+            if (!quiet) { Haptics.Tap(12); WorldCamera.I?.Shake(0.02f); }   // Holzfaeller-Knollis ruetteln nicht am Bildschirm
 
             if (t.hp <= 0)
             {

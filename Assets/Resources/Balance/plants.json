@@ -1278,7 +1278,15 @@
     "startKnollis": 1,
     "knolliCost": 40,
     "knolliCostGrowth": 1.6,
-    "knolliSpeed": 1.6
+    "knolliSpeed": 1.6,
+    "baseHousing": 2,
+    "workWaterPerTrip": 4,
+    "workWetSeconds": 45,
+    "workChopInterval": 0.8,
+    "workRepair": 0.08,
+    "guardInterval": 1.4,
+    "guardRange": 2.6,
+    "guardDamage": 2
   },
   "river": {
     "cost": 10,
@@ -1314,6 +1322,22 @@
     "pipeBonus": 1
   },
   "structures": [
+    {
+      "id": "knollihuette",
+      "name": "Knolli-Hütte",
+      "desc": "Runder Erdbau mit Grasdach: Wohnraum für 2 weitere Knollis",
+      "effect": "hut",
+      "multi": true,
+      "costGrowth": 1.6,
+      "cost": 150,
+      "wood": 3,
+      "unlockEarned": 0,
+      "value": 2,
+      "valuePerLevel": 0.5,
+      "radius": 0,
+      "radiusPerLevel": 0,
+      "scale": 0.9
+    },
     {
       "id": "wachturm",
       "name": "Wachturm",

@@ -206,7 +206,8 @@ namespace SeedClicker
             public bool gold; public int slot; public readonly Dictionary<string, int> types = new Dictionary<string, int>();
             public readonly List<Sprite> load = new List<Sprite>();                  // Bilder der Ladung (eins je schwebendem Stueck)
             public readonly List<SpriteRenderer> orbit = new List<SpriteRenderer>(); // schweben um den Knolli herum
-            public readonly List<Vector2> lpos = new List<Vector2>(), lvel = new List<Vector2>();   // Ort und Tempo jedes Stuecks (folgt wie an einem Magneten)
+            public readonly List<Vector2> lpos = new List<Vector2>(), lvel = new List<Vector2>();
+            public TreeObj workTree; public float workT, swing; public int water; public SpriteRenderer tool;   // Berufe   // Ort und Tempo jedes Stuecks (folgt wie an einem Magneten)
         }
 
         const int OrbitMax = 12;
@@ -227,6 +228,7 @@ namespace SeedClicker
 
         public bool HireKnolli()
         {
+            if (HousingFull) { Floater?.Invoke(CrateDrop + new Vector2(0, 1f), "Kein Platz mehr – bau eine Knolli-Hütte!", new Color(1f, 0.75f, 0.5f)); Sfx.Play("error", 1f, 0.5f); return false; }
             if (!TrySpend(KnolliCost)) return false;
             save.knollis++;
             SpawnKnolli(true);
@@ -274,6 +276,8 @@ namespace SeedClicker
             var D = PlantBalance.I.Delivery;
             foreach (var k in knollis)
             {
+                string role = RoleOf(k);
+                if (role != "carrier" && k.carry == 0) { DrawKnolli(k, UpdateWorker(k, role, dt), dt, role); continue; }
                 // Ziel weg (geerntet, umgetopft)? Mit Ladung zur Kiste, sonst neu suchen
                 if (k.state == 1 && (k.goal == null || !save.planted.Contains(k.goal) || k.goal.stock <= 0)) { k.goal = null; k.state = k.carry > 0 ? 2 : 0; k.target = CrateDrop; }
                 if (k.state == 0)
@@ -337,16 +341,7 @@ namespace SeedClicker
                     if (k.idleT <= 0f) { k.state = 0; k.idleT = 0.2f; }
                 }
 
-                // zeichnen: huepfen beim Laufen, Schatten, Ladung ueber dem Kopf
-                float hop = moving ? Mathf.Abs(Mathf.Sin(k.walkT)) * 0.06f : Mathf.Sin(Time.time * 2f + k.pos.x) * 0.01f;
-                float sq = moving ? Mathf.Sin(k.walkT * 2f) * 0.06f : 0f;
-                float s = 0.52f / Mathf.Max(0.01f, KnolliSprite.bounds.size.x);
-                k.body.transform.position = k.pos + new Vector2(0, hop);
-                k.body.transform.localScale = new Vector3(s * k.face * (1 + sq), s * (1 - sq), 1);
-                k.body.sortingOrder = Order(k.pos.y) + 1;
-                if (k.shadow != null) { k.shadow.transform.position = k.pos + new Vector2(0.03f, 0.01f); }
-                k.item.enabled = false;
-                DrawOrbit(k, hop, dt);
+                DrawKnolli(k, moving, dt, role);
             }
 
             UpdateKnolliJobs(dt);
@@ -356,6 +351,21 @@ namespace SeedClicker
                 float csq = Mathf.Sin(crateSquash * Mathf.PI * 1.5f) * crateSquash * 0.12f;
                 crate.transform.localScale = new Vector3(crateScale * (1 + csq), crateScale * (1 - csq), 1);
             }
+        }
+
+        /// <summary>Zeichnen: huepfen beim Laufen, Schatten, schwebende Ladung, Werkzeug des Berufs.</summary>
+        void DrawKnolli(Knolli k, bool moving, float dt, string role)
+        {
+            float hop = moving ? Mathf.Abs(Mathf.Sin(k.walkT)) * 0.06f : Mathf.Sin(Time.time * 2f + k.pos.x) * 0.01f;
+            float sq = moving ? Mathf.Sin(k.walkT * 2f) * 0.06f : Mathf.Sin(k.swing * Mathf.PI) * 0.08f;   // beim Arbeiten staucht er sich
+            float s = 0.52f / Mathf.Max(0.01f, KnolliSprite.bounds.size.x);
+            k.body.transform.position = k.pos + new Vector2(0, hop);
+            k.body.transform.localScale = new Vector3(s * k.face * (1 + sq), s * (1 - sq), 1);
+            k.body.sortingOrder = Order(k.pos.y) + 1;
+            if (k.shadow != null) { k.shadow.transform.position = k.pos + new Vector2(0.03f, 0.01f); }
+            k.item.enabled = false;
+            DrawOrbit(k, hop, dt);
+            DrawTool(k, role, hop);
         }
 
         // ------------------------------------------------------------------ Schwebende Ladung und Effektgewitter

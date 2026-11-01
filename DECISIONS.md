@@ -224,3 +224,12 @@
 - Bewusst nicht: Trampelpfade, Wachen auf der Mauer, Fahnen in Totemfarbe (Abstimmung 01.11.2026).
 - **Tore** (`WorldBuilder.Gates.cs`): Im Mauer-Modus zweimal auf ein Mauerstück tippen → Tor (Holz- oder Steinbogen mit beschlagener Doppeltür, passend zur Mauer; wird mit Steinmoos zum Steintor). Zweimal auf ein Tor → abbauen. Tore halten ×1,5 aus, tragen aber keine Pflanze und kein Steinpult.
 - Knollis laufen nicht mehr durch Mauern: Sie suchen sich einen Weg (Breitensuche auf dem Raster, keine Mauerecken abschneiden) und gehen durch Tore. Ist ihr Ziel ganz eingemauert, bleiben sie stehen und rufen „Ich komme nicht durch – bau ein Tor!“. Zombies schlagen weiterhin auf Mauer und Tor ein.
+- **Knolli-Berufe** (`WorldBuilder.KnolliWork.cs`, `WorldUI.KnolliRoles.cs`): Knolli antippen → unten erscheint ein Holzschild mit fünf Berufen, der aktuelle leuchtet. Feld-Berufe (Träger, Gießer) warten danach auf den Tipp aufs Feld, die anderen gelten sofort.
+  - Träger: wie bisher, Ernte eines Felds zur Lieferkiste.
+  - Gießer: holt Wasser am nächsten Bach (ohne Bach: am Haus), gießt 4 Pflanzen seines Felds pro Gang; gegossen für 45 s (zählt wie Tauschilf/Bach).
+  - Holzfäller: fällt den nächsten freien Baum bzw. gräbt Stümpfe aus (alle 0,8 s ein Schlag), Holz wie beim Spieler, ohne Bildschirmwackeln.
+  - Maurer: flickt immer die am stärksten beschädigte Mauer (+8 % je Schlag).
+  - Wache: nachts am Haus, wirft Steine auf Zombies in 2,6 Reichweite (Schaden 2, wächst mit der Welle); tagsüber schläft sie („z“).
+  - Jeder Beruf trägt sein Werkzeug (Kanne, Axt, Hammer, Helm); beim Arbeiten schwingt es und der Knolli staucht sich.
+- **Wohnplätze:** Das Haus hat 2 Plätze, jede **Knolli-Hütte** (Bauwerk, mehrfach kaufbar, 150 + 3 Holz, ×1,6) +2 (+0,5 je Stufe). Ohne freien Platz kein Anheuern.
+- Werte in `plants.json -> delivery` (baseHousing, workWaterPerTrip, workWetSeconds, workChopInterval, workRepair, guardInterval, guardRange, guardDamage).

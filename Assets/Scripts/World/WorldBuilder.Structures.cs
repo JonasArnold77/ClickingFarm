@@ -101,6 +101,7 @@ namespace SeedClicker
             {
                 case "light": return "Zombies nehmen +" + Mathf.RoundToInt(v * 100) + " % Schaden" + where + (s.moon ? " · Mondlicht" : "");
                 case "tower": return (s.moon ? "Schießt nachts doppelt, je " : "Schießt nachts für ") + v.ToString("0.#") + " Schaden" + where + (s.stone ? " · Stein" : "");
+                case "hut": return "Wohnraum für " + Mathf.RoundToInt(v) + " Knollis";
                 case "seedcost": return "Samen " + Mathf.RoundToInt(Mathf.Min(0.9f, v) * 100) + " % billiger";
             }
             return "";
@@ -390,6 +391,11 @@ namespace SeedClicker
                     return Blades(x, y, 64, 112)
                         ?? Tri(x, y, 32, 96, 96, 96, 64, 120, Roof, RoofHi)
                         ?? Poly(x, y, new[] { new Vector2(28, 2), new Vector2(100, 2), new Vector2(90, 96), new Vector2(38, 96) }, new Color(0.88f, 0.84f, 0.74f), Color.white);
+                case "knollihuette":
+                    return Circle(x, y, 64, 34, 9, new Color(0.25f, 0.16f, 0.1f), new Color(0.35f, 0.24f, 0.15f))                  // Tuer
+                        ?? Circle(x, y, 40, 60, 6, new Color(1f, 0.85f, 0.45f), new Color(1f, 0.95f, 0.7f))                        // Fenster
+                        ?? Ellipse(x, y, 64, 96, 52, 30, new Color(0.45f, 0.62f, 0.3f), new Color(0.6f, 0.78f, 0.4f))              // Grasdach
+                        ?? Ellipse(x, y, 64, 44, 46, 44, new Color(0.62f, 0.44f, 0.28f), new Color(0.78f, 0.6f, 0.4f));            // runder Erdbau
                 case "totem_wachstum": return Totem(x, y, new Color(0.35f, 0.75f, 0.3f), new Color(0.7f, 1f, 0.55f));
                 case "totem_ernte": return Totem(x, y, new Color(0.9f, 0.62f, 0.15f), new Color(1f, 0.88f, 0.4f));
                 case "totem_fleiss": return Totem(x, y, new Color(0.45f, 0.4f, 0.85f), new Color(0.7f, 0.68f, 1f));

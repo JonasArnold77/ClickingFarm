@@ -40,6 +40,7 @@ namespace SeedClicker
             BuildAltarInfo();
             BuildChallengeHud();
             BuildBoostTip();
+            BuildKnolliRoles();
             BuildJuice();
             wb.EmptyFieldTapped += OpenPlantPicker;
             wb.BookTapped += OpenPlantBook;
@@ -304,6 +305,7 @@ namespace SeedClicker
             UpdateAltarInfo(dt);
             UpdateChallengeHud(dt);
             UpdateBoostTip();
+            UpdateKnolliRoles();
             if (nw == null || waveText == null) return;
             UpdateWeaponBar(dt);
             if (nw.Evening)

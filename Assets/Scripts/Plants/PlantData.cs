@@ -60,6 +60,9 @@ namespace SeedClicker
         public int startKnollis = 1;
         public float knolliRange = 1.6f;   // Umkreis, aus dem ein Knolli alle Ernte auf einmal einsammelt (Magnet)
         public float knolliCost = 40f, knolliCostGrowth = 1.6f, knolliSpeed = 1.6f;
+        // Berufe und Wohnplaetze
+        public int baseHousing = 2, workWaterPerTrip = 4;
+        public float workWetSeconds = 45f, workChopInterval = 0.8f, workRepair = 0.08f, guardInterval = 1.4f, guardRange = 2.6f, guardDamage = 2f;
     }
     /// <summary>Runen-Altar: pro geopfertem Runenstein (Fluch-Stufe) werden Zombies staerker, groesser und zahlreicher,
     /// dafuer gibt es mehr Muenzen pro Zombie, einen Bonus beim Ueberstehen (victoryBonus * Stufe * Welle) und oefter Runensteine.</summary>
@@ -428,7 +431,7 @@ namespace SeedClicker
 
     [Serializable] public class BuildingCount { public string id; public int n; }
     /// <summary>Welchem Feld ein Knolli zugeordnet ist (eine Zelle des Beets; set = false: noch keinem).</summary>
-    [Serializable] public class KnolliJob { public bool set; public int x, y; }
+    [Serializable] public class KnolliJob { public bool set; public int x, y; public string role; }   // role: carrier, water, wood, mason, guard
     /// <summary>Stufe einer Waffe (an der Waffenbank geschmiedet) und Schlaege zur naechsten Stufe.</summary>
     /// <summary>Ein aufgestelltes Bauwerk (Spielstand). placed = false: gekauft, wartet auf seinen Platz.</summary>
     [Serializable] public class StructureState { public string id; public int x, y, lv = 1; public float xp; public bool placed, stone, moon; public bool anchored; public int bx, by; public bool area; public int ax0, ay0, ax1, ay1; }   // Totem: aufgezogene Flaeche (area) oder altes Beet (bx/by)

@@ -74,12 +74,13 @@ namespace SeedClicker
         {
             if (hitKnolli == null) return;
             selectedKnolli = hitKnolli == selectedKnolli ? null : hitKnolli;
+            pendingRole = null;
             Sfx.Play("pop", 1.4f, 0.6f);
             Haptics.Tap(10);
             if (selectedKnolli != null)
             {
                 selectedKnolli.idleT = 2f;   // stehen bleiben, solange man zuordnet
-                Floater?.Invoke(selectedKnolli.pos + new Vector2(0, 0.8f), BedOf(selectedKnolli) != null ? "Mein Feld leuchtet – tippe ein anderes an" : "Tippe ein Feld an, das ich bearbeiten soll", new Color(0.8f, 1f, 0.7f));
+                Floater?.Invoke(selectedKnolli.pos + new Vector2(0, 0.8f), RoleName(RoleOf(selectedKnolli)) + " – wähle unten einen Beruf oder tippe ein Feld an", new Color(0.8f, 1f, 0.7f));
             }
         }
 
@@ -89,6 +90,7 @@ namespace SeedClicker
             var k = selectedKnolli;
             selectedKnolli = null;
             if (k == null) return;
+            if (!HasField(c) && pendingRole == null) { pendingRole = null; return; }   // daneben getippt: Auswahl aufheben
             if (!HasField(c))
             {
                 Floater?.Invoke(CellCenter(c) + new Vector2(0, 0.6f), "Das ist kein Feld", new Color(1f, 0.7f, 0.55f));
@@ -97,11 +99,12 @@ namespace SeedClicker
             }
             var j = Job(k);
             j.set = true; j.x = c.x; j.y = c.y;
+            ApplyFieldRole(k);
             bedCache.Remove(k.slot);
             if (k.state == 1) { k.goal = null; k.state = k.carry > 0 ? 2 : 0; k.target = CrateDrop; }
             k.idleT = 0f;
             bedFlash = Bed(c); bedFlashT = 1.2f;
-            Floater?.Invoke(CellCenter(c) + new Vector2(0, 0.7f), "Knolli arbeitet jetzt hier (" + bedFlash.Count + " Felder)", new Color(0.8f, 1f, 0.7f));
+            Floater?.Invoke(CellCenter(c) + new Vector2(0, 0.7f), RoleName(RoleOf(k)) + " arbeitet jetzt hier (" + bedFlash.Count + " Felder)", new Color(0.8f, 1f, 0.7f));
             Sfx.Play("unlock", 1.4f, 0.6f);
             Haptics.Tap(20);
             save.Save();
@@ -144,7 +147,7 @@ namespace SeedClicker
             foreach (var k in knollis)
             {
                 if (k == selectedKnolli) { k.body.transform.position += new Vector3(0, Mathf.Abs(Mathf.Sin(Time.time * 8f)) * 0.08f, 0); continue; }
-                if (askT <= 0f && BedOf(k) == null && k.carry == 0)
+                if (askT <= 0f && RoleNeedsField(RoleOf(k)) && BedOf(k) == null && k.carry == 0)
                     Floater?.Invoke(k.pos + new Vector2(0, 0.75f), "Wo soll ich arbeiten? Tipp mich an!", new Color(1f, 0.95f, 0.75f));
             }
             if (askT <= 0f) askT = 9f;
