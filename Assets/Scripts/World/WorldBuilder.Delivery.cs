@@ -49,11 +49,9 @@ namespace SeedClicker
                 dv.tiltVel += (UnityEngine.Random.value < 0.5f ? -1f : 1f) * UnityEngine.Random.Range(45f, 70f);
                 dv.syVel -= 4f;
             }
+            LaunchDrops(p, add, fxFrom.HasValue);   // crunchy: herausploppen, fliegen, aufprallen, nachspringen
             if (fxFrom.HasValue)
             {
-                var pile = ScatterPos(p, Mathf.Min(p.stock - 1, PileShown - 1));
-                var spr = plantViews.TryGetValue(new Cell(p.x, p.y), out var v) && v.sr != null ? v.sr.sprite : null;
-                StartCoroutine(Leaf(fxFrom.Value, pile, null, spr, null, 0.18f));
                 Floater?.Invoke(fxFrom.Value + new Vector2(0.25f, 0.3f), "+" + add + " " + ProductName(PlantBalance.I.Plant(p.type)), new Color(1f, 0.92f, 0.6f));
             }
             return true;
@@ -99,7 +97,7 @@ namespace SeedClicker
         {
             foreach (var p in save.planted)
             {
-                int show = Mathf.Min(PileShown, p.stock);
+                int show = Mathf.Min(PileShown, Mathf.Max(0, p.stock - InFlight(p)));   // was noch fliegt, liegt noch nicht
                 pileViews.TryGetValue(p, out var list);
                 if (list == null && show == 0) continue;
                 if (list == null) pileViews[p] = list = new List<SpriteRenderer>();

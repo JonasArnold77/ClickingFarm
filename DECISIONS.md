@@ -213,3 +213,4 @@
 ## Kleinigkeiten
 - Fällt Ernte aus einer Pflanze (Tipp, von selbst, Klopfwurz), schüttelt sie sich und blitzt kurz auf.
 - Escape bricht angefangenes Ziehen (Felder, Mauer, Bach, Totemfläche) ab; ein zweites Escape verlässt den Mauer-, Bach- oder Steinpult-Modus. (Auf Android ist das die Zurück-Taste.)
+- Ernte-Drop (`WorldBuilder.Drops.cs`): Jedes neue Stück ploppt aus der Pflanze (gestreckt), fliegt im Bogen mit Drehung und Glitzerspur, sein Schatten wächst. Aufprall: Krümel in der Farbe der Ernte, Erdbrocken, Staubwölkchen, kleiner Ring, Knirsch-Ton, Feld federt; das Stück quetscht sich platt, springt zweimal kleiner nach (zweiter Aufprall leiser) und wackelt sich zurecht – erst dann liegt es im Haufen. Spieler-Tipps zusätzlich lauter mit leichtem Kamerawackeln und Vibration. Höchstens 40 Stücke gleichzeitig in der Luft, höchstens 6 pro Ernte.
