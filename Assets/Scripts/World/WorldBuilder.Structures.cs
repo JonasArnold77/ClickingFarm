@@ -8,8 +8,7 @@ namespace SeedClicker
     /// <summary>
     /// Bauwerke: im Laden (Reiter "Bauwerke") einmal kaufen, dann auf einen freien Platz im Hof setzen. Ein Tipp oeffnet
     /// ihr Fenster, weitere Tipps (oder "Verbessern!") bringen sie Stufe um Stufe weiter – wie Pflanzen und Waffenbank.
-    /// Jedes wirkt im Umkreis (oder ueberall, radius 0): Vogelscheuche, Brunnen, Laterne, Wachturm, Bienenhaus, Schmiede,
-    /// Treibhaus, Saatgutmuehle, Lagerhaus. Werte in plants.json -> structures und structureTaps.
+    /// Jedes wirkt im Umkreis (oder ueberall, radius 0): Vogelscheuche, Laterne, Wachturm, Saatgutmuehle, dazu die Totems. Werte in plants.json -> structures und structureTaps.
     /// </summary>
     public partial class WorldBuilder
     {
@@ -102,14 +101,9 @@ namespace SeedClicker
             switch (d.effect)
             {
                 case "scare": return "Tipps zählen ×" + (1f + v).ToString("0.##") + where;
-                case "water": return "Gießt alle Pflanzen" + where;
                 case "light": return "Zombies nehmen +" + Mathf.RoundToInt(v * 100) + " % Schaden" + where + (s.moon ? " · Mondlicht" : "");
                 case "tower": return (s.moon ? "Schießt nachts doppelt, je " : "Schießt nachts für ") + v.ToString("0.#") + " Schaden" + where + (s.stone ? " · Stein" : "");
-                case "bee": return "Honig +" + Mathf.RoundToInt(v * 100) + " %" + where;
-                case "forge": return "Hammerschläge +" + Mathf.RoundToInt(v * 100) + " % · Waffen " + s.lv + " Wellen früher";
-                case "greenhouse": return v.ToString("0.#") + " Wachstums-Tipps pro Sekunde" + where;
                 case "seedcost": return "Samen " + Mathf.RoundToInt(Mathf.Min(0.9f, v) * 100) + " % billiger";
-                case "offline": return "+" + v.ToString("0.#") + " Std. Offline-Ertrag";
             }
             return "";
         }
@@ -178,6 +172,7 @@ namespace SeedClicker
 
         void InitStructures()
         {
+            save.structures.RemoveAll(s => PlantBalance.I.Structure(s.id) == null);   // entfernte Bauwerke (Brunnen, Bienenhaus, ...)
             foreach (var s in save.structures) if (s.placed) CreateStructView(s, false);
             var waiting = save.structures.Find(s => !s.placed);
             if (waiting != null) BeginPlacing(waiting);
@@ -217,7 +212,7 @@ namespace SeedClicker
             sr.sortingOrder = Order(foot.y);
             Shadow(foot, CellSize * 1.6f * d.scale, 0.25f, 0.3f);
             var v = new StructView { st = st, def = d, sr = sr, scale = scale, squash = pop ? 1f : 0f, timer = UnityEngine.Random.Range(0.5f, 2f) };
-            if (d.effect == "light" || d.effect == "tower" || d.effect == "forge")
+            if (d.effect == "light" || d.effect == "tower")
             {
                 var lgo = new GameObject("StructLight");
                 lgo.transform.SetParent(sr.transform, false);
@@ -226,7 +221,7 @@ namespace SeedClicker
                 v.light.lightType = Light2D.LightType.Point;
                 v.light.pointLightInnerRadius = 0.2f;
                 v.light.pointLightOuterRadius = d.effect == "light" ? 2.5f : 1.4f;
-                v.light.color = d.effect == "forge" ? new Color(1f, 0.55f, 0.25f) : new Color(1f, 0.85f, 0.5f);
+                v.light.color = new Color(1f, 0.85f, 0.5f);
                 v.light.intensity = 0f;
             }
             structViews.Add(v);
@@ -333,7 +328,6 @@ namespace SeedClicker
                 if (v.light != null)
                 {
                     float want = dark ? (v.def.effect == "light" ? 1.3f : 0.7f) : 0f;
-                    if (v.def.effect == "forge" && v.squash > 0.1f) want = Mathf.Max(want, v.squash * 1.5f);
                     v.light.intensity = Mathf.MoveTowards(v.light.intensity, want * (0.92f + 0.08f * Mathf.Sin(Time.time * 7f + v.st.x)), dt * 2f);
                 }
                 v.timer -= dt;
@@ -353,32 +347,6 @@ namespace SeedClicker
                     if (NightWave.I != null && NightWave.I.TowerShot(new Vector2(v.sr.bounds.center.x, v.sr.bounds.max.y - 0.1f), r, StructValue(v.st), v.st.moon ? 2 : 1))
                         v.squash = Mathf.Max(v.squash, 0.35f);
                     return Mathf.Max(0.4f, 1.3f - 0.04f * v.st.lv);
-                case "greenhouse":
-                    {
-                        // ein Wachstums-Tipp auf eine zufaellige Pflanze im Umkreis
-                        PlantedState pick = null; int seen = 0;
-                        foreach (var p in save.planted)
-                            if (p.Role != "auto" && (CellCenter(new Cell(p.x, p.y)) - pos).sqrMagnitude <= r * r && UnityEngine.Random.Range(0, ++seen) == 0) pick = p;
-                        if (pick != null) { SoftTap(pick, null); Particles.I?.Spawn(pos + new Vector2(0, 0.6f), "spark", new Color(0.7f, 1f, 0.7f), Vector3.up * 0.5f, 0.5f, 0.1f, 0f, 0f); }
-                        return 1f / Mathf.Max(0.1f, StructValue(v.st));
-                    }
-                case "water":
-                    {
-                        // sichtbar machen: ab und zu platscht es auf einer Pflanze im Umkreis
-                        foreach (var p in save.planted)
-                        {
-                            var c = new Cell(p.x, p.y);
-                            if ((CellCenter(c) - pos).sqrMagnitude > r * r || UnityEngine.Random.value > 0.35f) continue;
-                            StartCoroutine(Droplet(pos + new Vector2(0, 0.5f), c, UnityEngine.Random.Range(0f, 0.3f), false));
-                        }
-                        return 2.5f;
-                    }
-                case "bee":
-                    Particles.I?.Burst(pos + new Vector2(0, 0.7f), "square", new Color(1f, 0.8f, 0.2f), 3, 0.8f, 1f, 0.05f, -0.3f, 0.5f);
-                    return 1.5f;
-                case "forge":
-                    Particles.I?.Spawn(pos + new Vector2(0.15f, 1f), "square", new Color(0.4f, 0.38f, 0.36f, 0.6f), new Vector3(0.1f, 0.6f, 0), 1.4f, 0.12f, 0.2f, -0.2f);
-                    return 0.5f;
             }
             return 3f;
         }
@@ -417,13 +385,6 @@ namespace SeedClicker
                         ?? Box(x, y, 46, 58, 82, 100, new Color(0.35f, 0.5f, 0.75f), new Color(0.5f, 0.68f, 0.9f))        // Hemd
                         ?? Box(x, y, 14, 88, 114, 96, Wood, WoodHi)                                                        // Querbalken
                         ?? Box(x, y, 60, 2, 68, 100, Wood, WoodHi);                                                        // Pfahl
-                case "brunnen":
-                    return Tri(x, y, 24, 104, 104, 104, 64, 140, Roof, RoofHi)
-                        ?? Box(x, y, 30, 40, 36, 104, Wood, WoodHi) ?? Box(x, y, 92, 40, 98, 104, Wood, WoodHi)
-                        ?? Box(x, y, 52, 66, 76, 72, new Color(0.45f, 0.35f, 0.3f), new Color(0.6f, 0.5f, 0.4f))          // Eimer
-                        ?? Box(x, y, 63, 72, 65, 104, new Color(0.85f, 0.8f, 0.7f), Color.white)                           // Seil
-                        ?? Ellipse(x, y, 64, 44, 44, 10, new Color(0.3f, 0.55f, 0.85f), new Color(0.55f, 0.8f, 1f))       // Wasser
-                        ?? Box(x, y, 18, 4, 110, 44, Stone, StoneHi, true);
                 case "laterne":
                     return Circle(x, y, 64, 128, 14, new Color(1f, 0.85f, 0.4f), new Color(1f, 1f, 0.8f))
                         ?? Box(x, y, 48, 110, 80, 146, new Color(0.25f, 0.25f, 0.28f), new Color(0.4f, 0.4f, 0.45f))
@@ -439,28 +400,10 @@ namespace SeedClicker
                         ?? Box(x, y, 58, 70, 70, 92, new Color(0.12f, 0.1f, 0.1f), new Color(0.2f, 0.18f, 0.16f))          // Schiessscharte
                         ?? Box(x, y, 24, 100, 104, 118, Stone, StoneHi, true)                                                // Zinnen
                         ?? Box(x, y, 32, 2, 96, 100, Stone, StoneHi, true);                                                  // Turm
-                case "bienenhaus":
-                    return Tri(x, y, 18, 92, 110, 92, 64, 124, Roof, RoofHi)
-                        ?? Circle(x, y, 64, 54, 8, new Color(0.2f, 0.15f, 0.1f), new Color(0.3f, 0.2f, 0.1f))
-                        ?? Stripes(x, y, 28, 20, 100, 92)
-                        ?? Box(x, y, 34, 2, 42, 20, Wood, WoodHi) ?? Box(x, y, 86, 2, 94, 20, Wood, WoodHi);
-                case "schmiede":
-                    return Box(x, y, 84, 70, 102, 150, Stone, StoneHi)                                                    // Schornstein
-                        ?? Box(x, y, 40, 58, 80, 70, new Color(0.3f, 0.3f, 0.33f), new Color(0.5f, 0.5f, 0.55f))         // Amboss
-                        ?? Box(x, y, 52, 40, 68, 58, new Color(0.3f, 0.3f, 0.33f), new Color(0.45f, 0.45f, 0.5f))
-                        ?? Tri(x, y, 8, 110, 120, 110, 64, 136, new Color(0.4f, 0.35f, 0.3f), new Color(0.55f, 0.5f, 0.45f))
-                        ?? Box(x, y, 14, 2, 114, 110, Stone, StoneHi, true, new Color(1f, 0.55f, 0.2f), 22, 48, 20, 56);   // Wand mit Glut
-                case "treibhaus":
-                    return Tri(x, y, 10, 90, 118, 90, 64, 128, new Color(0.55f, 0.8f, 0.85f, 0.85f), new Color(0.85f, 0.97f, 1f, 0.9f))
-                        ?? Glass(x, y, 12, 2, 116, 90);
                 case "saatgutmuehle":
                     return Blades(x, y, 64, 112)
                         ?? Tri(x, y, 32, 96, 96, 96, 64, 120, Roof, RoofHi)
                         ?? Poly(x, y, new[] { new Vector2(28, 2), new Vector2(100, 2), new Vector2(90, 96), new Vector2(38, 96) }, new Color(0.88f, 0.84f, 0.74f), Color.white);
-                case "lagerhaus":
-                    return Tri(x, y, 4, 82, 124, 82, 64, 120, Roof, RoofHi)
-                        ?? Box(x, y, 44, 2, 84, 56, new Color(0.45f, 0.28f, 0.16f), new Color(0.6f, 0.4f, 0.24f))
-                        ?? Box(x, y, 10, 2, 118, 82, Wood, WoodHi, true);
                 case "totem_wachstum": return Totem(x, y, new Color(0.35f, 0.75f, 0.3f), new Color(0.7f, 1f, 0.55f));
                 case "totem_ernte": return Totem(x, y, new Color(0.9f, 0.62f, 0.15f), new Color(1f, 0.88f, 0.4f));
                 case "totem_fleiss": return Totem(x, y, new Color(0.45f, 0.4f, 0.85f), new Color(0.7f, 0.68f, 1f));
@@ -532,29 +475,6 @@ namespace SeedClicker
             var a = new Vector2(x0, y0); var b = new Vector2(x1, y1); var p = new Vector2(x, y);
             float t = Mathf.Clamp01(Vector2.Dot(p - a, b - a) / (b - a).sqrMagnitude);
             return Vector2.Distance(p, a + (b - a) * t) <= w ? c * 0.85f : (Color?)null;
-        }
-
-        static Color? Stripes(int x, int y, float x0, float y0, float x1, float y1)
-        {
-            if (x < x0 || x > x1 || y < y0 || y > y1) return null;
-            bool dark = ((y - (int)y0) / 12) % 2 == 0;
-            var col = dark ? new Color(0.85f, 0.62f, 0.15f) : new Color(1f, 0.85f, 0.35f);
-            if (x - x0 < 2 || x1 - x < 2 || y - y0 < 2 || y1 - y < 2) col *= 0.6f;
-            col.a = 1f;
-            return col;
-        }
-
-        static Color? Glass(int x, int y, float x0, float y0, float x1, float y1)
-        {
-            if (x < x0 || x > x1 || y < y0 || y > y1) return null;
-            bool frame = (x - (int)x0) % 26 < 3 || (y - (int)y0) % 30 < 3 || x1 - x < 3;
-            if (frame) return new Color(0.92f, 0.92f, 0.88f);
-            // gruene Pflanzen hinter dem Glas
-            bool leaf = y < y0 + 40 && Mathf.PerlinNoise(x * 0.15f, y * 0.15f) > 0.45f;
-            var col = leaf ? new Color(0.35f, 0.65f, 0.3f) : new Color(0.65f, 0.88f, 0.92f);
-            col = Color.Lerp(col, Color.white, (x + y) % 40 < 4 ? 0.5f : 0f);
-            col.a = 0.92f;
-            return col;
         }
 
         static Color? Blades(int x, int y, float cx, float cy)

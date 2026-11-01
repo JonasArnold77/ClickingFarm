@@ -52,7 +52,7 @@ namespace SeedClicker
     [Serializable] public class PedestalDef { public float cost = 20f; }
     /// <summary>Tagesaufgabe: so viele Stueck des Tages-Ernteguts fuer Bronze, Silber, Gold.</summary>
     [Serializable] public class ChallengeDef { public int[] tiers = { 10, 30, 60 }; }
-    /// <summary>Ernte-Lieferung: Vorrat je Pflanze, Knollis (Preis, Traglast, Tempo), Honigglas = so viele Sekunden Honig.</summary>
+    /// <summary>Ernte-Lieferung: Vorrat je Pflanze, Knollis (Preis, Reichweite, Tempo).</summary>
     /// <summary>Bach: Muenzen je Stueck; Pflanzen am Bach gelten als gegossen und wachsen/produzieren schneller.</summary>
     [Serializable] public class RiverDef { public float cost = 10f, growth = 1.5f, produce = 1.5f; }
     [Serializable] public class RiverState { public int x, y, dir, seq; }
@@ -60,7 +60,7 @@ namespace SeedClicker
     {
         public int startKnollis = 1;
         public float knolliRange = 1.6f;   // Umkreis, aus dem ein Knolli alle Ernte auf einmal einsammelt (Magnet)
-        public float knolliCost = 40f, knolliCostGrowth = 1.6f, knolliSpeed = 1.6f, beeJarSeconds = 6f;
+        public float knolliCost = 40f, knolliCostGrowth = 1.6f, knolliSpeed = 1.6f;
     }
     /// <summary>Runen-Altar: pro geopfertem Runenstein (Fluch-Stufe) werden Zombies staerker, groesser und zahlreicher,
     /// dafuer gibt es mehr Muenzen pro Zombie, einen Bonus beim Ueberstehen (victoryBonus * Stufe * Welle) und oefter Runensteine.</summary>
@@ -82,7 +82,7 @@ namespace SeedClicker
     [Serializable] public class BenchDef { public float tapsBase = 12f, tapsGrowth = 1.3f, damagePerLevel = 0.25f, cooldownPerLevel = 0.04f, minCooldown = 0.5f; public int maxLevel = 30; }
     /// <summary>Bauwerk zum Aufstellen (einmal kaufen, auf einen freien Platz im Hof setzen, per Klick verbessern).
     /// effect: scare (Tipps in der Naehe staerker), water (giesst Umkreis), light (Zombies nehmen mehr Schaden), tower (schiesst nachts),
-    /// bee (Honig), forge (Waffenbank), greenhouse (Pflanzen wachsen von selbst), seedcost (Samen billiger), offline (Offline-Stunden).
+    /// seedcost (Samen billiger), totem (verstaerkt eine aufgezogene Flaeche).
     /// radius 0 = wirkt ueberall.</summary>
     [Serializable] public class StructureDef
     {
@@ -108,13 +108,13 @@ namespace SeedClicker
 
     /// <summary>Rollen der Pflanzen: combat (verteidigt), water (giesst Nachbarn), harvest (bringt Muenzen),
     /// fert (Duenger fuer Nachbarn), boost (Klicks in der Naehe zaehlen doppelt), auto (klickt selbst Nachbarn an),
-    /// bee (Honig = Muenzen, mehr bei Blumen), light (Zombies im Licht nehmen mehr Schaden).</summary>
+    /// light (Zombies im Licht nehmen mehr Schaden).</summary>
     public static class Roles
     {
         public static string Name(string r) => r switch
         {
             "water" => "Wasser", "harvest" => "Ernte", "fert" => "Dünger", "boost" => "Verstärker", "auto" => "Automatik",
-            "bee" => "Honig", "light" => "Licht", "support" => "Bauhelfer",
+            "light" => "Licht", "support" => "Bauhelfer",
             "transport" => "Transport", "carrier" => "Träger", "sower" => "Säer", "pipe" => "Leitung", "transform" => "Verwandlung", _ => "Kampf"
         };
         public static string Desc(CatalogDef d) => d.role switch
@@ -124,7 +124,6 @@ namespace SeedClicker
             "fert" => "Direkte Nachbarn wachsen schneller und bringen +50 % Münzen.",
             "boost" => "Tipps auf Pflanzen im Umkreis von 2 zählen doppelt.",
             "auto" => "Klickt von selbst das Feld vor sich – schneller mit jeder Stufe.",
-            "bee" => "Füllt Honiggläser, mehr mit Blumen in der Nähe. Knollis tragen sie zur Lieferkiste.",
             "light" => "Leuchtet nachts: Zombies in ihrem Licht nehmen +50 % Schaden.",
             "transport" => "Erntet reife Ernte-Pflanzen im Umkreis von 2 – Münzen +50 %.",
             "carrier" => "Trägt Holz aus dem Wald zum Haus, schneller mit jeder Stufe.",
@@ -152,7 +151,7 @@ namespace SeedClicker
     public class CatalogDef
     {
         public string id, name, species; public bool starter; public int unlockWave;
-        public string product;     // Ernte-Produkt (Name), z. B. "Honig" – sonst der Pflanzenname
+        public string product;     // Ernte-Produkt (Name), z. B. "Radieschen-Bund" – sonst der Pflanzenname
         public string transform;   // Rolle transform: stone (Holzmauer -> Stein) oder fire/ice/lightning/poison (Waffenbank)
         public string role = "combat";
         public float cost, value, unlockEarned;

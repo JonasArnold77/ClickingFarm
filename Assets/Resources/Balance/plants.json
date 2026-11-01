@@ -567,28 +567,6 @@
       "effectLv": 1
     },
     {
-      "id": "bienenblume",
-      "product": "Honigglas",
-      "name": "Bienenblume",
-      "species": "flowers",
-      "starter": false,
-      "unlockWave": 999,
-      "role": "bee",
-      "cost": 900,
-      "value": 4,
-      "growTaps": 45,
-      "unlockEarned": 8000,
-      "pattern": "single",
-      "patternLv": 1,
-      "rangeLv": 1,
-      "projectile": "seed",
-      "projectileLv": 1,
-      "element": "lightning",
-      "elementLv": 1,
-      "effect": "none",
-      "effectLv": 1
-    },
-    {
       "id": "gluehpilz",
       "name": "Glühpilz",
       "species": "pinkshroom",
@@ -1299,8 +1277,7 @@
     "startKnollis": 1,
     "knolliCost": 40,
     "knolliCostGrowth": 1.6,
-    "knolliSpeed": 1.6,
-    "beeJarSeconds": 6
+    "knolliSpeed": 1.6
   },
   "river": {
     "cost": 10,
@@ -1308,7 +1285,11 @@
     "produce": 1.5
   },
   "challenge": {
-    "tiers": [10, 30, 60]
+    "tiers": [
+      10,
+      30,
+      60
+    ]
   },
   "bench": {
     "tapsBase": 12,
@@ -1350,20 +1331,6 @@
       "scale": 1.0
     },
     {
-      "id": "brunnen",
-      "name": "Brunnen",
-      "desc": "Gießt alle Pflanzen in seiner Nähe",
-      "effect": "water",
-      "cost": 400,
-      "wood": 5,
-      "unlockEarned": 300,
-      "value": 1,
-      "valuePerLevel": 0,
-      "radius": 2.0,
-      "radiusPerLevel": 0.2,
-      "scale": 1.1
-    },
-    {
       "id": "laterne",
       "name": "Laterne",
       "desc": "Leuchtet nachts: Zombies im Licht nehmen mehr Schaden",
@@ -1392,48 +1359,6 @@
       "scale": 1.2
     },
     {
-      "id": "bienenhaus",
-      "name": "Bienenhaus",
-      "desc": "Alle Bienenblumen machen mehr Honig",
-      "effect": "bee",
-      "cost": 2500,
-      "wood": 6,
-      "unlockEarned": 2000,
-      "value": 0.5,
-      "valuePerLevel": 0.25,
-      "radius": 0,
-      "radiusPerLevel": 0,
-      "scale": 1.0
-    },
-    {
-      "id": "schmiede",
-      "name": "Schmiede",
-      "desc": "Hammerschläge an der Waffenbank zählen mehr, Waffen kommen früher",
-      "effect": "forge",
-      "cost": 4000,
-      "wood": 12,
-      "unlockEarned": 3000,
-      "value": 0.5,
-      "valuePerLevel": 0.25,
-      "radius": 0,
-      "radiusPerLevel": 0,
-      "scale": 1.2
-    },
-    {
-      "id": "treibhaus",
-      "name": "Treibhaus",
-      "desc": "Pflanzen in der Nähe wachsen von selbst – auch nachts",
-      "effect": "greenhouse",
-      "cost": 8000,
-      "wood": 15,
-      "unlockEarned": 6000,
-      "value": 1,
-      "valuePerLevel": 0.5,
-      "radius": 1.5,
-      "radiusPerLevel": 0.15,
-      "scale": 1.3
-    },
-    {
       "id": "saatgutmuehle",
       "name": "Saatgutmühle",
       "desc": "Alle Samen werden billiger",
@@ -1446,20 +1371,6 @@
       "radius": 0,
       "radiusPerLevel": 0,
       "scale": 1.2
-    },
-    {
-      "id": "lagerhaus",
-      "name": "Lagerhaus",
-      "desc": "Die Farm verdient länger, während du weg bist",
-      "effect": "offline",
-      "cost": 20000,
-      "wood": 20,
-      "unlockEarned": 15000,
-      "value": 2,
-      "valuePerLevel": 1,
-      "radius": 0,
-      "radiusPerLevel": 0,
-      "scale": 1.3
     },
     {
       "id": "totem_wachstum",
@@ -1500,7 +1411,7 @@
     {
       "id": "totem_fleiss",
       "name": "Fleißtotem",
-      "desc": "Pflanzen auf seinem Feld machen von selbst doppelt so viel Ernte und Honig",
+      "desc": "Pflanzen auf seinem Feld machen von selbst doppelt so viel Ernte",
       "effect": "totem",
       "boost": "produce",
       "multi": true,
@@ -1679,15 +1590,6 @@
       "value": 2,
       "cost": 9000,
       "unlockEarned": 6000
-    },
-    {
-      "id": "bienen1",
-      "name": "Königinnen",
-      "desc": "Honig bringt doppelt so viel",
-      "effect": "bee",
-      "value": 2,
-      "cost": 15000,
-      "unlockEarned": 10000
     },
     {
       "id": "mauer1",

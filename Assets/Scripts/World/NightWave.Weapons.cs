@@ -29,7 +29,7 @@ namespace SeedClicker
 
         public WeaponDef Weapon => B.Weapon(wb != null ? wb.Save.weapon : "pistole");
         /// <summary>Freigeschaltet nach Welle unlockWave – die Schmiede holt Waffen um ihre Stufe frueher.</summary>
-        public bool IsWeaponUnlocked(WeaponDef w) => w != null && wb != null && wb.Save.wave >= w.unlockWave - wb.StructLevel("forge");
+        public bool IsWeaponUnlocked(WeaponDef w) => w != null && wb != null && wb.Save.wave >= w.unlockWave;
 
         /// <summary>Wachturm: schiesst auf den naechsten Zombie in Reichweite. true = getroffen.</summary>
         public int TowerHits { get; private set; }

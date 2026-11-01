@@ -7,7 +7,7 @@ namespace SeedClicker
     /// <summary>
     /// Wirtschaft wie bei Cookie Clicker: Muenzen durch Ernte-Tipps und von selbst (Muenzen pro Sekunde),
     /// Verbesserungen und Gebaeude im Laden, Hof-Ausbau, Offline-Ertrag und goldene Schmetterlinge.
-    /// Hier sitzen auch die Rollen der Nutzpflanzen: Wasser, Ernte, Duenger, Verstaerker, Automatik, Honig, Licht.
+    /// Hier sitzen auch die Rollen der Nutzpflanzen: Wasser, Ernte, Duenger, Verstaerker, Automatik, Licht.
     /// Alle Zahlen stehen in plants.json (upgrades, buildings, farmLevels, catalog.role/value/cost).
     /// </summary>
     public partial class WorldBuilder
@@ -178,12 +178,11 @@ namespace SeedClicker
             return n;
         }
 
-        /// <summary>Gegossen: ein Tauschilf erreicht das Feld (Saftrohre verlaengern) oder ein Brunnen steht in der Naehe.</summary>
+        /// <summary>Gegossen: ein Tauschilf erreicht das Feld (Saftrohre verlaengern) oder das Feld liegt am Bach.</summary>
         public bool IsWatered(PlantedState p)
         {
             foreach (var q in save.planted) if (q != p && q.Grown && q.Role == "water" && InCross(new Cell(q.x, q.y), new Cell(p.x, p.y), WaterRadiusOf(q))) return true;
-            if (NearRiver(p)) return true;   // am Bach
-            return StructEffect("water", CellCenter(new Cell(p.x, p.y))) > 0f;
+            return NearRiver(p);   // am Bach
         }
         float FertMult(PlantedState p) => 1f + 0.5f * GrownNear(p, "fert", 1) * UpgradeMult("fert");
         float BoostMult(PlantedState p) => GrownNear(p, "boost", 2) > 0 ? 2f : 1f;
@@ -204,21 +203,13 @@ namespace SeedClicker
             return c.value * p.Lv * UpgradeMult("harvest") * UpgradeMult("click") * BoostMult(p) * FertMult(p) * WaterMult(p) * TotemMult(p, "harvest");
         }
 
-        /// <summary>Muenzen pro Sekunde dieser Pflanze (Ernte und Honig verdienen auch ohne Tippen).</summary>
+        /// <summary>Muenzen pro Sekunde dieser Pflanze (Ernte waechst auch ohne Tippen nach).</summary>
         public float PlantCps(PlantedState p)
         {
             if (!p.Grown) return 0f;
             var c = PlantBalance.I.Plant(p.type);
             if (c == null) return 0f;
             if (p.Role == "harvest") return c.value * p.Lv * 0.15f * UpgradeMult("harvest") * FertMult(p) * WaterMult(p) * TotemMult(p, "produce") * RiverMult(p, "produce");
-            if (p.Role == "bee")
-            {
-                int flowers = 0;
-                var pos = CellCenter(new Cell(p.x, p.y));
-                foreach (var d in decor) if (d.go != null && d.go.name.ToLower().Contains("flower") && (d.p - pos).sqrMagnitude < 2.2f * 2.2f) flowers++;
-                flowers += GrownNear(p, "bee", 2);
-                return c.value * p.Lv * (1f + 0.25f * flowers) * UpgradeMult("bee") * FertMult(p) * (1f + StructGlobal("bee")) * TotemMult(p, "produce") * RiverMult(p, "produce");
-            }
             return 0f;
         }
 
@@ -300,7 +291,7 @@ namespace SeedClicker
             long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             if (save.lastSeen > 0)
             {
-                double secs = Math.Min(now - save.lastSeen, (2 + UpgradeAdd("offline") + StructGlobal("offline")) * 3600.0);
+                double secs = Math.Min(now - save.lastSeen, (2 + UpgradeAdd("offline")) * 3600.0);
                 double earned = secs > 60 ? cps * secs * 0.5 : 0;
                 if (earned >= 1) { AddCoins(earned); StartCoroutine(AnnounceOffline(earned, secs)); }
             }
@@ -336,7 +327,7 @@ namespace SeedClicker
                     float pc = PlantCps(p);
                     if (pc <= 0f || UnityEngine.Random.value > 0.5f) continue;
                     var pos = CellCenter(new Cell(p.x, p.y)) + new Vector2(0, 0.4f);
-                    Particles.I?.Spawn(pos, "square", p.Role == "bee" ? new Color(1f, 0.8f, 0.2f) : new Color(1f, 0.88f, 0.35f), Vector3.up * 0.8f, 0.7f, 0.06f, 0.03f, 0f);
+                    Particles.I?.Spawn(pos, "square", new Color(1f, 0.88f, 0.35f), Vector3.up * 0.8f, 0.7f, 0.06f, 0.03f, 0f);
                 }
             }
             // gegossene Felder sind dunkler

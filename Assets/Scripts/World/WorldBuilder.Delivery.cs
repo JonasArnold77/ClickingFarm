@@ -6,7 +6,7 @@ using UnityEngine;
 namespace SeedClicker
 {
     /// <summary>
-    /// Ernte als Produkte: Ernte-Pflanzen (Radieschen, Weissruebe, Bienenblume) bringen keine Muenzen mehr direkt, sondern
+    /// Ernte als Produkte: Ernte-Pflanzen (Radieschen, Weissruebe, ...) bringen keine Muenzen mehr direkt, sondern
     /// ihr eigenes Produkt (catalog.product), das sich als kleiner Vorrat neben der Pflanze stapelt – beim Antippen und
     /// langsam von selbst. Knollis (kleine braune, runde Wesen) sammeln den Vorrat ein und tragen ihn zur Lieferkiste
     /// beim Haus. Sobald die Ernte in der Kiste liegt, gibt es das Geld. Werte in plants.json -> delivery.
@@ -20,14 +20,14 @@ namespace SeedClicker
 
         public event Action<int, double> DeliveryPaid;   // Stueck, Muenzen
 
-        public static bool MakesProduct(PlantedState p) => p != null && (p.Role == "harvest" || p.Role == "bee");
+        public static bool MakesProduct(PlantedState p) => p != null && p.Role == "harvest";
         public static string ProductName(CatalogDef d) => d == null ? "" : !string.IsNullOrEmpty(d.product) ? d.product : d.name;
         const int PileShown = 48;   // so viele Stuecke werden gezeigt (der Vorrat selbst ist unbegrenzt)
 
-        /// <summary>Wert eines Produkts dieser Pflanze (Ernte: wie frueher ein Tipp; Honig: ein Glas = einige Sekunden Honig).</summary>
+        /// <summary>Wert eines Produkts dieser Pflanze (wie frueher ein Ernte-Tipp).</summary>
         public double ItemValue(PlantedState p)
         {
-            double v = p.Role == "bee" ? Math.Max(1, PlantCps(p) * PlantBalance.I.Delivery.beeJarSeconds) : Math.Max(1, HarvestPerTap(p));
+            double v = Math.Max(1, HarvestPerTap(p));
             return HasPerk("horn") ? v * 1.25 : v;   // Erntehorn
         }
 

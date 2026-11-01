@@ -5,7 +5,7 @@ namespace SeedClicker
 {
     /// <summary>
     /// Geboostete Felder: Jedes Feld, das von irgendetwas verstaerkt wird (Totem, Bach, Tauschilf, Duenger, Verstaerker,
-    /// Vogelscheuche, Brunnen, Treibhaus), schimmert leicht in der Farbe seiner staerksten Quelle. Faehrt man mit der Maus
+    /// Vogelscheuche), schimmert leicht in der Farbe seiner staerksten Quelle. Faehrt man mit der Maus
     /// darueber (oder ist die Pflanze darauf geoeffnet), laufen leuchtende Linien von jeder Quelle zum Feld, und eine
     /// kleine Liste neben dem Zeiger sagt, wer was beitraegt.
     /// </summary>
@@ -61,7 +61,7 @@ namespace SeedClicker
             {
                 if (!s.placed || IsTotem(s)) continue;
                 var d = PlantBalance.I.Structure(s.id);
-                if (d == null || (d.effect != "scare" && d.effect != "water" && d.effect != "greenhouse")) continue;
+                if (d == null || d.effect != "scare") continue;
                 float r = StructRadius(s);
                 if (r <= 0f || (StructPos(s) - at).sqrMagnitude > r * r) continue;
                 list.Add(new BoostSource { label = d.name + ": " + StructSummary(s).Split('·')[0].Trim(), from = StructPos(s), col = StructCol });

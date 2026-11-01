@@ -97,7 +97,7 @@ namespace SeedClicker
                 if (loud) { benchSquash = 0.4f; Sfx.Play("dry", 1.2f, 0.4f); Floater?.Invoke(top + new Vector2(0, 0.5f), "Höchste Stufe!", new Color(1f, 0.9f, 0.6f)); }
                 return;
             }
-            float gain = Mathf.Max(1f, Mathf.Round(power * (loud ? UpgradeMult("click") : 1f) * (1f + StructGlobal("forge"))));
+            float gain = Mathf.Max(1f, Mathf.Round(power * (loud ? UpgradeMult("click") : 1f)));
             e.xp += gain;
             benchSquash = loud ? 1f : Mathf.Max(benchSquash, 0.45f);
             var P = Particles.I;

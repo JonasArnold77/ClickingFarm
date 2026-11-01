@@ -393,7 +393,7 @@ namespace SeedClicker
         /// <summary>Reiter fuer Pflanzenauswahl und Pflanzenbuch: Pflanzen nach ihrer Funktion gruppiert.</summary>
         static readonly (string name, string[] roles)[] RoleTabs =
         {
-            ("Ernte", new[] { "harvest", "bee" }),
+            ("Ernte", new[] { "harvest" }),
             ("Wachstum", new[] { "water", "fert", "boost", "auto" }),
             ("Verteidigung", new[] { "combat", "light" }),
             ("Helfer", new[] { "support", "transport", "carrier", "sower", "pipe", "transform" }),

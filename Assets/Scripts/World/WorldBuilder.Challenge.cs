@@ -43,7 +43,7 @@ namespace SeedClicker
             var pool = new List<string>();
             foreach (var p in save.planted) if (MakesProduct(p) && !pool.Contains(p.type)) pool.Add(p.type);
             if (pool.Count == 0)
-                foreach (var c in PlantBalance.I.catalog) if ((c.role == "harvest" || c.role == "bee") && IsUnlocked(c.id)) pool.Add(c.id);
+                foreach (var c in PlantBalance.I.catalog) if (c.role == "harvest" && IsUnlocked(c.id)) pool.Add(c.id);
             if (pool.Count == 0) return;
             if (pool.Count > 1) pool.Remove(save.chType);   // nicht zweimal hintereinander dasselbe
             var r = new System.Random(save.mapSeed + save.nights * 7919);

@@ -195,3 +195,7 @@
 - Gebäude-Plätze blockieren erst, wenn dort ein Gebäude steht. Felder dürfen jetzt auch aufs Pflaster.
 - Gartenfelder (und Bauwerke/Totems) gehen jetzt überall auf der Karte, wo nichts im Weg ist, nicht mehr nur in der gekauften Hoffläche. Die Hoffläche bestimmt nur noch, wo die schimmernden Feld-Vorschläge erscheinen.
 - Gilt weiter: Haus, Werkbank, Waffenbank, Altar, Lieferkiste, Almanach und Klippe blockieren.
+
+## Entfernt (Vereinfachung)
+- Bauwerke Brunnen, Bienenhaus, Schmiede, Treibhaus und Lagerhaus sind raus, ebenso die ganze Honig-Mechanik (Bienenblume, Honiggläser, Upgrade „Königinnen“). Alte Spielstände: diese Bauwerke und Bienenblumen werden beim Laden entfernt (ohne Erstattung).
+- Gießen kommt jetzt nur noch von Tauschilf und Bach.

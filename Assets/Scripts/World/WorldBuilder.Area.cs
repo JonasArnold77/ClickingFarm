@@ -6,7 +6,7 @@ namespace SeedClicker
     /// <summary>
     /// Wirkungsbereich: Ist das Info-Fenster einer Pflanze offen oder wird sie gerade gezogen, leuchten alle Felder in
     /// ihrer Reichweite gruen und durchsichtig – beim Ziehen fuer den Platz unter dem Finger, damit man vorher sieht,
-    /// was sie dort erreicht. Gilt fuer alle Pflanzen mit Reichweite: Wasser, Duenger, Verstaerker, Automatik, Honig,
+    /// was sie dort erreicht. Gilt fuer alle Pflanzen mit Reichweite: Wasser, Duenger, Verstaerker, Automatik,
     /// Licht, Kampf (Schussweite), Stuetzranke und die Helfer.
     /// </summary>
     public partial class WorldBuilder
@@ -30,7 +30,7 @@ namespace SeedClicker
                     case "water": list.AddRange(CrossCells(at, WaterRadiusOf(p))); break;
                     case "auto": list.AddRange(DirCells(p, at, 1)); break;
                     case "fert": Square(list, at, 1); break;
-                    case "boost": case "bee": Square(list, at, 2); break;
+                    case "boost": Square(list, at, 2); break;
                     case "transport": Square(list, at, h.transportRadius); break;
                     case "sower": Square(list, at, h.sowerRadius); break;
                     case "pipe": Square(list, at, h.pipeRadius); break;
