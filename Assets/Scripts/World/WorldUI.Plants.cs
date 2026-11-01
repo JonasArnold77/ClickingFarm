@@ -60,14 +60,17 @@ namespace SeedClicker
 
         Button Btn(Transform parent, string text, Color col, Action onClick, int size = 40)
         {
-            var img = Panel(parent, "Btn", col);
+            var img = UIKit.Rect(parent, "Btn").gameObject.AddComponent<Image>();
+            img.sprite = ButtonStyle; img.type = Image.Type.Sliced; img.color = col;
+            SoftShadow(img, 6f, 0.35f);
             var b = img.gameObject.AddComponent<Button>();
             b.transition = Selectable.Transition.ColorTint;
             var cb = b.colors; cb.disabledColor = new Color(0.7f, 0.7f, 0.7f, 0.6f); b.colors = cb;
             img.gameObject.AddComponent<Juicy>();
             b.onClick.AddListener(() => { Sfx.Play("click"); Haptics.Tap(8); onClick?.Invoke(); });
             var t = UIKit.Txt(img.transform, text, size, Color.white, TextAnchor.MiddleCenter, true, true);
-            t.rectTransform.Stretch(10, 10, 4, 6);
+            t.rectTransform.Stretch(12, 12, 12, 6);   // unten Platz fuer die Lippe
+            var o = t.GetComponent<Outline>(); if (o != null) o.effectColor = new Color(col.r * 0.35f, col.g * 0.3f, col.b * 0.25f, 0.95f);
             return b;
         }
 

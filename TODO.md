@@ -34,3 +34,4 @@
 ## Bekannte Einschränkungen
 - Der Spielstand hat noch keine Versions-Migration (Feld `version` ist vorbereitet).
 - Fenster werden bei jeder Aktion neu aufgebaut; bei sehr langen Listen evtl. optimieren.
+- [ ] Credits-Bildschirm: Schrift „Curse Casual“ (CC-BY-SA 3.0, Jayvee D. Enaguas) nennen.

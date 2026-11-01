@@ -13,8 +13,8 @@ namespace SeedClicker
 
         static Font LoadFont()
         {
-            Font f = null;
-            try { f = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); } catch { }
+            Font f = Resources.Load<Font>("Fonts/CurseCasual");   // verspielte Schrift aus dem Grafikpaket (CC-BY-SA, siehe DECISIONS.md)
+            if (f == null) try { f = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); } catch { }
             if (f == null) try { f = Resources.GetBuiltinResource<Font>("Arial.ttf"); } catch { }
             return f;
         }

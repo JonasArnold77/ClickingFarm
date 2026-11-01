@@ -56,12 +56,7 @@ namespace SeedClicker
             }
         }
 
-        static Image Panel(Transform parent, string name, Color col)
-        {
-            var img = UIKit.Rect(parent, name).gameObject.AddComponent<Image>();
-            img.sprite = Rounded; img.type = Image.Type.Sliced; img.color = col;
-            return img;
-        }
+        static Image Panel(Transform parent, string name, Color col) => StyledPanel(parent, name, col);   // siehe WorldUI.Style
 
         void BuildCanvas()
         {
