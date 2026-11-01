@@ -95,10 +95,9 @@ namespace SeedClicker
     }
     /// <summary>Klicks bis zur naechsten Stufe eines Bauwerks: tapsBase * tapsGrowth^(Stufe-1).</summary>
     [Serializable] public class StructureTapsDef { public float tapsBase = 15f, tapsGrowth = 1.35f; public int maxLevel = 20; }
-    /// <summary>Helfer-Pflanzen: Rankenbahn (transport), Wurzeltraeger (carrier), Pustesamen (sower), Saftrohr (pipe).</summary>
+    /// <summary>Helfer-Pflanzen: Wurzeltraeger (carrier), Pustesamen (sower), Saftrohr (pipe).</summary>
     [Serializable] public class HelperDef
     {
-        public float transportInterval = 2.5f, transportBonus = 1.5f; public int transportRadius = 2;
         public float carrierInterval = 7f; public int carrierWood = 1;
         public float sowerInterval = 4f; public int sowerRadius = 2;
         public int pipeRadius = 2, pipeBonus = 1;
@@ -117,10 +116,19 @@ namespace SeedClicker
             "light" => "Licht", "support" => "Bauhelfer",
             "transport" => "Transport", "carrier" => "Träger", "sower" => "Säer", "pipe" => "Leitung", "transform" => "Verwandlung", _ => "Kampf"
         };
+        static string HarvestDesc(CatalogDef d)
+        {
+            string prod = string.IsNullOrEmpty(d.product) ? d.name : d.product;
+            string s = "Reif: jeder Tipp bringt " + (d.yield > 1 ? d.yield + "× " : "") + prod + ", dazu wächst von selbst nach.";
+            if (d.prod >= 2f) s += " Macht besonders viel von selbst.";
+            else if (d.prod <= 0.5f) s += " Macht kaum etwas von selbst – lohnt sich zum Klicken.";
+            if (d.group > 0f) s += " +" + Mathf.RoundToInt(d.group * 100) + " % je gleicher Nachbar.";
+            return s + " Knollis tragen es zur Lieferkiste.";
+        }
         public static string Desc(CatalogDef d) => d.role switch
         {
             "water" => "Gießt die Felder links, rechts, oben und unten: wachsen doppelt so schnell, Ernte +50 %.",
-            "harvest" => "Reif: jeder Tipp bringt " + (string.IsNullOrEmpty(d.product) ? d.name : d.product) + ", dazu wächst von selbst nach. Knollis tragen es zur Lieferkiste – dort gibt es sofort Geld.",
+            "harvest" => HarvestDesc(d),
             "fert" => "Direkte Nachbarn wachsen schneller und bringen +50 % Münzen.",
             "boost" => "Tipps auf Pflanzen im Umkreis von 2 zählen doppelt.",
             "auto" => "Klickt von selbst das Feld vor sich – schneller mit jeder Stufe.",
@@ -134,7 +142,7 @@ namespace SeedClicker
                 "stone" => "Reif auf einen Mauerabschnitt oder hölzernen Wachturm ziehen: wird ganz zu Stein (Mauern 3× so stabil, Turm trifft härter und weiter).",
                 "thorns" => "Reif auf einen Mauerabschnitt ziehen: der ganze Abschnitt bekommt Dornen – schlagende Zombies verletzen sich.",
                 "heart" => "Reif in ein Steinpult ziehen: die Pflanze darin schießt weiter.",
-                "moon" => "Reif auf Laterne oder Wachturm ziehen: Laterne leuchtet doppelt so weit, Turm schießt doppelt.",
+                "moon" => "Reif auf einen Wachturm ziehen: der Turm schießt doppelt.",
                 "fire" => "Reif auf die Waffenbank ziehen: die gewählte Waffe setzt Zombies in Brand.",
                 "ice" => "Reif auf die Waffenbank ziehen: Treffer der gewählten Waffe verlangsamen Zombies.",
                 "lightning" => "Reif auf die Waffenbank ziehen: Treffer springen als Blitz auf weitere Zombies über.",
@@ -156,6 +164,9 @@ namespace SeedClicker
         public string role = "combat";
         public float cost, value, unlockEarned;
         public int growTaps;   // 0 = Standard (growTaps)
+        // Ernte-Charakter: yield = Stueck pro Ernte-Tipp, prod = Faktor fuer Ernte von selbst, group = Bonus je gleicher
+        // Nachbarpflanze (auch schraeg), taps = Faktor fuer den Wert eines Ernte-Tipps
+        public int yield = 1; public float prod = 1f, group, taps = 1f;
         public bool IsCombat => string.IsNullOrEmpty(role) || role == "combat";
         public string pattern; public int patternLv; public int rangeLv;
         public string projectile; public int projectileLv;

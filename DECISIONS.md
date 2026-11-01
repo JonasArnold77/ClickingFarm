@@ -199,3 +199,12 @@
 ## Entfernt (Vereinfachung)
 - Bauwerke Brunnen, Bienenhaus, Schmiede, Treibhaus und Lagerhaus sind raus, ebenso die ganze Honig-Mechanik (Bienenblume, Honiggläser, Upgrade „Königinnen“). Alte Spielstände: diese Bauwerke und Bienenblumen werden beim Laden entfernt (ohne Erstattung).
 - Gießen kommt jetzt nur noch von Tauschilf und Bach.
+- Doppelte Funktionen bereinigt (Abstimmung 01.11.2026): Rankenbahn raus (nur Knollis bringen Ernte weg), Vogelscheuche raus (Trommelkraut macht dasselbe), Laterne raus (Glühpilz macht dasselbe; Mondblume wirkt nur noch auf den Wachturm). Bewusst behalten: Wachturm + Kampfpflanzen, Tauschilf + Bach + Saftrohr + „Tiefe Wurzeln“, Kompostpilz + Erntetotem + Erntekorb, Klopfwurz + Automatik-Upgrades.
+- Kampfpflanzen von 12 auf 6: je Element eine Grundform (Funkenmais, Glutweizen, Giftrübe) und eine Spezialform mit eigenem Muster (Blitzmais: Kette, Aschenweizen: Flächenexplosion, Sumpfrübe: Giftwolke). Stärker werden sie über Level und Mutationen. Alte Spielstände: entfernte Kampfpflanzen werden zur Spezialform ihres Elements.
+- Erntepflanzen von 2 auf 6 (mehr Erntegüter für Tagesaufgaben), jede mit eigenem Charakter statt „gleich, nur besser“ (neue Katalogfelder `yield`, `prod`, `group`, `taps`):
+  - Radieschen: billig, schnell – der Einstieg
+  - Karotte: jeder Ernte-Tipp bringt 3 Stück (Bündel)
+  - Weißrübe: solide Allrounderin
+  - Salat: +25 % je reifem Salat daneben (auch schräg) – lohnt Salat-Beete; erscheint in „Geboostet durch“
+  - Weizen: Tipps bringen wenig, macht aber 3× so viel von selbst
+  - Mais: kaum etwas von selbst, aber wertvolle Ernte-Tipps

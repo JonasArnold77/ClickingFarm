@@ -189,14 +189,14 @@ namespace SeedClicker
                     break;
                 case "water": s = "Gießt gerade " + wb.WaterTargetCount(p) + " Pflanzen"; break;
                 case "support": s = p.Grown ? wb.SupportSummary(p) : ""; break;
-                case "transport": case "carrier": case "sower": case "pipe": s = p.Grown ? wb.HelperSummary(p) : ""; break;
+                case "carrier": case "sower": case "pipe": s = p.Grown ? wb.HelperSummary(p) : ""; break;
                 case "transform":
                     s = !p.Grown ? "" : def.transform switch
                     {
                         "stone" => "Bereit – zieh sie auf eine Holzmauer oder einen Wachturm",
                         "thorns" => "Bereit – zieh sie auf eine Mauer",
                         "heart" => "Bereit – zieh sie in ein Steinpult",
-                        "moon" => "Bereit – zieh sie auf Laterne oder Wachturm",
+                        "moon" => "Bereit – zieh sie auf einen Wachturm",
                         _ => "Bereit – zieh sie auf die Waffenbank"
                     };
                     break;

@@ -8,7 +8,7 @@ namespace SeedClicker
     /// dort einmal und sind dann verbraucht.
     /// Steinmoos auf einen Mauerabschnitt: alle zusammenhaengenden Holzmauern werden zu Stein (mehrfach so stabil);
     /// auf einen hoelzernen Wachturm: Steinturm. Dornenranke: ganzer Abschnitt bekommt Dornen. Beim Ziehen leuchtet
-    /// der ganze Abschnitt gruen. Wurzelherz ins Pult: mehr Reichweite. Mondblume: Laterne doppelt weit, Turm doppelt.
+    /// der ganze Abschnitt gruen. Wurzelherz ins Pult: mehr Reichweite. Mondblume: Wachturm schiesst doppelt.
     /// Glutbluete / Frostdistel / Blitzkraut / Giftpilz auf die Waffenbank: die gewaehlte Waffe bekommt Feuer, Eis,
     /// Blitz oder Gift – fuer immer; Elemente sammeln sich (gleiches Element nochmal = staerker). Werte in plants.json -> transforms und catalog.transform.
     /// </summary>
@@ -97,7 +97,7 @@ namespace SeedClicker
             var t = TransformOf(p);
             if (t == null) return false;
             var T = PlantBalance.I.Transforms;
-            // Bauwerke: Steinmoos auf hoelzernen Wachturm, Mondblume auf Laterne/Wachturm
+            // Bauwerke: Steinmoos auf hoelzernen Wachturm, Mondblume auf Wachturm
             var sv = StructTarget(t, w);
             if (sv != null)
             {

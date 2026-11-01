@@ -396,7 +396,7 @@ namespace SeedClicker
             ("Ernte", new[] { "harvest" }),
             ("Wachstum", new[] { "water", "fert", "boost", "auto" }),
             ("Verteidigung", new[] { "combat", "light" }),
-            ("Helfer", new[] { "support", "transport", "carrier", "sower", "pipe", "transform" }),
+            ("Helfer", new[] { "support", "carrier", "sower", "pipe", "transform" }),
         };
         int plantTab;
 

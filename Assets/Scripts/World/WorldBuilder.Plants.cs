@@ -424,7 +424,7 @@ namespace SeedClicker
             if (leveling)
             {
                 // Ernte: jeder Tipp legt ein Produkt in den Vorrat (Knollis tragen es zur Lieferkiste)
-                if (MakesProduct(p) && AddProduct(p, 1, ItemValue(p), top + new Vector2(0, 0.2f)))
+                if (MakesProduct(p) && AddProduct(p, Mathf.Max(1, PlantBalance.I.Plant(p.type)?.yield ?? 1), ItemValue(p), top + new Vector2(0, 0.2f)))
                 {
                     CropVfx(p, top, 0.6f);
                     Sfx.Play("harvest", UnityEngine.Random.Range(1.1f, 1.3f), 0.5f);
@@ -726,16 +726,22 @@ namespace SeedClicker
         /// <summary>Umbenannte Pflanzenarten (Weizen wurde Feuer, Glutmais wurde Frostmais).</summary>
         static readonly Dictionary<string, string> RenamedPlants = new Dictionary<string, string>
         {
-            { "glutmais", "funkenmais" }, { "frostmais", "funkenmais" }, { "sonnenmais", "donnermais" },
-            { "frostweizen", "glutweizen" }, { "moosweizen", "funkenweizen" },
-            { "feuerruebe", "sumpfruebe" }, { "eisruebe", "moderruebe" }, { "goldruebe", "seuchenruebe" },
-            { "dornenweizen", "aschenweizen" }, { "kristallweizen", "flammenweizen" },
+            { "glutmais", "funkenmais" }, { "frostmais", "funkenmais" }, { "sonnenmais", "blitzmais" },
+            { "frostweizen", "glutweizen" }, { "moosweizen", "aschenweizen" },
+            { "feuerruebe", "sumpfruebe" }, { "eisruebe", "sumpfruebe" }, { "goldruebe", "sumpfruebe" },
+            { "dornenweizen", "aschenweizen" }, { "kristallweizen", "aschenweizen" },
+            // weniger Kampfpflanzen: je Element eine Grund- und eine Spezialform
+            { "sturmmais", "blitzmais" }, { "donnermais", "blitzmais" },
+            { "funkenweizen", "aschenweizen" }, { "flammenweizen", "aschenweizen" },
+            { "moderruebe", "sumpfruebe" }, { "seuchenruebe", "sumpfruebe" },
         };
         static string Renamed(string id) => id != null && RenamedPlants.TryGetValue(id, out var n) ? n : id;
 
         void MigratePlantIds()
         {
             for (int i = 0; i < save.unlocked.Count; i++) save.unlocked[i] = Renamed(save.unlocked[i]);
+            var seen = new HashSet<string>();
+            save.unlocked.RemoveAll(u => !seen.Add(u));   // nach dem Zusammenlegen keine Doppelten
             save.selectedPlant = Renamed(save.selectedPlant);
             foreach (var p in save.planted) p.type = Renamed(p.type);
         }

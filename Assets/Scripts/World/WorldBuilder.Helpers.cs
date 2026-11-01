@@ -4,8 +4,7 @@ using UnityEngine;
 namespace SeedClicker
 {
     /// <summary>
-    /// Helfer-Pflanzen, die Dinge bewegen: Rankenbahn (erntet reife Ernte-Pflanzen in der Naehe und schickt die Muenzen
-    /// zum Hof), Wurzeltraeger (traegt Holz aus dem Wald zum Haus), Pustesamen (weht Samen auf leere Felder) und
+    /// Helfer-Pflanzen, die Dinge bewegen: Wurzeltraeger (traegt Holz aus dem Wald zum Haus), Pustesamen (weht Samen auf leere Felder) und
     /// Saftrohr (leitet Wasser: Tauschilf in der Naehe giesst weiter). Werte in plants.json -> helpers.
     /// </summary>
     public partial class WorldBuilder
@@ -31,7 +30,6 @@ namespace SeedClicker
             var h = PlantBalance.I.Helpers;
             switch (p.Role)
             {
-                case "transport": { int n = 0; foreach (var q in save.planted) if (q.Grown && MakesProduct(q) && Cheb(p, q) <= h.transportRadius) n++; return n > 0 ? "Bringt die Ernte von " + n + (n == 1 ? " Pflanze" : " Pflanzen") + " zur Lieferkiste · ×" + h.transportBonus.ToString("0.#") : "Keine Ernte-Pflanze in Reichweite"; }
                 case "carrier": return "+" + h.carrierWood + " Holz alle " + HelperInterval(p, h.carrierInterval).ToString("0.#") + " s";
                 case "sower": { var d = PlantBalance.I.Plant(SowType()); return d != null ? "Sät " + d.name + " (" + Num.Short(SeedCost(d)) + " Münzen)" : "Wähle zuerst eine Pflanze"; }
                 case "pipe": { int n = 0; foreach (var q in save.planted) if (q.Grown && q.Role == "water" && Cheb(p, q) <= h.pipeRadius) n++; return n > 0 ? n + " Tauschilf gießt +" + (h.pipeBonus + (p.Lv - 1) / 3) + " Feld weiter" : "Kein Tauschilf in Reichweite"; }
@@ -55,15 +53,14 @@ namespace SeedClicker
             {
                 var p = save.planted[i];
                 if (!p.Grown) continue;
-                float baseT = p.Role == "transport" ? h.transportInterval : p.Role == "carrier" ? h.carrierInterval : p.Role == "sower" ? h.sowerInterval : 0f;
+                float baseT = p.Role == "carrier" ? h.carrierInterval : p.Role == "sower" ? h.sowerInterval : 0f;
                 if (baseT <= 0f) continue;
                 if (!helperTimers.TryGetValue(p, out float t)) t = Random.Range(0.5f, baseT);
                 t -= dt;
                 if (t <= 0f)
                 {
                     t = HelperInterval(p, baseT);
-                    if (p.Role == "transport") Transport(p, h);
-                    else if (p.Role == "carrier") Carry(p, h);
+                    if (p.Role == "carrier") Carry(p, h);
                     else Sow(p, h);
                 }
                 helperTimers[p] = t;
@@ -73,34 +70,6 @@ namespace SeedClicker
         Vector2 HelperTop(PlantedState p) => PlantBase(p) + new Vector2(0, CellSize * 0.8f);
 
         void Nudge(PlantedState p) { if (plantViews.TryGetValue(new Cell(p.x, p.y), out var v)) { v.sy = Mathf.Min(v.sy, -0.06f); v.flash = Mathf.Max(v.flash, 0.25f); } }
-
-        /// <summary>Rankenbahn: eine reife Ernte-Pflanze in der Naehe ernten, Muenze laeuft ueber die Ranke zum Haus.</summary>
-        void Transport(PlantedState p, HelperDef h)
-        {
-            // nimmt den Vorrat einer Ernte-Pflanze in der Naehe und schickt ihn ueber die Ranke zur Lieferkiste
-            PlantedState pick = null; int seen = 0;
-            foreach (var q in save.planted)
-                if (q.stock > 0 && MakesProduct(q) && Cheb(p, q) <= h.transportRadius && Random.Range(0, ++seen) == 0) pick = q;
-            if (pick == null) return;
-            int n = Mathf.Min(pick.stock, 2 + p.Lv);
-            double each = pick.stockValue / Mathf.Max(1, pick.stock);
-            pick.stock -= n; pick.stockValue -= each * n;
-            if (pick.stock <= 0) { pick.stock = 0; pick.stockValue = 0; }
-            double coins = each * n * h.transportBonus;
-            var qc = new Cell(pick.x, pick.y);
-            PunchField(qc, 0.4f);
-            Nudge(pick); Nudge(p);
-            var from = HelperTop(pick);
-            var mid = HelperTop(p);
-            var coin = art.Get("hh_coin");
-            // erst zur Ranke, dann an ihr entlang zum Haus
-            StartCoroutine(Leaf(from, mid, () =>
-            {
-                Sfx.Play("tick", Random.Range(1.5f, 1.7f), 0.2f);
-                var types = new Dictionary<string, int> { { pick.type, n } };
-                StartCoroutine(Leaf(mid, CrateDrop, () => Deposit(n, coins, CrateDrop, types), coin, new Color(1f, 0.85f, 0.3f), 0.2f));
-            }, coin, new Color(1f, 0.85f, 0.3f), 0.18f));
-        }
 
         /// <summary>Wurzeltraeger: Holzscheit fliegt vom naechsten Baum ueber die Pflanze zum Haus.</summary>
         void Carry(PlantedState p, HelperDef h)

@@ -5,7 +5,7 @@ namespace SeedClicker
 {
     /// <summary>
     /// Geboostete Felder: Jedes Feld, das von irgendetwas verstaerkt wird (Totem, Bach, Tauschilf, Duenger, Verstaerker,
-    /// Vogelscheuche), schimmert leicht in der Farbe seiner staerksten Quelle. Faehrt man mit der Maus
+    /// Salat-Gruppe), schimmert leicht in der Farbe seiner staerksten Quelle. Faehrt man mit der Maus
     /// darueber (oder ist die Pflanze darauf geoeffnet), laufen leuchtende Linien von jeder Quelle zum Feld, und eine
     /// kleine Liste neben dem Zeiger sagt, wer was beitraegt.
     /// </summary>
@@ -57,15 +57,10 @@ namespace SeedClicker
                 else if (q.Role == "fert" && Cheb(c, q.x, q.y) <= 1) list.Add(new BoostSource { label = name + ": Dünger, Ernte ×1,5", from = from, col = FertCol });
                 else if (q.Role == "boost" && Cheb(c, q.x, q.y) <= 2) list.Add(new BoostSource { label = name + ": Tipps ×2", from = from, col = BoostCol });
             }
-            foreach (var s in save.structures)
-            {
-                if (!s.placed || IsTotem(s)) continue;
-                var d = PlantBalance.I.Structure(s.id);
-                if (d == null || d.effect != "scare") continue;
-                float r = StructRadius(s);
-                if (r <= 0f || (StructPos(s) - at).sqrMagnitude > r * r) continue;
-                list.Add(new BoostSource { label = d.name + ": " + StructSummary(s).Split('·')[0].Trim(), from = StructPos(s), col = StructCol });
-            }
+            var pc = PlantAt(c);
+            var pd = pc != null ? PlantBalance.I.Plant(pc.type) : null;
+            if (pd != null && pd.group > 0f && GroupMult(pc, pd) > 1f)
+                list.Add(new BoostSource { label = pd.name + "-Gruppe: Ertrag ×" + GroupMult(pc, pd).ToString("0.##"), from = CellCenter(c), col = new Color(0.6f, 1f, 0.5f), noLink = true });
             return list;
         }
 

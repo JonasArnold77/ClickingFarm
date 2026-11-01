@@ -8,7 +8,7 @@ namespace SeedClicker
     /// <summary>
     /// Bauwerke: im Laden (Reiter "Bauwerke") einmal kaufen, dann auf einen freien Platz im Hof setzen. Ein Tipp oeffnet
     /// ihr Fenster, weitere Tipps (oder "Verbessern!") bringen sie Stufe um Stufe weiter – wie Pflanzen und Waffenbank.
-    /// Jedes wirkt im Umkreis (oder ueberall, radius 0): Vogelscheuche, Laterne, Wachturm, Saatgutmuehle, dazu die Totems. Werte in plants.json -> structures und structureTaps.
+    /// Jedes wirkt im Umkreis (oder ueberall, radius 0): Wachturm, Saatgutmuehle, dazu die Totems. Werte in plants.json -> structures und structureTaps.
     /// </summary>
     public partial class WorldBuilder
     {
@@ -43,7 +43,6 @@ namespace SeedClicker
             if (d == null) return 0f;
             float r = d.radius + d.radiusPerLevel * (s.lv - 1);
             if (s.stone && d.effect == "tower") r += PlantBalance.I.Transforms.stoneTowerRange;
-            if (s.moon && d.effect == "light") r *= 2f;   // Mondblume: Laterne leuchtet doppelt so weit
             return r;
         }
 
@@ -100,7 +99,6 @@ namespace SeedClicker
             string where = r > 0 ? " · Umkreis " + r.ToString("0.#") : " · überall";
             switch (d.effect)
             {
-                case "scare": return "Tipps zählen ×" + (1f + v).ToString("0.##") + where;
                 case "light": return "Zombies nehmen +" + Mathf.RoundToInt(v * 100) + " % Schaden" + where + (s.moon ? " · Mondlicht" : "");
                 case "tower": return (s.moon ? "Schießt nachts doppelt, je " : "Schießt nachts für ") + v.ToString("0.#") + " Schaden" + where + (s.stone ? " · Stein" : "");
                 case "seedcost": return "Samen " + Mathf.RoundToInt(Mathf.Min(0.9f, v) * 100) + " % billiger";
@@ -378,18 +376,6 @@ namespace SeedClicker
         {
             switch (id)
             {
-                case "vogelscheuche":
-                    return Circle(x, y, 64, 112, 13, new Color(0.95f, 0.85f, 0.6f), new Color(1f, 0.95f, 0.8f))           // Kopf
-                        ?? Box(x, y, 40, 122, 88, 128, new Color(0.75f, 0.6f, 0.25f), new Color(0.9f, 0.78f, 0.4f))       // Hutkrempe
-                        ?? Box(x, y, 50, 126, 78, 148, new Color(0.75f, 0.6f, 0.25f), new Color(0.9f, 0.78f, 0.4f))       // Hut
-                        ?? Box(x, y, 46, 58, 82, 100, new Color(0.35f, 0.5f, 0.75f), new Color(0.5f, 0.68f, 0.9f))        // Hemd
-                        ?? Box(x, y, 14, 88, 114, 96, Wood, WoodHi)                                                        // Querbalken
-                        ?? Box(x, y, 60, 2, 68, 100, Wood, WoodHi);                                                        // Pfahl
-                case "laterne":
-                    return Circle(x, y, 64, 128, 14, new Color(1f, 0.85f, 0.4f), new Color(1f, 1f, 0.8f))
-                        ?? Box(x, y, 48, 110, 80, 146, new Color(0.25f, 0.25f, 0.28f), new Color(0.4f, 0.4f, 0.45f))
-                        ?? Box(x, y, 60, 4, 68, 112, new Color(0.25f, 0.25f, 0.28f), new Color(0.45f, 0.45f, 0.5f))
-                        ?? Box(x, y, 46, 2, 82, 12, Stone, StoneHi);
                 case "wachturm":
                     return Tri(x, y, 22, 118, 106, 118, 64, 158, Roof, RoofHi)
                         ?? Box(x, y, 26, 100, 102, 118, Wood, WoodHi)                                                       // Plattform

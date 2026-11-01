@@ -31,7 +31,6 @@ namespace SeedClicker
                     case "auto": list.AddRange(DirCells(p, at, 1)); break;
                     case "fert": Square(list, at, 1); break;
                     case "boost": Square(list, at, 2); break;
-                    case "transport": Square(list, at, h.transportRadius); break;
                     case "sower": Square(list, at, h.sowerRadius); break;
                     case "pipe": Square(list, at, h.pipeRadius); break;
                     case "light": Circle(list, at, 2.2f + 0.3f * (p.Lv - 1)); break;
