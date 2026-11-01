@@ -206,6 +206,7 @@ namespace SeedClicker
             public bool gold; public int slot; public readonly Dictionary<string, int> types = new Dictionary<string, int>();
             public readonly List<Sprite> load = new List<Sprite>();                  // Bilder der Ladung (eins je schwebendem Stueck)
             public readonly List<SpriteRenderer> orbit = new List<SpriteRenderer>(); // schweben um den Knolli herum
+            public readonly List<Vector2> lpos = new List<Vector2>(), lvel = new List<Vector2>();   // Ort und Tempo jedes Stuecks (folgt wie an einem Magneten)
         }
 
         const int OrbitMax = 12;
@@ -306,9 +307,13 @@ namespace SeedClicker
                     {
                         if (q.stock <= 0 || !InBed(k, q) || (PilePos(q) - k.pos).sqrMagnitude > range * range) continue;
                         var qspr = plantViews.TryGetValue(new Cell(q.x, q.y), out var qv) && qv.sr != null ? qv.sr.sprite : null;
-                        for (int i = 0; i < Mathf.Min(q.stock, 6) && flies < 18; i++, flies++)
-                            StartCoroutine(Leaf(ScatterPos(q, i), k.pos + new Vector2(0, 0.5f), null, qspr, null, 0.15f));
-                        for (int i = 0; i < q.stock && k.load.Count < OrbitMax; i++) k.load.Add(qspr);
+                        // jedes Stueck loest sich aus dem Haufen und wird vom Knolli angezogen (Startpunkt = sein Platz im Haufen)
+                        for (int i = 0; i < q.stock && k.load.Count < OrbitMax; i++, flies++)
+                        {
+                            k.load.Add(qspr);
+                            k.lpos.Add(i < PileShown ? ScatterPos(q, i) : PilePos(q));
+                            k.lvel.Add(new Vector2(UnityEngine.Random.Range(-0.6f, 0.6f), UnityEngine.Random.Range(1.2f, 2.2f)));   // kleiner Hopser beim Losreissen
+                        }
                         k.carry += q.stock; k.carryValue += q.stockValue;
                         k.types.TryGetValue(q.type, out int had); k.types[q.type] = had + q.stock;
                         q.stock = 0; q.stockValue = 0;
@@ -338,7 +343,7 @@ namespace SeedClicker
                 k.body.sortingOrder = Order(k.pos.y) + 1;
                 if (k.shadow != null) { k.shadow.transform.position = k.pos + new Vector2(0.03f, 0.01f); }
                 k.item.enabled = false;
-                DrawOrbit(k, hop);
+                DrawOrbit(k, hop, dt);
             }
 
             UpdateKnolliJobs(dt);
@@ -368,7 +373,7 @@ namespace SeedClicker
         }
 
         /// <summary>Die Ernte schwebt beim Tragen frei um den Knolli herum (vorn davor, hinten dahinter).</summary>
-        void DrawOrbit(Knolli k, float hop)
+        void DrawOrbit(Knolli k, float hop, float dt)
         {
             int n = k.carry > 0 ? k.load.Count : 0;
             while (k.orbit.Count < n)
@@ -383,11 +388,27 @@ namespace SeedClicker
                 sr.enabled = i < n && k.load[i] != null;
                 if (!sr.enabled) continue;
                 sr.sprite = k.load[i];
-                var p = OrbitPos(k, i, n, hop, out bool front);
+                var goal = OrbitPos(k, i, n, hop, out bool front);
+                // Magnet-Folgen: Feder zum Platz in der Wolke, mit Nachziehen – weit weg zieht es staerker
+                while (k.lpos.Count <= i) { k.lpos.Add(goal); k.lvel.Add(Vector2.zero); }
+                var p = k.lpos[i]; var vel = k.lvel[i];
+                float h = Mathf.Min(dt, 0.05f);
+                var d = goal - p;
+                float pull = 26f + 40f * Mathf.Clamp01(d.magnitude - 0.4f);
+                vel += (d * pull - vel * 6.5f) * h;
+                if (vel.sqrMagnitude > 49f) vel = vel.normalized * 7f;
+                p += vel * h;
+                k.lpos[i] = p; k.lvel[i] = vel;
+                float spd = vel.magnitude;
+                float stretch = 1f + Mathf.Min(0.45f, spd * 0.08f);
                 float s = (front ? 0.19f : 0.15f) / Mathf.Max(0.01f, sr.sprite.bounds.size.x);
                 sr.transform.position = p;
-                sr.transform.localScale = Vector3.one * s;
-                sr.transform.rotation = Quaternion.Euler(0, 0, Mathf.Sin(Time.time * 4f + i) * 20f);
+                // in Bewegungsrichtung gestreckt und geneigt, in Ruhe sanftes Wiegen
+                float ang = spd > 0.3f ? Mathf.Atan2(vel.y, vel.x) * Mathf.Rad2Deg - 90f : 0f;
+                sr.transform.rotation = Quaternion.Euler(0, 0, Mathf.LerpAngle(Mathf.Sin(Time.time * 4f + i) * 20f, ang, Mathf.Clamp01(spd * 0.4f)));
+                sr.transform.localScale = new Vector3(s / Mathf.Sqrt(stretch), s * stretch, 1f);
+                if (spd > 2f && UnityEngine.Random.value < 0.3f)
+                    Particles.I?.Spawn(p, "spark", new Color(1f, 0.92f, 0.6f, 0.7f), Vector3.zero, 0.3f, 0.045f, 0f, 0f);
                 sr.sortingOrder = k.body.sortingOrder + (front ? 2 : -1);
                 sr.color = front ? Color.white : new Color(0.85f, 0.85f, 0.85f);
                 if (UnityEngine.Random.value < 0.04f)
@@ -409,13 +430,13 @@ namespace SeedClicker
                 for (int i = 0; i < k.load.Count; i++)
                 {
                     if (k.load[i] == null) continue;
-                    var from = OrbitPos(k, i, k.load.Count, 0f, out _);
+                    var from = i < k.lpos.Count ? k.lpos[i] : OrbitPos(k, i, k.load.Count, 0f, out _);
                     bool last = ++idx == m;
                     int step = idx;
                     StartCoroutine(IntoCrate(from, k.load[i], (idx - 1) * 0.07f, step, last ? () => { Deposit(n, value, cratePos, types); CrateStorm(n); } : (Action)null));
                 }
             }
-            k.carry = 0; k.carryValue = 0; k.types.Clear(); k.load.Clear(); k.item.sprite = null;
+            k.carry = 0; k.carryValue = 0; k.types.Clear(); k.load.Clear(); k.lpos.Clear(); k.lvel.Clear(); k.item.sprite = null;
             foreach (var sr in k.orbit) sr.enabled = false;
         }
 
