@@ -347,15 +347,22 @@ namespace SeedClicker
 
         // ------------------------------------------------------------------ Schwebende Ladung und Effektgewitter
 
+        /// <summary>Freies Schweben: jedes Stueck treibt auf eigener, ruhiger Zufallsbahn in einer Wolke um den Knolli.</summary>
         Vector2 OrbitPos(Knolli k, int i, int n, float hop, out bool front)
         {
-            float rx = 0.3f + 0.012f * n, ry = rx * 0.42f;
-            float a = Time.time * 2.4f + i * Mathf.PI * 2f / n + k.slot;
-            front = Mathf.Sin(a) < 0f;   // untere Haelfte der Bahn ist naeher am Betrachter
-            return k.pos + new Vector2(Mathf.Cos(a) * rx, 0.3f + hop + Mathf.Sin(a) * ry + Mathf.Sin(Time.time * 3f + i) * 0.03f);
+            float rx = 0.34f + 0.012f * n, ry = 0.24f + 0.008f * n;
+            // Grundplatz in der Wolke (gleichmaessig verteilt), dazu eigenes Treiben mit krummen Frequenzen
+            float a0 = i * 2.39996f + k.slot * 1.3f, r0 = Mathf.Sqrt((i + 0.5f) / Mathf.Max(1, n));
+            float h1 = Mathf.Repeat(i * 0.6180339f + k.slot * 0.37f, 1f), h2 = Mathf.Repeat(i * 0.4142f + k.slot * 0.71f, 1f), t = Time.time;
+            float nx = Mathf.Cos(a0) * r0 + Mathf.Sin(t * (0.9f + h1) + h2 * 6.3f) * 0.38f + Mathf.Sin(t * (2.1f + h2) + h1 * 4f) * 0.12f;
+            float ny = Mathf.Sin(a0) * r0 + Mathf.Sin(t * (0.7f + h2) + h1 * 6.3f) * 0.38f + Mathf.Cos(t * (1.7f + h1) + h2 * 4f) * 0.12f;
+            float m = Mathf.Sqrt(nx * nx + ny * ny);
+            if (m > 1f) { nx /= m; ny /= m; }   // in der Wolke bleiben
+            front = ny < 0f;   // unten = naeher am Betrachter
+            return k.pos + new Vector2(nx * rx, 0.32f + hop + ny * ry);
         }
 
-        /// <summary>Die Ernte schwebt beim Tragen im Kreis um den Knolli (vorn davor, hinten dahinter).</summary>
+        /// <summary>Die Ernte schwebt beim Tragen frei um den Knolli herum (vorn davor, hinten dahinter).</summary>
         void DrawOrbit(Knolli k, float hop)
         {
             int n = k.carry > 0 ? k.load.Count : 0;
