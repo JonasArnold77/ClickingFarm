@@ -219,3 +219,8 @@
 ## Oberflächen-Stil
 - `WorldUI.Style.cs`: Alle Flächen laufen über `Panel()`/`Btn()` und bekommen den Spielstil: dunkle Farben → Holzschild (Maserung, heller Rand, Lichtkante), helle Farben → Pergament (cremig, warmer Rand, brauner Rahmen), Knöpfe → gewölbt (Glanzkante oben, dunklere Unterlippe, Kontur, Textkontur in dunklerer Knopffarbe); alle mit weichem Schlagschatten. Die Bilder werden im Code gemalt (9-Slice).
 - Schrift: „Curse Casual“ aus dem HappyHarvest-Paket, nach `Resources/Fonts/CurseCasual.ttf` kopiert. Lizenz CC-BY-SA 3.0, Autor Jayvee D. Enaguas (Grand Chaos) – muss in den Credits genannt werden. Umlaute sind enthalten; ●, ○ und → fehlen (fallen auf eine Systemschrift zurück).
+
+## Festung
+- Bewusst nicht: Trampelpfade, Wachen auf der Mauer, Fahnen in Totemfarbe (Abstimmung 01.11.2026).
+- **Tore** (`WorldBuilder.Gates.cs`): Im Mauer-Modus zweimal auf ein Mauerstück tippen → Tor (Holz- oder Steinbogen mit beschlagener Doppeltür, passend zur Mauer; wird mit Steinmoos zum Steintor). Zweimal auf ein Tor → abbauen. Tore halten ×1,5 aus, tragen aber keine Pflanze und kein Steinpult.
+- Knollis laufen nicht mehr durch Mauern: Sie suchen sich einen Weg (Breitensuche auf dem Raster, keine Mauerecken abschneiden) und gehen durch Tore. Ist ihr Ziel ganz eingemauert, bleiben sie stehen und rufen „Ich komme nicht durch – bau ein Tor!“. Zombies schlagen weiterhin auf Mauer und Tor ein.

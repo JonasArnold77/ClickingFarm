@@ -106,9 +106,9 @@ namespace SeedClicker
             var a = wallAnchor.Value;
             if (c.Equals(a) && walls.TryGetValue(a, out var v))
             {
-                // zweimal dieselbe Mauer: abbauen (nur leer)
-                if (PlantAt(a) == null && !HasPedestal(a)) { RemoveWall(a, v, false); RefundWallWood(CellCenter(a) + new Vector2(0, 0.5f)); }
-                else Sfx.Play("error", 1f, 0.5f);
+                // zweimal dieselbe Mauer: wird zum Tor; zweimal dasselbe Tor: abbauen
+                if (!v.st.gate) MakeGate(a, v);
+                else { RemoveWall(a, v, false); RefundWallWood(CellCenter(a) + new Vector2(0, 0.5f)); }
                 CancelWallPlan();
                 save.Save();
                 return true;

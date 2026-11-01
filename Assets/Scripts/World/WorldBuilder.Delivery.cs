@@ -288,11 +288,14 @@ namespace SeedClicker
                 }
                 if (k.state == 1) k.target = PilePos(k.goal) + new Vector2(0.12f, -0.05f);   // Pflanze kann umgetopft werden
 
-                var d = k.target - k.pos;
+                // Weg um Mauern herum, durch Tore
+                var aim = RouteAim(k, k.pos, k.target, dt, out bool walled);
+                if (walled && k.state != 0) KnolliWalledIn(k, dt);
+                var d = aim - k.pos;
                 float dist = d.magnitude;
                 float speed = D.knolliSpeed * (k.state == 0 ? 0.4f : 1f) * (k.gold ? 1.6f : 1f) * (HasPerk("stiefel") ? 1.3f : 1f);
-                bool moving = dist > 0.04f;
-                if (moving)
+                bool moving = !walled && (k.target - k.pos).magnitude > 0.04f;
+                if (moving && dist > 0.0001f)
                 {
                     k.pos += d / dist * Mathf.Min(dist, speed * dt);
                     k.walkT += dt * 10f;

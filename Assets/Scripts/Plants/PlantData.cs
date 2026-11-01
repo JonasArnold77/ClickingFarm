@@ -422,7 +422,7 @@ namespace SeedClicker
     /// <summary>Wann ein Baum gefaellt wurde (Nacht-Zaehler), fuers Nachwachsen.</summary>
     [Serializable] public class TreeFell { public int id, night; }
 
-    [Serializable] public class WallState { public int x, y; public float hp; public bool stone; public int thorns; }
+    [Serializable] public class WallState { public int x, y; public float hp; public bool stone; public int thorns; public bool gate; }
     /// <summary>Ein Steinpult (Spielstand): auf dem Boden oder auf einer Mauer.</summary>
     [Serializable] public class PedestalState { public int x, y; public int heart; }
 

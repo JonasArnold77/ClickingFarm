@@ -167,7 +167,7 @@ namespace SeedClicker
         // ------------------------------------------------------------------ Einsetzen / Ausgraben
 
         /// <summary>Feld oder Mauerplatz, auf dem eine Pflanze stehen kann.</summary>
-        public bool IsSlot(Cell c) => (HasField(c) || HasWall(c) || HasPedestal(c)) && !HasStructure(c);
+        public bool IsSlot(Cell c) => (HasField(c) || HasWall(c) || HasPedestal(c)) && !HasStructure(c) && !HasGate(c);   // auf Toren waechst nichts
 
         /// <summary>Passt diese Pflanze auf diesen Platz? Ins Steinpult nur Kampf- und Verteidigungspflanzen.</summary>
         public bool Fits(Cell c, string type, bool tell)

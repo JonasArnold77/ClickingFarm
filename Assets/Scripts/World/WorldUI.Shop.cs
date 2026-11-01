@@ -65,7 +65,7 @@ namespace SeedClicker
             {
                 wallBtnText.text = on ? "Fertig" : "Mauer bauen";
                 wallBtnImg.color = on ? new Color(0.85f, 0.6f, 0.25f) : new Color(0.62f, 0.45f, 0.28f);
-                hintText.text = on ? "Mauer: Klick setzt den Anfang, die grüne Mauer folgt dir – nächster Klick baut sie (" + PlantBalance.I.Wall.wood.ToString("0.##") + " Holz je Stück). Zweimal auf eine leere Mauer: abbauen" : ToolHint(WorldCamera.Tool);
+                hintText.text = on ? "Mauer: Klick setzt den Anfang, die grüne Mauer folgt dir – nächster Klick baut sie (" + PlantBalance.I.Wall.wood.ToString("0.##") + " Holz je Stück). Zweimal auf eine Mauer: Tor, zweimal auf ein Tor: abbauen" : ToolHint(WorldCamera.Tool);
             };
 
             wbi.OfflineEarned += OpenWelcomeBack;

@@ -33,7 +33,7 @@ namespace SeedClicker
         };
 
         /// <summary>Haltbarkeit einer Mauer: Stein haelt ein Vielfaches.</summary>
-        float MaxHp(WallState st) => WallMaxHp * (st.stone ? PlantBalance.I.Transforms.stoneHpMult : 1f);
+        float MaxHp(WallState st) => WallMaxHp * (st.stone ? PlantBalance.I.Transforms.stoneHpMult : 1f) * (st.gate ? GateHpMult : 1f);
 
         /// <summary>Alle Elemente der Waffe – sie bleiben fuer immer und sammeln sich.</summary>
         public List<WeaponElementLv> WeaponElements(string id)
@@ -355,7 +355,7 @@ namespace SeedClicker
                 if (!walls.TryGetValue(c, out var v) || v.st.stone) continue;
                 v.st.stone = true;
                 v.st.hp = MaxHp(v.st);
-                v.sr.sprite = StoneWallSprite;
+                v.sr.sprite = WallLook(v.st);
                 v.pop = 0.6f;
                 StartCoroutine(StoneFx(CellCenter(c) + new Vector2(0, WallH * 0.6f), Mathf.Min(n, 20) * 0.05f));
                 n++;

@@ -122,11 +122,12 @@ namespace SeedClicker
             var sr = new GameObject("Wall").AddComponent<SpriteRenderer>();
             sr.transform.SetParent(objects, false);
             sr.transform.position = WallFoot(c);
-            sr.sprite = st.stone ? StoneWallSprite : WallSprite;
+            sr.sprite = WallLook(st);
             // sortiert knapp hinter der Vorderkante: Zombies davor bleiben vorn, alles in der Zelle dahinter liegt hinten;
             // Pflanzen obendrauf sortieren nach ihrem Fuss auf dem Boden (PlantSortY) und bleiben damit vorn
             sr.sortingOrder = Order(WallFoot(c).y + 0.1f);
             var v = new WallView { st = st, sr = sr, pop = fx ? 0f : 1f };
+            wallVersion++;
             ApplyThornLook(v);
             walls[c] = v;
             RefreshThornsAround(c);
@@ -150,6 +151,7 @@ namespace SeedClicker
             RemovePedestal(c, false);    // ein Pult obendrauf auch
             if (v.sr != null) Destroy(v.sr.gameObject);
             walls.Remove(c);
+            wallVersion++;
             RefreshThornsAround(c);
             save.walls.Remove(v.st);
             RefreshGhosts();

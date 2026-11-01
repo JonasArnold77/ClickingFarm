@@ -50,7 +50,7 @@ namespace SeedClicker
             foreach (var p in save.pedestals) CreatePedestalView(p, false);
         }
 
-        public bool CanPlacePedestal(Cell c) => !HasPedestal(c) && PlantAt(c) == null && !HasStructure(c) && (HasWall(c) || CanPlaceWall(c));
+        public bool CanPlacePedestal(Cell c) => !HasPedestal(c) && PlantAt(c) == null && !HasStructure(c) && !HasGate(c) && (HasWall(c) || CanPlaceWall(c));
 
         bool BuildPedestal(Cell c, bool quietNoMoney)
         {
