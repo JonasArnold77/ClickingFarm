@@ -296,3 +296,4 @@
   - Dauereffekte hören erst auf auszustoßen und klingen dann aus, statt hart zu verschwinden.
 - Größe: mit der Element-Stufe größer. Pistole ×1, Schrotflinte ×1,2 (eine Flamme an der Zielstelle, nicht je Schrotkugel), Pfeil ×0,9, Granate ×1,7.
 - Nur Optik; Schaden und Wirkung der Elemente bleiben wie bisher (`NightWave.Weapons.cs → GroundFire`).
+- **Zombies tragen den Effekt mit**, solange der Zustand anhält, egal ob von Waffe oder Kampfpflanze: Brennen → Flamme am Körper („flame“), Eis/verlangsamt → blauer Frostschimmer („CFXR Magical Source“ blau gefärbt, `magicalSource`), Gift → grüne Gaswolke („gasLeak“), Blitz → knisternder Strom („electrified“, 0,9 s nach dem Treffer, 0,6 s bei übergesprungenen Zombies). Die Effekte folgen dem Zombie und wandern in der Tiefe mit. Endet der Zustand oder stirbt der Zombie, klingen sie aus.

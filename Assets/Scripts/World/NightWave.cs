@@ -35,6 +35,8 @@ namespace SeedClicker
             public Sprite[] walk; public float animT; public Color tint = Color.white;
             public Vector2 pos; public float hp, maxHp, hop, hitFlash;
             public float slowT, slowAmt, burnT, burnDps, poisonT, poisonDps; public int poisonStacks;
+            public float shockT;   // vom Blitz getroffen: knistert kurz
+            public GameObject fxBurn, fxIce, fxPoison, fxShock;   // Element-Effekte, die der Zombie mit sich traegt
             public Vector2 knock;
             public bool dead;
             public float bashT;   // schlaegt gerade auf eine Mauer ein
@@ -498,6 +500,8 @@ namespace SeedClicker
                     m.sr.color = Color.Lerp(c, new Color(1f, 0.35f, 0.3f), m.hitFlash);
                 }
                 if (m.burnT > 0 && rnd.NextDouble() < dt * 10) Particles.I?.Spawn(m.pos + new Vector2(0, 0.4f), "square", new Color(1f, 0.6f, 0.2f), new Vector3(0, 1.2f, 0), 0.5f, 0.6f, 0f, 0f);
+                if (m.shockT > 0) m.shockT -= dt;
+                UpdateStatusFx(m);
             }
         }
 
@@ -1103,6 +1107,7 @@ namespace SeedClicker
                 WorldFx.Play("poof", m.pos + new Vector2(0, 0.35f), 0.18f, WorldBuilder.Order(m.pos.y) + 5);
                 Sfx.Play("break", 1.4f, 0.6f);
             }
+            ClearStatusFx(m);
             if (m.root != null) Destroy(m.root.gameObject);
         }
 

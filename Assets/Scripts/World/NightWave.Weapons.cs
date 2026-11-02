@@ -216,6 +216,40 @@ namespace SeedClicker
             }
         }
 
+        // ------------------------------------------------------------------ Element-Effekte am Zombie
+
+        /// <summary>Solange ein Zombie brennt, vereist, vergiftet oder unter Strom ist, traegt er den passenden Cartoon-FX-Effekt mit:
+        /// Flamme, blauer Frostschimmer, gruene Gaswolke, Knistern. Endet der Zustand, klingt der Effekt aus.</summary>
+        void UpdateStatusFx(Monster m)
+        {
+            float s = m.size;
+            var body = m.pos + new Vector2(0, 0.38f * s);
+            StatusFx(ref m.fxBurn, m.burnT > 0, "flame", body + new Vector2(0, 0.05f), 0.13f * s, null, m);
+            StatusFx(ref m.fxIce, m.slowT > 0, "magicalSource", body, 0.16f * s, new Color(0.55f, 0.85f, 1f, 1f), m);
+            StatusFx(ref m.fxPoison, m.poisonT > 0, "gasLeak", body - new Vector2(0, 0.2f * s), 0.08f * s, new Color(0.6f, 1f, 0.35f, 0.85f), m);
+            StatusFx(ref m.fxShock, m.shockT > 0, "electrified", body, 0.16f * s, null, m);
+        }
+
+        void StatusFx(ref GameObject fx, bool on, string name, Vector2 pos, float scale, Color? tint, Monster m)
+        {
+            int order = WorldBuilder.Order(m.pos.y) + 4;   // vor dem Zombie
+            if (on && fx == null) fx = WorldFx.Play(name, pos, scale, order, tint, null, 600f);
+            if (fx == null) return;
+            if (!on) { Burning(fx, 0f); Destroy(fx, 1.5f); fx = null; return; }
+            fx.transform.position = new Vector3(pos.x, pos.y, 0f);
+            // mit dem Zombie in der Tiefe mitwandern (Reihenfolge der Teile bleibt erhalten)
+            var rs = fx.GetComponentsInChildren<ParticleSystemRenderer>();
+            for (int i = 0; i < rs.Length; i++) rs[i].sortingOrder = order + i;
+        }
+
+        /// <summary>Zombie ist weg: alle mitgetragenen Effekte ausklingen lassen.</summary>
+        void ClearStatusFx(Monster m)
+        {
+            foreach (var fx in new[] { m.fxBurn, m.fxIce, m.fxPoison, m.fxShock })
+                if (fx != null) { Burning(fx, 0f); Destroy(fx, 1.5f); }
+            m.fxBurn = m.fxIce = m.fxPoison = m.fxShock = null;
+        }
+
         /// <summary>Dauer-Effekt (Feuer, Gas, Strom) nach kurzer Zeit ausklingen lassen statt hart abzuschneiden.</summary>
         void Burning(GameObject fx, float seconds)
         {
@@ -242,6 +276,7 @@ namespace SeedClicker
                 case "poison": AddPoison(m, dmg * 0.12f * lv, 1); break;
                 case "lightning":
                     {
+                        m.shockT = Mathf.Max(m.shockT, 0.9f);
                         var ex = new HashSet<Monster> { m };
                         var cur = m;
                         for (int i = 0; i < 1 + lv / 2; i++)
@@ -251,6 +286,7 @@ namespace SeedClicker
                             ex.Add(next);
                             Beam(Center(cur), Center(next), col);
                             Damage(next, dmg * 0.5f, null);
+                            next.shockT = Mathf.Max(next.shockT, 0.6f);
                             cur = next;
                         }
                         break;
