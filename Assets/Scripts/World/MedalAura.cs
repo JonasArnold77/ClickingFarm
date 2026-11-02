@@ -1,27 +1,29 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace SeedClicker
 {
     /// <summary>
-    /// Comic-Kontur in Medaillenfarbe (Bronze, Silber, Gold) um ein Bild: um die Ernte-Pflanze selbst und um
+    /// Feste Comic-Linie in Medaillenfarbe (Bronze, Silber, Gold) um ein Bild: um die Ernte-Pflanze selbst und um
     /// jedes einzelne Erntestueck (fliegend, im Haufen, beim Knolli, auf dem Weg in die Kiste).
-    /// Ganz einfach: unter dem Bild liegen zwei etwas groessere Kopien derselben Form, einfarbig gefuellt –
-    /// innen die Medaillenfarbe, ganz aussen ein dunkler Tuschestrich. Was ueber das Bild hinaussteht, ist die Kontur.
+    /// Klassische Sprite-Kontur: Unter dem Bild liegen einfarbige Kopien seiner Form, rundherum um eine feste Strecke
+    /// versetzt (Pflanze 16 Richtungen, Erntestueck 8). Zusammen ergeben sie eine gleichmaessig dicke, glatte Linie,
+    /// die sich genau an die Aussenlinie legt – egal wie gross das Bild ist.
     /// Einfarbig fuellt der eingebaute Shader "GUI/Text Shader" (Farbe vom SpriteRenderer, Form aus dem Alpha des Bildes).
     /// Haengt als Komponente am Bild und folgt ihm selbst (Bild, sichtbar, Reihenfolge) – Aufrufer setzen nur die Stufe.
     /// </summary>
     public class MedalAura : MonoBehaviour
     {
-        const float ColorGrow = 1.09f, InkGrow = 1.14f;   // so viel groesser als das Bild (um seine Mitte)
-
-        SpriteRenderer host, fill, ink;
-        int level;
-        float strength = 1f;
+        SpriteRenderer host;
+        readonly List<SpriteRenderer> copies = new List<SpriteRenderer>();
+        int level, dirs = 16;
+        float width = 0.035f;   // Linienbreite in Welt-Einheiten
         static Material silhouetteMat;
         static bool shaderLooked;
 
-        /// <summary>Stufe setzen (unter 2 = keine Kontur). strength: Deckkraft.</summary>
-        public static void Set(SpriteRenderer host, int level, float strength = 1f)
+        /// <summary>Stufe setzen (unter 2 = keine Linie). width: Linienbreite in Welt-Einheiten, dirs: Zahl der Kopien
+        /// (mehr = glatter; fuer viele kleine Erntestuecke reichen 8).</summary>
+        public static void Set(SpriteRenderer host, int level, float width = 0.035f, int dirs = 16)
         {
             if (host == null) return;
             var a = host.GetComponent<MedalAura>();
@@ -31,45 +33,44 @@ namespace SeedClicker
                 a = host.gameObject.AddComponent<MedalAura>();
                 a.host = host;
             }
-            a.level = level; a.strength = strength;
+            a.level = level; a.width = width; a.dirs = Mathf.Clamp(dirs, 4, 24);
         }
 
         void LateUpdate()
         {
             bool on = host != null && host.enabled && host.sprite != null && level >= 2 && Mat != null;
-            if (!on) { Show(false); return; }
-            if (fill == null) { ink = Make("MedalInk"); fill = Make("MedalColor"); }
-            Show(true);
+            if (!on) { Show(0); return; }
+            while (copies.Count < dirs) copies.Add(Make());
+            Show(dirs);
+
             var c = WorldBuilder.MedalColor(level);
-            Layer(fill, ColorGrow, new Color(c.r, c.g, c.b, strength), 1);
-            Layer(ink, InkGrow, new Color(c.r * 0.3f, c.g * 0.25f, c.b * 0.2f, strength), 2);
+            var col = new Color(c.r, c.g, c.b, 1f);
+            // feste Breite in der Welt, umgerechnet in die (skalierte) Einheit des Bildes
+            var ls = host.transform.lossyScale;
+            float rx = width / Mathf.Max(0.0001f, Mathf.Abs(ls.x)), ry = width / Mathf.Max(0.0001f, Mathf.Abs(ls.y));
+            for (int i = 0; i < dirs; i++)
+            {
+                var sr = copies[i];
+                float ang = i * Mathf.PI * 2f / dirs;
+                sr.sprite = host.sprite;
+                sr.flipX = host.flipX; sr.flipY = host.flipY;
+                sr.transform.localPosition = new Vector3(Mathf.Cos(ang) * rx, Mathf.Sin(ang) * ry, 0f);
+                sr.color = col;
+                sr.sortingLayerID = host.sortingLayerID;
+                sr.sortingOrder = host.sortingOrder - 1;   // unter dem Bild: nur der Rand ragt heraus
+            }
         }
 
-        /// <summary>Kopie der Form, um die Bildmitte vergroessert, direkt unter dem Bild.</summary>
-        void Layer(SpriteRenderer sr, float grow, Color col, int below)
+        void Show(int n)
         {
-            var spr = host.sprite;
-            sr.sprite = spr;
-            sr.flipX = host.flipX; sr.flipY = host.flipY;
-            var bc = (Vector2)spr.bounds.center;
-            sr.transform.localPosition = bc * (1f - grow);
-            sr.transform.localScale = new Vector3(grow, grow, 1f);
-            sr.color = col;
-            sr.sortingLayerID = host.sortingLayerID;
-            sr.sortingOrder = host.sortingOrder - below;
+            for (int i = 0; i < copies.Count; i++) if (copies[i] != null) copies[i].enabled = i < n;
         }
 
-        void Show(bool on)
-        {
-            if (fill != null) fill.enabled = on;
-            if (ink != null) ink.enabled = on;
-        }
+        void OnDisable() => Show(0);
 
-        void OnDisable() => Show(false);
-
-        SpriteRenderer Make(string name)
+        SpriteRenderer Make()
         {
-            var sr = new GameObject(name).AddComponent<SpriteRenderer>();
+            var sr = new GameObject("MedalLine").AddComponent<SpriteRenderer>();
             sr.transform.SetParent(host.transform, false);
             sr.sharedMaterial = Mat;
             return sr;
