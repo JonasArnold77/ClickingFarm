@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System;
 using UnityEngine;
 using UnityEngine.UI;
@@ -75,7 +76,7 @@ namespace SeedClicker
             wbi.PlantUnlocked += id =>
             {
                 var d = PlantBalance.I.Plant(id);
-                if (d != null && !d.IsCombat) Banner("Neue Pflanze: " + d.name, Roles.Name(d.role) + " – " + Roles.Desc(d));
+                if (d != null && !d.IsCombat) Banner("Neue Pflanze: " + d.name, Helps(d));
                 RefreshGoal();
             };
         }
@@ -135,7 +136,14 @@ namespace SeedClicker
                     var uu = u;
                     ShopRow(content, u.name, u.desc, Num.Short(u.cost), wbi.Coins >= u.cost, () => { if (wbi.BuyUpgrade(uu)) OpenShop(0); });
                 }
-                if (!any) Label(content, "Gerade nichts – verdiene mehr Münzen, dann gibt es neue Verbesserungen.", 30, InkSoft, TextAnchor.MiddleCenter).LE(-1, 120);
+                if (!any) Label(content, "Gerade nichts zu kaufen – die nächsten Verbesserungen stehen unten.", 30, InkSoft, TextAnchor.MiddleCenter).LE(-1, 120);
+                // die naechsten zwei gesperrten: was sie bringen und ab wann es sie gibt (man sieht immer, was kommt)
+                var soon = new List<ShopUpgradeDef>();
+                foreach (var u in PlantBalance.I.upgrades) if (!wbi.HasUpgrade(u.id) && wbi.Earned < u.unlockEarned) soon.Add(u);
+                soon.Sort((x, y) => x.unlockEarned.CompareTo(y.unlockEarned));
+                for (int i = 0; i < soon.Count && i < 2; i++)
+                    ShopRow(content, soon[i].name + " (bald)", soon[i].desc + "\nAb " + Num.Short(soon[i].unlockEarned) + " verdienten Münzen – jetzt " + Num.Short(wbi.Earned),
+                        Num.Short(soon[i].cost), false, () => Sfx.Play("error", 1.1f, 0.4f));
                 int owned = wbi.Save.upgrades.Count;
                 if (owned > 0) Label(content, "Gekauft: " + owned, 28, InkSoft, TextAnchor.MiddleCenter).LE(-1, 60);
             }

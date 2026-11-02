@@ -307,3 +307,13 @@
 - **Nächte:** Pro Welle +3 Zombies (vorher +2) und +40 % Lebenspunkte (vorher +25 %). Fällt das Haus, **zertrampeln** die durchgekommenen Zombies Ernte-Pflanzen am Haus, eine je übrigem Zombie (höchstens 8, `waves.trampleMax`). Diese Pflanzen werden wieder zum Samen, ihre liegende Ernte ist weg und sie verlieren eine Medaille. Dazu kommt der Holzverlust wie bisher. Das Ergebnisfenster zeigt „Zertrampelte Pflanzen: n“. Weil Waffen nur noch ×0,4 treffen, braucht man genug Kampfpflanzen und Mauern, also Platz.
 - **Freischaltungen an Hofgröße:** Jede Pflanze ab Weißrübe braucht neben den Münzen eine Mindestzahl an Feldern (`unlockFields`, etwa 6 + 1,1 × Ziel-Minute): Weißrübe 9, Salat 14, Weizen 19, Mais 28 … Saftrohr 54. Die Zielanzeige sagt „bei 28 Feldern (19) – bau aus!“, wenn nur noch Felder fehlen. Ein neues Feld prüft sofort, ob etwas frei wird.
 - **Große Aufträge:** Die Tagesmengen wachsen jeden Tag um 50 % der Grundmenge (Tag 1: 10/30/60, Tag 9: 50/150/300). Belohnungen: Bronze 12 %, Silber 20 % (plus 2 Runensteine), Gold 35 % (plus Schatz) vom bisher Verdienten, mindestens die alten Festbeträge (`challenge.growthPerDay`, `challenge.earnedShare`).
+
+## Freischaltungen bauen aufeinander auf und erklären sich (02.11.2026)
+- Jede Nicht-Kampfpflanze hat in `plants.json` `buildsOn` (worauf sie aufbaut: eine Pflanze oder ein Ding auf dem Hof) und `helps` (konkret, was sie der Farm bringt und wie man sie einsetzt). Die Kette:
+  - Ernte: Radieschen → Karotte → Weißrübe → Salat → Weizen → Mais.
+  - Helfer: Karotte → Kompostpilz → Trommelkraut → Klopfwurz → Pustesamen; Tauschilf → Saftrohr.
+  - Verteidigung: Mauer → Steinmoos → Dornenranke; Waffenbank → Glutblüte → Frostdistel → Giftpilz → Blitzkraut; Waffenbank → Stützranke; Steinpult → Wurzelherz; Wachturm → Mondblume; Kampfpflanzen → Glühpilz; Knollis → Wurzelträger.
+- **Zielanzeige** (oben links, größer): „Als Nächstes: Salat (Ernte, baut auf Weißrübe auf)“, darunter der Stand jeder Bedingung live (alle 0,5 s): „Münzen 8,2K / 17,5K   Felder 12 / 14“. Erfüllte Bedingungen sind grün mit Haken, offene gold. Darunter steht der Nutzen. Das Bild zeigt die Pflanze in Farbe statt als Silhouette, man sieht genau, was kommt (bewusst gegen CLAUDE.md „Silhouette“, weil verstehen wichtiger ist).
+- **Sammelbuch:** Gesperrte Pflanzen zeigen Namen, Bedingungen, worauf sie aufbauen, und den Nutzen. Freigeschaltete zeigen den Nutzen statt der allgemeinen Beschreibung.
+- **Banner bei Freischaltung:** zeigt den Nutzen.
+- **Laden → Verbesserungen:** Die nächsten zwei gesperrten Upgrades stehen mit „(bald)“, Wirkung, Schwelle und aktuellem Stand unten in der Liste.

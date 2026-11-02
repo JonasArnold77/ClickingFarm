@@ -187,6 +187,8 @@ namespace SeedClicker
         public string role = "combat";
         public float cost, value, unlockEarned;
         public int unlockFields;   // zusaetzlich so viele Felder noetig (Ausbau gehoert zum Fortschritt)
+        public string buildsOn;    // worauf sie aufbaut: eine Pflanzen-ID oder ein Ding auf dem Hof (Mauer, Waffenbank, Wachturm, Steinpult, Knollis, Kampfpflanzen)
+        public string helps;       // konkret: was sie deiner Farm bringt und wie man sie einsetzt
         public int growTaps;   // 0 = Standard (growTaps)
         // Ernte-Charakter: yield = Stueck pro Ernte-Tipp, prod = Faktor fuer Ernte von selbst, group = Bonus je gleicher
         // Nachbarpflanze (auch schraeg), taps = Faktor fuer den Wert eines Ernte-Tipps

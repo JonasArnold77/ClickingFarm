@@ -161,12 +161,14 @@ namespace SeedClicker
             img.color = locked ? new Color(0.15f, 0.12f, 0.1f, 0.7f) : Color.Lerp(Color.white, g.ElementColor, 0.18f);
             img.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -14), new Vector2(size.x * 0.7f, imgH - 8));
 
-            var name = Label(rt, locked ? "???" : def.name, fontSize + 6, Ink, TextAnchor.MiddleCenter, true);
+            var name = Label(rt, def.name, fontSize + 6, locked ? InkSoft : Ink, TextAnchor.MiddleCenter, true);
             name.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -imgH - 6), new Vector2(-16, fontSize + 14));
             if (locked)
             {
-                var l = Label(rt, def.IsCombat ? "Freigeschaltet nach Welle " + def.unlockWave : "Ab " + Num.Short(def.unlockEarned) + " Münzen" + (def.unlockFields > 0 ? " und " + def.unlockFields + " Feldern" : ""), fontSize, InkSoft, TextAnchor.MiddleCenter);
-                l.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -imgH - fontSize - 30), new Vector2(-20, fontSize * 2 + 10));
+                string need = def.IsCombat ? "Nach Welle " + def.unlockWave : "Ab " + Num.Short(def.unlockEarned) + " Münzen" + (def.unlockFields > 0 ? " und " + def.unlockFields + " Feldern" : "");
+                string on = BuildsOnName(def);
+                var l = Label(rt, need + (on != null ? "\nBaut auf " + on + " auf" : "") + "\n\n" + Helps(def), fontSize - 4, InkSoft, TextAnchor.UpperCenter);
+                l.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -imgH - fontSize - 24), new Vector2(-24, size.y * 0.5f));
                 return rt;
             }
             if (!def.IsCombat)
@@ -174,7 +176,7 @@ namespace SeedClicker
                 // Nutzpflanze: Rolle, Beschreibung und Preis statt Kampfwerten
                 var role = Label(rt, Roles.Name(def.role), fontSize, AccentWarm, TextAnchor.MiddleCenter, true);
                 role.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -imgH - fontSize - 22), new Vector2(-16, fontSize + 8));
-                var ds = Label(rt, Roles.Desc(def), fontSize - 4, InkSoft, TextAnchor.UpperCenter);
+                var ds = Label(rt, Helps(def), fontSize - 4, InkSoft, TextAnchor.UpperCenter);
                 ds.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -imgH - fontSize * 2 - 40), new Vector2(-30, size.y * 0.4f));
                 CostTag(rt, def, fontSize);
                 return rt;
@@ -267,27 +269,43 @@ namespace SeedClicker
             b.GetComponent<Image>().color = new Color(0.35f, 0.3f, 0.26f, 0.85f);
         }
 
+        float goalTimer;
+
         void BuildGoalHud()
         {
             var p = Panel(safe, "Goal", new Color(0.12f, 0.1f, 0.08f, 0.55f));
-            p.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(28, -295), new Vector2(560, 110));
+            p.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(28, -295), new Vector2(640, 190));
             p.raycastTarget = false;
             goalIcon = UIKit.Rect(p.transform, "Icon").gameObject.AddComponent<Image>();
             goalIcon.preserveAspect = true; goalIcon.raycastTarget = false;
-            goalIcon.rectTransform.Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(58, 0), new Vector2(84, 84));
-            goalText = UIKit.Txt(p.transform, "", 30, Color.white, TextAnchor.MiddleLeft, true, true);
+            goalIcon.rectTransform.Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(62, 0), new Vector2(96, 96));
+            goalText = UIKit.Txt(p.transform, "", 26, Color.white, TextAnchor.MiddleLeft, true, true);
+            goalText.supportRichText = true;
             goalText.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0.5f), new Vector2(110, 0), new Vector2(-120, 0));
         }
 
         /// <summary>Was fuer die naechste Pflanze noch fehlt: Muenzen und/oder Felder (mit aktuellem Stand bei den Feldern).</summary>
         string UnlockNeed(CatalogDef c)
         {
-            bool coins = wb.Earned < c.unlockEarned, more = wb.FieldCount < c.unlockFields;
-            string f = c.unlockFields + " Feldern (" + wb.FieldCount + ")";
-            if (coins && more) return "bei " + Num.Short(c.unlockEarned) + " Münzen und " + f;
-            if (more) return "bei " + f + " – bau aus!";
-            return "bei " + Num.Short(c.unlockEarned) + " verdienten Münzen";
+            if (c.IsCombat) return Check(wb.Save.wave >= c.unlockWave, "Welle " + c.unlockWave + " überstehen (jetzt " + wb.Save.wave + ")");
+            string s = Check(wb.Earned >= c.unlockEarned, "Münzen " + Num.Short(System.Math.Min(wb.Earned, c.unlockEarned)) + " / " + Num.Short(c.unlockEarned));
+            if (c.unlockFields > 0) s += "   " + Check(wb.FieldCount >= c.unlockFields, "Felder " + Mathf.Min(wb.FieldCount, c.unlockFields) + " / " + c.unlockFields);
+            return s;
         }
+
+        /// <summary>Erfuellte Bedingung gruen mit Haken, offene in Gold.</summary>
+        static string Check(bool ok, string txt) => ok ? "<color=#9be27a>✓ " + txt + "</color>" : "<color=#ffd27a>" + txt + "</color>";
+
+        /// <summary>Worauf die Pflanze aufbaut (Name einer Pflanze oder ein Ding auf dem Hof).</summary>
+        public static string BuildsOnName(CatalogDef c)
+        {
+            if (c == null || string.IsNullOrEmpty(c.buildsOn)) return null;
+            var b = PlantBalance.I.Plant(c.buildsOn);
+            return b != null ? b.name : c.buildsOn;
+        }
+
+        /// <summary>Konkreter Nutzen fuer die Farm (sonst die allgemeine Beschreibung).</summary>
+        public static string Helps(CatalogDef c) => c == null ? "" : !string.IsNullOrEmpty(c.helps) ? c.helps : Roles.Desc(c);
 
         void RefreshGoal()
         {
@@ -296,11 +314,13 @@ namespace SeedClicker
             if (next == null) { goalText.text = "Alle Pflanzen freigeschaltet!"; goalIcon.enabled = false; }
             else
             {
-                goalText.text = next.IsCombat ? "Nächste Pflanze:\nnach Welle " + next.unlockWave
-                                              : "Nächste Pflanze: " + Roles.Name(next.role) + "\n" + UnlockNeed(next);
+                // was kommt, was dafuer noch fehlt (mit Stand) und was es konkret bringt
+                string on = BuildsOnName(next);
+                goalText.text = "<b>Als Nächstes: " + next.name + "</b> <size=20>(" + Roles.Name(next.role) + (on != null ? ", baut auf " + on + " auf" : "") + ")</size>\n"
+                              + UnlockNeed(next) + "\n<size=21>" + Helps(next) + "</size>";
                 goalIcon.enabled = true;
                 goalIcon.sprite = SpeciesSprite(next.Genome);
-                goalIcon.color = new Color(0.12f, 0.1f, 0.08f, 0.85f);   // als Silhouette, Spannung!
+                goalIcon.color = Color.white;   // man sieht genau, was man freischaltet
             }
             var sel = PlantBalance.I.Plant(wb.Save.selectedPlant);
         }
@@ -309,6 +329,7 @@ namespace SeedClicker
         {
             UpdateJuice(dt);
             UpdateEconomyUI(dt);
+            goalTimer -= dt; if (goalTimer <= 0f) { goalTimer = 0.5f; RefreshGoal(); }
             UpdatePlantInfo(dt);
             UpdateBenchInfo(dt);
             UpdateStructureInfo(dt);
