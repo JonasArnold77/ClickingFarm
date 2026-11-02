@@ -172,8 +172,10 @@ namespace SeedClicker
             foreach (var e in wb.WeaponElements(w.id)) ApplyWeaponElement(m, e.id, e.lv, dmg);
         }
 
-        /// <summary>Waffe mit Element: am Einschlag lodert am Boden eine Flamme auf (Feuer orange, sonst in der Farbe des Elements),
-        /// dazu Glut in der Elementfarbe, die aufsteigt, und ein Brandring. Groesser mit der Element-Stufe.</summary>
+        /// <summary>Waffe mit Element: am Einschlag passiert am Boden ein Effekt aus Cartoon FX, je Element passend:
+        /// Feuer = kleine Feuerexplosion + kurz brennender Boden, Eis = blauer Frost-Treffer mit Leuchten,
+        /// Gift = gruener Platscher + Gaswolke, Blitz = Einschlag + knisternder Boden, Natur = gruener Zauberwirbel.
+        /// Groesser mit der Element-Stufe; bei zwei Elementen beide leicht versetzt. Ohne Effekt-Paket: eigene Partikel.</summary>
         void GroundFire(WeaponDef w, Vector2 at, float size)
         {
             if (w == null || wb == null) return;
@@ -184,14 +186,47 @@ namespace SeedClicker
                 if (e.lv <= 0 || shown >= 2) continue;
                 shown++;
                 var col = WorldBuilder.ElementCol(e.id);
-                var p = at + new Vector2((shown - 1) * 0.18f, -0.05f);   // zweites Element leicht daneben
+                var p = at + new Vector2((shown - 1) * 0.22f, -0.05f);
                 float s = size * (1f + 0.15f * Mathf.Min(e.lv, 5));
-                var fx = WorldFx.Play("flame", p, 0.13f * s, 29980, e.id == "fire" ? (Color?)null : col, null, 1.4f);
-                if (fx == null)   // ohne Effekt-Paket: eigene Flammen-Partikel
-                    Particles.I?.Burst(p, "spark", col, 10, 1.4f * s, 0.6f, 0.12f, -3f, 0.6f);
-                Particles.I?.Burst(p, "square", Color.Lerp(col, Color.white, 0.3f), 6, 1.6f * s, 0.7f, 0.06f, -2f, 0.8f);   // aufsteigende Glut
-                Particles.I?.Ring(p, new Color(col.r, col.g, col.b, 0.55f), 0.45f * s, 0.35f);
+                GameObject a = null;
+                switch (e.id)
+                {
+                    case "fire":
+                        a = WorldFx.Play("fireBurst", p, 0.09f * s, 29985);
+                        Burning(WorldFx.Play("groundFire", p, 0.12f * s, 29980, null, null, 3f), 1.2f);
+                        break;
+                    case "ice":
+                        a = WorldFx.Play("iceHit", p, 0.14f * s, 29985);
+                        WorldFx.Play("iceGlow", p, 0.12f * s, 29984);
+                        break;
+                    case "poison":
+                        a = WorldFx.Play("splashPlain", p, 0.12f * s, 29985, new Color(0.55f, 1f, 0.3f, 1f));
+                        Burning(WorldFx.Play("gasLeak", p, 0.1f * s, 29980, new Color(0.6f, 1f, 0.35f, 0.85f), null, 3.5f), 1.4f);
+                        break;
+                    case "lightning":
+                        a = WorldFx.Play("lightningImpact", p, 0.14f * s, 29985);
+                        Burning(WorldFx.Play("electricSurface", p, 0.14f * s, 29980, null, null, 2.5f), 0.9f);
+                        break;
+                    default:
+                        a = WorldFx.Play("magicPoof", p, 0.12f * s, 29985, col);
+                        break;
+                }
+                if (a == null) Particles.I?.Burst(p, "spark", col, 10, 1.4f * s, 0.6f, 0.12f, -3f, 0.6f);   // Ersatz ohne Effekt-Paket
+                Particles.I?.Ring(p, new Color(col.r, col.g, col.b, 0.5f), 0.4f * s, 0.35f);
             }
+        }
+
+        /// <summary>Dauer-Effekt (Feuer, Gas, Strom) nach kurzer Zeit ausklingen lassen statt hart abzuschneiden.</summary>
+        void Burning(GameObject fx, float seconds)
+        {
+            if (fx != null) StartCoroutine(StopEmitting(fx, seconds));
+        }
+
+        System.Collections.IEnumerator StopEmitting(GameObject fx, float seconds)
+        {
+            yield return new WaitForSeconds(seconds);
+            if (fx == null) yield break;
+            foreach (var ps in fx.GetComponentsInChildren<ParticleSystem>()) ps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
         }
 
         /// <summary>Ein Element der Waffe auf einen getroffenen Zombie anwenden (alle Elemente wirken zusammen).</summary>

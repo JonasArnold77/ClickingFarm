@@ -277,6 +277,20 @@ MonoBehaviour:
     prefab: {fileID: 2060212803351811498, guid: 38b99d63cdad9994b89d14c10a8783ce, type: 3}
   - name: waterFountain
     prefab: {fileID: 5582959372779851105, guid: f6a3c3d847782f842adfa192f9ad05ed, type: 3}
+  - name: fireBurst
+    prefab: {fileID: 6649054028638981966, guid: 17749527f24a38e4a8518725a42d1df3, type: 3}
+  - name: groundFire
+    prefab: {fileID: 6294508013172393196, guid: 043176b6a68be2b43b073aaaa4782c7d, type: 3}
+  - name: iceHit
+    prefab: {fileID: 3308840082544497919, guid: af0ef20d9a41ee7479f76ea5c49918cf, type: 3}
+  - name: iceGlow
+    prefab: {fileID: 2708598583397607911, guid: 6398d43fe79ea0140913dc5530c646af, type: 3}
+  - name: splashPlain
+    prefab: {fileID: 5531231052371847854, guid: 60c88e966a0f8324da766221921ee65f, type: 3}
+  - name: gasLeak
+    prefab: {fileID: 1695191526168693321, guid: a0a1803193f53814fb46f639dc12d8c2, type: 3}
+  - name: electricSurface
+    prefab: {fileID: 5625733165965871918, guid: ce12f4ba5683e264ca9931fe664aac33, type: 3}
   vfx:
   - name: water
     asset: {fileID: 8926484042661614526, guid: 7517e52f5006acb4b8b99050faec9f8e, type: 3}
