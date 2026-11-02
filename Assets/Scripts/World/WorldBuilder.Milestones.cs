@@ -12,7 +12,7 @@ namespace SeedClicker
     /// </summary>
     public partial class WorldBuilder
     {
-        public event Action<MilestoneDef> MilestoneReached;
+        public event Action<MilestoneDef, double, int> MilestoneReached;   // Ziel, Muenzen, Runensteine
         /// <summary>Gerade wird ein Ziel ausgezahlt (die einzelnen Freischalt-Banner bleiben dann still).</summary>
         public bool GrantingMilestone { get; private set; }
 
@@ -21,7 +21,36 @@ namespace SeedClicker
         static MilestoneDef[] Milestones => PlantBalance.I.milestones ?? new MilestoneDef[0];
         public int MilestoneIndex => save.milestone;
         public int MilestoneTotal => Milestones.Length;
-        public MilestoneDef CurrentMilestone => save.milestone < Milestones.Length ? Milestones[save.milestone] : null;
+        /// <summary>Aktuelles Ziel – nach dem letzten festen Ziel ein Grossprojekt (endlos, immer gewaltigere Mengen).</summary>
+        public MilestoneDef CurrentMilestone => save.milestone < Milestones.Length ? Milestones[save.milestone] : Project(save.milestone - Milestones.Length);
+        /// <summary>Geschaffte Grossprojekte (jedes gibt dauerhaft mehr Ertrag).</summary>
+        public int ProjectsDone => Mathf.Max(0, save.milestone - Milestones.Length);
+        public float ProjectMult => 1f + PlantBalance.I.projects.bonusPerProject * ProjectsDone;
+
+        MilestoneDef cachedProject; int cachedProjectIdx = -1;
+
+        /// <summary>Grossprojekt j: astronomische Mengen an Ernte, besiegten Zombies und Muenzen, dazu eine riesige Anlage.</summary>
+        MilestoneDef Project(int j)
+        {
+            if (cachedProjectIdx == j && cachedProject != null) return cachedProject;
+            var P = PlantBalance.I.projects;
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            string R(double v) => Math.Round(v).ToString("0", inv);
+            string[] build = { "fields:" + (60 + 12 * j), "towers:" + (3 + j), "stonewalls:" + (15 + 6 * j), "knollis:" + (8 + 2 * j) };
+            var m = new MilestoneDef
+            {
+                project = true,
+                name = "Großprojekt " + (j + 1) + ": " + P.names[j % P.names.Length],
+                desc = "Dauerhaft +" + Mathf.RoundToInt(P.bonusPerProject * 100) + " % auf alle Ernte – für immer, Projekt für Projekt mehr.",
+                tasks = new[] { "delivered:" + R(P.delivered * Math.Pow(P.deliveredGrowth, j)), "kills:" + R(P.kills * Math.Pow(P.killsGrowth, j)),
+                                "earned:" + R(P.earned * Math.Pow(P.earnedGrowth, j)), build[j % build.Length] },
+                unlocks = new string[0],
+                coinShare = P.coinShare,
+                runes = P.runes + j
+            };
+            cachedProject = m; cachedProjectIdx = j;
+            return m;
+        }
 
         /// <summary>In welchem Ziel steckt dieses Ding (-1 = in keinem, dann gelten die alten Schwellen)?</summary>
         public int MilestoneOf(string id)
@@ -61,6 +90,7 @@ namespace SeedClicker
                 var m = CurrentMilestone;
                 if (m == null || !NeedsMet(m.tasks)) return;
                 save.milestone++;
+                double coins = Math.Round(save.earned * m.coinShare);   // Belohnung: ein guter Batzen vom bisher Verdienten
                 GrantingMilestone = true;
                 if (m.unlocks != null)
                     foreach (var id in m.unlocks)
@@ -73,7 +103,9 @@ namespace SeedClicker
                 WorldPostFX.Punch(1f);
                 Haptics.Tap(60);
                 WorldFx.Play("firework", HousePos + new Vector2(0, 1.5f), 0.22f);
-                MilestoneReached?.Invoke(m);
+                if (coins > 0) AddCoins(coins, HousePos + new Vector2(0, 1.4f));
+                if (m.runes > 0) AddRunes(m.runes, HousePos + new Vector2(0, 1.8f));
+                MilestoneReached?.Invoke(m, coins, m.runes);
                 save.Save();
             }
         }

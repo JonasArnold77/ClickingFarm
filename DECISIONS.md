@@ -353,3 +353,12 @@
   15. Die Großfarm: 50 Felder, 4 reife Tauschilfe, 10.000 geliefert, 7M → Saftrohr, Uhrwerk, Genossenschaft, Sternenhandschuhe
 - **Anzeige:** Die Liste links zeigt „Ziel 3 von 15: Die erste Medaille“, darunter „Schaltet frei: …“ mit einem Satz, was das Paket bringt, und genau die vier Aufgaben (Bild, Aufgabe, Stand, Balken, Haken). Der Tagesauftrag hat wieder seine eigene Tafel darunter. Sammelbuch, Laden und Bauwerke sagen bei gesperrten Dingen „Kommt mit Ziel 7: Der Knolli-Trupp“.
 - Die Zahlen sind aus der bisherigen Kurve geschätzt, aber nicht durchgespielt.
+- **Belohnungsfenster:** Ein erreichtes Ziel öffnet ein Fenster „Ziel erreicht!“ mit dem Namen des Ziels und der Belohnung. Belohnung: 25 % vom bisher Verdienten (`coinShare`) und Runensteine (1 + Ziel/4). Darunter steht jede Freischaltung als eigene Zeile mit Bild, Name, Art und konkretem Nutzen, unten „Als Nächstes: …“. Mehrere Ziele auf einmal kommen nacheinander; das Fenster wartet, bis kein anderes offen ist.
+- **Großprojekte** (`plants.json → projects`): Nach Ziel 15 geht es endlos weiter. Jedes Projekt verlangt astronomische Mengen, die nur große, verschachtelte Anlagen schaffen:
+  - gelieferte Ernte 25.000 × 2,5ⁿ
+  - besiegte Zombies 300 × 2ⁿ
+  - verdiente Münzen 20 Mio. × 6ⁿ
+  - eine Anlage im Wechsel: 60 + 12n Felder / 3 + n Wachtürme / 15 + 6n Steinmauern / 8 + 2n Knollis
+  - Belohnung: dauerhaft +20 % auf alle Ernte je Projekt, 30 % vom Verdienten, 3 + n Runensteine.
+  - Neue Zähler im Spielstand: `deliveredTotal`, `killsTotal` (double); Bedingungen rechnen jetzt mit double (`kills`, große Zahlen).
+- **Pflanzen ausgraben:** Im Info-Fenster einer Pflanze steht oben rechts „Ausgraben“. Erster Tipp: „Wirklich?“ (rot, 3 s), zweiter Tipp: die Pflanze ist weg. Ihre liegende Ernte wird noch ausgezahlt, das Feld bleibt frei.

@@ -33,13 +33,7 @@ namespace SeedClicker
             taskReward = UIKit.Txt(p.transform, "", 22, new Color(1f, 1f, 1f, 0.85f), TextAnchor.UpperLeft, false, true);
             taskReward.supportRichText = true;
             taskReward.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(22, -58), new Vector2(-44, 76));
-            wb.MilestoneReached += m =>
-            {
-                var names = new List<string>();
-                if (m.unlocks != null) foreach (var id in m.unlocks) names.Add(WorldBuilder.UnlockName(id));
-                Banner("Ziel erreicht: " + m.name + "!", "Neu: " + string.Join(", ", names) + " – " + m.desc);
-                taskTimer = 0f;
-            };
+            wb.MilestoneReached += (m, coins, runes) => { pendingRewards.Enqueue((m, coins, runes)); taskTimer = 0f; };
             for (int i = 0; i < TaskMax; i++) taskRows.Add(MakeTaskRow(p.transform, i));
             // die alten Felder (naechstes Ziel, Tagesauftrag) zeigt jetzt diese Liste
             if (goalText != null) goalText.transform.parent.gameObject.SetActive(false);
@@ -95,8 +89,8 @@ namespace SeedClicker
                     icon = pd != null ? SpeciesSprite(pd.Genome) : reward,
                     title = n.task,
                     sub = done ? "geschafft!" : "Aufgabe " + (i + 1) + " von 4",
-                    count = Num.Short(Mathf.Min(n.v, n.n)) + " / " + Num.Short(n.n),
-                    f = n.v / (float)Mathf.Max(1, n.n),
+                    count = Num.Short(System.Math.Min(n.v, n.n)) + " / " + Num.Short(n.n),
+                    f = (float)(n.v / System.Math.Max(1, n.n)),
                     done = done,
                     col = TaskCols[i % TaskCols.Length]
                 });
@@ -107,9 +101,73 @@ namespace SeedClicker
 
         static readonly Color[] TaskCols = { new Color(0.95f, 0.78f, 0.36f), new Color(0.65f, 0.85f, 0.45f), new Color(0.6f, 0.8f, 1f), new Color(0.85f, 0.7f, 1f) };
 
+        readonly Queue<(MilestoneDef m, double coins, int runes)> pendingRewards = new Queue<(MilestoneDef, double, int)>();
+
+        /// <summary>Fenster "Ziel erreicht!": was es gebracht hat (Muenzen, Runensteine, Dauerbonus) und jede Freischaltung
+        /// mit Bild und konkretem Nutzen. Mehrere erreichte Ziele kommen nacheinander.</summary>
+        void OpenMilestoneReward(MilestoneDef m, double coins, int runes)
+        {
+            OpenModal(out var panel, 160, 120);
+            Header(panel, m.project ? "Großprojekt geschafft!" : "Ziel erreicht!");
+            var title = Label(panel, m.name, 46, AccentWarm, TextAnchor.MiddleCenter, true);
+            title.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -120), new Vector2(-60, 70));
+            string got = "Belohnung: +" + Num.Short(coins) + " Münzen" + (runes > 0 ? "  ·  +" + runes + " Runensteine" : "")
+                       + (m.project ? "\nDauerhaft ×" + wb.ProjectMult.ToString("0.0#") + " auf alle Ernte" : "");
+            var g = Label(panel, got, 32, Ink, TextAnchor.MiddleCenter, true);
+            g.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -196), new Vector2(-60, 90));
+            // jede Freischaltung als Zeile: Bild, Name, was sie bringt
+            float y = -300f;
+            if (m.unlocks != null && m.unlocks.Length > 0)
+            {
+                var u = Label(panel, "Neu freigeschaltet", 36, AccentWarm, TextAnchor.MiddleCenter, true);
+                u.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, y), new Vector2(-60, 54));
+                y -= 64f;
+                foreach (var id in m.unlocks)
+                {
+                    var row = Panel(panel, "Unlock", new Color(1f, 1f, 1f, 0.9f));
+                    row.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, y), new Vector2(-70, 150));
+                    var c = PlantBalance.I.Plant(id);
+                    var ic = UIKit.Rect(row.transform, "Icon").gameObject.AddComponent<Image>();
+                    ic.preserveAspect = true; ic.raycastTarget = false;
+                    if (c != null) ic.sprite = SpeciesSprite(c.Genome); else ic.enabled = false;
+                    ic.rectTransform.Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(76, 0), new Vector2(116, 116));
+                    var nm = Label(row.transform, WorldBuilder.UnlockName(id) + (c != null ? "  (" + Roles.Name(c.role) + ")" : ""), 32, Ink, TextAnchor.MiddleLeft, true);
+                    nm.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(150, -10), new Vector2(-170, 46));
+                    var ds = Label(row.transform, UnlockBenefit(id), 24, InkSoft, TextAnchor.UpperLeft);
+                    ds.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(150, -58), new Vector2(-170, 86));
+                    StartCoroutine(PopIn(row.rectTransform));
+                    y -= 162f;
+                }
+            }
+            else
+            {
+                var ds = Label(panel, m.desc, 30, InkSoft, TextAnchor.UpperCenter);
+                ds.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, y), new Vector2(-80, 140));
+            }
+            var next = wb.CurrentMilestone;
+            var nx = Label(panel, next != null ? "Als Nächstes: " + next.name : "", 28, InkSoft, TextAnchor.MiddleCenter);
+            nx.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 150), new Vector2(-60, 50));
+            var b = Btn(panel, "Weiter", Accent, CloseModal, 44);
+            b.GetComponent<RectTransform>().Place(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(480, 110));
+            WorldFx.Play("firework", WorldBuilder.HousePos + new Vector2(0, 2f), 0.25f);
+            Sfx.Play("levelup", 1.1f, 1f);
+        }
+
+        /// <summary>Was eine Freischaltung konkret bringt (Pflanze: ihr Nutzen, Verbesserung/Bauwerk: ihre Beschreibung).</summary>
+        static string UnlockBenefit(string id)
+        {
+            var B = PlantBalance.I;
+            var c = B.Plant(id); if (c != null) return Helps(c);
+            var s = B.Structure(id); if (s != null) return "Bauwerk: " + s.desc;
+            if (B.upgrades != null) foreach (var u in B.upgrades) if (u.id == id) return "Verbesserung im Laden: " + u.desc;
+            return "";
+        }
+
         void UpdateTasks(float dt)
         {
             if (taskPanel == null || wb == null) return;
+            // erreichte Ziele: Belohnungsfenster zeigen, sobald gerade kein anderes Fenster offen ist
+            if (pendingRewards.Count > 0 && modal == null) { var r = pendingRewards.Dequeue(); OpenMilestoneReward(r.m, r.coins, r.runes); }
             taskTimer -= dt;
             if (taskTimer > 0f) return;
             taskTimer = 0.4f;
@@ -132,7 +190,12 @@ namespace SeedClicker
             }
             taskPanel.sizeDelta = new Vector2(taskPanel.sizeDelta.x, TaskTop + Mathf.Max(n, 1) * TaskRowH + 10f);
             var m = wb.CurrentMilestone;
-            if (m == null) { taskHeader.text = "Alle Ziele erreicht!"; taskReward.text = "Dein Hof ist eine Großfarm – spiel weiter, so lange du magst."; }
+            if (m == null) { taskHeader.text = "Alle Ziele erreicht!"; taskReward.text = ""; }
+            else if (m.project)
+            {
+                taskHeader.text = m.name;
+                taskReward.text = "<b>Belohnung: dauerhaft +" + Mathf.RoundToInt(PlantBalance.I.projects.bonusPerProject * 100) + " % auf alle Ernte</b> (jetzt ×" + wb.ProjectMult.ToString("0.0#") + ")\nRiesige Mengen – dafür brauchst du große, verschachtelte Anlagen.";
+            }
             else
             {
                 var names = new List<string>();

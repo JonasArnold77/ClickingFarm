@@ -1096,6 +1096,7 @@ namespace SeedClicker
         void Kill(Monster m)
         {
             result.kills++;
+            wb.Save.killsTotal++;   // fuer Ziele und Grossprojekte
             double loot = (2 + WaveNumber * 2) * (1f + B.Altar.coinsPerLevel * Curse);
             result.coins += loot;
             wb.AddCoins(loot, m.pos + new Vector2(0, 0.8f));   // Beute (mehr bei Fluch)

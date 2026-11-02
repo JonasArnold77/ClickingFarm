@@ -1825,7 +1825,9 @@
         "karotte",
         "handschuh1",
         "kanne1"
-      ]
+      ],
+      "coinShare": 0.25,
+      "runes": 1
     },
     {
       "name": "Mehr Beete",
@@ -1840,7 +1842,9 @@
         "weissruebe",
         "korb1",
         "totem_wachstum"
-      ]
+      ],
+      "coinShare": 0.25,
+      "runes": 1
     },
     {
       "name": "Die erste Medaille",
@@ -1854,7 +1858,9 @@
       "unlocks": [
         "kompostpilz",
         "schilf1"
-      ]
+      ],
+      "coinShare": 0.25,
+      "runes": 1
     },
     {
       "name": "Der Hof wehrt sich",
@@ -1869,7 +1875,9 @@
         "steinmoos",
         "wachturm",
         "kompost1"
-      ]
+      ],
+      "coinShare": 0.25,
+      "runes": 1
     },
     {
       "name": "Grüne Beete",
@@ -1884,7 +1892,9 @@
         "salat",
         "totem_ernte",
         "dornenranke"
-      ]
+      ],
+      "coinShare": 0.25,
+      "runes": 2
     },
     {
       "name": "Steinerne Festung",
@@ -1899,7 +1909,9 @@
         "handschuh2",
         "mauer1",
         "wurzeltraeger"
-      ]
+      ],
+      "coinShare": 0.25,
+      "runes": 2
     },
     {
       "name": "Der Knolli-Trupp",
@@ -1913,7 +1925,9 @@
       "unlocks": [
         "trommelkraut",
         "glutbluete"
-      ]
+      ],
+      "coinShare": 0.25,
+      "runes": 2
     },
     {
       "name": "Das Klickzentrum",
@@ -1928,7 +1942,9 @@
         "weizen",
         "frostdistel",
         "totem_fleiss"
-      ]
+      ],
+      "coinShare": 0.25,
+      "runes": 2
     },
     {
       "name": "Die Waffenschmiede",
@@ -1944,7 +1960,9 @@
         "korb2",
         "stuetzranke",
         "licht1"
-      ]
+      ],
+      "coinShare": 0.25,
+      "runes": 3
     },
     {
       "name": "Die Kornkammer",
@@ -1959,7 +1977,9 @@
         "mais",
         "wurzelherz",
         "cps1"
-      ]
+      ],
+      "coinShare": 0.25,
+      "runes": 3
     },
     {
       "name": "Hilfe von selbst",
@@ -1974,7 +1994,9 @@
         "klopfwurz",
         "blitzkraut",
         "kanne2"
-      ]
+      ],
+      "coinShare": 0.25,
+      "runes": 3
     },
     {
       "name": "Die Wachtürme",
@@ -1989,7 +2011,9 @@
         "auto1",
         "golden1",
         "saatgutmuehle"
-      ]
+      ],
+      "coinShare": 0.25,
+      "runes": 3
     },
     {
       "name": "Der Selbstläufer",
@@ -2004,7 +2028,9 @@
         "pustesamen",
         "handschuh3",
         "mondblume"
-      ]
+      ],
+      "coinShare": 0.25,
+      "runes": 4
     },
     {
       "name": "Das Nachtlicht",
@@ -2019,7 +2045,9 @@
         "gluehpilz",
         "offline1",
         "korb3"
-      ]
+      ],
+      "coinShare": 0.25,
+      "runes": 4
     },
     {
       "name": "Die Großfarm",
@@ -2035,7 +2063,28 @@
         "auto2",
         "cps2",
         "handschuh4"
-      ]
+      ],
+      "coinShare": 0.25,
+      "runes": 4
     }
-  ]
+  ],
+  "projects": {
+    "names": [
+      "Erntegigant",
+      "Zombiewall",
+      "Lieferimperium",
+      "Goldene Ära",
+      "Ewiger Sommer",
+      "Knolli-Königreich"
+    ],
+    "delivered": 25000,
+    "deliveredGrowth": 2.5,
+    "kills": 300,
+    "killsGrowth": 2,
+    "earned": 20000000.0,
+    "earnedGrowth": 6,
+    "bonusPerProject": 0.2,
+    "coinShare": 0.3,
+    "runes": 3
+  }
 }

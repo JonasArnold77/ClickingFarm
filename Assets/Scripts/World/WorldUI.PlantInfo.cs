@@ -20,7 +20,8 @@ namespace SeedClicker
         float infoTimer;
         string infoBuiltFor;
 
-        Button infoAct, infoTurn;
+        Button infoAct, infoTurn, infoDig;
+        float digArmedT;   // erster Tipp auf "Ausgraben" macht scharf, der zweite (innerhalb 3 s) graebt aus
         Text infoActText;
         Image infoActImg;
 
@@ -83,6 +84,18 @@ namespace SeedClicker
             infoTurn.GetComponent<RectTransform>().Place(new Vector2(1, 0), new Vector2(1, 0), new Vector2(1, 0), new Vector2(-30, 88), new Vector2(400, 104));
             infoTurn.gameObject.SetActive(false);
 
+            // Ausgraben: Pflanze entfernen (zweimal tippen); liegende Ernte wird noch ausgezahlt
+            infoDig = Btn(root, "Ausgraben", new Color(0.62f, 0.45f, 0.3f), () =>
+            {
+                if (infoPlant == null) return;
+                infoTimer = InfoShowTime;
+                if (digArmedT <= 0f) { digArmedT = 3f; infoDig.GetComponentInChildren<Text>().text = "Wirklich?"; infoDig.GetComponent<Image>().color = new Color(0.85f, 0.35f, 0.3f); Sfx.Play("tick", 0.9f, 0.6f); return; }
+                wb.DigUp(infoPlant);
+                digArmedT = 0f;
+                HidePlantInfo();
+            }, 30);
+            infoDig.GetComponent<RectTransform>().Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-126, -18), new Vector2(220, 84));
+
             var x = Btn(root, "X", new Color(0.8f, 0.45f, 0.35f), HidePlantInfo, 40);
             x.GetComponent<RectTransform>().Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-18, -18), new Vector2(96, 84));
 
@@ -104,7 +117,15 @@ namespace SeedClicker
             if (infoGroup.alpha < 0.05f) infoPanel.localScale = Vector3.one * 0.9f;
         }
 
-        void HidePlantInfo() { infoPlant = null; infoTimer = 0f; }
+        void HidePlantInfo() { infoPlant = null; infoTimer = 0f; DisarmDig(); }
+
+        void DisarmDig()
+        {
+            digArmedT = 0f;
+            if (infoDig == null) return;
+            infoDig.GetComponentInChildren<Text>().text = "Ausgraben";
+            infoDig.GetComponent<Image>().color = new Color(0.62f, 0.45f, 0.3f);
+        }
 
         void UpdatePlantInfo(float dt)
         {
@@ -117,6 +138,7 @@ namespace SeedClicker
             infoGroup.blocksRaycasts = show;
             wb.Inspected = show ? infoPlant : null;
             infoPanel.localScale = Vector3.one * Mathf.MoveTowards(infoPanel.localScale.x, 1f, dt * 1.5f);
+            if (digArmedT > 0f) { digArmedT -= dt; if (digArmedT <= 0f) DisarmDig(); }
             hintText.enabled = infoGroup.alpha < 0.5f;
             if (infoPlant != null) FillPlantInfo(infoPlant);
             UpdateHover(dt);

@@ -8,29 +8,31 @@ namespace SeedClicker
     /// Dinge, die man auf dem Hof erreicht haben muss, z. B. "walls:6" (6 Mauerstuecke), "plant:tauschilf:2"
     /// (2 reife Tauschilfe), "medal:3" (eine Ernte-Pflanze auf Silber). So baut der Fortschritt auf dem auf,
     /// was man schon gemacht hat. Arten: fields, walls, stonewalls, gates, towers, pedestals, knollis, huts,
-    /// totems, river, waves, medal, plant:ID.
+    /// totems, river, waves, medal, plant:ID, earned, delivered, kills.
     /// </summary>
     public partial class WorldBuilder
     {
-        struct Need { public string kind, arg; public int n; }
+        struct Need { public string kind, arg; public double n; }   // double: spaete Grossprojekte verlangen astronomische Mengen
 
         static Need ParseNeed(string s)
         {
             var p = s.Split(':');
             var n = new Need { kind = p[0].Trim() };
-            if (p.Length >= 3) { n.arg = p[1].Trim(); int.TryParse(p[2], out n.n); }
-            else if (p.Length == 2) int.TryParse(p[1], out n.n);
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            if (p.Length >= 3) { n.arg = p[1].Trim(); double.TryParse(p[2], System.Globalization.NumberStyles.Float, inv, out n.n); }
+            else if (p.Length == 2) double.TryParse(p[1], System.Globalization.NumberStyles.Float, inv, out n.n);
             return n;
         }
 
         /// <summary>Aktueller Stand einer Bedingung.</summary>
-        int NeedValue(Need n)
+        double NeedValue(Need n)
         {
             switch (n.kind)
             {
                 case "fields": return FieldCount;
-                case "earned": return (int)System.Math.Min(save.earned, int.MaxValue);
-                case "delivered": return save.deliveredCount;
+                case "earned": return save.earned;
+                case "delivered": return save.deliveredTotal > 0 ? save.deliveredTotal : save.deliveredCount;
+                case "kills": return save.killsTotal;
                 case "walls": { int c = 0; foreach (var w in save.walls) if (!w.gate) c++; return c; }
                 case "stonewalls": { int c = 0; foreach (var w in save.walls) if (w.stone) c++; return c; }
                 case "gates": { int c = 0; foreach (var w in save.walls) if (w.gate) c++; return c; }
@@ -62,6 +64,7 @@ namespace SeedClicker
                 case "fields": return "Felder";
                 case "earned": return "verdiente Münzen";
                 case "delivered": return "gelieferte Ernte";
+                case "kills": return "besiegte Zombies";
                 case "walls": return "Mauerstücke";
                 case "stonewalls": return "Steinmauern";
                 case "gates": return "Tore";
@@ -72,7 +75,7 @@ namespace SeedClicker
                 case "towers": return "Wachtürme";
                 case "huts": return "Knolli-Hütten";
                 case "totems": return "Totems";
-                case "medal": return "Ernte-Pflanze auf " + MedalName(n.n);
+                case "medal": return "Ernte-Pflanze auf " + MedalName((int)n.n);
                 case "plant": return "reife " + (PlantBalance.I.Plant(n.arg)?.name ?? n.arg);
             }
             return n.kind;
@@ -94,46 +97,48 @@ namespace SeedClicker
             {
                 if (string.IsNullOrEmpty(s)) continue;
                 var n = ParseNeed(s);
-                int v = NeedValue(n);
+                double v = NeedValue(n);
                 bool ok = v >= n.n;
-                l.Add((n.kind == "medal" ? NeedName(n) : NeedName(n) + " " + Mathf.Min(v, n.n) + " / " + n.n, ok));
+                l.Add((n.kind == "medal" ? NeedName(n) : NeedName(n) + " " + Num.Short(System.Math.Min(v, n.n)) + " / " + Num.Short(n.n), ok));
             }
             return l;
         }
 
         /// <summary>Jede Bedingung als Aufgabe ("Baue 6 Mauerstücke") mit Stand und Ziel.</summary>
-        public List<(string task, int v, int n)> NeedsProgress(string[] needs)
+        public List<(string task, double v, double n)> NeedsProgress(string[] needs)
         {
-            var l = new List<(string, int, int)>();
+            var l = new List<(string, double, double)>();
             if (needs == null) return l;
             foreach (var s in needs)
             {
                 if (string.IsNullOrEmpty(s)) continue;
                 var n = ParseNeed(s);
-                l.Add((NeedTask(n), n.kind == "medal" ? Mathf.Min(NeedValue(n), n.n) : NeedValue(n), n.n));
+                l.Add((NeedTask(n), n.kind == "medal" ? System.Math.Min(NeedValue(n), n.n) : NeedValue(n), n.n));
             }
             return l;
         }
 
         static string NeedTask(Need n)
         {
+            string k = Num.Short(n.n); bool one = n.n == 1;
             switch (n.kind)
             {
-                case "fields": return "Baue " + n.n + " Felder";
-                case "earned": return "Verdiene insgesamt " + Num.Short(n.n) + " Münzen";
-                case "delivered": return "Liefere " + Num.Short(n.n) + " Ernte in die Kiste";
-                case "walls": return "Baue " + n.n + " Mauerstücke";
-                case "stonewalls": return "Mach " + n.n + " Mauerstücke zu Stein";
-                case "gates": return "Baue " + n.n + (n.n == 1 ? " Tor" : " Tore");
-                case "pedestals": return "Stell " + n.n + (n.n == 1 ? " Steinpult" : " Steinpulte") + " auf";
-                case "knollis": return "Heuere " + n.n + " Knollis an";
-                case "river": return "Grab " + n.n + " Bachstücke";
-                case "waves": return "Übersteh " + n.n + (n.n == 1 ? " Nacht" : " Nächte");
-                case "towers": return "Stell " + n.n + (n.n == 1 ? " Wachturm" : " Wachtürme") + " auf";
-                case "huts": return "Bau " + n.n + (n.n == 1 ? " Knolli-Hütte" : " Knolli-Hütten");
-                case "totems": return "Stell " + n.n + (n.n == 1 ? " Totem" : " Totems") + " auf";
-                case "medal": return "Bring eine Ernte-Pflanze auf " + MedalName(n.n);
-                case "plant": return "Lass " + n.n + " " + (PlantBalance.I.Plant(n.arg)?.name ?? n.arg) + " reif werden";
+                case "fields": return "Baue " + k + " Felder";
+                case "earned": return "Verdiene insgesamt " + k + " Münzen";
+                case "delivered": return "Liefere " + k + " Ernte in die Kiste";
+                case "kills": return "Besiege " + k + " Zombies";
+                case "walls": return "Baue " + k + " Mauerstücke";
+                case "stonewalls": return "Mach " + k + " Mauerstücke zu Stein";
+                case "gates": return "Baue " + k + (one ? " Tor" : " Tore");
+                case "pedestals": return "Stell " + k + (one ? " Steinpult" : " Steinpulte") + " auf";
+                case "knollis": return "Heuere " + k + " Knollis an";
+                case "river": return "Grab " + k + " Bachstücke";
+                case "waves": return "Übersteh " + k + (one ? " Nacht" : " Nächte");
+                case "towers": return "Stell " + k + (one ? " Wachturm" : " Wachtürme") + " auf";
+                case "huts": return "Bau " + k + (one ? " Knolli-Hütte" : " Knolli-Hütten");
+                case "totems": return "Stell " + k + (one ? " Totem" : " Totems") + " auf";
+                case "medal": return "Bring eine Ernte-Pflanze auf " + MedalName((int)n.n);
+                case "plant": return "Lass " + k + " " + (PlantBalance.I.Plant(n.arg)?.name ?? n.arg) + " reif werden";
             }
             return NeedName(n);
         }
@@ -147,7 +152,7 @@ namespace SeedClicker
             {
                 if (string.IsNullOrEmpty(s)) continue;
                 var n = ParseNeed(s);
-                parts.Add(n.kind == "medal" ? NeedName(n) : n.n + " " + NeedName(n));
+                parts.Add(n.kind == "medal" ? NeedName(n) : Num.Short(n.n) + " " + NeedName(n));
             }
             return string.Join(", ", parts);
         }

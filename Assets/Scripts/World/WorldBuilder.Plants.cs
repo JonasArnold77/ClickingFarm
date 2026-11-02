@@ -267,6 +267,21 @@ namespace SeedClicker
             return hit;
         }
 
+        /// <summary>Spieler graebt eine Pflanze aus: die liegende Ernte wird noch ausgezahlt, das Feld bleibt frei.</summary>
+        public void DigUp(PlantedState p)
+        {
+            if (p == null || !save.planted.Contains(p)) return;
+            var at = CellCenterOf(new Cell(p.x, p.y));
+            if (p.stockValue > 0) AddCoins(p.stockValue, at + new Vector2(0, 0.6f));
+            if (Inspected == p) Inspected = null;
+            if (carrying == p) CancelPlacing();
+            Unplant(p);
+            Particles.I?.Burst(at, "square", new Color(0.45f, 0.3f, 0.18f), 10, 2.4f, 0.5f, 0.1f, 9f, 2f);
+            PunchField(new Cell(p.x, p.y), 1f);
+            RefreshGhosts();
+            save.Save();
+        }
+
         public void Unplant(PlantedState p)
         {
             var c = new Cell(p.x, p.y);

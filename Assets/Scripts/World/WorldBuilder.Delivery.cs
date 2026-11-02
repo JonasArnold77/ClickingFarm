@@ -178,6 +178,8 @@ namespace SeedClicker
             CountDelivered(types);
             // sofort bezahlt, sobald die Ernte in der Kiste liegt
             save.deliveredCount += n;
+            if (save.deliveredTotal < save.deliveredCount - n) save.deliveredTotal = save.deliveredCount - n;   // alte Spielstaende
+            save.deliveredTotal += n;
             crateSquash = 0.7f;
             Particles.I?.Burst(cratePos + new Vector2(0, 0.5f), "square", new Color(1f, 0.85f, 0.3f), 8, 2.2f, 0.6f, 0.08f, 3f, 1.2f);
             AddCoins(value, cratePos + new Vector2(0, 0.8f));

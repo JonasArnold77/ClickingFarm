@@ -54,7 +54,14 @@ namespace SeedClicker
     [Serializable] public class FieldDef { public int free = 6; public float cost = 10f, growth = 1.1f; }
     /// <summary>Tagesaufgabe: so viele Stueck des Tages-Ernteguts fuer Bronze, Silber, Gold.</summary>
     /// <summary>Ein Ziel: genau vier Aufgaben (Bedingungen wie bei needs) und was danach frei wird.</summary>
-    [Serializable] public class MilestoneDef { public string name, desc; public string[] tasks, unlocks; }
+    [Serializable] public class MilestoneDef { public string name, desc; public string[] tasks, unlocks; public float coinShare = 0.25f; public int runes = 1; public bool project; }
+    /// <summary>Grossprojekte nach dem letzten Ziel: endlos, die Mengen wachsen je Projekt um den Faktor.</summary>
+    [Serializable] public class BigProjectDef
+    {
+        public string[] names = { "Erntegigant", "Zombiewall", "Lieferimperium", "Goldene Ära", "Ewiger Sommer", "Knolli-Königreich" };
+        public double delivered = 25000, deliveredGrowth = 2.5, kills = 300, killsGrowth = 2, earned = 2e7, earnedGrowth = 6;
+        public float bonusPerProject = 0.2f, coinShare = 0.3f; public int runes = 3;
+    }
 
     [Serializable] public class ChallengeDef
     {
@@ -235,6 +242,7 @@ namespace SeedClicker
         public SpeciesDef[] species;
         public CatalogDef[] catalog;
         public MilestoneDef[] milestones;   // Ziele mit je vier Aufgaben, nacheinander
+        public BigProjectDef projects = new BigProjectDef();   // danach endlose Grossprojekte
         public MonsterDefW[] monsters;
         public WaveDef waves;
         public WeaponDef[] weapons;
