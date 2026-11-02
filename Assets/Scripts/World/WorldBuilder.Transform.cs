@@ -413,7 +413,9 @@ namespace SeedClicker
         {
             if (benchIcon == null) return;
             var list = WeaponElements(save.weapon);
-            benchIcon.color = Color.Lerp(Color.white, ElementTint(save.weapon), list.Count > 0 ? 0.45f : 0f);
+            // reihum in der Farbe jedes Elements aufleuchten (nicht als Mischfarbe, sonst sieht man nur eins)
+            var tint = list.Count > 0 ? ElementCol(list[(int)(Time.time / 0.9f) % list.Count].id) : Color.white;
+            benchIcon.color = Color.Lerp(benchIcon.color, Color.Lerp(Color.white, tint, list.Count > 0 ? 0.45f : 0f), Time.deltaTime * 4f);
             if (list.Count > 0 && Random.value < Time.deltaTime * (4f + 2f * list.Count))
                 Particles.I?.Spawn(benchIcon.transform.position + (Vector3)(Random.insideUnitCircle * 0.25f), "spark", ElementCol(list[Random.Range(0, list.Count)].id), Vector3.up * 0.4f, 0.6f, 0.08f, 0f, 0f);
         }
