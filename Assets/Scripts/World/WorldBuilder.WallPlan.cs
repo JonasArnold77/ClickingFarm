@@ -139,6 +139,7 @@ namespace SeedClicker
             if (wallMode) SetWallMode(false);
             else if (riverMode) SetRiverMode(false);
             else if (pedestalMode) SetPedestalMode(false);
+            else if (shovelMode) SetShovelMode(false);
         }
 
         public void CancelWallPlan()

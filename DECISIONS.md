@@ -362,3 +362,8 @@
   - Belohnung: dauerhaft +20 % auf alle Ernte je Projekt, 30 % vom Verdienten, 3 + n Runensteine.
   - Neue Zähler im Spielstand: `deliveredTotal`, `killsTotal` (double); Bedingungen rechnen jetzt mit double (`kills`, große Zahlen).
 - **Pflanzen ausgraben:** Im Info-Fenster einer Pflanze steht oben rechts „Ausgraben“. Erster Tipp: „Wirklich?“ (rot, 3 s), zweiter Tipp: die Pflanze ist weg. Ihre liegende Ernte wird noch ausgezahlt, das Feld bleibt frei.
+
+## Werkzeuge: Schnellauswahl und Schaufel (02.11.2026)
+- **Schnellauswahl unten** (ersetzt die alte Knopfreihe): Hand · Schaufel · Mauer · Steinpult · Bach · Laden. Das gewählte Werkzeug leuchtet orange. Ein zweiter Tipp auf die Schaufel oder ein Tipp auf „Hand“ legt das Werkzeug weg. Nachts ist die Leiste ausgeblendet und alle Bau-Werkzeuge gehen aus.
+- **Felder nur mit der Schaufel** (`WorldBuilder.Shovel.cs`): Mit der Hand legt ein Tipp auf freien Boden keine Felder mehr an (vorher entstanden sie aus Versehen). Mit der Schaufel: Anfang setzen, Vorschau ziehen, zweiter Tipp baut. Schaufel, Mauer, Steinpult und Bach schließen sich gegenseitig aus; Escape legt die Schaufel weg.
+- **Laden → neuer Reiter „Bauen“**: Felder (Schaufel, Preis des nächsten Felds), Mauer (Holz je Stück), Steinpult und Bach (Münzen je Stück), jeweils mit kurzer Erklärung. „Kaufen“ schließt den Laden und nimmt das Werkzeug in die Hand.

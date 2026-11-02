@@ -14,9 +14,7 @@ namespace SeedClicker
     {
         Text coinText, cpsText;
         readonly CountUp coinCount = new CountUp();
-        CanvasGroup dayButtons;
-        Image wallBtnImg;
-        Text wallBtnText;
+        CanvasGroup dayButtons;   // Schnellauswahl unten (tagsueber)
         int shopTab;
 
         void BuildEconomyUI()
@@ -35,39 +33,8 @@ namespace SeedClicker
             cpsText = UIKit.Txt(p.transform, "", 28, new Color(1f, 1f, 1f, 0.85f), TextAnchor.MiddleLeft, false, true);
             cpsText.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 0), new Vector2(128, 8), new Vector2(-135, 42));
 
-            // Knoepfe unten: Mauer bauen (links), Laden (rechts)
-            var row = UIKit.Rect(safe, "DayButtons");
-            row.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(-56, 150));
-            dayButtons = row.gameObject.AddComponent<CanvasGroup>();
-            var wall = Btn(row, "Mauer bauen", new Color(0.62f, 0.45f, 0.28f), () => wbi.SetWallMode(!wbi.WallMode), 36);
-            wall.GetComponent<RectTransform>().Place(new Vector2(0, 0), new Vector2(0.28f, 1), new Vector2(0, 0.5f), new Vector2(0, 0), new Vector2(0, 0));   // Breite anteilig: passt auf jedes Format
-            wallBtnImg = wall.GetComponent<Image>(); wallBtnText = wall.GetComponentInChildren<Text>();
-            var ped = Btn(row, "Steinpult", new Color(0.55f, 0.55f, 0.58f), () => wbi.SetPedestalMode(!wbi.PedestalMode), 32);
-            ped.GetComponent<RectTransform>().Place(new Vector2(0.295f, 0), new Vector2(0.49f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, 0), new Vector2(0, 0));
-            var riv = Btn(row, "Bach", new Color(0.3f, 0.6f, 0.85f), () => wbi.SetRiverMode(!wbi.RiverMode), 34);
-            riv.GetComponent<RectTransform>().Place(new Vector2(0.505f, 0), new Vector2(0.685f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, 0), new Vector2(0, 0));
-            var rivImg = riv.GetComponent<Image>(); var rivText = riv.GetComponentInChildren<Text>();
-            wbi.RiverModeChanged += on =>
-            {
-                rivText.text = on ? "Fertig" : "Bach";
-                rivImg.color = on ? new Color(0.85f, 0.6f, 0.25f) : new Color(0.3f, 0.6f, 0.85f);
-                hintText.text = on ? "Bach: Klick setzt den Anfang, das blaue Wasser folgt dir – nächster Klick gräbt ihn (" + Num.Short(PlantBalance.I.River.cost) + " Münzen je Stück). Felder am Bach wachsen schneller und tragen mehr" : ToolHint(WorldCamera.Tool);
-            };
-            var pedImg = ped.GetComponent<Image>(); var pedText = ped.GetComponentInChildren<Text>();
-            wbi.PedestalModeChanged += on =>
-            {
-                pedText.text = on ? "Fertig" : "Steinpult";
-                pedImg.color = on ? new Color(0.85f, 0.6f, 0.25f) : new Color(0.55f, 0.55f, 0.58f);
-                hintText.text = on ? "Steinpult (" + Num.Short(PlantBalance.I.Pedestal.cost) + " Münzen) auf Boden oder Mauer setzen – halten und ziehen setzt viele. Ins Loch passen Kampfpflanzen" : ToolHint(WorldCamera.Tool);
-            };
-            var shop = Btn(row, "Laden", new Color(0.36f, 0.62f, 0.3f), () => OpenShop(shopTab), 44);
-            shop.GetComponent<RectTransform>().Place(new Vector2(0.70f, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(0, 0), new Vector2(0, 0));
-            wbi.WallModeChanged += on =>
-            {
-                wallBtnText.text = on ? "Fertig" : "Mauer bauen";
-                wallBtnImg.color = on ? new Color(0.85f, 0.6f, 0.25f) : new Color(0.62f, 0.45f, 0.28f);
-                hintText.text = on ? "Mauer: Klick setzt den Anfang, die grüne Mauer folgt dir – nächster Klick baut sie (" + PlantBalance.I.Wall.wood.ToString("0.##") + " Holz je Stück). Zweimal auf eine Mauer: Tor, zweimal auf ein Tor: abbauen" : ToolHint(WorldCamera.Tool);
-            };
+            // Schnellauswahl unten: Hand, Schaufel (Felder), Mauer, Steinpult, Bach – und der Laden
+            BuildQuickbar(wbi);
 
             wbi.OfflineEarned += OpenWelcomeBack;
             wbi.DeliveryPaid += (n, v) => Banner("Lieferung bezahlt: +" + Num.Short(v) + " Münzen", n + " Stück Ernte sind verkauft");
@@ -79,6 +46,96 @@ namespace SeedClicker
                 if (d != null && !d.IsCombat && !wbi.GrantingMilestone) Banner("Neue Pflanze: " + d.name, Helps(d));
                 RefreshGoal();
             };
+        }
+
+        // ------------------------------------------------------------------ Schnellauswahl
+
+        class QuickTool { public string id; public Image img; public Text txt; public Color col; }
+        readonly List<QuickTool> quickTools = new List<QuickTool>();
+
+        void BuildQuickbar(WorldBuilder wbi)
+        {
+            var row = UIKit.Rect(safe, "Quickbar");
+            row.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(-40, 150));
+            dayButtons = row.gameObject.AddComponent<CanvasGroup>();
+            (string id, string label, Color col)[] tools =
+            {
+                ("hand", "Hand", new Color(0.5f, 0.45f, 0.4f)),
+                ("shovel", "Schaufel", new Color(0.55f, 0.42f, 0.25f)),
+                ("wall", "Mauer", new Color(0.62f, 0.45f, 0.28f)),
+                ("pedestal", "Steinpult", new Color(0.55f, 0.55f, 0.58f)),
+                ("river", "Bach", new Color(0.3f, 0.6f, 0.85f)),
+                ("shop", "Laden", new Color(0.36f, 0.62f, 0.3f)),
+            };
+            float w = 1f / tools.Length;
+            for (int i = 0; i < tools.Length; i++)
+            {
+                var t = tools[i];
+                string id = t.id;
+                var b = Btn(row, t.label, t.col, () => PickQuickTool(id), t.label.Length > 7 ? 28 : 32);
+                b.GetComponent<RectTransform>().Place(new Vector2(i * w + 0.004f, 0), new Vector2((i + 1) * w - 0.004f, 1), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+                quickTools.Add(new QuickTool { id = id, img = b.GetComponent<Image>(), txt = b.GetComponentInChildren<Text>(), col = t.col });
+            }
+            wbi.WallModeChanged += on => { RefreshQuickbar(); hintText.text = on ? "Mauer: Klick setzt den Anfang, die grüne Mauer folgt dir – nächster Klick baut sie (" + PlantBalance.I.Wall.wood.ToString("0.##") + " Holz je Stück). Zweimal auf eine Mauer: Tor, zweimal auf ein Tor: abbauen" : ToolHint(WorldCamera.Tool); };
+            wbi.PedestalModeChanged += on => { RefreshQuickbar(); hintText.text = on ? "Steinpult (" + Num.Short(PlantBalance.I.Pedestal.cost) + " Münzen) auf Boden oder Mauer setzen – halten und ziehen setzt viele. Ins Loch passen Kampfpflanzen" : ToolHint(WorldCamera.Tool); };
+            wbi.RiverModeChanged += on => { RefreshQuickbar(); hintText.text = on ? "Bach: Klick setzt den Anfang, das blaue Wasser folgt dir – nächster Klick gräbt ihn (" + Num.Short(PlantBalance.I.River.cost) + " Münzen je Stück). Felder am Bach wachsen schneller und tragen mehr" : ToolHint(WorldCamera.Tool); };
+            wbi.ShovelModeChanged += on => { RefreshQuickbar(); hintText.text = on ? "Schaufel: Tipp auf freien Boden setzt den Anfang, die Vorschau folgt – nächster Tipp legt die Felder an (nächstes Feld: " + Num.Short(wbi.FieldCost()) + " Münzen)" : ToolHint(WorldCamera.Tool); };
+            RefreshQuickbar();
+        }
+
+        /// <summary>Werkzeug aus der Schnellauswahl waehlen (nochmal tippen = zurueck zur Hand).</summary>
+        void PickQuickTool(string id)
+        {
+            var wbi = WorldBuilder.I;
+            if (wbi == null) return;
+            Haptics.Tap(8);
+            switch (id)
+            {
+                case "shop": OpenShop(shopTab); return;
+                case "hand": HandTool(wbi); break;
+                case "shovel": if (wbi.ShovelMode) HandTool(wbi); else wbi.SetShovelMode(true); break;
+                case "wall": wbi.SetWallMode(!wbi.WallMode); break;
+                case "pedestal": wbi.SetPedestalMode(!wbi.PedestalMode); break;
+                case "river": wbi.SetRiverMode(!wbi.RiverMode); break;
+            }
+            RefreshQuickbar();
+        }
+
+        static void HandTool(WorldBuilder wbi)
+        {
+            if (wbi.WallMode) wbi.SetWallMode(false);
+            if (wbi.PedestalMode) wbi.SetPedestalMode(false);
+            if (wbi.RiverMode) wbi.SetRiverMode(false);
+            if (wbi.ShovelMode) wbi.SetShovelMode(false);
+        }
+
+        /// <summary>Gewaehltes Werkzeug leuchtet (Hand, wenn kein Bau-Modus an ist).</summary>
+        void RefreshQuickbar()
+        {
+            var wbi = WorldBuilder.I;
+            if (wbi == null) return;
+            string cur = wbi.ShovelMode ? "shovel" : wbi.WallMode ? "wall" : wbi.PedestalMode ? "pedestal" : wbi.RiverMode ? "river" : "hand";
+            foreach (var q in quickTools)
+            {
+                bool on = q.id == cur;
+                q.img.color = on ? new Color(0.95f, 0.72f, 0.3f) : q.col;
+                q.img.rectTransform.localScale = Vector3.one * (on ? 1.06f : 1f);
+            }
+        }
+
+        /// <summary>Laden-Reiter "Bauen": Felder, Mauer, Steinpult, Bach – mit Preis; "Auswählen" nimmt das Werkzeug in die Hand.</summary>
+        void BuildShop(Transform content, WorldBuilder wbi)
+        {
+            void Row(string title, string desc, string price, string tool)
+                => ShopRow(content, title, desc, price, true, () => { CloseModal(); PickQuickTool(tool); });
+            Row("Felder (Schaufel)", "Neue Felder anlegen: Tipp setzt den Anfang, die Vorschau folgt, zweiter Tipp baut. Du hast " + wbi.FieldCount + " Felder.",
+                Num.Short(wbi.FieldCost()) + " je Feld", "shovel");
+            Row("Mauer", "Hält Zombies auf. Zweimal auf eine Mauer tippen: Tor (Knollis gehen durch).",
+                PlantBalance.I.Wall.wood.ToString("0.##") + " Holz je Stück", "wall");
+            Row("Steinpult", "Erhöhtes Pult für Kampf- und Verteidigungspflanzen, auch auf Mauern.",
+                Num.Short(PlantBalance.I.Pedestal.cost) + " je Stück", "pedestal");
+            Row("Bach", "Fließt um deine Gärten: Felder daneben wachsen schneller und tragen mehr.",
+                Num.Short(PlantBalance.I.River.cost) + " je Stück", "river");
         }
 
         void UpdateEconomyUI(float dt)
@@ -98,6 +155,7 @@ namespace SeedClicker
                 if (night && wbi.WallMode) wbi.SetWallMode(false);
                 if (night && wbi.PedestalMode) wbi.SetPedestalMode(false);
                 if (night && wbi.RiverMode) wbi.SetRiverMode(false);
+                if (night && wbi.ShovelMode) wbi.SetShovelMode(false);
             }
         }
 
@@ -113,8 +171,8 @@ namespace SeedClicker
             var tabs = UIKit.HRow(panel, "Tabs", 12, TextAnchor.MiddleCenter, new RectOffset(20, 20, 0, 0));
             tabs.GetComponent<RectTransform>().Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -120), new Vector2(0, 90));
             if (tab == 1) tab = shopTab = 0;   // frueher "Gebaeude" – gibt es nicht mehr
-            string[] names = { "Verbesserungen", "Hof", "Bauwerke" };
-            int[] ids = { 0, 2, 3 };
+            string[] names = { "Verbesserungen", "Bauen", "Hof", "Bauwerke" };
+            int[] ids = { 0, 4, 2, 3 };
             for (int i = 0; i < names.Length; i++)
             {
                 int k = ids[i];
@@ -148,6 +206,7 @@ namespace SeedClicker
                 if (owned > 0) Label(content, "Gekauft: " + owned, 28, InkSoft, TextAnchor.MiddleCenter).LE(-1, 60);
             }
             else if (tab == 3) StructureShop(content);
+            else if (tab == 4) BuildShop(content, wbi);
             else
             {
                 var next = wbi.NextFarmLevel();

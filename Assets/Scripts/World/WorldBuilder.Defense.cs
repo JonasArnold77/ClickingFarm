@@ -28,6 +28,7 @@ namespace SeedClicker
         {
             if (on && pedestalMode) { pedestalMode = false; PedestalModeChanged?.Invoke(false); }
             if (on && riverMode) { riverMode = false; RiverModeChanged?.Invoke(false); }
+            if (on) DropShovel();
             CancelWallPlan();   // auch eine angefangene Feld-Vorschau
             wallMode = on;
             RefreshGhosts();

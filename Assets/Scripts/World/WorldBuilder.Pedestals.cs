@@ -39,6 +39,7 @@ namespace SeedClicker
         {
             if (on && wallMode) { wallMode = false; WallModeChanged?.Invoke(false); }
             if (on && riverMode) { riverMode = false; RiverModeChanged?.Invoke(false); }
+            if (on) DropShovel();
             CancelWallPlan();
             pedestalMode = on;
             RefreshGhosts();

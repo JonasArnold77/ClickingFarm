@@ -226,7 +226,7 @@ namespace SeedClicker
             if (wb.PlantAt(cell) != null) { wb.InspectPlant(cell); return; }
             if (wb.IsSlot(cell)) { wb.TapEmptyField(cell); return; }
             if (wb.TryChop(w) || wb.TryMine(w) || wb.TryClearJunk(w)) return;
-            if (wb.CanPlaceField(cell)) wb.FieldClick(w);   // Anfang setzen, gruene Vorschau folgt
+            if (wb.ShovelMode && wb.CanPlaceField(cell)) wb.FieldClick(w);   // nur mit der Schaufel: Anfang setzen, gruene Vorschau folgt
 
         }
 
