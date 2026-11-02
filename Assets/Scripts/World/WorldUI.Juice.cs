@@ -39,7 +39,7 @@ namespace SeedClicker
                 comboAlpha = 0f;
                 var def = PlantBalance.I.Plant(p.type);
                 string what = p.IsCombat ? "Sie verteidigt jetzt den Hof" : def != null ? Roles.Desc(def) : Roles.Name(p.Role);
-                Banner(p.Genome.name + " ist reif!", what + " – alle " + PlantBalance.I.levelTaps + " Klicks steigt sie eine Stufe auf");
+                Banner(p.Genome.name + " ist reif!", what + " – jeder Klick erntet und bringt sie Stufe für Stufe weiter (erst " + PlantBalance.I.LevelTapsFor(1) + " Klicks, dann immer mehr)");
             };
             wb.PlacingChanged += h => hintText.text = h ?? ToolHint(WorldCamera.Tool);
         }

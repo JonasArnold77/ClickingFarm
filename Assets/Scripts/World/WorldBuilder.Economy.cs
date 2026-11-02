@@ -125,7 +125,7 @@ namespace SeedClicker
             return n;
         }
 
-        /// <summary>Gegossen: ein Tauschilf erreicht das Feld (Saftrohre verlaengern) oder das Feld liegt am Bach.</summary>
+        /// <summary>Nass (nur Optik): ein Tauschilf erreicht das Feld (Saftrohre verlaengern), das Feld liegt am Bach oder ein Giesser war da.</summary>
         public bool IsWatered(PlantedState p)
         {
             foreach (var q in save.planted) if (q != p && q.Grown && q.Role == "water" && InCross(new Cell(q.x, q.y), new Cell(p.x, p.y), WaterRadiusOf(q))) return true;
@@ -141,13 +141,12 @@ namespace SeedClicker
         }
         float FertMult(PlantedState p) => 1f + 0.5f * GrownNear(p, "fert", 1) * UpgradeMult("fert");
         float BoostMult(PlantedState p) => GrownNear(p, "boost", 2) > 0 ? 2f : 1f;
-        float WaterMult(PlantedState p) => IsWatered(p) ? 1.5f : 1f;
 
         /// <summary>So viel bringt ein Tipp: Wachstum (bzw. Stufen-Fortschritt) und bei reifer Ernte Muenzen.</summary>
         public int TapPower(PlantedState p, bool growing)
         {
             float m = UpgradeMult("click") * BoostMult(p);
-            if (growing) m *= UpgradeMult("growth") * (IsWatered(p) ? 2f : 1f) * (1f + 0.5f * GrownNear(p, "fert", 1)) * TotemMult(p, "growth") * RiverMult(p, "growth");
+            if (growing) m *= UpgradeMult("growth") * (1f + 0.5f * GrownNear(p, "fert", 1)) * TotemMult(p, "growth") * RiverMult(p, "growth");
             return Mathf.Max(1, Mathf.RoundToInt(m));
         }
 
@@ -155,7 +154,7 @@ namespace SeedClicker
         {
             var c = PlantBalance.I.Plant(p.type);
             if (c == null || p.Role != "harvest" || !p.Grown) return 0;
-            return c.value * c.taps * p.Lv * UpgradeMult("harvest") * BoostMult(p) * FertMult(p) * WaterMult(p) * TotemMult(p, "harvest") * GroupMult(p, c);
+            return c.value * c.taps * p.Lv * UpgradeMult("harvest") * BoostMult(p) * FertMult(p) * TotemMult(p, "harvest") * GroupMult(p, c);
         }
 
         /// <summary>Muenzen pro Sekunde dieser Pflanze (Ernte waechst auch ohne Tippen nach).</summary>
@@ -164,7 +163,7 @@ namespace SeedClicker
             if (!p.Grown) return 0f;
             var c = PlantBalance.I.Plant(p.type);
             if (c == null) return 0f;
-            if (p.Role == "harvest") return c.value * c.prod * p.Lv * 0.15f * UpgradeMult("harvest") * UpgradeMult("cps") * FertMult(p) * WaterMult(p) * TotemMult(p, "produce") * RiverMult(p, "produce") * GroupMult(p, c);
+            if (p.Role == "harvest") return c.value * c.prod * p.Lv * 0.15f * UpgradeMult("harvest") * UpgradeMult("cps") * FertMult(p) * TotemMult(p, "produce") * RiverMult(p, "produce") * GroupMult(p, c);
             return 0f;
         }
 
@@ -217,7 +216,7 @@ namespace SeedClicker
             if (Time.unscaledTime < v.readyAt) return;
             if (p.Role == "harvest") AddProduct(p, 1, ItemValue(p) * 0.5, null);   // Klopfwurz erntet halb so gut
             p.xp += 1;
-            if (p.xp >= Mathf.Max(1, PlantBalance.I.levelTaps)) LevelUp(p, v, basePos, top);
+            if (p.xp >= PlantBalance.I.LevelTapsFor(p.Lv)) LevelUp(p, v, basePos, top);
         }
 
         void UpdateAuto(float dt)

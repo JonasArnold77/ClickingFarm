@@ -158,7 +158,7 @@ namespace SeedClicker
             if (!p.Grown) { f = p.growth / Mathf.Max(1f, p.GrowTaps); bar = "Wächst: " + Mathf.FloorToInt(p.growth) + " / " + p.GrowTaps; }
             else
             {
-                int need = Mathf.Max(1, PlantBalance.I.levelTaps);
+                int need = PlantBalance.I.LevelTapsFor(p.Lv);
                 f = p.xp / (float)need;
                 int next = NextMutationLevel(p.Lv);
                 bar = "Nächste Stufe: " + p.xp + " / " + need + (next > 0 ? "   ·   Mutation ab Stufe " + next : "");
@@ -203,7 +203,6 @@ namespace SeedClicker
                 case "combat": s = PlantGenome.Describe(g.projectile) + " · " + PlantGenome.Describe(g.element) + " · " + PlantGenome.Describe(g.range); break;
                 default: s = ""; break;
             }
-            if (!p.Grown && wb.IsWatered(p)) s = (s != "" ? s + " · " : "") + "gegossen ×2";
             if (!p.Grown && s == "") s = "Tippe, damit sie wächst";
             return s;
         }

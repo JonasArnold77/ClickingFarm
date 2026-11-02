@@ -9,7 +9,7 @@ namespace SeedClicker
     /// Baeche fliessen nur um Gaerten herum: nie auf ein Feld, und die Vorschau endet am ersten Feld bzw. Hindernis.
     /// Das Wasser ist comichaft gemalt (dicke dunkle Kontur, kraeftiges Tuerkis, heller Rand) und fliesst sichtbar:
     /// Helligkeitswellen laufen den Bach entlang, weisse Stroemungsstriche ziehen in Fliessrichtung.
-    /// Pflanzen auf Feldern direkt am Bach (auch schraeg) gelten als gegossen und wachsen und produzieren schneller.
+    /// Pflanzen auf Feldern direkt am Bach (auch schraeg) wachsen und produzieren schneller.
     /// Werte in plants.json -> river.
     /// </summary>
     public partial class WorldBuilder

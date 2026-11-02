@@ -245,3 +245,17 @@
   - Upgrade-Preis ≈ gut eine Minute Einkommen zum Freischaltzeitpunkt, Bauwerke ≈ eine knappe Minute, Hof-Stufen ≈ 1,5 Minuten.
   - `testUnlockAll` ist aus.
 - „Buchhaltung“/„Genossenschaft“ (Effekt `cps`) wirkten seit der Lieferkette nicht mehr (keine Pflanze zahlt mehr direkt). Jetzt verstärken sie die von selbst nachwachsende Ernte. Die HUD-Zeile „+X pro Sekunde“ und der Offline-Ertrag rechnen diese Ernte mit ein (vorher war beides 0).
+
+## Gießen wirft Ernte ab (02.11.2026)
+- Entscheidung: **Wachstum kommt nur vom Tippen** (und von Hilfe durch Pflanzen wie der Klopfwurz). Gießen bringt kein Wachstum und keinen Ertrags-Multiplikator mehr (vorher: wachsend ×2, Ernte und Produktion ×1,5).
+- Stattdessen lässt jeder Tropfen **Ernte aus reifen Pflanzen fallen**:
+  - Tauschilf: etwa alle 2,4 s (schneller mit Stufe) ein Tropfen auf jede reife Ernte-Pflanze im Kreuz. Je Tropfen 2 Stück (+1 je zwei Stufen) zu je 35 % des Ernte-Werts. Ein Tipp aufs Tauschilf gießt sofort alles in Reichweite, mit halber Menge, damit es das Ernten nicht schlägt.
+  - Gießer-Knolli: eine Kanne zählt ×4 (8 Stück je Pflanze). Er gießt nur reife Ernte-Pflanzen, jede höchstens alle 15 s.
+  - Werte: `helpers.waterDropItems/waterDropValue/waterCanMult`, `delivery.workWetSeconds`.
+- Automatische Tropfen sind leise (kein Wackeln, keine Zahl). Nur der eigene Tipp aufs Tauschilf bekommt das volle Spektakel.
+- „Nass“ (Bach, Tauschilf, Gießer) ist nur noch Optik: dunkleres Feld. Der Bach behält seine eigenen Boni (Wachstum ×1,5 pro Tipp, Produktion ×1,5).
+
+## Klicken wichtiger, Kamera (02.11.2026)
+- **Pflanzen-Stufen werden teurer:** Stufe 1→2 braucht 60 Klicks, jede weitere ×1,35 (Stufe 5→6 ≈ 200, 9→10 ≈ 660; `levelTaps`, `levelGrowth`). Vorher waren es immer 40. Man muss also entscheiden, welche Pflanze man zuerst hochklickt.
+- Ein Klick auf eine reife Ernte-Pflanze macht weiterhin beides auf einmal: Ernte abwerfen und Stufen-Fortschritt.
+- **Kamera:** Mit der Maus verschiebt man nur noch mit der rechten (oder mittleren) Taste. Die linke Taste klickt nur, auch wenn man sie dabei bewegt. Auf dem Handy schiebt weiter ein Finger, weil es dort keinen Rechtsklick gibt.

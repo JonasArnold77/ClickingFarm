@@ -6,7 +6,7 @@ namespace SeedClicker
     /// <summary>
     /// Knolli-Berufe: Knolli antippen, Beruf waehlen.
     ///  - Traeger (carrier): bringt die Ernte eines Felds zur Lieferkiste (wie bisher, Feld antippen).
-    ///  - Giesser (water): holt Wasser am Bach (oder am Haus) und giesst die Pflanzen eines Felds – gegossen fuer eine Weile.
+    ///  - Giesser (water): holt Wasser am Bach (oder am Haus) und giesst die reifen Pflanzen eines Felds – jeder Guss laesst viel Ernte fallen.
     ///  - Holzfaeller (wood): faellt Baeume und graebt Stuempfe aus, das Holz kommt wie beim Spieler.
     ///  - Maurer (mason): flickt die am staerksten beschaedigte Mauer.
     ///  - Wache (guard): nachts wirft sie Steine auf Zombies in der Naehe des Hauses, tagsueber schlaeft sie.
@@ -18,7 +18,7 @@ namespace SeedClicker
         public static readonly (string id, string name, string desc, bool needsField)[] KnolliRoles =
         {
             ("carrier", "Träger", "Bringt Ernte zur Lieferkiste – überall oder nur von einem Feld", true),
-            ("water", "Gießer", "Holt Wasser am Bach und gießt ein Feld", true),
+            ("water", "Gießer", "Holt Wasser am Bach und gießt ein Feld – jede Kanne lässt viel Ernte fallen", true),
             ("wood", "Holzfäller", "Fällt Bäume und bringt Holz", false),
             ("mason", "Maurer", "Flickt beschädigte Mauern", false),
             ("guard", "Wache", "Wirft nachts Steine auf Zombies", false),
@@ -180,7 +180,7 @@ namespace SeedClicker
             PlantedState pick = null; float bd = float.MaxValue;
             foreach (var p in save.planted)
             {
-                if (!bed.Contains(new Cell(p.x, p.y)) || (wetUntil.TryGetValue(p, out var t) && t > Time.time + 8f)) continue;
+                if (!bed.Contains(new Cell(p.x, p.y)) || !p.Grown || !MakesProduct(p) || (wetUntil.TryGetValue(p, out var t) && t > Time.time + 8f)) continue;
                 float d = (PlantBase(p) - k.pos).sqrMagnitude;
                 if (d < bd) { bd = d; pick = p; }
             }
@@ -192,7 +192,7 @@ namespace SeedClicker
                 {
                     k.workT = 0f; k.water--;
                     wetUntil[pick] = Time.time + PlantBalance.I.Delivery.workWetSeconds;
-                    StartCoroutine(Droplet(k.pos + new Vector2(0.15f * k.face, 0.45f), new Cell(pick.x, pick.y), 0f, false));
+                    StartCoroutine(Droplet(k.pos + new Vector2(0.15f * k.face, 0.45f), new Cell(pick.x, pick.y), 0f, false, PlantBalance.I.Helpers.waterCanMult));
                     PunchField(new Cell(pick.x, pick.y), 0.3f);
                     k.swing = 1f;
                 }

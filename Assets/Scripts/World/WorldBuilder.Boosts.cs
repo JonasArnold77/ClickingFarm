@@ -45,7 +45,7 @@ namespace SeedClicker
                     var rc = new Cell(c.x + dx, c.y + dy);
                     if ((dx == 0 && dy == 0) || !rivers.ContainsKey(rc)) continue;
                     var r = PlantBalance.I.River;
-                    list.Add(new BoostSource { label = "Bach: gegossen, Wachstum ×" + r.growth.ToString("0.#") + ", Ernte ×" + r.produce.ToString("0.#"), from = CellCenter(rc), col = RiverCol });
+                    list.Add(new BoostSource { label = "Bach: Wachstum ×" + r.growth.ToString("0.#") + ", Ernte ×" + r.produce.ToString("0.#"), from = CellCenter(rc), col = RiverCol });
                     dx = 2; break;   // ein Bach reicht
                 }
             foreach (var q in save.planted)
@@ -53,7 +53,7 @@ namespace SeedClicker
                 if (!q.Grown || (q.x == c.x && q.y == c.y)) continue;
                 string name = PlantBalance.I.Plant(q.type)?.name ?? q.type;
                 var from = CellCenter(new Cell(q.x, q.y));
-                if (q.Role == "water" && InCross(new Cell(q.x, q.y), c, WaterRadiusOf(q))) list.Add(new BoostSource { label = name + ": gegossen", from = from, col = SchilfCol });
+                if (q.Role == "water" && InCross(new Cell(q.x, q.y), c, WaterRadiusOf(q))) list.Add(new BoostSource { label = name + ": tropft, Ernte fällt heraus", from = from, col = SchilfCol });
                 else if (q.Role == "fert" && Cheb(c, q.x, q.y) <= 1) list.Add(new BoostSource { label = name + ": Dünger, Ernte ×1,5", from = from, col = FertCol });
                 else if (q.Role == "boost" && Cheb(c, q.x, q.y) <= 2) list.Add(new BoostSource { label = name + ": Tipps ×2", from = from, col = BoostCol });
             }

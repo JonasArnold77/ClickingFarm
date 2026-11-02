@@ -6,7 +6,7 @@ namespace SeedClicker
 {
     /// <summary>
     /// Giess-Effekt des Tauschilfs: Alle 1-2 Sekunden schiesst aus der reifen Wasserpflanze eine kleine Fontaene
-    /// (Cartoon FX "Water Fountain"), Wassertropfen fliegen im Bogen auf alle Pflanzen im Umkreis (wachsende Saat und reife, die weiter leveln) und platschen dort auf
+    /// (Cartoon FX "Water Fountain"), Wassertropfen fliegen im Bogen auf alle reifen Ernte-Pflanzen im Umkreis, platschen dort auf und lassen Ernte herausfallen
     /// (Spritzer + zwei Wasserringe), das Feld glaenzt kurz nass. Ein Tipp auf das reife Tauschilf giesst sofort alle
     /// Felder im Umkreis mit einer grossen Fontaene. Ohne das Effekt-Paket laufen eigene Tropfen-Partikel.
     /// </summary>
@@ -88,10 +88,9 @@ namespace SeedClicker
             var list = new List<Cell>();
             foreach (var c in CrossCells(new Cell(w.x, w.y), WaterRadiusOf(w)))
             {
-                // nur dort giessen, wo es etwas bringt: wachsende Saat und reife Pflanzen, die weiter leveln
-                // (nicht in der kurzen Sperre direkt nach dem Reif-Moment)
+                // nur dort giessen, wo es etwas bringt: reife Ernte-Pflanzen (nicht in der kurzen Sperre direkt nach dem Reif-Moment)
                 var t = PlantAt(c);
-                if (t == null || t == w || t.x != c.x || t.y != c.y) continue;
+                if (t == null || t == w || t.x != c.x || t.y != c.y || !t.Grown || !MakesProduct(t)) continue;
                 if (t.Grown && plantViews.TryGetValue(c, out var tv) && Time.unscaledTime < tv.readyAt) continue;
                 list.Add(c);
             }
@@ -117,38 +116,35 @@ namespace SeedClicker
                 Particles.I?.Spawn(top, "drop", WaterCol, new Vector3(UnityEngine.Random.Range(-1.6f, 1.6f), UnityEngine.Random.Range(2.2f, 4f), 0), 0.7f, 0.09f, 0.05f, 8f);
             Sfx.Play("water", UnityEngine.Random.Range(big ? 0.8f : 1.1f, big ? 0.95f : 1.3f), big ? 0.55f : 0.22f);
             // alle Felder im Umkreis auf einmal: die Tropfen starten zusammen und landen zusammen
-            foreach (var c in targets) StartCoroutine(Droplet(top, c, 0f, big));
+            foreach (var c in targets) StartCoroutine(Droplet(top, c, 0f, big, big ? 0.5f : 1f));   // Tipp aufs Tauschilf: halbe Menge, sonst schlaegt er das Ernten
         }
 
-        /// <summary>Ein Tropfen wirkt wie ein Klick: das Feld schwillt an und blitzt, der Balken springt und zaehlt hoch.</summary>
-        void WaterTap(Cell c, bool big)
+        /// <summary>Ein Tropfen laesst Ernte herausfallen (Giessen bringt kein Wachstum – das kommt nur vom Tippen).
+        /// amount: Tauschilf-Tropfen 1, volle Kanne eines Giesser-Knollis mehr.</summary>
+        void WaterTap(Cell c, bool big, float amount)
         {
             var p = PlantAt(c);
-            if (p == null || !plantViews.TryGetValue(new Cell(p.x, p.y), out var v)) return;
+            if (p == null || !p.Grown || !MakesProduct(p) || !plantViews.TryGetValue(new Cell(p.x, p.y), out var v)) return;
             var basePos = PlantBase(p);
             var top = basePos + new Vector2(0, (v.sr.bounds.max.y - basePos.y) * 0.75f);
             PunchField(c, big ? 1f : 0.8f);
             v.flash = Mathf.Max(v.flash, 0.45f);
-            v.barPunch = 1f;
-            v.barShow = 2.5f;
-            int gain;
-            if (!p.Grown)
-            {
-                gain = Mathf.Max(1, Mathf.Min(TapPower(p, true), Mathf.CeilToInt(p.GrowTaps - p.growth)));
-                p.growth = Mathf.Min(p.GrowTaps, p.growth + gain);
-                UpdatePlantSprite(p, v);
-                Floater?.Invoke(top + new Vector2(0.2f, 0.15f), "+" + gain, new Color(0.6f, 0.88f, 1f));
-                if (p.Grown) Ripe(p, v, basePos, top);
-                return;
-            }
-            gain = Mathf.Max(1, TapPower(p, false));
-            p.xp += gain;
-            Floater?.Invoke(top + new Vector2(0.2f, 0.15f), "+" + gain, new Color(0.75f, 0.65f, 1f));
-            if (p.xp >= Mathf.Max(1, PlantBalance.I.levelTaps)) LevelUp(p, v, basePos, top);
+            var h = PlantBalance.I.Helpers;
+            int n = Mathf.Max(1, Mathf.RoundToInt((h.waterDropItems + WaterLevelBonus(c)) * amount));
+            AddProduct(p, n, ItemValue(p) * h.waterDropValue, big ? top + new Vector2(0, 0.2f) : (Vector2?)null);   // nur der eigene Tipp wackelt und zeigt die Zahl
+        }
+
+        /// <summary>Hoehere Stufe des Tauschilfs (das am weitesten levelte in Reichweite): mehr Stueck je Tropfen.</summary>
+        int WaterLevelBonus(Cell c)
+        {
+            int best = 0;
+            foreach (var q in save.planted)
+                if (q.Grown && q.Role == "water" && InCross(new Cell(q.x, q.y), c, WaterRadiusOf(q))) best = Mathf.Max(best, (q.Lv - 1) / 2);
+            return best;
         }
 
         /// <summary>Ein Wassertropfen fliegt im Bogen von der Pflanze aufs Feld und platscht dort auf.</summary>
-        IEnumerator Droplet(Vector2 from, Cell target, float delay, bool big)
+        IEnumerator Droplet(Vector2 from, Cell target, float delay, bool big, float amount = 1f)
         {
             if (delay > 0f) yield return new WaitForSeconds(delay);
             var to = CellCenter(target) + new Vector2(UnityEngine.Random.Range(-0.08f, 0.08f), UnityEngine.Random.Range(-0.05f, 0.08f));
@@ -177,10 +173,10 @@ namespace SeedClicker
                 yield return null;
             }
             Destroy(sr.gameObject);
-            Splash(to, target, big);
+            Splash(to, target, big, amount);
         }
 
-        void Splash(Vector2 at, Cell c, bool big)
+        void Splash(Vector2 at, Cell c, bool big, float amount)
         {
             // Spritzer: kleine Tropfen springen hoch und fallen zurueck
             for (int i = 0; i < (big ? 8 : 5); i++)
@@ -190,7 +186,7 @@ namespace SeedClicker
             Shockwave(at, big ? 0.22f : 0.18f, 0.55f, new Color(0.65f, 0.88f, 1f, 0.45f));
             Sfx.Play("pop", UnityEngine.Random.Range(1.4f, 1.8f), big ? 0.25f : 0.12f);
             if (fields.ContainsKey(c)) wetFlash[c] = 1f;
-            WaterTap(c, big);
+            WaterTap(c, big, amount);
         }
     }
 }

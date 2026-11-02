@@ -67,7 +67,7 @@ namespace SeedClicker
         // Sammelrunde der Traeger: bis zu tripStops Haufen (je hoechstens tripReach entfernt), bis tripLoad Stueck dabei sind
         public int tripLoad = 30, tripStops = 5;
         public float tripReach = 4f;
-        public float workWetSeconds = 45f, workChopInterval = 0.8f, workRepair = 0.08f, guardInterval = 1.4f, guardRange = 2.6f, guardDamage = 2f;
+        public float workWetSeconds = 15f, workChopInterval = 0.8f, workRepair = 0.08f, guardInterval = 1.4f, guardRange = 2.6f, guardDamage = 2f;
     }
     /// <summary>Runen-Altar: pro geopfertem Runenstein (Fluch-Stufe) werden Zombies staerker, groesser und zahlreicher,
     /// dafuer gibt es mehr Muenzen pro Zombie, einen Bonus beim Ueberstehen (victoryBonus * Stufe * Welle) und oefter Runensteine.</summary>
@@ -107,6 +107,8 @@ namespace SeedClicker
     {
         public float carrierInterval = 7f; public int carrierWood = 1;
         public float sowerInterval = 4f; public int sowerRadius = 2;
+        // Giessen: je Tropfen so viele Stueck (+1 je zwei Stufen des Tauschilfs) zu diesem Anteil des Ernte-Werts; die Kanne eines Giessers zaehlt mehrfach
+        public int waterDropItems = 2; public float waterDropValue = 0.35f, waterCanMult = 4f;
         public int pipeRadius = 2, pipeBonus = 1;
     }
     /// <summary>Stuetzranke: Reichweite, Gebaeude-Bonus, Hammerschlaege an der Waffenbank, Mauer-Reparatur (Anteil der vollen Haltbarkeit).</summary>
@@ -134,7 +136,7 @@ namespace SeedClicker
         }
         public static string Desc(CatalogDef d) => d.role switch
         {
-            "water" => "Gießt die Felder links, rechts, oben und unten: wachsen doppelt so schnell, Ernte +50 %.",
+            "water" => "Tropft auf die Felder links, rechts, oben und unten: aus reifen Pflanzen fällt dabei Ernte heraus.",
             "harvest" => HarvestDesc(d),
             "fert" => "Direkte Nachbarn wachsen schneller und bringen +50 % Münzen.",
             "boost" => "Tipps auf Pflanzen im Umkreis von 2 zählen doppelt.",
@@ -197,7 +199,11 @@ namespace SeedClicker
     {
         public float baseDamage, baseCooldown, damagePerLevel, rangeBase, rangePerLevel, comboWindow;
         public int growTaps, maxLevel;
-        public int levelTaps = 40;   // Klicks auf eine reife Pflanze bis zur naechsten Stufe
+        public int levelTaps = 60;   // Klicks auf eine reife Pflanze von Stufe 1 auf 2 ...
+        public float levelGrowth = 1.35f;   // ... und jede weitere Stufe braucht so viel mal mehr
+
+        /// <summary>Klicks, die eine reife Pflanze auf Stufe lv bis zur naechsten Stufe braucht.</summary>
+        public int LevelTapsFor(int lv) => Mathf.Max(1, Mathf.RoundToInt(levelTaps * Mathf.Pow(levelGrowth, Mathf.Max(0, lv - 1))));
         public int[] growMilestones;
         public OptionDef[] patterns, projectiles, elements, effects;
         public SpeciesDef[] species;

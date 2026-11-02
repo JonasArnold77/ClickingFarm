@@ -369,7 +369,7 @@ namespace SeedClicker
             float heat = Mathf.Clamp01(combo / 30f);
             v.heat = Mathf.Max(v.heat, heat);
 
-            int taps = leveling ? Mathf.Max(1, PlantBalance.I.levelTaps) : p.GrowTaps;
+            int taps = leveling ? PlantBalance.I.LevelTapsFor(p.Lv) : p.GrowTaps;
             int before = p.growth;
             int power = TapPower(p, !leveling);
             if (leveling) p.xp += power; else p.growth = Mathf.Min(taps, p.growth + power);
@@ -458,7 +458,7 @@ namespace SeedClicker
             return true;
         }
 
-        /// <summary>40 Klicks auf eine reife Pflanze: eine Stufe hoeher (groesser, staerker), an den Schwellen Mutation.</summary>
+        /// <summary>Genug Klicks auf eine reife Pflanze (jede Stufe mehr, siehe LevelTapsFor): eine Stufe hoeher (groesser, staerker), an den Schwellen Mutation.</summary>
         void LevelUp(PlantedState p, PlantView v, Vector2 basePos, Vector2 top)
         {
             var g = p.Genome;
@@ -819,7 +819,7 @@ namespace SeedClicker
                 v.barBack.enabled = v.barFill.enabled = showBar;
                 if (showBar)
                 {
-                    float f = p.Grown ? p.xp / (float)Mathf.Max(1, PlantBalance.I.levelTaps) : p.growth / (float)p.GrowTaps;
+                    float f = p.Grown ? p.xp / (float)PlantBalance.I.LevelTapsFor(p.Lv) : p.growth / (float)p.GrowTaps;
                     var top = new Vector2(v.root.position.x, v.sr.bounds.max.y + 0.1f);
                     float w = CellSize * 0.85f, h = 0.06f * (1 + v.barPunch * 0.8f);
                     v.barBack.transform.position = top; v.barBack.transform.localScale = new Vector3(w + 0.04f, h + 0.04f, 1);

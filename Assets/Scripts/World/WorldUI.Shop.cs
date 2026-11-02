@@ -50,7 +50,7 @@ namespace SeedClicker
             {
                 rivText.text = on ? "Fertig" : "Bach";
                 rivImg.color = on ? new Color(0.85f, 0.6f, 0.25f) : new Color(0.3f, 0.6f, 0.85f);
-                hintText.text = on ? "Bach: Klick setzt den Anfang, das blaue Wasser folgt dir – nächster Klick gräbt ihn (" + Num.Short(PlantBalance.I.River.cost) + " Münzen je Stück). Felder am Bach sind gegossen und wachsen schneller" : ToolHint(WorldCamera.Tool);
+                hintText.text = on ? "Bach: Klick setzt den Anfang, das blaue Wasser folgt dir – nächster Klick gräbt ihn (" + Num.Short(PlantBalance.I.River.cost) + " Münzen je Stück). Felder am Bach wachsen schneller und tragen mehr" : ToolHint(WorldCamera.Tool);
             };
             var pedImg = ped.GetComponent<Image>(); var pedText = ped.GetComponentInChildren<Text>();
             wbi.PedestalModeChanged += on =>

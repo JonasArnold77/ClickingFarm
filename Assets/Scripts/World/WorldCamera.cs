@@ -82,7 +82,7 @@ namespace SeedClicker
             float wheel = Input.mouseScrollDelta.y;
             if (Mathf.Abs(wheel) > 0.01f && !OverUI(-1)) ZoomAt(Input.mousePosition, 1f - wheel * 0.1f);
 
-            // Rechte/mittlere Taste: immer verschieben
+            // Rechte/mittlere Taste: verschieben (mit der linken Taste wird nur geklickt, nie geschoben)
             if (Input.GetMouseButtonDown(1) || Input.GetMouseButtonDown(2)) lastScreen = Input.mousePosition;
             if (Input.GetMouseButton(1) || Input.GetMouseButton(2)) { PanBy((Vector2)Input.mousePosition - lastScreen); lastScreen = Input.mousePosition; return; }
 
@@ -136,10 +136,12 @@ namespace SeedClicker
         PlantedState dragCand;   // reife Pflanze unter dem Finger: kann gezogen werden
         bool draggingPlant;
         bool tappedReady;   // dieser Druck hat die Pflanze schon wachsen lassen (Info-Fenster offen)
+        bool mouseDown;     // Druck kommt von der linken Maustaste (schiebt die Karte nicht)
 
         void PointerDown(Vector2 screen, int id)
         {
             down = true; panning = false; painting = false; consumed = false; dragCand = null; draggingPlant = false; tappedReady = false;
+            mouseDown = id < 0;
             downScreen = lastScreen = screen;
             overUI = OverUI(id);
             if (overUI) return;
@@ -180,7 +182,7 @@ namespace SeedClicker
                 if (draggingPlant) { wbd.DragTo(World(screen)); lastScreen = screen; return; }
             }
             float dpi = Screen.dpi > 0 ? Screen.dpi : 160f;
-            if (!panning && Vector2.Distance(screen, downScreen) > dpi * 0.08f) panning = true;
+            if (!mouseDown && !panning && Vector2.Distance(screen, downScreen) > dpi * 0.08f) panning = true;   // nur mit dem Finger
             if (panning) PanBy(screen - lastScreen);
             lastScreen = screen;
         }

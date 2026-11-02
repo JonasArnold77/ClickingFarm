@@ -3,7 +3,7 @@
   "baseCooldown": 1.1,
   "damagePerLevel": 0.12,
   "growTaps": 100,
-  "levelTaps": 40,
+  "levelTaps": 60,
   "growMilestones": [
     25,
     50,
@@ -1281,7 +1281,7 @@
     "knolliSpeed": 1.6,
     "baseHousing": 2,
     "workWaterPerTrip": 4,
-    "workWetSeconds": 45,
+    "workWetSeconds": 15,
     "workChopInterval": 0.8,
     "workRepair": 0.08,
     "guardInterval": 1.4,
@@ -1322,7 +1322,10 @@
     "sowerInterval": 4,
     "sowerRadius": 2,
     "pipeRadius": 2,
-    "pipeBonus": 1
+    "pipeBonus": 1,
+    "waterDropItems": 2,
+    "waterDropValue": 0.35,
+    "waterCanMult": 4
   },
   "structures": [
     {
@@ -1634,5 +1637,6 @@
     "free": 6,
     "cost": 10,
     "growth": 1.12
-  }
+  },
+  "levelGrowth": 1.35
 }
