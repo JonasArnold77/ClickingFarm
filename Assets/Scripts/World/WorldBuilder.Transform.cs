@@ -35,38 +35,32 @@ namespace SeedClicker
         /// <summary>Haltbarkeit einer Mauer: Stein haelt ein Vielfaches.</summary>
         float MaxHp(WallState st) => WallMaxHp * (st.stone ? PlantBalance.I.Transforms.stoneHpMult : 1f) * (st.gate ? GateHpMult : 1f);
 
-        const string SharedElements = "_bench";   // kurzzeitig lagen alle Elemente gemeinsam auf der Bank – wird der gewaehlten Waffe gegeben
+        const string SharedElements = "_bench";   // das Element liegt auf der Waffenbank und gilt fuer jede Waffe
 
-        /// <summary>Element dieser einen Waffe (Liste mit hoechstens einem Eintrag): ein neues ersetzt das alte, dasselbe nochmal macht es staerker.
-        /// Jede Waffe hat ihr eigenes: was die Pistole bekommt, hat die Schrotflinte nicht.</summary>
+        /// <summary>Das Element der Waffenbank (Liste mit hoechstens einem Eintrag) – es gilt fuer alle Waffen.
+        /// Das zuletzt auf die Bank gezogene gilt: ein anderes ersetzt das alte, dasselbe nochmal macht es staerker.</summary>
         public List<WeaponElementLv> WeaponElements(string id)
         {
             if (!save.elementsReset)
             {
-                // einmalig: nach dem Hin und Her (gemeinsame Bank-Elemente) war die Verteilung verloren – alle Elemente loeschen
+                // einmalig: nach dem Hin und Her war die Verteilung verloren – alle Elemente loeschen
                 foreach (var wl in save.weaponLevels) { wl.elements?.Clear(); wl.element = null; wl.elementLv = 0; }
-                save.weaponLevels.RemoveAll(x => x.id == SharedElements);
                 save.elementsReset = true;
                 save.Save();
             }
-            var e = WLevel(id);
-            if (e.elements == null) e.elements = new List<WeaponElementLv>();
-            if (!string.IsNullOrEmpty(e.element))
+            var bank = WLevel(SharedElements);
+            if (bank.elements == null) bank.elements = new List<WeaponElementLv>();
+            // Zwischenstaende mit Elementen an einzelnen Waffen: das der gewaehlten Waffe (sonst irgendeins) kommt auf die Bank
+            foreach (var wl in save.weaponLevels)
             {
-                // alter Spielstand: ein einzelnes Element uebernehmen
-                Merge(e.elements, e.element, Mathf.Max(1, e.elementLv));
-                e.element = null; e.elementLv = 0;
+                if (wl == bank) continue;
+                bool pick = bank.elements.Count == 0 || wl.id == save.weapon;
+                if (!string.IsNullOrEmpty(wl.element) && pick) { bank.elements.Clear(); bank.elements.Add(new WeaponElementLv { id = wl.element, lv = Mathf.Max(1, wl.elementLv) }); }
+                if (wl.elements != null && wl.elements.Count > 0 && pick) { var last = wl.elements[wl.elements.Count - 1]; bank.elements.Clear(); bank.elements.Add(new WeaponElementLv { id = last.id, lv = last.lv }); }
+                wl.element = null; wl.elementLv = 0; wl.elements?.Clear();
             }
-            // Zwischenstand mit gemeinsamen Bank-Elementen: an die gewaehlte Waffe zurueckgeben
-            var shared = save.weaponLevels.Find(x => x.id == SharedElements);
-            if (shared != null)
-            {
-                var owner = WLevel(string.IsNullOrEmpty(save.weapon) ? id : save.weapon);
-                if (shared.elements != null) foreach (var x in shared.elements) Merge(owner.elements ??= new List<WeaponElementLv>(), x.id, x.lv);
-                save.weaponLevels.Remove(shared);
-            }
-            if (e.elements.Count > 1) e.elements.RemoveRange(0, e.elements.Count - 1);   // nur ein Element je Waffe (das zuletzt dazugekommene bleibt)
-            return e.elements;
+            if (bank.elements.Count > 1) bank.elements.RemoveRange(0, bank.elements.Count - 1);   // nur ein Element
+            return bank.elements;
         }
 
         static void Merge(List<WeaponElementLv> list, string id, int lv)
@@ -406,7 +400,7 @@ namespace SeedClicker
         {
             var w = PlantBalance.I.Weapon(save.weapon);
             if (w == null) return;
-            // eine Waffe traegt immer nur ein Element: ein anderes ersetzt das alte, dasselbe nochmal macht es staerker
+            // die Bank traegt immer nur ein Element fuer alle Waffen: ein anderes ersetzt das alte, dasselbe nochmal macht es staerker
             var list = WeaponElements(w.id);
             var e = list.Find(x => x.id == element);
             string replaced = e == null && list.Count > 0 ? list[0].id : null;
