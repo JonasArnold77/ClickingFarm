@@ -307,6 +307,7 @@ namespace SeedClicker
         void UpdateTotemOutlines()
         {
             outlineUsed = 0;
+            totemLabelSeen.Clear();
             foreach (var s in save.structures)
             {
                 if (!s.placed || !IsTotem(s)) continue;
@@ -321,6 +322,7 @@ namespace SeedClicker
                 if (OpenStructure == s) flash = Mathf.Max(flash, 0.25f + 0.1f * Mathf.Sin(Time.time * 6f));   // Fenster offen
                 thick *= 1f + flash;
                 col = Color.Lerp(col, Color.white, flash * 0.5f);
+                TotemLabel(s, bed, col, PlantBalance.I.Structure(s.id));   // Wirkung als Wort ueber dem Feld, in Linienfarbe
                 int dashes = 1 + Mathf.RoundToInt(2f * k);
                 float pulse = 0.55f + 0.2f * Mathf.Sin(Time.time * (2f + 3f * k) + s.x);
                 float t = Time.time * speed;
@@ -343,6 +345,57 @@ namespace SeedClicker
                     }
             }
             for (int i = outlineUsed; i < outlinePool.Count; i++) outlinePool[i].enabled = false;
+            foreach (var kv in totemLabels) if (kv.Value.front != null) kv.Value.front.gameObject.SetActive(totemLabelSeen.Contains(kv.Key));
+        }
+
+        // ------------------------------------------------------------------ Wirkungsname ueber dem Feld
+
+        class TotemTag { public TextMesh front, shadow; }
+        readonly Dictionary<StructureState, TotemTag> totemLabels = new Dictionary<StructureState, TotemTag>();
+        readonly HashSet<StructureState> totemLabelSeen = new HashSet<StructureState>();
+
+        /// <summary>Kurzer Name der Wirkung (Ernte-Totem: "Ernte").</summary>
+        static string TotemWord(string boost) => boost == "growth" ? "Wachstum" : boost == "harvest" ? "Ernte" : "Fleiß";
+
+        /// <summary>Wort ueber der Mitte der obersten Feldreihe, in der Farbe der Linie, mit dunklem Schatten fuer die Lesbarkeit.</summary>
+        void TotemLabel(StructureState s, HashSet<Cell> bed, Color col, StructureDef d)
+        {
+            if (d == null || bed == null || bed.Count == 0) return;
+            if (!totemLabels.TryGetValue(s, out var tag) || tag.front == null)
+            {
+                tag = new TotemTag();
+                tag.front = MakeLabel("TotemLabel", null);
+                tag.shadow = MakeLabel("Shadow", tag.front.transform);
+                totemLabels[s] = tag;
+            }
+            int top = int.MinValue; float x0 = float.MaxValue, x1 = float.MinValue;
+            foreach (var c in bed) top = Mathf.Max(top, c.y);
+            foreach (var c in bed) if (c.y == top) { var cc = CellCenter(c); x0 = Mathf.Min(x0, cc.x); x1 = Mathf.Max(x1, cc.x); }
+            var pos = new Vector2((x0 + x1) * 0.5f, CellCenter(new Cell(0, top)).y + CellSize * 0.5f + 0.16f);
+            tag.front.gameObject.SetActive(true);
+            tag.front.transform.position = new Vector3(pos.x, pos.y + 0.02f * Mathf.Sin(Time.time * 2f + s.x), 0f);
+            string word = TotemWord(d.boost);
+            tag.front.text = word; tag.shadow.text = word;
+            tag.front.color = new Color(col.r, col.g, col.b, 1f);
+            tag.shadow.color = new Color(0.08f, 0.06f, 0.04f, 0.8f);
+            totemLabelSeen.Add(s);
+        }
+
+        TextMesh MakeLabel(string name, Transform parent)
+        {
+            var go = new GameObject(name);
+            if (parent != null) { go.transform.SetParent(parent, false); go.transform.localPosition = new Vector3(0.022f, -0.022f, 0f); }
+            else go.transform.SetParent(objects, false);
+            var tm = go.AddComponent<TextMesh>();
+            tm.font = UIKit.Font;
+            tm.fontSize = 64;
+            tm.characterSize = 0.045f;
+            tm.anchor = TextAnchor.LowerCenter;
+            tm.alignment = TextAlignment.Center;
+            var mr = go.GetComponent<MeshRenderer>();
+            mr.sharedMaterial = UIKit.Font.material;
+            mr.sortingOrder = parent != null ? 29000 : 29001;   // ueber Pflanzen und Feldern lesbar, Schatten darunter
+            return tm;
         }
 
         static string BoostName(string boost) => boost == "growth" ? "Wachstum" : boost == "harvest" ? "Ernte pro Tipp" : "Ernte von selbst";
