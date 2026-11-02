@@ -8,7 +8,7 @@ namespace SeedClicker
 {
     public class WaveResult
     {
-        public int wave; public bool victory; public int kills; public int woodLost;
+        public int wave; public bool victory; public int kills; public int woodLost, trampled;
         public int curse, runes; public double coins, bonus;   // Fluch-Stufe vom Altar, gefundene Runen, Beute, Bonus
         public List<CatalogDef> unlocked = new List<CatalogDef>();
         public List<WeaponDef> weapons = new List<WeaponDef>();
@@ -139,6 +139,7 @@ namespace SeedClicker
         {
             Active = false;
             result.victory = victory;
+            int alive = 0; foreach (var m in monsters) if (!m.dead) alive++;
             foreach (var m in monsters) Poof(m, false);
             monsters.Clear();
             foreach (var s in shots) { if (s.sr != null) Destroy(s.sr.gameObject); if (s.shadow != null) Destroy(s.shadow.gameObject); }
@@ -163,6 +164,8 @@ namespace SeedClicker
             {
                 result.woodLost = Mathf.Min(wb.Save.wood, B.waves.woodLossOnDefeat);
                 wb.Save.wood -= result.woodLost;
+                // die Zombies, die durchgekommen sind, zertrampeln Felder am Haus (eine Pflanze je Zombie)
+                result.trampled = wb.TrampleCrops(Mathf.Min(Mathf.Max(1, alive), B.waves.trampleMax));
             }
             wb.NotifyInventory();
             Countdown = B.waves.dayDuration;

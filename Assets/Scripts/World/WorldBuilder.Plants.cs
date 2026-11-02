@@ -244,6 +244,29 @@ namespace SeedClicker
             return true;
         }
 
+        /// <summary>Niederlage in der Nacht: die naechsten Ernte-Pflanzen am Haus werden zertrampelt – zurueck zum Samen,
+        /// die liegende Ernte ist weg und eine Medaille geht verloren. Gibt zurueck, wie viele es traf.</summary>
+        public int TrampleCrops(int n)
+        {
+            var list = new List<PlantedState>();
+            foreach (var p in save.planted) if (p.Role == "harvest" && (p.growth > 0 || p.Grown)) list.Add(p);
+            list.Sort((a, b) => (CellCenterOf(new Cell(a.x, a.y)) - HousePos).sqrMagnitude.CompareTo((CellCenterOf(new Cell(b.x, b.y)) - HousePos).sqrMagnitude));
+            int hit = 0;
+            for (int i = 0; i < list.Count && hit < n; i++, hit++)
+            {
+                var p = list[i];
+                p.growth = 0; p.xp = 0; p.stock = 0; p.stockValue = 0;
+                if (p.level > 1) p.level--;
+                var c = new Cell(p.x, p.y);
+                RemovePlantView(c); CreatePlantView(p, true);   // neu aufbauen: wieder ein Samen, ohne Gesicht
+                PunchField(c, 1.4f);
+                Particles.I?.Burst(CellCenterOf(c), "leaf", new Color(0.45f, 0.6f, 0.3f), 10, 3f, 0.7f, 0.5f, 4f, 1.6f);
+                Particles.I?.Burst(CellCenterOf(c), "square", new Color(0.4f, 0.28f, 0.16f), 8, 2.4f, 0.5f, 0.1f, 9f, 2f);
+            }
+            if (hit > 0) { Sfx.Play("break", 0.8f, 0.8f); save.Save(); }
+            return hit;
+        }
+
         public void Unplant(PlantedState p)
         {
             var c = new Cell(p.x, p.y);

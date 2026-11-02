@@ -91,6 +91,7 @@ namespace SeedClicker
         readonly List<TreeObj> trees = new List<TreeObj>();
         readonly List<Decor> decor = new List<Decor>();
         readonly Dictionary<Cell, SpriteRenderer> fields = new Dictionary<Cell, SpriteRenderer>();
+        public event System.Action FieldsChanged;
         readonly List<(Transform t, float k)> popping = new List<(Transform, float)>();
         readonly HashSet<Transform> fieldPop = new HashSet<Transform>();
         class FieldFx { public SpriteRenderer field, overlay; public float shake, flash, s, sv; }   // s/sv: Feder fuer Gross-Klein
@@ -365,7 +366,7 @@ namespace SeedClicker
                 Haptics.Tap(10);
             }
             if (ghosts.TryGetValue(c, out var gh) && gh != null) gh.enabled = false;
-            if (persist) { save.fields.Add(c); save.Save(); }
+            if (persist) { save.fields.Add(c); save.Save(); CheckEarnedUnlocks(); FieldsChanged?.Invoke(); }   // neues Feld kann eine Pflanze freischalten
             return true;
         }
 

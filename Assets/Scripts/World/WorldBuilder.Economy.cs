@@ -51,11 +51,14 @@ namespace SeedClicker
             return true;
         }
 
+        /// <summary>Felder auf dem Hof (Freischaltungen brauchen eine Mindestzahl).</summary>
+        public int FieldCount => fields.Count;
+
         void CheckEarnedUnlocks()
         {
             foreach (var c in PlantBalance.I.catalog)
             {
-                if (c.IsCombat || IsUnlocked(c.id) || c.unlockEarned > save.earned) continue;
+                if (c.IsCombat || IsUnlocked(c.id) || c.unlockEarned > save.earned || c.unlockFields > FieldCount) continue;
                 save.unlocked.Add(c.id);
                 PlantUnlocked?.Invoke(c.id);
             }

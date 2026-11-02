@@ -71,6 +71,7 @@ namespace SeedClicker
             wbi.OfflineEarned += OpenWelcomeBack;
             wbi.DeliveryPaid += (n, v) => Banner("Lieferung bezahlt: +" + Num.Short(v) + " Münzen", n + " Stück Ernte sind verkauft");
             wbi.GoldenCaught += msg => Banner("Goldener Schmetterling!", msg);
+            wbi.FieldsChanged += RefreshGoal;   // Ziel zeigt, wie viele Felder noch fehlen
             wbi.PlantUnlocked += id =>
             {
                 var d = PlantBalance.I.Plant(id);

@@ -165,7 +165,7 @@ namespace SeedClicker
             name.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -imgH - 6), new Vector2(-16, fontSize + 14));
             if (locked)
             {
-                var l = Label(rt, def.IsCombat ? "Freigeschaltet nach Welle " + def.unlockWave : "Ab " + Num.Short(def.unlockEarned) + " verdienten Münzen", fontSize, InkSoft, TextAnchor.MiddleCenter);
+                var l = Label(rt, def.IsCombat ? "Freigeschaltet nach Welle " + def.unlockWave : "Ab " + Num.Short(def.unlockEarned) + " Münzen" + (def.unlockFields > 0 ? " und " + def.unlockFields + " Feldern" : ""), fontSize, InkSoft, TextAnchor.MiddleCenter);
                 l.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -imgH - fontSize - 30), new Vector2(-20, fontSize * 2 + 10));
                 return rt;
             }
@@ -279,6 +279,16 @@ namespace SeedClicker
             goalText.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0.5f), new Vector2(110, 0), new Vector2(-120, 0));
         }
 
+        /// <summary>Was fuer die naechste Pflanze noch fehlt: Muenzen und/oder Felder (mit aktuellem Stand bei den Feldern).</summary>
+        string UnlockNeed(CatalogDef c)
+        {
+            bool coins = wb.Earned < c.unlockEarned, more = wb.FieldCount < c.unlockFields;
+            string f = c.unlockFields + " Feldern (" + wb.FieldCount + ")";
+            if (coins && more) return "bei " + Num.Short(c.unlockEarned) + " Münzen und " + f;
+            if (more) return "bei " + f + " – bau aus!";
+            return "bei " + Num.Short(c.unlockEarned) + " verdienten Münzen";
+        }
+
         void RefreshGoal()
         {
             if (wb == null || goalText == null) return;
@@ -287,7 +297,7 @@ namespace SeedClicker
             else
             {
                 goalText.text = next.IsCombat ? "Nächste Pflanze:\nnach Welle " + next.unlockWave
-                                              : "Nächste Pflanze: " + Roles.Name(next.role) + "\nbei " + Num.Short(next.unlockEarned) + " verdienten Münzen";
+                                              : "Nächste Pflanze: " + Roles.Name(next.role) + "\n" + UnlockNeed(next);
                 goalIcon.enabled = true;
                 goalIcon.sprite = SpeciesSprite(next.Genome);
                 goalIcon.color = new Color(0.12f, 0.1f, 0.08f, 0.85f);   // als Silhouette, Spannung!
@@ -518,7 +528,7 @@ namespace SeedClicker
             OpenModal(out var panel, r.unlocked.Count > 0 ? 260 : 560, r.unlocked.Count > 0 ? 220 : 520);
             Header(panel, r.victory ? "Nacht überstanden!" : "Der Hof wurde überrannt");
             string txt = $"Besiegte Zombies: {r.kills}";
-            if (!r.victory) txt += $"\nVerlorenes Holz: {r.woodLost}";
+            if (!r.victory) txt += $"\nVerlorenes Holz: {r.woodLost}" + (r.trampled > 0 ? $"\nZertrampelte Pflanzen: {r.trampled}" : "");
             if (r.curse > 0) txt += $"\nFluch {r.curse}: Beute {Num.Short(r.coins)}" + (r.victory ? $" + Bonus {Num.Short(r.bonus)}" : "");
             if (r.runes > 0) txt += $"\nRunensteine gefunden: {r.runes}";
             foreach (var w in r.weapons) txt += "\nNeue Waffe: " + w.name + "!";

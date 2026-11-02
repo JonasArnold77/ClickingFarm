@@ -29,7 +29,26 @@ namespace SeedClicker
         public string ChallengeType => save.chType;
         public int ChallengeCount => save.chCount;
         public int ChallengeTier => save.chTier;
-        public int[] ChallengeTiers => PlantBalance.I.Challenge.tiers;
+        /// <summary>Mengen der drei Stufen: wachsen jeden Tag mit (am Anfang 10/30/60, an Tag 9 schon 50/150/300).</summary>
+        public int[] ChallengeTiers
+        {
+            get
+            {
+                var ch = PlantBalance.I.Challenge;
+                float k = 1f + ch.growthPerDay * Mathf.Max(0, save.nights);
+                var t = new int[ch.tiers.Length];
+                for (int i = 0; i < t.Length; i++) t[i] = Mathf.Max(1, Mathf.RoundToInt(ch.tiers[i] * k / 5f) * 5);
+                return t;
+            }
+        }
+
+        /// <summary>Muenzpreis einer Stufe: ein guter Batzen vom bisher Verdienten (waechst mit dem Hof).</summary>
+        double ChallengeCoins(int tier, double minimum)
+        {
+            var sh = PlantBalance.I.Challenge.earnedShare;
+            double share = sh != null && sh.Length > tier ? sh[tier] : 0.1;
+            return Math.Max(minimum, Math.Round(save.earned * share));
+        }
 
         /// <summary>Beim Laden: gibt es fuer heute schon eine Aufgabe?</summary>
         void EnsureChallenge()
@@ -70,14 +89,18 @@ namespace SeedClicker
             {
                 case 0:
                     {
-                        double coins = 30 + 15 * save.wave;
+                        double coins = ChallengeCoins(0, 30 + 15 * save.wave);
                         AddCoins(coins, at);
                         ChallengeReward?.Invoke("Bronze: " + prod + "!", "+" + Num.Short(coins) + " Münzen");
                         break;
                     }
                 case 1:
-                    AddRunes(2, at);
-                    ChallengeReward?.Invoke("Silber: " + prod + "!", "+2 Runensteine");
+                    {
+                        AddRunes(2, at);
+                        double coins = ChallengeCoins(1, 60 + 30 * save.wave);
+                        AddCoins(coins, at);
+                        ChallengeReward?.Invoke("Silber: " + prod + "!", "+2 Runensteine und " + Num.Short(coins) + " Münzen");
+                    }
                     break;
                 default:
                     {
@@ -86,7 +109,7 @@ namespace SeedClicker
                         for (int i = 0; i < Perks.Length; i++) if (!HasPerk(Perks[i].id)) free.Add(i);
                         if (free.Count == 0)
                         {
-                            double coins = 500 + 200 * save.wave;
+                            double coins = ChallengeCoins(2, 500 + 200 * save.wave);
                             AddCoins(coins, at);
                             ChallengeReward?.Invoke("Gold: " + prod + "!", "Alle Schätze gesammelt – +" + Num.Short(coins) + " Münzen");
                             break;
@@ -94,7 +117,9 @@ namespace SeedClicker
                         var pk = Perks[free[new System.Random(save.mapSeed + save.nights).Next(free.Count)]];
                         save.perks.Add(pk.id);
                         ApplyPerk(pk.id, true);
-                        ChallengeReward?.Invoke("Gold! " + pk.name, pk.desc);
+                        double gcoins = ChallengeCoins(2, 500 + 200 * save.wave);
+                        AddCoins(gcoins, at);
+                        ChallengeReward?.Invoke("Gold! " + pk.name, pk.desc + " – und " + Num.Short(gcoins) + " Münzen");
                         WorldFx.Play("firework", at, 0.18f);
                         break;
                     }

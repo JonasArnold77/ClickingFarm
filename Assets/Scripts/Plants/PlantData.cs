@@ -24,6 +24,7 @@ namespace SeedClicker
     {
         public bool autoWave; public float firstWaveDelay, dayDuration, eveningDuration, nightDuration, testEveningDuration, spawnInterval, hpGrowthPerWave, houseHp, tapDamage;
         public int baseCount, countPerWave, woodLossOnDefeat;
+        public int trampleMax = 8;   // Niederlage: so viele Ernte-Pflanzen zertrampeln die Zombies hoechstens (eine je uebriger Zombie)
     }
 
     /// <summary>Waffe des Spielers (Tipp auf einen Zombie schiesst). kind: bullet, pellet, arrow, grenade.</summary>
@@ -52,7 +53,12 @@ namespace SeedClicker
     /// <summary>Gartenfelder: die ersten free Felder gratis, danach kostet jedes neue Feld cost * growth^(Anzahl - free).</summary>
     [Serializable] public class FieldDef { public int free = 6; public float cost = 10f, growth = 1.1f; }
     /// <summary>Tagesaufgabe: so viele Stueck des Tages-Ernteguts fuer Bronze, Silber, Gold.</summary>
-    [Serializable] public class ChallengeDef { public int[] tiers = { 10, 30, 60 }; }
+    [Serializable] public class ChallengeDef
+    {
+        public int[] tiers = { 10, 30, 60 };
+        public float growthPerDay = 0.5f;   // die Mengen wachsen jeden Tag mit (Tag 9: x5) – man braucht mehrere Felder derselben Pflanze
+        public float[] earnedShare = { 0.12f, 0.2f, 0.35f };   // Muenzen je Stufe als Anteil am bisher Verdienten (gross, waechst mit dem Hof)
+    }
     /// <summary>Ernte-Lieferung: Vorrat je Pflanze, Knollis (Preis, Reichweite, Tempo).</summary>
     /// <summary>Bach: Muenzen je Stueck; Pflanzen am Bach gelten als gegossen und wachsen/produzieren schneller.</summary>
     [Serializable] public class RiverDef { public float cost = 10f, growth = 1.5f, produce = 1.5f; }
@@ -180,6 +186,7 @@ namespace SeedClicker
         public string transform;   // Rolle transform: stone (Holzmauer -> Stein) oder fire/ice/lightning/poison (Waffenbank)
         public string role = "combat";
         public float cost, value, unlockEarned;
+        public int unlockFields;   // zusaetzlich so viele Felder noetig (Ausbau gehoert zum Fortschritt)
         public int growTaps;   // 0 = Standard (growTaps)
         // Ernte-Charakter: yield = Stueck pro Ernte-Tipp, prod = Faktor fuer Ernte von selbst, group = Bonus je gleicher
         // Nachbarpflanze (auch schraeg), taps = Faktor fuer den Wert eines Ernte-Tipps
