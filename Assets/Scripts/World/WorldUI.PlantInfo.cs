@@ -136,7 +136,7 @@ namespace SeedClicker
                 infoName.text = def.name;
                 infoDesc.text = Roles.Desc(def);
             }
-            infoLevel.text = "Stufe " + p.Lv;
+            infoLevel.text = WorldBuilder.HasMedals(p) ? WorldBuilder.MedalName(p.Lv) : "Stufe " + p.Lv;
             int tier = PlantBalance.I.Tier(p.Lv);
             if (def.IsCombat)
             {
@@ -156,15 +156,21 @@ namespace SeedClicker
 
             float f; string bar;
             if (!p.Grown) { f = p.growth / Mathf.Max(1f, p.GrowTaps); bar = "Wächst: " + Mathf.FloorToInt(p.growth) + " / " + p.GrowTaps; }
+            else if (WorldBuilder.HasMedals(p))
+            {
+                // Medaillen: Fortschritt bis Bronze/Silber/Gold (am Tauschilf doppelt)
+                if (wb.LevelMaxed(p)) { f = 1f; bar = "Gold – höchste Stufe"; }
+                else { int need = wb.LevelTaps(p); f = p.xp / (float)need; bar = "Bis " + WorldBuilder.MedalName(p.Lv + 1) + ": " + p.xp + " / " + need; }
+            }
             else
             {
-                int need = PlantBalance.I.LevelTapsFor(p.Lv);
+                int need = wb.LevelTaps(p);
                 f = p.xp / (float)need;
                 int next = NextMutationLevel(p.Lv);
                 bar = "Nächste Stufe: " + p.xp + " / " + need + (next > 0 ? "   ·   Mutation ab Stufe " + next : "");
             }
             infoBarFill.rectTransform.anchorMax = new Vector2(Mathf.Clamp01(f), 1f);
-            infoBarFill.color = !p.Grown ? new Color(0.55f, 0.82f, 0.35f) : new Color(0.7f, 0.55f, 1f);
+            infoBarFill.color = !p.Grown ? new Color(0.55f, 0.82f, 0.35f) : WorldBuilder.HasMedals(p) ? WorldBuilder.MedalColor(Mathf.Min(p.Lv + 1, 4)) : new Color(0.7f, 0.55f, 1f);
             infoBarText.text = bar;
             bool locked = p.Grown && !wb.IsReadyForTaps(p);
             infoActText.text = locked ? "Gleich bereit …" : !p.Grown ? "Wachsen lassen!" : def.role == "harvest" ? "Ernten!" : def.role == "water" ? "Gießen!" : "Stärker machen!";

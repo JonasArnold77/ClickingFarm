@@ -268,3 +268,14 @@
 - Warum der Klick vorn bleibt: Ein Spieler-Klick bringt die volle Ernte und den Fortschritt × Handschuhe (bis ×60), bei ~4 Klicks/s auf eine Pflanze. Helfer sind breiter (viele Pflanzen gleichzeitig), aber je Pflanze schwächer.
 - Werte: `helpers.waterInterval/waterDropXp/waterDropValue/autoInterval/autoMaxRate/autoValue`.
 - Die Freischaltschwellen sind dafür nicht neu gemessen. Wer Helfer nutzt, verdient mehr und schaltet etwas früher frei.
+
+## Medaillen für Ernte-Pflanzen (02.11.2026)
+- Ernte-Pflanzen haben keine Zahlen-Stufen mehr, sondern **Normal → Bronze → Silber → Gold** (Gold ist das Maximum).
+  - Klicks je Aufstieg: 60 → 300 → 1500, jede Stufe also ×5 schwerer.
+  - Ertrag (Ernte-Wert und nachwachsende Ernte): ×1 / ×2,5 / ×6 / ×15.
+  - Werte: `harvestLevelTaps`, `harvestLevelMult`.
+- Aussehen: Der Pflanzen-Shader bekommt `_Metal`/`_MetalColor`. Die Pflanze wird bronze-, silber- bzw. goldfarben, mit einem langsam wandernden Glanzstreifen. Der Aufstieg wird mit Funken und Welle in der Medaillenfarbe und „Radieschen: Silber!“ gefeiert.
+- Im Info-Fenster steht „Bis Silber: 120 / 300“, der Balken hat die Farbe der nächsten Medaille.
+- **Tauschilf begünstigt das Aufleveln:** Ernte-Pflanzen in seiner Reichweite bekommen doppelten Stufen-Fortschritt, von Klicks, Tropfen und Klopfwurz (`helpers.waterLevelMult`).
+- Ernte-Pflanzen lassen sich nicht mehr zusammenlegen (das hätte Medaillen ohne Klicken verschenkt). Andere Pflanzen behalten Zahlen-Stufen und Zusammenlegen.
+- Alte Spielstände: Ernte-Pflanzen über Stufe 4 zählen als Gold.

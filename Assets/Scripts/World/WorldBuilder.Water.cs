@@ -134,9 +134,8 @@ namespace SeedClicker
             AddProduct(p, n, ItemValue(p) * h.waterDropValue, big ? top + new Vector2(0, 0.2f) : (Vector2?)null);   // nur der eigene Tipp wackelt und zeigt die Zahl
             // Wasser von selbst laesst die Pflanze auch aufleveln (wie ein Klick ohne Handschuhe; eine Kanne zaehlt mehrfach)
             if (big) return;   // eigener Tipp aufs Tauschilf: nur Ernte, sonst waere er besser als die Pflanze selbst zu klicken
-            p.xp += Mathf.Max(1, Mathf.RoundToInt(h.waterDropXp * amount));
             v.barPunch = 1f; v.barShow = 2.5f;
-            if (p.xp >= PlantBalance.I.LevelTapsFor(p.Lv)) LevelUp(p, v, basePos, top);
+            GainLevelXp(p, v, Mathf.Max(1, Mathf.RoundToInt(h.waterDropXp * amount)), basePos, top);
         }
 
         /// <summary>Hoehere Stufe des Tauschilfs (das am weitesten levelte in Reichweite): mehr Stueck je Tropfen.</summary>

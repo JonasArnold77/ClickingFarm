@@ -29,10 +29,11 @@ namespace SeedClicker
             return p != null && p.Grown && plantViews.TryGetValue(new Cell(p.x, p.y), out var v) && Time.unscaledTime >= v.readyAt;
         }
 
-        bool IsMergeTarget(PlantedState p) => carrying != null && p != null && p != carrying && p.Grown && p.type == carrying.type;
+        bool IsMergeTarget(PlantedState p) => carrying != null && p != null && p != carrying && p.Grown && p.type == carrying.type && !HasMedals(p);   // Medaillen muss man sich erklicken
 
         bool AnyMergeTargetFor(PlantedState p)
         {
+            if (HasMedals(p)) return false;
             foreach (var q in save.planted) if (q != p && q.Grown && q.type == p.type) return true;
             return false;
         }

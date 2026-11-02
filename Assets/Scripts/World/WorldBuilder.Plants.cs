@@ -320,6 +320,7 @@ namespace SeedClicker
             v.glow.transform.localScale = new Vector3(v.size * 1.6f, v.size * 1.2f, 1);
             // leichter Farbstich der Wirkung, damit man die Arten unterscheidet
             v.sr.color = PlantBalance.MutationTint(g, p.Grown ? tier : 1);
+            ApplyMedalLook(p, v);
         }
 
         /// <summary>Tipp auf eine Pflanze: waechst ein Stueck (Klick-Wachstum) oder zeigt Infos, wenn sie fertig ist.
@@ -369,10 +370,11 @@ namespace SeedClicker
             float heat = Mathf.Clamp01(combo / 30f);
             v.heat = Mathf.Max(v.heat, heat);
 
-            int taps = leveling ? PlantBalance.I.LevelTapsFor(p.Lv) : p.GrowTaps;
+            int taps = leveling ? LevelTaps(p) : p.GrowTaps;
             int before = p.growth;
             int power = TapPower(p, !leveling);
-            if (leveling) p.xp += power; else p.growth = Mathf.Min(taps, p.growth + power);
+            if (leveling) { if (!LevelMaxed(p)) p.xp += WaterLevelGain(p, power); }   // Gold: nur noch ernten
+            else p.growth = Mathf.Min(taps, p.growth + power);
             float progress = (leveling ? p.xp : p.growth) / (float)taps;
             var g = p.Genome;
             var basePos = (Vector2)v.root.position;
@@ -488,7 +490,15 @@ namespace SeedClicker
                 WorldCamera.I?.Shake(0.08f);
                 WorldCamera.I?.Punch(0.045f);
                 WorldPostFX.Punch(0.8f);
-                Floater?.Invoke(top + new Vector2(0, 0.7f), g.name + " Stufe " + p.Lv + "!", new Color(1f, 0.9f, 0.4f));
+                if (!HasMedals(p)) Floater?.Invoke(top + new Vector2(0, 0.7f), g.name + " Stufe " + p.Lv + "!", new Color(1f, 0.9f, 0.4f));
+            }
+            if (HasMedals(p))
+            {
+                // Medaille: gross ankuendigen, Funken in Metallfarbe
+                var mc = MedalColor(p.Lv);
+                Floater?.Invoke(top + new Vector2(0, 0.8f), g.name + ": " + MedalName(p.Lv) + "!" + (LevelMaxed(p) ? " (höchste Stufe)" : ""), mc);
+                Particles.I?.Burst(top, "star", mc, 26, 3.6f, 0.9f, 0.3f, 1f, 1.5f);
+                Shockwave(basePos, v.size * 3.6f, 0.5f, mc);
             }
             combo = 0;
         }
@@ -819,7 +829,7 @@ namespace SeedClicker
                 v.barBack.enabled = v.barFill.enabled = showBar;
                 if (showBar)
                 {
-                    float f = p.Grown ? p.xp / (float)PlantBalance.I.LevelTapsFor(p.Lv) : p.growth / (float)p.GrowTaps;
+                    float f = p.Grown ? (LevelMaxed(p) ? 1f : p.xp / (float)LevelTaps(p)) : p.growth / (float)p.GrowTaps;
                     var top = new Vector2(v.root.position.x, v.sr.bounds.max.y + 0.1f);
                     float w = CellSize * 0.85f, h = 0.06f * (1 + v.barPunch * 0.8f);
                     v.barBack.transform.position = top; v.barBack.transform.localScale = new Vector3(w + 0.04f, h + 0.04f, 1);

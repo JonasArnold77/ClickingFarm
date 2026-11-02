@@ -114,6 +114,8 @@ namespace SeedClicker
         // Klopfwurz: Tipp alle autoInterval s, schneller mit Stufe und Upgrades, aber hoechstens autoMaxRate Tipps/s
         // (ein fleissiger Spieler schafft ~4 – Klicken bleibt am staerksten); jeder Tipp erntet zu autoValue des Werts
         public float autoInterval = 0.7f, autoMaxRate = 6f, autoValue = 0.5f;
+        // Ernte-Pflanzen in Reichweite eines reifen Tauschilfs bekommen so viel mal mehr Stufen-Fortschritt (Klicks und Tropfen)
+        public float waterLevelMult = 2f;
         public int pipeRadius = 2, pipeBonus = 1;
     }
     /// <summary>Stuetzranke: Reichweite, Gebaeude-Bonus, Hammerschlaege an der Waffenbank, Mauer-Reparatur (Anteil der vollen Haltbarkeit).</summary>
@@ -206,6 +208,10 @@ namespace SeedClicker
         public int growTaps, maxLevel;
         public int levelTaps = 60;   // Klicks auf eine reife Pflanze von Stufe 1 auf 2 ...
         public float levelGrowth = 1.35f;   // ... und jede weitere Stufe braucht so viel mal mehr
+        // Ernte-Pflanzen: Medaillen statt Zahlen-Stufen – normal -> Bronze -> Silber -> Gold (Klicks je Aufstieg, Ertrag je Stufe)
+        public int[] harvestLevelTaps = { 60, 300, 1500 };
+        public float[] harvestLevelMult = { 1f, 2.5f, 6f, 15f };
+        public int HarvestMaxLevel => (harvestLevelTaps?.Length ?? 0) + 1;
 
         /// <summary>Klicks, die eine reife Pflanze auf Stufe lv bis zur naechsten Stufe braucht.</summary>
         public int LevelTapsFor(int lv) => Mathf.Max(1, Mathf.RoundToInt(levelTaps * Mathf.Pow(levelGrowth, Mathf.Max(0, lv - 1))));

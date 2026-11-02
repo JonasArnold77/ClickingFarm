@@ -154,7 +154,7 @@ namespace SeedClicker
         {
             var c = PlantBalance.I.Plant(p.type);
             if (c == null || p.Role != "harvest" || !p.Grown) return 0;
-            return c.value * c.taps * p.Lv * UpgradeMult("harvest") * BoostMult(p) * FertMult(p) * TotemMult(p, "harvest") * GroupMult(p, c);
+            return c.value * c.taps * LevelMult(p) * UpgradeMult("harvest") * BoostMult(p) * FertMult(p) * TotemMult(p, "harvest") * GroupMult(p, c);
         }
 
         /// <summary>Muenzen pro Sekunde dieser Pflanze (Ernte waechst auch ohne Tippen nach).</summary>
@@ -163,7 +163,7 @@ namespace SeedClicker
             if (!p.Grown) return 0f;
             var c = PlantBalance.I.Plant(p.type);
             if (c == null) return 0f;
-            if (p.Role == "harvest") return c.value * c.prod * p.Lv * 0.15f * UpgradeMult("harvest") * UpgradeMult("cps") * FertMult(p) * TotemMult(p, "produce") * RiverMult(p, "produce") * GroupMult(p, c);
+            if (p.Role == "harvest") return c.value * c.prod * LevelMult(p) * 0.15f * UpgradeMult("harvest") * UpgradeMult("cps") * FertMult(p) * TotemMult(p, "produce") * RiverMult(p, "produce") * GroupMult(p, c);
             return 0f;
         }
 
@@ -215,8 +215,7 @@ namespace SeedClicker
             }
             if (Time.unscaledTime < v.readyAt) return;
             if (p.Role == "harvest") AddProduct(p, 1, ItemValue(p) * PlantBalance.I.Helpers.autoValue, null);   // Klopfwurz erntet etwas schwaecher als ein Klick
-            p.xp += 1;
-            if (p.xp >= PlantBalance.I.LevelTapsFor(p.Lv)) LevelUp(p, v, basePos, top);
+            GainLevelXp(p, v, 1, basePos, top);
         }
 
         void UpdateAuto(float dt)

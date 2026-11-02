@@ -3,6 +3,7 @@
 // vom Sprite-Import automatisch gesetzt) wird mit einer festen Sonne von oben links schattiert,
 // dazu ein warmer Lichtsaum und kuehle Schatten. Unten wird die Pflanze dunkler (Bodenschatten).
 // _Flash faerbt die ganze Pflanze kurz weiss ein (Treffer-Blitz beim Klicken).
+// _Metal/_MetalColor: Medaillen-Stufe der Ernte-Pflanzen (Bronze, Silber, Gold) mit wanderndem Glanzstreifen.
 Shader "SeedClicker/PlantLit2D"
 {
     Properties
@@ -18,6 +19,8 @@ Shader "SeedClicker/PlantLit2D"
         _BaseDarken("Bodenschatten unten", Range(0, 1)) = 0.35
         _Flash("Treffer-Blitz", Range(0, 1)) = 0
         _FlashColor("Blitzfarbe", Color) = (1, 1, 0.92, 1)
+        _Metal("Medaille (Bronze/Silber/Gold)", Range(0, 1)) = 0
+        _MetalColor("Medaillenfarbe", Color) = (1, 0.8, 0.3, 1)
 
         [HideInInspector] _Color("Tint", Color) = (1,1,1,1)
         [HideInInspector] _RendererColor("RendererColor", Color) = (1,1,1,1)
@@ -37,6 +40,10 @@ Shader "SeedClicker/PlantLit2D"
             half rim = pow(saturate(1.0h - nrm.z), 2.0h) * saturate(dot(nrm.xy, L.xy) * 2.0h); \
             shaded += rim * _Rim * _LightTint.rgb * 0.6h; \
             shaded *= 1.0h - _BaseDarken * pow(saturate(1.0h - uv.y * 2.2h), 2.0h); \
+            half lum = dot(shaded, half3(0.3h, 0.59h, 0.11h)); \
+            half glint = saturate(1.0h - abs(frac((uv.x + uv.y) * 0.6h - _Time.y * 0.35h) - 0.5h) * 9.0h); \
+            half3 metal = _MetalColor.rgb * (0.35h + lum * 1.35h) + glint * glint * 0.7h * _MetalColor.rgb + glint * 0.25h; \
+            shaded = lerp(shaded, metal, _Metal); \
             outCol = lerp(shaded, _FlashColor.rgb, _Flash); \
         }
     ENDHLSL
@@ -87,8 +94,8 @@ Shader "SeedClicker/PlantLit2D"
             float4 _Color;
             half4 _RendererColor;
             float4 _SunDir;
-            half _Shade, _Ambient, _Rim, _BaseDarken, _Flash;
-            half4 _LightTint, _ShadowTint, _FlashColor;
+            half _Shade, _Ambient, _Rim, _BaseDarken, _Flash, _Metal;
+            half4 _LightTint, _ShadowTint, _FlashColor, _MetalColor;
 
             #if USE_SHAPE_LIGHT_TYPE_0
             SHAPE_LIGHT(0)
@@ -153,8 +160,8 @@ Shader "SeedClicker/PlantLit2D"
             float4 _MainTex_ST;
             float4 _Color;
             float4 _SunDir;
-            half _Shade, _Ambient, _Rim, _BaseDarken, _Flash;
-            half4 _LightTint, _ShadowTint, _FlashColor;
+            half _Shade, _Ambient, _Rim, _BaseDarken, _Flash, _Metal;
+            half4 _LightTint, _ShadowTint, _FlashColor, _MetalColor;
 
             Varyings vert(Attributes v)
             {
