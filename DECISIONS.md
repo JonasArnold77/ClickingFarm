@@ -259,3 +259,4 @@
 - **Pflanzen-Stufen werden teurer:** Stufe 1→2 braucht 60 Klicks, jede weitere ×1,35 (Stufe 5→6 ≈ 200, 9→10 ≈ 660; `levelTaps`, `levelGrowth`). Vorher waren es immer 40. Man muss also entscheiden, welche Pflanze man zuerst hochklickt.
 - Ein Klick auf eine reife Ernte-Pflanze macht weiterhin beides auf einmal: Ernte abwerfen und Stufen-Fortschritt.
 - **Kamera:** Mit der Maus verschiebt man nur noch mit der rechten (oder mittleren) Taste. Die linke Taste klickt nur, auch wenn man sie dabei bewegt. Auf dem Handy schiebt weiter ein Finger, weil es dort keinen Rechtsklick gibt.
+- Schwellen danach neu auf die Bot-Kurve mit den langsameren Stufen gelegt. Ab Minute 40 (Mensch) wächst die Kurve fest mit ×1,15 pro Minute statt gemessen: Nach dem Kauf der letzten Upgrades springt das Einkommen, und Schwellen in diesem Sprung wären ohne genau diese Upgrades unerreichbar. „Großhandel“ ist jetzt ×2 statt ×3. Der Prüflauf auf diesen letzten Werten steht noch aus.
