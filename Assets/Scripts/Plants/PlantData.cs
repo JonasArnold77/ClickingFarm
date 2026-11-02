@@ -108,7 +108,12 @@ namespace SeedClicker
         public float carrierInterval = 7f; public int carrierWood = 1;
         public float sowerInterval = 4f; public int sowerRadius = 2;
         // Giessen: je Tropfen so viele Stueck (+1 je zwei Stufen des Tauschilfs) zu diesem Anteil des Ernte-Werts; die Kanne eines Giessers zaehlt mehrfach
-        public int waterDropItems = 2; public float waterDropValue = 0.35f, waterCanMult = 4f;
+        public int waterDropItems = 2; public float waterDropValue = 0.5f, waterCanMult = 4f;
+        // Tauschilf tropft alle waterInterval s (schneller mit Stufe), jeder Tropfen bringt auch Stufen-Fortschritt
+        public float waterInterval = 1.2f; public int waterDropXp = 1;
+        // Klopfwurz: Tipp alle autoInterval s, schneller mit Stufe und Upgrades, aber hoechstens autoMaxRate Tipps/s
+        // (ein fleissiger Spieler schafft ~4 – Klicken bleibt am staerksten); jeder Tipp erntet zu autoValue des Werts
+        public float autoInterval = 0.7f, autoMaxRate = 6f, autoValue = 0.5f;
         public int pipeRadius = 2, pipeBonus = 1;
     }
     /// <summary>Stuetzranke: Reichweite, Gebaeude-Bonus, Hammerschlaege an der Waffenbank, Mauer-Reparatur (Anteil der vollen Haltbarkeit).</summary>
@@ -136,7 +141,7 @@ namespace SeedClicker
         }
         public static string Desc(CatalogDef d) => d.role switch
         {
-            "water" => "Tropft auf die Felder links, rechts, oben und unten: aus reifen Pflanzen fällt dabei Ernte heraus.",
+            "water" => "Tropft auf die Felder links, rechts, oben und unten: reife Pflanzen werfen dabei Ernte ab und steigen schneller auf.",
             "harvest" => HarvestDesc(d),
             "fert" => "Direkte Nachbarn wachsen schneller und bringen +50 % Münzen.",
             "boost" => "Tipps auf Pflanzen im Umkreis von 2 zählen doppelt.",

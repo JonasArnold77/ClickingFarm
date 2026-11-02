@@ -1324,8 +1324,13 @@
     "pipeRadius": 2,
     "pipeBonus": 1,
     "waterDropItems": 2,
-    "waterDropValue": 0.35,
-    "waterCanMult": 4
+    "waterDropValue": 0.5,
+    "waterCanMult": 4,
+    "waterInterval": 1.2,
+    "waterDropXp": 1,
+    "autoInterval": 0.7,
+    "autoMaxRate": 6,
+    "autoValue": 0.5
   },
   "structures": [
     {

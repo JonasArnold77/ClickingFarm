@@ -68,7 +68,7 @@ namespace SeedClicker
                 if (t <= 0f)
                 {
                     WaterPulse(p, false);
-                    t = UnityEngine.Random.Range(2f, 2.8f) / Mathf.Max(1f, 0.6f + 0.4f * p.Lv);   // gemaechlich tropfen
+                    t = PlantBalance.I.Helpers.waterInterval * UnityEngine.Random.Range(0.85f, 1.15f) / Mathf.Max(1f, 0.6f + 0.4f * p.Lv);
                 }
                 waterTimers[p] = t;
             }
@@ -119,7 +119,7 @@ namespace SeedClicker
             foreach (var c in targets) StartCoroutine(Droplet(top, c, 0f, big, big ? 0.5f : 1f));   // Tipp aufs Tauschilf: halbe Menge, sonst schlaegt er das Ernten
         }
 
-        /// <summary>Ein Tropfen laesst Ernte herausfallen (Giessen bringt kein Wachstum – das kommt nur vom Tippen).
+        /// <summary>Ein Tropfen laesst Ernte herausfallen und bringt Stufen-Fortschritt (aber kein Wachstum – das kommt nur vom Tippen).
         /// amount: Tauschilf-Tropfen 1, volle Kanne eines Giesser-Knollis mehr.</summary>
         void WaterTap(Cell c, bool big, float amount)
         {
@@ -132,6 +132,11 @@ namespace SeedClicker
             var h = PlantBalance.I.Helpers;
             int n = Mathf.Max(1, Mathf.RoundToInt((h.waterDropItems + WaterLevelBonus(c)) * amount));
             AddProduct(p, n, ItemValue(p) * h.waterDropValue, big ? top + new Vector2(0, 0.2f) : (Vector2?)null);   // nur der eigene Tipp wackelt und zeigt die Zahl
+            // Wasser von selbst laesst die Pflanze auch aufleveln (wie ein Klick ohne Handschuhe; eine Kanne zaehlt mehrfach)
+            if (big) return;   // eigener Tipp aufs Tauschilf: nur Ernte, sonst waere er besser als die Pflanze selbst zu klicken
+            p.xp += Mathf.Max(1, Mathf.RoundToInt(h.waterDropXp * amount));
+            v.barPunch = 1f; v.barShow = 2.5f;
+            if (p.xp >= PlantBalance.I.LevelTapsFor(p.Lv)) LevelUp(p, v, basePos, top);
         }
 
         /// <summary>Hoehere Stufe des Tauschilfs (das am weitesten levelte in Reichweite): mehr Stueck je Tropfen.</summary>

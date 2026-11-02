@@ -260,3 +260,11 @@
 - Ein Klick auf eine reife Ernte-Pflanze macht weiterhin beides auf einmal: Ernte abwerfen und Stufen-Fortschritt.
 - **Kamera:** Mit der Maus verschiebt man nur noch mit der rechten (oder mittleren) Taste. Die linke Taste klickt nur, auch wenn man sie dabei bewegt. Auf dem Handy schiebt weiter ein Finger, weil es dort keinen Rechtsklick gibt.
 - Schwellen danach neu auf die Bot-Kurve mit den langsameren Stufen gelegt. Ab Minute 40 (Mensch) wächst die Kurve fest mit ×1,15 pro Minute statt gemessen: Nach dem Kauf der letzten Upgrades springt das Einkommen, und Schwellen in diesem Sprung wären ohne genau diese Upgrades unerreichbar. „Großhandel“ ist jetzt ×2 statt ×3. Der Prüflauf auf diesen letzten Werten steht noch aus.
+
+## Helfer-Pflanzen als echter Klick-Ersatz (02.11.2026)
+- Ziel: Tauschilf und Klopfwurz sollen sich wie Ersatz fürs Klicken anfühlen; der eigene Klick bleibt aber das stärkste Werkzeug.
+- **Tauschilf:** tropft alle 1,2 s (Stufe 1, schneller mit jeder Stufe; vorher ~2,4 s). Jeder Tropfen wirft 2 Stück zu 50 % des Werts ab (vorher 35 %) und bringt jetzt auch +1 Stufen-Fortschritt. Die Kanne eines Gießers zählt ×4 (auch beim Fortschritt). Ein eigener Tipp aufs Tauschilf gibt nur Ernte und keinen Fortschritt, sonst wäre er besser, als die Pflanze selbst anzuklicken.
+- **Klopfwurz:** tippt alle 0,7 s / (Stufe × Taktgefühl/Uhrwerk), vorher 1,4 s, aber höchstens 6 Tipps/s. Jeder Tipp erntet zu 50 % und gibt +1 Fortschritt.
+- Warum der Klick vorn bleibt: Ein Spieler-Klick bringt die volle Ernte und den Fortschritt × Handschuhe (bis ×60), bei ~4 Klicks/s auf eine Pflanze. Helfer sind breiter (viele Pflanzen gleichzeitig), aber je Pflanze schwächer.
+- Werte: `helpers.waterInterval/waterDropXp/waterDropValue/autoInterval/autoMaxRate/autoValue`.
+- Die Freischaltschwellen sind dafür nicht neu gemessen. Wer Helfer nutzt, verdient mehr und schaltet etwas früher frei.

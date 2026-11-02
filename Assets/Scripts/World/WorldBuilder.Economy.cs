@@ -214,7 +214,7 @@ namespace SeedClicker
                 return;
             }
             if (Time.unscaledTime < v.readyAt) return;
-            if (p.Role == "harvest") AddProduct(p, 1, ItemValue(p) * 0.5, null);   // Klopfwurz erntet halb so gut
+            if (p.Role == "harvest") AddProduct(p, 1, ItemValue(p) * PlantBalance.I.Helpers.autoValue, null);   // Klopfwurz erntet etwas schwaecher als ein Klick
             p.xp += 1;
             if (p.xp >= PlantBalance.I.LevelTapsFor(p.Lv)) LevelUp(p, v, basePos, top);
         }
@@ -228,7 +228,8 @@ namespace SeedClicker
                 t -= dt;
                 if (t <= 0f)
                 {
-                    t = 1.4f / (p.Lv * UpgradeMult("auto"));
+                    var hh = PlantBalance.I.Helpers;
+                    t = Mathf.Max(1f / hh.autoMaxRate, hh.autoInterval / (p.Lv * UpgradeMult("auto")));
                     // klickt nur das Feld in Blickrichtung
                     var target = PlantAt(Step(new Cell(p.x, p.y), p.dir, 1));
                     if (target != null && target != p && target.Role != "auto") SoftTap(target, p);
