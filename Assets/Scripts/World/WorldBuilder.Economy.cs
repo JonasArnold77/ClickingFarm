@@ -12,7 +12,7 @@ namespace SeedClicker
     /// </summary>
     public partial class WorldBuilder
     {
-        float cps, cpsTimer, saveTimer, butterflyTimer = 60f, goldenBoostT, goldenBoost = 1f, fieldTintT, prodFxT;
+        float cps, produceCps, cpsTimer, saveTimer, butterflyTimer = 60f, goldenBoostT, goldenBoost = 1f, fieldTintT, prodFxT;
         double coinFrac;
         readonly Dictionary<PlantedState, float> autoTimers = new Dictionary<PlantedState, float>();
         Transform butterfly; SpriteRenderer butterflySr; Vector2 bfFrom, bfTo; float bfT, bfDur;
@@ -20,7 +20,7 @@ namespace SeedClicker
 
         public double Coins => save.coins;
         public double Earned => save.earned;
-        public float Cps => cps;
+        public float Cps => cps + produceCps;   // direkte Muenzen + von selbst nachwachsende Ernte
         public float GoldenBoostLeft => goldenBoostT;
         public event Action CoinsChanged;
         public event Action<double, double> OfflineEarned;   // Muenzen, Sekunden
@@ -155,7 +155,7 @@ namespace SeedClicker
         {
             var c = PlantBalance.I.Plant(p.type);
             if (c == null || p.Role != "harvest" || !p.Grown) return 0;
-            return c.value * c.taps * p.Lv * UpgradeMult("harvest") * UpgradeMult("click") * BoostMult(p) * FertMult(p) * WaterMult(p) * TotemMult(p, "harvest") * GroupMult(p, c);
+            return c.value * c.taps * p.Lv * UpgradeMult("harvest") * BoostMult(p) * FertMult(p) * WaterMult(p) * TotemMult(p, "harvest") * GroupMult(p, c);
         }
 
         /// <summary>Muenzen pro Sekunde dieser Pflanze (Ernte waechst auch ohne Tippen nach).</summary>
@@ -164,7 +164,7 @@ namespace SeedClicker
             if (!p.Grown) return 0f;
             var c = PlantBalance.I.Plant(p.type);
             if (c == null) return 0f;
-            if (p.Role == "harvest") return c.value * c.prod * p.Lv * 0.15f * UpgradeMult("harvest") * FertMult(p) * WaterMult(p) * TotemMult(p, "produce") * RiverMult(p, "produce") * GroupMult(p, c);
+            if (p.Role == "harvest") return c.value * c.prod * p.Lv * 0.15f * UpgradeMult("harvest") * UpgradeMult("cps") * FertMult(p) * WaterMult(p) * TotemMult(p, "produce") * RiverMult(p, "produce") * GroupMult(p, c);
             return 0f;
         }
 
@@ -186,6 +186,14 @@ namespace SeedClicker
             float sum = 0f;
             foreach (var p in save.planted) if (!MakesProduct(p)) sum += PlantCps(p);   // Ernte-Pflanzen machen Produkte statt Muenzen
             return sum * UpgradeMult("cps");
+        }
+
+        /// <summary>Wert der Ernte, die pro Sekunde von selbst nachwaechst (fuer Anzeige und Offline-Ertrag).</summary>
+        float ComputeProduceCps()
+        {
+            float sum = 0f;
+            foreach (var p in save.planted) if (MakesProduct(p)) sum += PlantCps(p);
+            return sum;
         }
 
         /// <summary>Ein "Tipp" von einer Automatik-Pflanze: wie ein Klick, aber ohne grosses Spektakel.</summary>
@@ -238,13 +246,13 @@ namespace SeedClicker
             CheckEarnedUnlocks();
             InitStructures();
             InitKnollis();
-            cps = ComputeCps();
+            cps = ComputeCps(); produceCps = ComputeProduceCps();
             // Offline-Ertrag (gedeckelt, halbe Rate)
             long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             if (save.lastSeen > 0)
             {
                 double secs = Math.Min(now - save.lastSeen, (2 + UpgradeAdd("offline")) * 3600.0);
-                double earned = secs > 60 ? cps * secs * 0.5 : 0;
+                double earned = secs > 60 ? (cps + produceCps) * secs * 0.5 : 0;   // nachgewachsene Ernte haben die Knollis abgeliefert
                 if (earned >= 1) { AddCoins(earned); StartCoroutine(AnnounceOffline(earned, secs)); }
             }
             save.lastSeen = now;
@@ -263,7 +271,7 @@ namespace SeedClicker
         void UpdateEconomy(float dt)
         {
             cpsTimer -= dt;
-            if (cpsTimer <= 0f) { cpsTimer = 0.5f; cps = ComputeCps(); }
+            if (cpsTimer <= 0f) { cpsTimer = 0.5f; cps = ComputeCps(); produceCps = ComputeProduceCps(); }
             if (goldenBoostT > 0f) { goldenBoostT -= dt; if (goldenBoostT <= 0f) goldenBoost = 1f; }
             // laufend gutschreiben
             coinFrac += cps * goldenBoost * dt;

@@ -319,9 +319,22 @@ namespace SeedClicker
         bool IsDecorOcc(int occ) { foreach (var d in decor) if (d.occ == occ) return true; return false; }
 
         /// <summary>Legt ein Feld an (Rasterzelle). Gibt false zurueck, wenn der Platz nicht geht.</summary>
+        /// <summary>Preis des naechsten Gartenfelds (die ersten paar sind gratis).</summary>
+        public double FieldCost(int extra = 0)
+        {
+            var f = PlantBalance.I.Field;
+            int n = fields.Count + extra - f.free;
+            return n < 0 ? 0 : Math.Ceiling(f.cost * Math.Pow(f.growth, n));
+        }
+
         public bool PlaceField(Cell c, bool fx, bool persist = true)
         {
             if (!CanPlaceField(c)) return false;
+            if (fx && persist)
+            {
+                double cost = FieldCost();
+                if (cost > 0 && !TrySpend(cost, CellCenter(c) + new Vector2(0, 0.5f))) return false;   // vom Spieler angelegt: kostet
+            }
             var center = CellCenter(c);
             // Blumen, Gras, Pilze, Buesche in der Zelle wegraeumen
             for (int i = decor.Count - 1; i >= 0; i--)

@@ -53,7 +53,8 @@ namespace SeedClicker
             return b;
         }
 
-        bool InBed(Knolli k, PlantedState p) { var b = BedOf(k); return b != null && b.Contains(new Cell(p.x, p.y)); }
+        /// <summary>Darf der Knolli hier abholen? Ohne eigenes Feld sammelt er ueberall (die naechste Ernte zuerst).</summary>
+        bool InBed(Knolli k, PlantedState p) { var b = BedOf(k); return b == null || b.Contains(new Cell(p.x, p.y)); }
 
         // ------------------------------------------------------------------ Antippen und Zuordnen
 
@@ -147,7 +148,7 @@ namespace SeedClicker
             foreach (var k in knollis)
             {
                 if (k == selectedKnolli) { k.body.transform.position += new Vector3(0, Mathf.Abs(Mathf.Sin(Time.time * 8f)) * 0.08f, 0); continue; }
-                if (askT <= 0f && RoleNeedsField(RoleOf(k)) && BedOf(k) == null && k.carry == 0)
+                if (askT <= 0f && RoleOf(k) != "carrier" && RoleNeedsField(RoleOf(k)) && BedOf(k) == null && k.carry == 0)   // Traeger sammeln ohne Feld ueberall
                     Floater?.Invoke(k.pos + new Vector2(0, 0.75f), "Wo soll ich arbeiten? Tipp mich an!", new Color(1f, 0.95f, 0.75f));
             }
             if (askT <= 0f) askT = 9f;

@@ -1,7 +1,7 @@
 # TODO.md – offene Punkte
 
 ## Als Nächstes
-- [ ] Balancing Wirtschaft: Preise der Verbesserungen/Gebäude, Ertrag der Nutzpflanzen, Tempo der Freischaltungen in den ersten 10 Minuten.
+- [ ] Balancing mit echten Menschen gegenprüfen: Annahme „Mensch = 0,65× Bot-Tempo“ (DECISIONS → Balancing einer ganzen Runde).
 - [ ] Startauswahl der Kampfpflanze passt nicht mehr ganz zum neuen Start mit Radieschen – evtl. erst vor der ersten Nacht fragen.
 - [ ] Eigene Grafiken für Gebäude und Nutzpflanzen (aktuell vorhandene Sprites als Platzhalter).
 - [ ] Mauern reparieren; Zombies laufen nicht um Mauern herum (keine Wegfindung).

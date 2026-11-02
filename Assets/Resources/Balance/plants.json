@@ -528,7 +528,7 @@
       "cost": 60,
       "value": 6,
       "growTaps": 30,
-      "unlockEarned": 250,
+      "unlockEarned": 1250,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -550,7 +550,7 @@
       "cost": 25,
       "value": 1.5,
       "growTaps": 20,
-      "unlockEarned": 120,
+      "unlockEarned": 95,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -573,7 +573,7 @@
       "cost": 90,
       "value": 3,
       "growTaps": 25,
-      "unlockEarned": 600,
+      "unlockEarned": 17500,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -596,7 +596,7 @@
       "cost": 200,
       "value": 4,
       "growTaps": 40,
-      "unlockEarned": 1200,
+      "unlockEarned": 95000,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -620,7 +620,7 @@
       "cost": 400,
       "value": 14,
       "growTaps": 35,
-      "unlockEarned": 2500,
+      "unlockEarned": 550000,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -643,7 +643,7 @@
       "cost": 120,
       "value": 0,
       "growTaps": 35,
-      "unlockEarned": 600,
+      "unlockEarned": 3750,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -664,7 +664,7 @@
       "cost": 300,
       "value": 0,
       "growTaps": 40,
-      "unlockEarned": 1500,
+      "unlockEarned": 50000,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -685,7 +685,7 @@
       "cost": 500,
       "value": 0,
       "growTaps": 45,
-      "unlockEarned": 3500,
+      "unlockEarned": 1500000,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -706,7 +706,7 @@
       "cost": 700,
       "value": 0,
       "growTaps": 40,
-      "unlockEarned": 5000,
+      "unlockEarned": 5000000,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -727,7 +727,7 @@
       "cost": 300,
       "value": 0,
       "growTaps": 40,
-      "unlockEarned": 2500,
+      "unlockEarned": 325000,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -748,7 +748,7 @@
       "cost": 100,
       "value": 0,
       "growTaps": 30,
-      "unlockEarned": 600,
+      "unlockEarned": 35000,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -769,7 +769,7 @@
       "cost": 250,
       "value": 0,
       "growTaps": 35,
-      "unlockEarned": 4000,
+      "unlockEarned": 2250000,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -790,7 +790,7 @@
       "cost": 400,
       "value": 0,
       "growTaps": 35,
-      "unlockEarned": 5000,
+      "unlockEarned": 9000000,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -812,7 +812,7 @@
       "cost": 120,
       "value": 0,
       "growTaps": 30,
-      "unlockEarned": 800,
+      "unlockEarned": 8000,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -834,7 +834,7 @@
       "cost": 200,
       "value": 0,
       "growTaps": 35,
-      "unlockEarned": 1500,
+      "unlockEarned": 125000,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -856,7 +856,7 @@
       "cost": 200,
       "value": 0,
       "growTaps": 35,
-      "unlockEarned": 1500,
+      "unlockEarned": 175000,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -878,7 +878,7 @@
       "cost": 300,
       "value": 0,
       "growTaps": 40,
-      "unlockEarned": 3000,
+      "unlockEarned": 1250000,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -900,7 +900,7 @@
       "cost": 250,
       "value": 0,
       "growTaps": 35,
-      "unlockEarned": 2200,
+      "unlockEarned": 250000,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -922,7 +922,7 @@
       "cost": 180,
       "value": 0,
       "growTaps": 35,
-      "unlockEarned": 1200,
+      "unlockEarned": 25000,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -944,7 +944,7 @@
       "cost": 300,
       "value": 0,
       "growTaps": 40,
-      "unlockEarned": 2500,
+      "unlockEarned": 800000,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -966,7 +966,7 @@
       "cost": 400,
       "value": 0,
       "growTaps": 45,
-      "unlockEarned": 4000,
+      "unlockEarned": 3000000,
       "pattern": "single",
       "patternLv": 1,
       "rangeLv": 1,
@@ -1241,7 +1241,7 @@
     }
   ],
   "startCoins": 30,
-  "testUnlockAll": true,
+  "testUnlockAll": false,
   "treeRegrowNights": 3,
   "wall": {
     "wood": 0.2,
@@ -1286,7 +1286,10 @@
     "workRepair": 0.08,
     "guardInterval": 1.4,
     "guardRange": 2.6,
-    "guardDamage": 2
+    "guardDamage": 2,
+    "tripLoad": 30,
+    "tripStops": 5,
+    "tripReach": 4
   },
   "river": {
     "cost": 10,
@@ -1343,9 +1346,9 @@
       "name": "Wachturm",
       "desc": "Schießt nachts selbst auf Zombies",
       "effect": "tower",
-      "cost": 1500,
+      "cost": 15000,
       "wood": 10,
-      "unlockEarned": 1000,
+      "unlockEarned": 35000,
       "value": 4,
       "valuePerLevel": 2,
       "radius": 4.0,
@@ -1357,9 +1360,9 @@
       "name": "Saatgutmühle",
       "desc": "Alle Samen werden billiger",
       "effect": "seedcost",
-      "cost": 12000,
+      "cost": 150000,
       "wood": 10,
-      "unlockEarned": 9000,
+      "unlockEarned": 1500000,
       "value": 0.25,
       "valuePerLevel": 0.05,
       "radius": 0,
@@ -1375,9 +1378,9 @@
       "multi": true,
       "fullCells": 6,
       "costGrowth": 1.8,
-      "cost": 120,
+      "cost": 275,
       "wood": 2,
-      "unlockEarned": 150,
+      "unlockEarned": 275,
       "value": 1,
       "valuePerLevel": 0.2,
       "radius": 0,
@@ -1393,9 +1396,9 @@
       "multi": true,
       "fullCells": 6,
       "costGrowth": 1.8,
-      "cost": 400,
+      "cost": 7500,
       "wood": 4,
-      "unlockEarned": 500,
+      "unlockEarned": 17500,
       "value": 0.75,
       "valuePerLevel": 0.15,
       "radius": 0,
@@ -1411,9 +1414,9 @@
       "multi": true,
       "fullCells": 6,
       "costGrowth": 1.8,
-      "cost": 1200,
+      "cost": 35000,
       "wood": 6,
-      "unlockEarned": 1500,
+      "unlockEarned": 150000,
       "value": 1,
       "valuePerLevel": 0.2,
       "radius": 0,
@@ -1430,27 +1433,27 @@
   },
   "farmLevels": [
     {
-      "cost": 150,
+      "cost": 1000,
       "wood": 10
     },
     {
-      "cost": 900,
+      "cost": 15000,
       "wood": 25
     },
     {
-      "cost": 5000,
+      "cost": 65000,
       "wood": 50
     },
     {
-      "cost": 25000,
+      "cost": 175000,
       "wood": 90
     },
     {
-      "cost": 120000,
+      "cost": 650000,
       "wood": 150
     },
     {
-      "cost": 600000,
+      "cost": 8000000,
       "wood": 250
     }
   ],
@@ -1461,8 +1464,8 @@
       "desc": "Jeder Tipp zählt doppelt",
       "effect": "click",
       "value": 2,
-      "cost": 100,
-      "unlockEarned": 50
+      "cost": 50,
+      "unlockEarned": 30
     },
     {
       "id": "kanne1",
@@ -1470,8 +1473,8 @@
       "desc": "Pflanzen wachsen doppelt so schnell",
       "effect": "growth",
       "value": 2,
-      "cost": 250,
-      "unlockEarned": 150
+      "cost": 225,
+      "unlockEarned": 100
     },
     {
       "id": "korb1",
@@ -1479,8 +1482,8 @@
       "desc": "Ernte bringt doppelt so viele Münzen",
       "effect": "harvest",
       "value": 2,
-      "cost": 400,
-      "unlockEarned": 300
+      "cost": 700,
+      "unlockEarned": 700
     },
     {
       "id": "schilf1",
@@ -1488,8 +1491,8 @@
       "desc": "Wasserpflanzen gießen 1 Feld weiter",
       "effect": "water",
       "value": 1,
-      "cost": 800,
-      "unlockEarned": 600
+      "cost": 1750,
+      "unlockEarned": 2000
     },
     {
       "id": "kompost1",
@@ -1497,8 +1500,8 @@
       "desc": "Dünger wirkt doppelt so stark",
       "effect": "fert",
       "value": 2,
-      "cost": 1500,
-      "unlockEarned": 1000
+      "cost": 6000,
+      "unlockEarned": 7500
     },
     {
       "id": "handschuh2",
@@ -1506,8 +1509,8 @@
       "desc": "Jeder Tipp zählt doppelt",
       "effect": "click",
       "value": 2,
-      "cost": 2500,
-      "unlockEarned": 1800
+      "cost": 12500,
+      "unlockEarned": 25000
     },
     {
       "id": "auto1",
@@ -1515,8 +1518,8 @@
       "desc": "Automatik-Pflanzen klicken doppelt so schnell",
       "effect": "auto",
       "value": 2,
-      "cost": 5000,
-      "unlockEarned": 4000
+      "cost": 30000,
+      "unlockEarned": 60000
     },
     {
       "id": "korb2",
@@ -1524,8 +1527,8 @@
       "desc": "Ernte bringt doppelt so viele Münzen",
       "effect": "harvest",
       "value": 2,
-      "cost": 9000,
-      "unlockEarned": 6000
+      "cost": 50000,
+      "unlockEarned": 225000
     },
     {
       "id": "mauer1",
@@ -1533,8 +1536,8 @@
       "desc": "Mauern halten doppelt so viel aus",
       "effect": "wall",
       "value": 2,
-      "cost": 8000,
-      "unlockEarned": 5000
+      "cost": 45000,
+      "unlockEarned": 125000
     },
     {
       "id": "licht1",
@@ -1542,8 +1545,8 @@
       "desc": "Licht verstärkt Schaden um weitere 50 %",
       "effect": "light",
       "value": 0.5,
-      "cost": 12000,
-      "unlockEarned": 8000
+      "cost": 150000,
+      "unlockEarned": 350000
     },
     {
       "id": "cps1",
@@ -1551,8 +1554,8 @@
       "desc": "Alle Einnahmen von selbst +50 %",
       "effect": "cps",
       "value": 1.5,
-      "cost": 20000,
-      "unlockEarned": 15000
+      "cost": 200000,
+      "unlockEarned": 700000
     },
     {
       "id": "kanne2",
@@ -1560,8 +1563,8 @@
       "desc": "Pflanzen wachsen doppelt so schnell",
       "effect": "growth",
       "value": 2,
-      "cost": 30000,
-      "unlockEarned": 20000
+      "cost": 150000,
+      "unlockEarned": 1250000
     },
     {
       "id": "handschuh3",
@@ -1569,8 +1572,8 @@
       "desc": "Jeder Tipp zählt dreifach",
       "effect": "click",
       "value": 3,
-      "cost": 60000,
-      "unlockEarned": 40000
+      "cost": 300000,
+      "unlockEarned": 2250000
     },
     {
       "id": "golden1",
@@ -1578,8 +1581,8 @@
       "desc": "Goldene Schmetterlinge kommen doppelt so oft",
       "effect": "golden",
       "value": 2,
-      "cost": 50000,
-      "unlockEarned": 30000
+      "cost": 275000,
+      "unlockEarned": 1500000
     },
     {
       "id": "offline1",
@@ -1587,8 +1590,8 @@
       "desc": "Offline-Ertrag hält 4 Stunden länger",
       "effect": "offline",
       "value": 4,
-      "cost": 40000,
-      "unlockEarned": 25000
+      "cost": 500000,
+      "unlockEarned": 3750000
     },
     {
       "id": "korb3",
@@ -1596,8 +1599,8 @@
       "desc": "Ernte bringt dreimal so viele Münzen",
       "effect": "harvest",
       "value": 3,
-      "cost": 200000,
-      "unlockEarned": 120000
+      "cost": 1750000,
+      "unlockEarned": 6000000
     },
     {
       "id": "cps2",
@@ -1605,8 +1608,8 @@
       "desc": "Alle Einnahmen von selbst verdoppelt",
       "effect": "cps",
       "value": 2,
-      "cost": 500000,
-      "unlockEarned": 300000
+      "cost": 4000000,
+      "unlockEarned": 30000000
     },
     {
       "id": "auto2",
@@ -1614,8 +1617,8 @@
       "desc": "Automatik-Pflanzen klicken doppelt so schnell",
       "effect": "auto",
       "value": 2,
-      "cost": 400000,
-      "unlockEarned": 250000
+      "cost": 3250000,
+      "unlockEarned": 15000000
     },
     {
       "id": "handschuh4",
@@ -1623,8 +1626,13 @@
       "desc": "Jeder Tipp zählt fünffach",
       "effect": "click",
       "value": 5,
-      "cost": 2000000,
-      "unlockEarned": 1200000
+      "cost": 8500000,
+      "unlockEarned": 60000000
     }
-  ]
+  ],
+  "field": {
+    "free": 6,
+    "cost": 10,
+    "growth": 1.12
+  }
 }

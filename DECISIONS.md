@@ -233,3 +233,15 @@
   - Jeder Beruf trägt sein Werkzeug (Kanne, Axt, Hammer, Helm); beim Arbeiten schwingt es und der Knolli staucht sich.
 - **Wohnplätze:** Das Haus hat 2 Plätze, jede **Knolli-Hütte** (Bauwerk, mehrfach kaufbar, 150 + 3 Holz, ×1,6) +2 (+0,5 je Stufe). Ohne freien Platz kein Anheuern.
 - Werte in `plants.json -> delivery` (baseHousing, workWaterPerTrip, workWetSeconds, workChopInterval, workRepair, guardInterval, guardRange, guardDamage).
+
+## Balancing einer ganzen Runde (02.11.2026)
+- **Spielbot** (nur im Test-Projekt, nicht im Repo): spielt wie ein fleißiger Mensch mit 4 Tipps/s – Beete 3×2, beste bezahlbare Ernte, Upgrades nach Preis, Knollis (Träger, Holzfäller, Maurer, Wache), Hütten, Totem, Mauer, Hof-Ausbau, schießt nachts. Protokolliert jede Minute Einkommen, Vorrat und jede Freischaltung.
+- **Gefundene Fehler:**
+  - Träger ohne zugewiesenes Feld taten nichts – Ernte neuer Beete blieb für immer liegen (nach 8 min ~110.000 Münzen ungeholt). Jetzt sammeln Träger ohne Feld **überall** (die nächste Ernte zuerst); ein Feld-Tipp beschränkt sie auf dieses Feld. „Träger“ im Berufsschild gilt sofort.
+  - Träger liefen nach einem einzigen Haufen (4–7 Stück) zurück. Jetzt **Sammelrunde**: bis zu 5 Haufen (je ≤ 4 Felder entfernt), bis 30 Stück dabei sind (`delivery.tripLoad/tripStops/tripReach`).
+- **Felder:** die ersten 6 gratis, danach 10 Münzen ×1,12 je weiteres Feld (`field`). Der Ernte-Tipp hängt nicht mehr an den Handschuh-Upgrades (die stapelten sich mit allem anderen zur Explosion).
+- **Freischaltkurve:** Die Multiplikatoren (Pflanzenstufe, Körbe, Dünger, Gießen, Trommelkraut, bessere Sorten, Felder) verstärken sich gegenseitig. Mit linear gesetzten Schwellen war nach 17 Bot-Minuten alles frei. Jetzt liegen alle Schwellen (`unlockEarned`) und Preise auf der **gemessenen Bot-Kurve, zeitlich um 1/0,65 gestreckt** (ein Mensch tippt langsamer und überlegt). Ziel für einen Menschen: in den ersten 10 Minuten etwa jede Minute etwas Neues, danach alle 2–4 Minuten, alles nach ~60 Minuten; der Bot schafft es in ~40.
+  - Ziel-Minuten (Mensch): Karotte 1, Weißrübe 3, Kompostpilz 4,5, Steinmoos 5,5, Salat 7, Dornenranke 8, Wurzelträger 9, Trommelkraut 10, Weizen 12, Glutblüte 13, Frostdistel 14,5, Giftpilz 16, Stützranke 18, Mais 20, Wurzelherz 22, Blitzkraut 24, Klopfwurz 26, Pustesamen 29, Mondblume 32, Glühpilz 36, Saftrohr 40; Upgrades von 0,8 bis 57 Minuten; Hof-Stufen bei 3, 8, 15, 25, 38, 52. Kampfpflanzen weiter über die Wellen (1, 3, 6, 7, 9, 11 ≈ alle 5,7 min).
+  - Upgrade-Preis ≈ gut eine Minute Einkommen zum Freischaltzeitpunkt, Bauwerke ≈ eine knappe Minute, Hof-Stufen ≈ 1,5 Minuten.
+  - `testUnlockAll` ist aus.
+- „Buchhaltung“/„Genossenschaft“ (Effekt `cps`) wirkten seit der Lieferkette nicht mehr (keine Pflanze zahlt mehr direkt). Jetzt verstärken sie die von selbst nachwachsende Ernte. Die HUD-Zeile „+X pro Sekunde“ und der Offline-Ertrag rechnen diese Ernte mit ein (vorher war beides 0).

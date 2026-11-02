@@ -207,7 +207,7 @@ namespace SeedClicker
             public readonly List<Sprite> load = new List<Sprite>();                  // Bilder der Ladung (eins je schwebendem Stueck)
             public readonly List<SpriteRenderer> orbit = new List<SpriteRenderer>(); // schweben um den Knolli herum
             public readonly List<Vector2> lpos = new List<Vector2>(), lvel = new List<Vector2>();
-            public TreeObj workTree; public float workT, swing; public int water; public SpriteRenderer tool;   // Berufe   // Ort und Tempo jedes Stuecks (folgt wie an einem Magneten)
+            public TreeObj workTree; public float workT, swing; public int water, stops; public SpriteRenderer tool;   // Berufe   // Ort und Tempo jedes Stuecks (folgt wie an einem Magneten)
         }
 
         const int OrbitMax = 12;
@@ -327,7 +327,10 @@ namespace SeedClicker
                         if (k.item.sprite == null || q == k.goal) k.item.sprite = qspr;
                     }
                     if (flies > 0) { Particles.I?.Ring(k.pos + new Vector2(0, 0.3f), new Color(1f, 0.92f, 0.6f, 0.6f), range * 1.2f, 0.4f); Sfx.Play("grow", 1.5f, 0.4f); }
-                    k.state = 2; k.goal = null; k.target = CrateDrop + UnityEngine.Random.insideUnitCircle * 0.15f;
+                    // Sammelrunde: noch wenig dabei? Dann erst zum naechsten Haufen in der Naehe, danach zur Kiste
+                    var next = k.carry < D.tripLoad && ++k.stops < D.tripStops ? FindPickup(k) : null;
+                    if (next != null && (PilePos(next) - k.pos).sqrMagnitude < D.tripReach * D.tripReach) { k.goal = next; k.target = PilePos(next) + new Vector2(0.12f, -0.05f); }
+                    else { k.state = 2; k.goal = null; k.stops = 0; k.target = CrateDrop + UnityEngine.Random.insideUnitCircle * 0.15f; }
                 }
                 else if (k.state == 2)
                 {

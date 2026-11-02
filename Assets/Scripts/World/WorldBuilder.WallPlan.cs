@@ -183,6 +183,11 @@ namespace SeedClicker
                 bool ok = planTotem ? !TotemTaken(c) : river ? !riverStop && CanPlaceRiver(c) && coinBudget >= PlantBalance.I.River.cost
                         : planFields ? CanPlaceField(c) : CanPlaceWall(c) && budget >= WallWood - 0.0001f;
                 if (river && !ok) riverStop = true;
+                if (ok && planFields && !planTotem)
+                {
+                    double fc = FieldCost(planOk.Count);
+                    if (fc > coinBudget) ok = false; else coinBudget -= fc;   // Felder kosten: rot, wenn das Geld nicht reicht
+                }
                 if (ok) { if (river) coinBudget -= PlantBalance.I.River.cost; else if (!planFields) budget -= WallWood; planOk.Add(c); }
                 var sr = PlanView(n++);
                 sr.enabled = true;

@@ -49,6 +49,8 @@ namespace SeedClicker
     [Serializable] public class WallDef { public float wood = 2f; public float hp = 30f; }
     /// <summary>Steinpult: Preis in Muenzen (Abbauen gibt ihn zurueck).</summary>
     [Serializable] public class PedestalDef { public float cost = 20f; }
+    /// <summary>Gartenfelder: die ersten free Felder gratis, danach kostet jedes neue Feld cost * growth^(Anzahl - free).</summary>
+    [Serializable] public class FieldDef { public int free = 6; public float cost = 10f, growth = 1.1f; }
     /// <summary>Tagesaufgabe: so viele Stueck des Tages-Ernteguts fuer Bronze, Silber, Gold.</summary>
     [Serializable] public class ChallengeDef { public int[] tiers = { 10, 30, 60 }; }
     /// <summary>Ernte-Lieferung: Vorrat je Pflanze, Knollis (Preis, Reichweite, Tempo).</summary>
@@ -62,6 +64,9 @@ namespace SeedClicker
         public float knolliCost = 40f, knolliCostGrowth = 1.6f, knolliSpeed = 1.6f;
         // Berufe und Wohnplaetze
         public int baseHousing = 2, workWaterPerTrip = 4;
+        // Sammelrunde der Traeger: bis zu tripStops Haufen (je hoechstens tripReach entfernt), bis tripLoad Stueck dabei sind
+        public int tripLoad = 30, tripStops = 5;
+        public float tripReach = 4f;
         public float workWetSeconds = 45f, workChopInterval = 0.8f, workRepair = 0.08f, guardInterval = 1.4f, guardRange = 2.6f, guardDamage = 2f;
     }
     /// <summary>Runen-Altar: pro geopfertem Runenstein (Fluch-Stufe) werden Zombies staerker, groesser und zahlreicher,
@@ -204,6 +209,7 @@ namespace SeedClicker
         public FarmLevelDef[] farmLevels;
         public WallDef wall;
         public PedestalDef pedestal;
+        public FieldDef field;
         public DeliveryDef delivery;
         public RiverDef river;
         public ChallengeDef challenge;
@@ -324,6 +330,7 @@ namespace SeedClicker
         public WallDef Wall => wall ?? (wall = new WallDef());
         public PedestalDef Pedestal => pedestal ?? (pedestal = new PedestalDef());
         public DeliveryDef Delivery => delivery ?? (delivery = new DeliveryDef());
+        public FieldDef Field => field ?? (field = new FieldDef());
         public RiverDef River => river ?? (river = new RiverDef());
         public ChallengeDef Challenge => challenge != null && challenge.tiers != null && challenge.tiers.Length > 0 ? challenge : (challenge = new ChallengeDef());
         public AltarDef Altar => altar ?? (altar = new AltarDef());

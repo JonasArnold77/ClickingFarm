@@ -17,7 +17,7 @@ namespace SeedClicker
     {
         public static readonly (string id, string name, string desc, bool needsField)[] KnolliRoles =
         {
-            ("carrier", "Träger", "Bringt die Ernte eines Felds zur Lieferkiste", true),
+            ("carrier", "Träger", "Bringt Ernte zur Lieferkiste – überall oder nur von einem Feld", true),
             ("water", "Gießer", "Holt Wasser am Bach und gießt ein Feld", true),
             ("wood", "Holzfäller", "Fällt Bäume und bringt Holz", false),
             ("mason", "Maurer", "Flickt beschädigte Mauern", false),
@@ -41,6 +41,17 @@ namespace SeedClicker
         {
             var k = selectedKnolli;
             if (k == null) return;
+            if (role == "carrier")
+            {
+                // Traeger sammeln sofort ueberall; ein Tipp aufs Feld beschraenkt sie danach auf dieses Feld
+                var jc = Job(k);
+                if (jc.role != "carrier" || jc.set) { jc.role = "carrier"; jc.set = false; ResetWork(k); }
+                pendingRole = role;
+                Floater?.Invoke(k.pos + new Vector2(0, 0.85f), "Ich sammle überall – tipp ein Feld an, wenn ich nur dort sammeln soll", new Color(0.8f, 1f, 0.7f));
+                Sfx.Play("tick", 1.3f, 0.5f);
+                save.Save();
+                return;
+            }
             if (RoleNeedsField(role))
             {
                 pendingRole = role;
@@ -73,7 +84,7 @@ namespace SeedClicker
         {
             if (k.carry > 0 && RoleOf(k) != "carrier") { k.state = 2; k.target = CrateDrop; }   // Ladung noch abliefern
             else { k.state = k.carry > 0 ? 2 : 0; }
-            k.goal = null; k.workTree = null; k.workT = 0f; k.water = 0; k.idleT = 0f;
+            k.goal = null; k.workTree = null; k.workT = 0f; k.water = 0; k.stops = 0; k.idleT = 0f;
         }
 
         // ------------------------------------------------------------------ Wohnplaetze
