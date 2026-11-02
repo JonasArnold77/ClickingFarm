@@ -5,8 +5,8 @@ namespace SeedClicker
     /// <summary>
     /// Medaillen der Ernte-Pflanzen: Statt Zahlen-Stufen werden sie normal -> Bronze -> Silber -> Gold.
     /// Jeder Aufstieg braucht deutlich mehr Klicks als der vorige (plants.json -> harvestLevelTaps) und bringt
-    /// einen grossen Ertragssprung (harvestLevelMult). Pflanze und jedes Erntestueck stecken dann in einer
-    /// wabernden Sphaere in Medaillenfarbe (MedalAura).
+    /// einen grossen Ertragssprung (harvestLevelMult). Pflanze und jedes Erntestueck bekommen dann eine
+    /// leuchtende Kontur in Medaillenfarbe (MedalAura).
     /// Ein reifes Tauschilf in Reichweite verdoppelt den Stufen-Fortschritt (helpers.waterLevelMult).
     /// </summary>
     public partial class WorldBuilder
@@ -58,7 +58,7 @@ namespace SeedClicker
             return true;
         }
 
-        /// <summary>Medaille fuer die Sphaere (unter 2 = keine): reife Ernte-Pflanze und ihre Erntestuecke.</summary>
+        /// <summary>Medaille fuer die Kontur (unter 2 = keine): reife Ernte-Pflanze und ihre Erntestuecke.</summary>
         static int MedalOf(PlantedState p) => HasMedals(p) && p.Grown ? p.Lv : 0;
     }
 }

@@ -114,7 +114,7 @@ namespace SeedClicker
                     sr.enabled = i < show && spr != null;
                     if (!sr.enabled) continue;
                     sr.sprite = spr;
-                    MedalAura.Set(sr, MedalOf(p), 1.4f);
+                    MedalAura.Set(sr, MedalOf(p), 0.85f);
                     float s = 0.15f / Mathf.Max(0.01f, spr.bounds.size.x);
                     sr.transform.localScale = Vector3.one * s;
                     var pos = ScatterPos(p, i);
@@ -208,7 +208,7 @@ namespace SeedClicker
             public readonly List<Sprite> load = new List<Sprite>();                  // Bilder der Ladung (eins je schwebendem Stueck)
             public readonly List<SpriteRenderer> orbit = new List<SpriteRenderer>(); // schweben um den Knolli herum
             public readonly List<Vector2> lpos = new List<Vector2>(), lvel = new List<Vector2>();
-            public readonly List<int> lmedal = new List<int>();   // Medaille je schwebendem Stueck (Sphaere)
+            public readonly List<int> lmedal = new List<int>();   // Medaille je schwebendem Stueck (Kontur)
             public TreeObj workTree; public float workT, swing; public int water, stops; public SpriteRenderer tool;   // Berufe   // Ort und Tempo jedes Stuecks (folgt wie an einem Magneten)
         }
 
@@ -407,7 +407,7 @@ namespace SeedClicker
                 sr.enabled = i < n && k.load[i] != null;
                 if (!sr.enabled) continue;
                 sr.sprite = k.load[i];
-                MedalAura.Set(sr, i < k.lmedal.Count ? k.lmedal[i] : 0, 1.4f);
+                MedalAura.Set(sr, i < k.lmedal.Count ? k.lmedal[i] : 0, 0.85f);
                 var goal = OrbitPos(k, i, n, hop, out bool front);
                 // Magnet-Folgen: Feder zum Platz in der Wolke, mit Nachziehen – weit weg zieht es staerker
                 while (k.lpos.Count <= i) { k.lpos.Add(goal); k.lvel.Add(Vector2.zero); }
@@ -466,7 +466,7 @@ namespace SeedClicker
             var sr = new GameObject("IntoCrate").AddComponent<SpriteRenderer>();
             sr.transform.SetParent(objects, false);
             sr.sprite = spr;
-            MedalAura.Set(sr, medal, 1.4f);
+            MedalAura.Set(sr, medal, 0.85f);
             sr.sortingOrder = 30005;
             float size = 0.19f / Mathf.Max(0.01f, spr.bounds.size.x);
             var to = cratePos + new Vector2(0, 0.45f);

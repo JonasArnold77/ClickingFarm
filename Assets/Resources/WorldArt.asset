@@ -277,8 +277,6 @@ MonoBehaviour:
     prefab: {fileID: 2060212803351811498, guid: 38b99d63cdad9994b89d14c10a8783ce, type: 3}
   - name: waterFountain
     prefab: {fileID: 5582959372779851105, guid: f6a3c3d847782f842adfa192f9ad05ed, type: 3}
-  - name: magicalSource
-    prefab: {fileID: 3031766928850544864, guid: a8cb176ac2d6504459d1fb8e59257cda, type: 3}
   vfx:
   - name: water
     asset: {fileID: 8926484042661614526, guid: 7517e52f5006acb4b8b99050faec9f8e, type: 3}
