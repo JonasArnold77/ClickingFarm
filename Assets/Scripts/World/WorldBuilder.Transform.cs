@@ -35,22 +35,29 @@ namespace SeedClicker
         /// <summary>Haltbarkeit einer Mauer: Stein haelt ein Vielfaches.</summary>
         float MaxHp(WallState st) => WallMaxHp * (st.stone ? PlantBalance.I.Transforms.stoneHpMult : 1f) * (st.gate ? GateHpMult : 1f);
 
-        const string SharedElements = "_bench";   // Elemente liegen auf der Waffenbank und gelten fuer jede Waffe
+        const string SharedElements = "_bench";   // kurzzeitig lagen alle Elemente gemeinsam auf der Bank – wird der gewaehlten Waffe gegeben
 
-        /// <summary>Alle Elemente der Waffenbank – sie bleiben fuer immer, sammeln sich und gelten fuer alle Waffen
-        /// (vorher hingen sie an der gerade gewaehlten Waffe; beim Wechsel schienen sie verschwunden).</summary>
+        /// <summary>Elemente dieser einen Waffe – sie bleiben fuer immer und sammeln sich (mehrere Elemente wirken zusammen).
+        /// Jede Waffe hat ihre eigenen: was die Pistole bekommt, hat die Schrotflinte nicht.</summary>
         public List<WeaponElementLv> WeaponElements(string id)
         {
-            var all = WLevel(SharedElements);
-            if (all.elements == null) all.elements = new List<WeaponElementLv>();
-            // alte Spielstaende: Elemente einzelner Waffen zusammenlegen (gleiches Element: die hoehere Stufe zaehlt)
-            foreach (var e in save.weaponLevels)
+            var e = WLevel(id);
+            if (e.elements == null) e.elements = new List<WeaponElementLv>();
+            if (!string.IsNullOrEmpty(e.element))
             {
-                if (e == all) continue;
-                if (!string.IsNullOrEmpty(e.element)) { Merge(all.elements, e.element, Mathf.Max(1, e.elementLv)); e.element = null; e.elementLv = 0; }
-                if (e.elements != null && e.elements.Count > 0) { foreach (var x in e.elements) Merge(all.elements, x.id, x.lv); e.elements.Clear(); }
+                // alter Spielstand: ein einzelnes Element uebernehmen
+                Merge(e.elements, e.element, Mathf.Max(1, e.elementLv));
+                e.element = null; e.elementLv = 0;
             }
-            return all.elements;
+            // Zwischenstand mit gemeinsamen Bank-Elementen: an die gewaehlte Waffe zurueckgeben
+            var shared = save.weaponLevels.Find(x => x.id == SharedElements);
+            if (shared != null)
+            {
+                var owner = WLevel(string.IsNullOrEmpty(save.weapon) ? id : save.weapon);
+                if (shared.elements != null) foreach (var x in shared.elements) Merge(owner.elements ??= new List<WeaponElementLv>(), x.id, x.lv);
+                save.weaponLevels.Remove(shared);
+            }
+            return e.elements;
         }
 
         static void Merge(List<WeaponElementLv> list, string id, int lv)
