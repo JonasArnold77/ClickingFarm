@@ -41,6 +41,14 @@ namespace SeedClicker
         /// Jede Waffe hat ihre eigenen: was die Pistole bekommt, hat die Schrotflinte nicht.</summary>
         public List<WeaponElementLv> WeaponElements(string id)
         {
+            if (!save.elementsReset)
+            {
+                // einmalig: nach dem Hin und Her (gemeinsame Bank-Elemente) war die Verteilung verloren – alle Elemente loeschen
+                foreach (var wl in save.weaponLevels) { wl.elements?.Clear(); wl.element = null; wl.elementLv = 0; }
+                save.weaponLevels.RemoveAll(x => x.id == SharedElements);
+                save.elementsReset = true;
+                save.Save();
+            }
             var e = WLevel(id);
             if (e.elements == null) e.elements = new List<WeaponElementLv>();
             if (!string.IsNullOrEmpty(e.element))
