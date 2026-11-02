@@ -119,6 +119,7 @@ namespace SeedClicker
                             if (hit != null) { hit.knock += (hit.pos - aim).normalized * 0.3f + Vector2.up * 0.4f; WeaponHit(w, hit, dmg); }
                         }
                         ImpactFx(aim, 1.3f);
+                        GroundFire(w, aim, 1.2f);
                         Sfx.Play("shotgun", Random.Range(0.92f, 1.05f), 0.9f);
                         WorldCamera.I?.Shake(0.07f);
                         WorldCamera.I?.Punch(0.018f);
@@ -152,6 +153,7 @@ namespace SeedClicker
                         var hit = NearestTo(p, 0.38f);
                         if (hit != null) { hit.knock += Vector2.up * 0.25f; WeaponHit(w, hit, dmg); ImpactFx(p, 1f); }
                         else MissFx(p);
+                        GroundFire(w, p, 1f);
                         Sfx.Play("shot", Random.Range(0.95f, 1.1f), 0.8f);
                         WorldCamera.I?.Shake(0.03f);
                         WorldCamera.I?.Punch(0.008f);
@@ -168,6 +170,28 @@ namespace SeedClicker
             Damage(m, dmg, null);
             if (w == null || wb == null || m == null) return;
             foreach (var e in wb.WeaponElements(w.id)) ApplyWeaponElement(m, e.id, e.lv, dmg);
+        }
+
+        /// <summary>Waffe mit Element: am Einschlag lodert am Boden eine Flamme auf (Feuer orange, sonst in der Farbe des Elements),
+        /// dazu Glut in der Elementfarbe, die aufsteigt, und ein Brandring. Groesser mit der Element-Stufe.</summary>
+        void GroundFire(WeaponDef w, Vector2 at, float size)
+        {
+            if (w == null || wb == null) return;
+            var els = wb.WeaponElements(w.id);
+            int shown = 0;
+            foreach (var e in els)
+            {
+                if (e.lv <= 0 || shown >= 2) continue;
+                shown++;
+                var col = WorldBuilder.ElementCol(e.id);
+                var p = at + new Vector2((shown - 1) * 0.18f, -0.05f);   // zweites Element leicht daneben
+                float s = size * (1f + 0.15f * Mathf.Min(e.lv, 5));
+                var fx = WorldFx.Play("flame", p, 0.13f * s, 29980, e.id == "fire" ? (Color?)null : col, null, 1.4f);
+                if (fx == null)   // ohne Effekt-Paket: eigene Flammen-Partikel
+                    Particles.I?.Burst(p, "spark", col, 10, 1.4f * s, 0.6f, 0.12f, -3f, 0.6f);
+                Particles.I?.Burst(p, "square", Color.Lerp(col, Color.white, 0.3f), 6, 1.6f * s, 0.7f, 0.06f, -2f, 0.8f);   // aufsteigende Glut
+                Particles.I?.Ring(p, new Color(col.r, col.g, col.b, 0.55f), 0.45f * s, 0.35f);
+            }
         }
 
         /// <summary>Ein Element der Waffe auf einen getroffenen Zombie anwenden (alle Elemente wirken zusammen).</summary>
@@ -292,7 +316,7 @@ namespace SeedClicker
                     if (Random.value < dt * 30) Particles.I?.Spawn(pos, "square", new Color(0.75f, 0.75f, 0.72f, 0.5f), Vector3.zero, 0.4f, 0.08f, 0.2f, 0f, 0f);
                 }
                 if (k < 1f) continue;
-                if (s.w.kind == "grenade") { Explode(s.to, s.w.radius, s.dmg, s.w); Finish(s); continue; }
+                if (s.w.kind == "grenade") { Explode(s.to, s.w.radius, s.dmg, s.w); GroundFire(s.w, s.to, 1.7f); Finish(s); continue; }
 
                 // Pfeil: trifft alle nahe beieinander (bis 1 + Durchschlag) und bleibt kurz stecken
                 var targets = new List<Monster>();
@@ -300,6 +324,7 @@ namespace SeedClicker
                 targets.Sort((a, b) => (Center(a) - s.to).sqrMagnitude.CompareTo((Center(b) - s.to).sqrMagnitude));
                 for (int i = 0; i < targets.Count && i <= s.w.pierce; i++) { targets[i].knock += dir.normalized * 0.3f; WeaponHit(s.w, targets[i], s.dmg); }
                 ImpactFx(s.to, 0.7f);
+                GroundFire(s.w, s.to, 0.9f);
                 Sfx.Play("chop", 1.3f, 0.6f);
                 WorldCamera.I?.Shake(0.02f);
                 WorldCamera.I?.Punch(0.006f);

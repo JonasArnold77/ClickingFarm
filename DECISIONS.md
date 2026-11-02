@@ -285,3 +285,8 @@
 
 ## Totem-Beschriftung (02.11.2026)
 - Über jeder Totem-Fläche steht der Name der Wirkung in der Farbe ihrer Linie (also je nach Stärke grün bis gold): „Wachstum“, „Ernte“ oder „Fleiß“. Das Wort sitzt mittig über der obersten Feldreihe, mit dunklem Schatten zum Lesen, und wippt leicht. Umgesetzt mit `TextMesh` und der Spielschrift (`WorldBuilder.Totems.cs → TotemLabel`).
+
+## Element-Waffen: Feuer am Boden (02.11.2026)
+- Hat die Waffe an der Waffenbank ein Element bekommen, lodert bei jedem Schuss am Einschlag eine Flamme am Boden auf: „flame“ aus Cartoon FX, bei Feuer orange, bei Eis, Gift und Blitz in der Elementfarbe. Dazu steigt Glut in der Elementfarbe auf, und ein Brandring breitet sich aus. Bei zwei Elementen gibt es zwei Flammen nebeneinander (höchstens zwei).
+- Größe: mit der Element-Stufe größer. Pistole ×1, Schrotflinte ×1,2 (eine Flamme an der Zielstelle, nicht je Schrotkugel), Pfeil ×0,9, Granate ×1,7.
+- Nur Optik; Schaden und Wirkung der Elemente bleiben wie bisher (`NightWave.Weapons.cs → GroundFire`).
