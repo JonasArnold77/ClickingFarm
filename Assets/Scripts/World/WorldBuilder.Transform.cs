@@ -37,8 +37,8 @@ namespace SeedClicker
 
         const string SharedElements = "_bench";   // kurzzeitig lagen alle Elemente gemeinsam auf der Bank – wird der gewaehlten Waffe gegeben
 
-        /// <summary>Elemente dieser einen Waffe – sie bleiben fuer immer und sammeln sich (mehrere Elemente wirken zusammen).
-        /// Jede Waffe hat ihre eigenen: was die Pistole bekommt, hat die Schrotflinte nicht.</summary>
+        /// <summary>Element dieser einen Waffe (Liste mit hoechstens einem Eintrag): ein neues ersetzt das alte, dasselbe nochmal macht es staerker.
+        /// Jede Waffe hat ihr eigenes: was die Pistole bekommt, hat die Schrotflinte nicht.</summary>
         public List<WeaponElementLv> WeaponElements(string id)
         {
             if (!save.elementsReset)
@@ -65,6 +65,7 @@ namespace SeedClicker
                 if (shared.elements != null) foreach (var x in shared.elements) Merge(owner.elements ??= new List<WeaponElementLv>(), x.id, x.lv);
                 save.weaponLevels.Remove(shared);
             }
+            if (e.elements.Count > 1) e.elements.RemoveRange(0, e.elements.Count - 1);   // nur ein Element je Waffe (das zuletzt dazugekommene bleibt)
             return e.elements;
         }
 
@@ -405,11 +406,13 @@ namespace SeedClicker
         {
             var w = PlantBalance.I.Weapon(save.weapon);
             if (w == null) return;
-            // dazu, nicht statt: jedes Element bleibt fuer immer; gleiches Element nochmal = staerker
+            // eine Waffe traegt immer nur ein Element: ein anderes ersetzt das alte, dasselbe nochmal macht es staerker
             var list = WeaponElements(w.id);
             var e = list.Find(x => x.id == element);
-            if (e == null) list.Add(e = new WeaponElementLv { id = element, lv = 0 });
+            string replaced = e == null && list.Count > 0 ? list[0].id : null;
+            if (e == null) { list.Clear(); list.Add(e = new WeaponElementLv { id = element, lv = 0 }); }
             e.lv = Mathf.Min(PlantBalance.I.Transforms.maxElementLevel, e.lv + lv);
+            if (replaced != null) Floater?.Invoke(BenchTop + new Vector2(0, 1.1f), ElementName(replaced) + " ist weg – jetzt " + ElementName(element), new Color(1f, 0.85f, 0.6f));
             var col = ElementCol(element);
             var top = BenchTop;
             benchSquash = 1f;
