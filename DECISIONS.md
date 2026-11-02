@@ -274,7 +274,7 @@
   - Klicks je Aufstieg: 60 → 300 → 1500, jede Stufe also ×5 schwerer.
   - Ertrag (Ernte-Wert und nachwachsende Ernte): ×1 / ×2,5 / ×6 / ×15.
   - Werte: `harvestLevelTaps`, `harvestLevelMult`.
-- Aussehen: Der Pflanzen-Shader bekommt `_Metal`/`_MetalColor`. Die Pflanze wird bronze-, silber- bzw. goldfarben, mit einem langsam wandernden Glanzstreifen. Der Aufstieg wird mit Funken und Welle in der Medaillenfarbe und „Radieschen: Silber!“ gefeiert.
+- Aussehen (`MedalAura.cs`): Die Pflanze behält ihre Farbe, steckt aber in einer **wabernden Sphäre** in Medaillenfarbe: eine Blase mit leuchtendem Rand und Glanzpunkt, die in Breite und Höhe gegeneinander pulsiert, dazu innen drehende Schlieren. Dieselbe Sphäre umgibt jedes einzelne Erntestück dieser Pflanze: beim Herausfliegen, im Haufen, schwebend beim Knolli und auf dem Flug in die Kiste. Der Aufstieg wird mit Funken und Welle in der Medaillenfarbe und „Radieschen: Silber!“ gefeiert.
 - Im Info-Fenster steht „Bis Silber: 120 / 300“, der Balken hat die Farbe der nächsten Medaille.
 - **Tauschilf begünstigt das Aufleveln:** Ernte-Pflanzen in seiner Reichweite bekommen doppelten Stufen-Fortschritt, von Klicks, Tropfen und Klopfwurz (`helpers.waterLevelMult`).
 - Ernte-Pflanzen lassen sich nicht mehr zusammenlegen (das hätte Medaillen ohne Klicken verschenkt). Andere Pflanzen behalten Zahlen-Stufen und Zusammenlegen.

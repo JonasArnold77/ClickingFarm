@@ -5,7 +5,8 @@ namespace SeedClicker
     /// <summary>
     /// Medaillen der Ernte-Pflanzen: Statt Zahlen-Stufen werden sie normal -> Bronze -> Silber -> Gold.
     /// Jeder Aufstieg braucht deutlich mehr Klicks als der vorige (plants.json -> harvestLevelTaps) und bringt
-    /// einen grossen Ertragssprung (harvestLevelMult). Die Pflanze glaenzt dann metallisch (Shader: _Metal).
+    /// einen grossen Ertragssprung (harvestLevelMult). Pflanze und jedes Erntestueck stecken dann in einer
+    /// wabernden Sphaere in Medaillenfarbe (MedalAura).
     /// Ein reifes Tauschilf in Reichweite verdoppelt den Stufen-Fortschritt (helpers.waterLevelMult).
     /// </summary>
     public partial class WorldBuilder
@@ -57,13 +58,7 @@ namespace SeedClicker
             return true;
         }
 
-        /// <summary>Metall-Look der Medaille aufs Material legen.</summary>
-        void ApplyMedalLook(PlantedState p, PlantView v)
-        {
-            if (v?.mat == null) return;
-            bool on = HasMedals(p) && p.Grown && p.Lv >= 2;
-            v.mat.SetFloat("_Metal", on ? (p.Lv >= 4 ? 0.85f : 0.75f) : 0f);
-            if (on) v.mat.SetColor("_MetalColor", MedalColor(p.Lv));
-        }
+        /// <summary>Medaille fuer die Sphaere (unter 2 = keine): reife Ernte-Pflanze und ihre Erntestuecke.</summary>
+        static int MedalOf(PlantedState p) => HasMedals(p) && p.Grown ? p.Lv : 0;
     }
 }

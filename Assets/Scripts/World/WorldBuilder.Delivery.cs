@@ -114,6 +114,7 @@ namespace SeedClicker
                     sr.enabled = i < show && spr != null;
                     if (!sr.enabled) continue;
                     sr.sprite = spr;
+                    MedalAura.Set(sr, MedalOf(p), 1.9f);
                     float s = 0.15f / Mathf.Max(0.01f, spr.bounds.size.x);
                     sr.transform.localScale = Vector3.one * s;
                     var pos = ScatterPos(p, i);
@@ -207,6 +208,7 @@ namespace SeedClicker
             public readonly List<Sprite> load = new List<Sprite>();                  // Bilder der Ladung (eins je schwebendem Stueck)
             public readonly List<SpriteRenderer> orbit = new List<SpriteRenderer>(); // schweben um den Knolli herum
             public readonly List<Vector2> lpos = new List<Vector2>(), lvel = new List<Vector2>();
+            public readonly List<int> lmedal = new List<int>();   // Medaille je schwebendem Stueck (Sphaere)
             public TreeObj workTree; public float workT, swing; public int water, stops; public SpriteRenderer tool;   // Berufe   // Ort und Tempo jedes Stuecks (folgt wie an einem Magneten)
         }
 
@@ -318,6 +320,7 @@ namespace SeedClicker
                         for (int i = 0; i < q.stock && k.load.Count < OrbitMax; i++, flies++)
                         {
                             k.load.Add(qspr);
+                            k.lmedal.Add(MedalOf(q));
                             k.lpos.Add(i < PileShown ? ScatterPos(q, i) : PilePos(q));
                             k.lvel.Add(new Vector2(UnityEngine.Random.Range(-0.6f, 0.6f), UnityEngine.Random.Range(1.2f, 2.2f)));   // kleiner Hopser beim Losreissen
                         }
@@ -404,6 +407,7 @@ namespace SeedClicker
                 sr.enabled = i < n && k.load[i] != null;
                 if (!sr.enabled) continue;
                 sr.sprite = k.load[i];
+                MedalAura.Set(sr, i < k.lmedal.Count ? k.lmedal[i] : 0, 1.9f);
                 var goal = OrbitPos(k, i, n, hop, out bool front);
                 // Magnet-Folgen: Feder zum Platz in der Wolke, mit Nachziehen – weit weg zieht es staerker
                 while (k.lpos.Count <= i) { k.lpos.Add(goal); k.lvel.Add(Vector2.zero); }
@@ -449,19 +453,20 @@ namespace SeedClicker
                     var from = i < k.lpos.Count ? k.lpos[i] : OrbitPos(k, i, k.load.Count, 0f, out _);
                     bool last = ++idx == m;
                     int step = idx;
-                    StartCoroutine(IntoCrate(from, k.load[i], (idx - 1) * 0.07f, step, last ? () => { Deposit(n, value, cratePos, types); CrateStorm(n); } : (Action)null));
+                    StartCoroutine(IntoCrate(from, k.load[i], i < k.lmedal.Count ? k.lmedal[i] : 0, (idx - 1) * 0.07f, step, last ? () => { Deposit(n, value, cratePos, types); CrateStorm(n); } : (Action)null));
                 }
             }
-            k.carry = 0; k.carryValue = 0; k.types.Clear(); k.load.Clear(); k.lpos.Clear(); k.lvel.Clear(); k.item.sprite = null;
+            k.carry = 0; k.carryValue = 0; k.types.Clear(); k.load.Clear(); k.lpos.Clear(); k.lvel.Clear(); k.lmedal.Clear(); k.item.sprite = null;
             foreach (var sr in k.orbit) sr.enabled = false;
         }
 
-        IEnumerator IntoCrate(Vector2 from, Sprite spr, float delay, int step, Action onHit)
+        IEnumerator IntoCrate(Vector2 from, Sprite spr, int medal, float delay, int step, Action onHit)
         {
             if (delay > 0f) yield return new WaitForSeconds(delay);
             var sr = new GameObject("IntoCrate").AddComponent<SpriteRenderer>();
             sr.transform.SetParent(objects, false);
             sr.sprite = spr;
+            MedalAura.Set(sr, medal, 1.9f);
             sr.sortingOrder = 30005;
             float size = 0.19f / Mathf.Max(0.01f, spr.bounds.size.x);
             var to = cratePos + new Vector2(0, 0.45f);

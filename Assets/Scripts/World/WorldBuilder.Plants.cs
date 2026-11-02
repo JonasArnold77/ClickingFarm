@@ -320,7 +320,6 @@ namespace SeedClicker
             v.glow.transform.localScale = new Vector3(v.size * 1.6f, v.size * 1.2f, 1);
             // leichter Farbstich der Wirkung, damit man die Arten unterscheidet
             v.sr.color = PlantBalance.MutationTint(g, p.Grown ? tier : 1);
-            ApplyMedalLook(p, v);
         }
 
         /// <summary>Tipp auf eine Pflanze: waechst ein Stueck (Klick-Wachstum) oder zeigt Infos, wenn sie fertig ist.
@@ -818,6 +817,7 @@ namespace SeedClicker
                 v.body.localRotation = Quaternion.Euler(0, 0, sway + v.tilt);
                 v.shadow.color = new Color(0.05f, 0.04f, 0.02f, 0.42f * (1f + v.sy * 0.8f));
                 if (v.mat != null) v.mat.SetFloat("_Flash", v.flash);
+                MedalAura.Set(v.sr, MedalOf(p), 1.25f);   // Bronze/Silber/Gold: wabernde Sphaere um die Pflanze
                 var g = p.Genome;
                 var col = g.ElementColor;
                 float glowA = p.Grown ? 0.22f + 0.1f * Mathf.Sin(t * 2f + p.x) + nightAmt * 0.2f : v.heat * 0.45f;
