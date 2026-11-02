@@ -6,13 +6,13 @@ namespace SeedClicker
     /// <summary>
     /// Leuchtende Kontur in Medaillenfarbe (Bronze, Silber, Gold) um ein Bild: um die Ernte-Pflanze selbst und um
     /// jedes einzelne Erntestueck (fliegend, im Haufen, beim Knolli, auf dem Weg in die Kiste).
-    /// Eine vergroesserte Kopie des Bildes liegt dahinter; der Shader "SeedClicker/MedalOutline2D" zeichnet davon nur
-    /// die Leuchtlinie am Rand und einen weichen, leicht strahlenden Schein.
+    /// Eine deckungsgleiche Kopie des Bildes liegt darueber; der Shader "SeedClicker/MedalOutline2D" zeichnet davon nur
+    /// die Leuchtlinie, die sich an die Aussenlinie schmiegt, und einen zarten, leicht strahlenden Schein.
     /// Haengt als Komponente am Bild und folgt ihm selbst (Bild, sichtbar, Reihenfolge) – Aufrufer setzen nur die Stufe.
     /// </summary>
     public class MedalAura : MonoBehaviour
     {
-        const float Grow = 1.2f;   // so viel groesser ist die Kopie (Platz fuer den Schein)
+        const float Grow = 1f;   // deckungsgleich: die Linie liegt genau auf der Aussenlinie
 
         SpriteRenderer host, outline;
         MaterialPropertyBlock block;
@@ -64,7 +64,7 @@ namespace SeedClicker
             var c = WorldBuilder.MedalColor(level);
             outline.color = new Color(c.r, c.g, c.b, strength);
             outline.sortingLayerID = host.sortingLayerID;
-            outline.sortingOrder = host.sortingOrder - 1;   // dahinter: das Bild selbst deckt die Mitte ab
+            outline.sortingOrder = host.sortingOrder + 1;   // darueber: der Shader zeichnet nur den Rand, die Mitte bleibt frei
         }
 
         void OnDisable() { if (outline != null) outline.enabled = false; }

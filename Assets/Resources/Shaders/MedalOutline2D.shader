@@ -1,7 +1,7 @@
 // Leuchtende Medaillen-Kontur (URP 2D, unbeleuchtet – leuchtet auch nachts).
-// Liegt als vergroesserte Kopie hinter dem Bild und zeichnet nur, was ausserhalb der Silhouette liegt:
-// eine klare Leuchtlinie direkt am Rand und ein weicher, leicht pulsierender Schein dahinter, der in
-// sanften Strahlen um die Form wandert. Farbe kommt vom SpriteRenderer (Bronze, Silber, Gold).
+// Liegt als deckungsgleiche Kopie ueber dem Bild und zeichnet nur den Rand der Silhouette: eine schmale
+// Leuchtlinie, die sich genau an die Aussenlinie schmiegt (innen am Rand, aussen wo Platz ist), und einen
+// zarten, leicht pulsierenden Schein, der in sanften Strahlen um die Form wandert. Farbe kommt vom SpriteRenderer (Bronze, Silber, Gold).
 // _UVRect: UV-Bereich des Bildes im Atlas (Proben ausserhalb zaehlen als leer), _Grow: Vergroesserung der Kopie.
 Shader "SeedClicker/MedalOutline2D"
 {
@@ -9,9 +9,9 @@ Shader "SeedClicker/MedalOutline2D"
     {
         _MainTex("Sprite", 2D) = "white" {}
         _UVRect("UV-Bereich (min x, min y, max x, max y)", Vector) = (0, 0, 1, 1)
-        _Grow("Vergroesserung der Kopie", Float) = 1.2
-        _Width("Linienbreite (Anteil der Bildgroesse)", Float) = 0.02
-        _Glow("Scheinbreite (Anteil der Bildgroesse)", Float) = 0.07
+        _Grow("Vergroesserung der Kopie", Float) = 1
+        _Width("Linienbreite (Anteil der Bildgroesse)", Float) = 0.015
+        _Glow("Scheinbreite (Anteil der Bildgroesse)", Float) = 0.04
         _Seed("Versatz", Float) = 0
 
         [HideInInspector] _Color("Tint", Color) = (1,1,1,1)
@@ -25,6 +25,7 @@ Shader "SeedClicker/MedalOutline2D"
     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
     TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
+    float4 _MainTex_TexelSize;
     float4 _UVRect;
     float _Grow, _Width, _Glow, _Seed;
 
@@ -49,32 +50,38 @@ Shader "SeedClicker/MedalOutline2D"
 
     half4 frag(Varyings i) : SV_Target
     {
-        // die Kopie ist um _Grow vergroessert: zurueck auf die Groesse des Originals rechnen
+        // (_Grow: falls die Kopie vergroessert ist, zurueck auf die Groesse des Originals rechnen; normal 1)
         float2 c = (_UVRect.xy + _UVRect.zw) * 0.5;
         float2 uv = c + (i.uv - c) * _Grow;
         half self = A(uv);
 
-        float2 px = _UVRect.zw - _UVRect.xy;   // Breiten im Verhaeltnis zur Bildgroesse (gleich dick bei jeder Aufloesung)
-        half line_ = 0, glow = 0;
+        // Breiten in Texeln, gleich in x und y (sonst waere die Linie bei schmalen Bildern einseitig dick)
+        float2 rectTex = (_UVRect.zw - _UVRect.xy) / _MainTex_TexelSize.xy;
+        float2 px = _MainTex_TexelSize.xy * max(rectTex.x, rectTex.y);
+        half inMin = 1, outMax = 0, glow = 0;
         [unroll] for (int k = 0; k < 12; k++)
         {
             float ang = k * 0.5235988;   // 30 Grad
             float2 d = float2(cos(ang), sin(ang)) * px;
-            line_ = max(line_, A(uv + d * _Width));
-            glow = max(glow, A(uv + d * _Glow * 0.55) * 0.75);
-            glow = max(glow, A(uv + d * _Glow) * 0.4);
+            half a1 = A(uv + d * _Width);
+            inMin = min(inMin, a1);
+            outMax = max(outMax, a1);
+            glow = max(glow, A(uv + d * _Glow) * 0.6);
         }
-        line_ = saturate(line_ - self);
+        // Linie genau an der Silhouette: ein schmaler Streifen innen am Rand und (wo Platz ist) direkt aussen
+        half inner = saturate(self - inMin) * step(0.1, self);
+        half outer = saturate(outMax - self);
+        half ring = saturate(inner + outer);
         glow = saturate(glow - self);
 
-        // leichtes Strahlen: der Schein pulsiert und ein paar weiche Strahlen wandern um die Form
+        // leichtes Strahlen: der Schein aussen pulsiert, ein paar weiche Strahlen wandern um die Form
         float t = _Time.y + _Seed;
         float2 p = i.uv - c;
-        float rays = 0.75 + 0.25 * sin(atan2(p.y, p.x) * 7.0 + t * 1.3);
-        float pulse = 0.8 + 0.2 * sin(t * 2.1);
+        float rays = 0.7 + 0.3 * sin(atan2(p.y, p.x) * 7.0 + t * 1.3);
+        float pulse = 0.85 + 0.15 * sin(t * 2.1);
 
-        half alpha = saturate(line_ * 0.95 + glow * 0.55 * rays * pulse);
-        half3 col = i.color.rgb * (1.0 + 0.35 * line_);
+        half alpha = saturate(ring * 0.9 * pulse + glow * 0.35 * rays * pulse);
+        half3 col = i.color.rgb * (1.0 + 0.4 * ring);
         return half4(col, alpha * i.color.a);
     }
     ENDHLSL
