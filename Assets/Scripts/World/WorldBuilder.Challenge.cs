@@ -43,6 +43,9 @@ namespace SeedClicker
         }
 
         /// <summary>Muenzpreis einer Stufe: ein guter Batzen vom bisher Verdienten (waechst mit dem Hof).</summary>
+        /// <summary>Muenzpreis einer Stufe, wie er jetzt ausgezahlt wuerde (fuer die Anzeige).</summary>
+        public double ChallengePreview(int tier) => ChallengeCoins(tier, tier == 0 ? 30 + 15 * save.wave : tier == 1 ? 60 + 30 * save.wave : 500 + 200 * save.wave);
+
         double ChallengeCoins(int tier, double minimum)
         {
             var sh = PlantBalance.I.Challenge.earnedShare;

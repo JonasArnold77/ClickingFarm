@@ -317,3 +317,4 @@
 - **Sammelbuch:** Gesperrte Pflanzen zeigen Namen, Bedingungen, worauf sie aufbauen, und den Nutzen. Freigeschaltete zeigen den Nutzen statt der allgemeinen Beschreibung.
 - **Banner bei Freischaltung:** zeigt den Nutzen.
 - **Laden → Verbesserungen:** Die nächsten zwei gesperrten Upgrades stehen mit „(bald)“, Wirkung, Schwelle und aktuellem Stand unten in der Liste.
+- **Tagesauftrag groß sichtbar** (`WorldUI.Challenge.cs`): eine eigene Tafel oben links unter dem Ziel (640×270). Sie zeigt „Auftrag für heute“ mit der Restzeit bis zur Nacht, großem Bild des Ernteguts, „Liefere Radieschen-Bund in die Kiste“, eine große Zahl „24 / 30“ und einen Balken über die ganze Strecke bis Gold, mit Strichen bei Bronze und Silber. Darunter stehen die drei Stufen mit Menge und Belohnung (Münzen, wie sie jetzt ausgezahlt würden, Silber + 2 Runensteine, Gold + ein Schatz). Geschafft = grün mit Haken, die nächste in ihrer Medaillenfarbe, spätere blasser.
