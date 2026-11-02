@@ -97,6 +97,41 @@ namespace SeedClicker
             return l;
         }
 
+        /// <summary>Jede Bedingung als Aufgabe ("Baue 6 Mauerstücke") mit Stand und Ziel.</summary>
+        public List<(string task, int v, int n)> NeedsProgress(string[] needs)
+        {
+            var l = new List<(string, int, int)>();
+            if (needs == null) return l;
+            foreach (var s in needs)
+            {
+                if (string.IsNullOrEmpty(s)) continue;
+                var n = ParseNeed(s);
+                l.Add((NeedTask(n), n.kind == "medal" ? Mathf.Min(NeedValue(n), n.n) : NeedValue(n), n.n));
+            }
+            return l;
+        }
+
+        static string NeedTask(Need n)
+        {
+            switch (n.kind)
+            {
+                case "fields": return "Baue " + n.n + " Felder";
+                case "walls": return "Baue " + n.n + " Mauerstücke";
+                case "stonewalls": return "Mach " + n.n + " Mauerstücke zu Stein";
+                case "gates": return "Baue " + n.n + (n.n == 1 ? " Tor" : " Tore");
+                case "pedestals": return "Stell " + n.n + (n.n == 1 ? " Steinpult" : " Steinpulte") + " auf";
+                case "knollis": return "Heuere " + n.n + " Knollis an";
+                case "river": return "Grab " + n.n + " Bachstücke";
+                case "waves": return "Übersteh " + n.n + (n.n == 1 ? " Nacht" : " Nächte");
+                case "towers": return "Stell " + n.n + (n.n == 1 ? " Wachturm" : " Wachtürme") + " auf";
+                case "huts": return "Bau " + n.n + (n.n == 1 ? " Knolli-Hütte" : " Knolli-Hütten");
+                case "totems": return "Stell " + n.n + (n.n == 1 ? " Totem" : " Totems") + " auf";
+                case "medal": return "Bring eine Ernte-Pflanze auf " + MedalName(n.n);
+                case "plant": return "Lass " + n.n + " " + (PlantBalance.I.Plant(n.arg)?.name ?? n.arg) + " reif werden";
+            }
+            return NeedName(n);
+        }
+
         /// <summary>Kurz fuer Beschreibungen: "6 Mauerstücke, 1 Wachturm".</summary>
         public static string NeedsShort(string[] needs)
         {

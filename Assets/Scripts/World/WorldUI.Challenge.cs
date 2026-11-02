@@ -67,7 +67,7 @@ namespace SeedClicker
         {
             if (chPanel == null) return;
             var def = PlantBalance.I.Plant(wb.ChallengeType);
-            chPanel.gameObject.SetActive(def != null);
+            chPanel.gameObject.SetActive(def != null && taskPanel == null);   // die Aufgabenliste zeigt den Auftrag mit
             if (def == null) return;
             var tiers = wb.ChallengeTiers;
             int tier = wb.ChallengeTier, count = wb.ChallengeCount;

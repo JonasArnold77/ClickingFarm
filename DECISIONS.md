@@ -326,3 +326,8 @@
   - Bauwerke: Wachturm ← 4 Mauerstücke; Erntetotem ← 1 Totem; Fleißtotem ← 2 Totems; Saatgutmühle ← 30 Felder.
   - Verbesserungen: Eisenbeschläge ← 5 Mauerstücke; Tiefe Wurzeln ← reifes Tauschilf; Kompostkunde ← reifer Kompostpilz; Taktgefühl ← reife Klopfwurz; Uhrwerk ← 3 reife Klopfwurze.
 - Anzeige: Die Zielanzeige listet jede Bedingung mit Stand („Mauerstücke 3 / 6“, erfüllt grün mit Haken). Das Sammelbuch zeigt „Dazu: 6 Mauerstücke“. Im Laden und bei den Bauwerken stehen gesperrte Dinge mit Beschreibung, Münz-Schwelle und den offenen Bedingungen samt Stand.
+- **Aufgabenliste an der Seite** (`WorldUI.Tasks.cs`): Eine große Liste links ersetzt Zielanzeige und Auftragstafel. Die Aufgaben stehen untereinander, höchstens 7. Jede Zeile hat Bild, Titel, wofür sie ist, Stand rechts („3 / 6“) und einen Fortschrittsbalken; erledigte bekommen einen grünen Haken. Reihenfolge:
+  1. Heutiger Auftrag mit der Belohnung der nächsten Medaille.
+  2. Jede Bedingung der nächsten Pflanze als eigene Aufgabe („Verdiene 17,5K Münzen“, „Baue 14 Felder“, „Baue 6 Mauerstücke“, „Bring eine Ernte-Pflanze auf Silber“, „Lass 4 Salat reif werden“), jeweils mit „für Salat: …“ und dem Nutzen.
+  3. Offene Hof-Bedingungen der nächsten Verbesserung und des nächsten Bauwerks, die nur noch daran hängen.
+  - Aktualisiert sich alle 0,4 s.

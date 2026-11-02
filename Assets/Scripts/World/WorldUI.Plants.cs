@@ -39,6 +39,7 @@ namespace SeedClicker
             BuildStructureInfo();
             BuildAltarInfo();
             BuildChallengeHud();
+            BuildTasks();   // grosse Aufgabenliste an der Seite (ersetzt Ziel- und Auftragsfeld)
             BuildBoostTip();
             BuildKnolliRoles();
             BuildJuice();
@@ -337,6 +338,7 @@ namespace SeedClicker
             UpdateStructureInfo(dt);
             UpdateAltarInfo(dt);
             UpdateChallengeHud(dt);
+            UpdateTasks(dt);
             UpdateBoostTip();
             UpdateKnolliRoles();
             if (nw == null || waveText == null) return;
