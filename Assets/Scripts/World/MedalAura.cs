@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace SeedClicker
@@ -6,24 +5,22 @@ namespace SeedClicker
     /// <summary>
     /// Comic-Kontur in Medaillenfarbe (Bronze, Silber, Gold) um ein Bild: um die Ernte-Pflanze selbst und um
     /// jedes einzelne Erntestueck (fliegend, im Haufen, beim Knolli, auf dem Weg in die Kiste).
-    /// Eine deckungsgleiche Kopie des Bildes liegt darueber; der Shader "SeedClicker/MedalOutline2D" zeichnet davon nur
-    /// eine harte Linie genau auf der Aussenlinie, aussen mit dunklem Tuschestrich – wie in einem Comic.
+    /// Ganz einfach: unter dem Bild liegen zwei etwas groessere Kopien derselben Form, einfarbig gefuellt –
+    /// innen die Medaillenfarbe, ganz aussen ein dunkler Tuschestrich. Was ueber das Bild hinaussteht, ist die Kontur.
+    /// Einfarbig fuellt der eingebaute Shader "GUI/Text Shader" (Farbe vom SpriteRenderer, Form aus dem Alpha des Bildes).
     /// Haengt als Komponente am Bild und folgt ihm selbst (Bild, sichtbar, Reihenfolge) – Aufrufer setzen nur die Stufe.
     /// </summary>
     public class MedalAura : MonoBehaviour
     {
-        const float Grow = 1f;   // deckungsgleich: die Linie liegt genau auf der Aussenlinie
+        const float ColorGrow = 1.09f, InkGrow = 1.14f;   // so viel groesser als das Bild (um seine Mitte)
 
-        SpriteRenderer host, outline;
-        MaterialPropertyBlock block;
-        Sprite lastSprite;
+        SpriteRenderer host, fill, ink;
         int level;
-        float strength = 1f, seed;
-        static Material outlineMat;
+        float strength = 1f;
+        static Material silhouetteMat;
         static bool shaderLooked;
-        static readonly Dictionary<Sprite, Vector4> uvRects = new Dictionary<Sprite, Vector4>();
 
-        /// <summary>Stufe setzen (unter 2 = keine Kontur). strength: Deckkraft (Pflanze 1, kleine Stuecke etwas weniger).</summary>
+        /// <summary>Stufe setzen (unter 2 = keine Kontur). strength: Deckkraft.</summary>
         public static void Set(SpriteRenderer host, int level, float strength = 1f)
         {
             if (host == null) return;
@@ -33,7 +30,6 @@ namespace SeedClicker
                 if (level < 2) return;
                 a = host.gameObject.AddComponent<MedalAura>();
                 a.host = host;
-                a.seed = Random.value * 10f;
             }
             a.level = level; a.strength = strength;
         }
@@ -41,43 +37,45 @@ namespace SeedClicker
         void LateUpdate()
         {
             bool on = host != null && host.enabled && host.sprite != null && level >= 2 && Mat != null;
-            if (!on) { if (outline != null) outline.enabled = false; return; }
-            if (outline == null) Build();
-            outline.enabled = true;
-
-            var spr = host.sprite;
-            if (spr != lastSprite)
-            {
-                lastSprite = spr;
-                outline.sprite = spr;
-                block.SetVector("_UVRect", UVRect(spr));
-                block.SetFloat("_Grow", Grow);
-                block.SetFloat("_Seed", seed);
-                outline.SetPropertyBlock(block);
-            }
-            outline.flipX = host.flipX; outline.flipY = host.flipY;
-            // um die Bildmitte vergroessern (nicht um den Drehpunkt), damit die Kontur genau um die Form liegt
-            var bc = (Vector2)spr.bounds.center;
-            outline.transform.localPosition = bc * (1f - Grow);
-            outline.transform.localScale = new Vector3(Grow, Grow, 1f);
-
+            if (!on) { Show(false); return; }
+            if (fill == null) { ink = Make("MedalInk"); fill = Make("MedalColor"); }
+            Show(true);
             var c = WorldBuilder.MedalColor(level);
-            outline.color = new Color(c.r, c.g, c.b, strength);
-            outline.sortingLayerID = host.sortingLayerID;
-            outline.sortingOrder = host.sortingOrder + 1;   // darueber: der Shader zeichnet nur den Rand, die Mitte bleibt frei
+            Layer(fill, ColorGrow, new Color(c.r, c.g, c.b, strength), 1);
+            Layer(ink, InkGrow, new Color(c.r * 0.3f, c.g * 0.25f, c.b * 0.2f, strength), 2);
         }
 
-        void OnDisable() { if (outline != null) outline.enabled = false; }
-
-        void Build()
+        /// <summary>Kopie der Form, um die Bildmitte vergroessert, direkt unter dem Bild.</summary>
+        void Layer(SpriteRenderer sr, float grow, Color col, int below)
         {
-            outline = new GameObject("MedalOutline").AddComponent<SpriteRenderer>();
-            outline.transform.SetParent(host.transform, false);
-            outline.sharedMaterial = Mat;
-            block = new MaterialPropertyBlock();
-            lastSprite = null;
+            var spr = host.sprite;
+            sr.sprite = spr;
+            sr.flipX = host.flipX; sr.flipY = host.flipY;
+            var bc = (Vector2)spr.bounds.center;
+            sr.transform.localPosition = bc * (1f - grow);
+            sr.transform.localScale = new Vector3(grow, grow, 1f);
+            sr.color = col;
+            sr.sortingLayerID = host.sortingLayerID;
+            sr.sortingOrder = host.sortingOrder - below;
         }
 
+        void Show(bool on)
+        {
+            if (fill != null) fill.enabled = on;
+            if (ink != null) ink.enabled = on;
+        }
+
+        void OnDisable() => Show(false);
+
+        SpriteRenderer Make(string name)
+        {
+            var sr = new GameObject(name).AddComponent<SpriteRenderer>();
+            sr.transform.SetParent(host.transform, false);
+            sr.sharedMaterial = Mat;
+            return sr;
+        }
+
+        /// <summary>Einfarbige Silhouette: Farbe vom SpriteRenderer, Form aus dem Alpha des Bildes.</summary>
         static Material Mat
         {
             get
@@ -85,22 +83,11 @@ namespace SeedClicker
                 if (!shaderLooked)
                 {
                     shaderLooked = true;
-                    var sh = Shader.Find("SeedClicker/MedalOutline2D");
-                    if (sh != null) outlineMat = new Material(sh);
+                    var sh = Shader.Find("GUI/Text Shader");
+                    if (sh != null) silhouetteMat = new Material(sh);
                 }
-                return outlineMat;   // ohne Shader: keine Kontur
+                return silhouetteMat;
             }
-        }
-
-        /// <summary>UV-Bereich des Bildes im (Atlas-)Bild: Proben ausserhalb zaehlen im Shader als leer.</summary>
-        static Vector4 UVRect(Sprite s)
-        {
-            if (uvRects.TryGetValue(s, out var r)) return r;
-            float x0 = 1f, y0 = 1f, x1 = 0f, y1 = 0f;
-            foreach (var u in s.uv) { x0 = Mathf.Min(x0, u.x); y0 = Mathf.Min(y0, u.y); x1 = Mathf.Max(x1, u.x); y1 = Mathf.Max(y1, u.y); }
-            r = new Vector4(x0, y0, x1, y1);
-            uvRects[s] = r;
-            return r;
         }
     }
 }
