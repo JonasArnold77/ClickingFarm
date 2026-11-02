@@ -331,3 +331,25 @@
   2. Jede Bedingung der nächsten Pflanze als eigene Aufgabe („Verdiene 17,5K Münzen“, „Baue 14 Felder“, „Baue 6 Mauerstücke“, „Bring eine Ernte-Pflanze auf Silber“, „Lass 4 Salat reif werden“), jeweils mit „für Salat: …“ und dem Nutzen.
   3. Offene Hof-Bedingungen der nächsten Verbesserung und des nächsten Bauwerks, die nur noch daran hängen.
   - Aktualisiert sich alle 0,4 s.
+
+## Ziele mit je vier Aufgaben (02.11.2026)
+- Es gibt immer genau **vier Aufgaben** (`plants.json → milestones`, `WorldBuilder.Milestones.cs`). Sind alle vier geschafft, ist das Ziel erreicht: ein Paket neuer Dinge wird frei (Feuerwerk, Ton, Banner „Ziel erreicht: …“ mit allem Neuen), dann kommen die nächsten vier Aufgaben. Die Aufgaben nutzen die `needs`-Bedingungen, neu dazu `earned` (insgesamt verdient) und `delivered` (insgesamt geliefert). Der Stand zählt absolut, nicht ab Zielbeginn.
+- Was in einem Ziel steht, wird **nur noch darüber** frei; Münz-Schwellen, `unlockFields` und `needs` gelten dafür nicht mehr. Kampfpflanzen kommen weiter über die Nächte. Der Spielstand merkt sich `milestone`; alte Stände rücken beim Laden durch alle schon erfüllten Ziele.
+- Die 15 Ziele (Aufgaben → Freischaltung):
+  1. Der erste Acker: 3 reife Radieschen, 20 geliefert, 100 verdient, 1 reifes Tauschilf → Karotte, Arbeitshandschuhe, Kupfer-Gießkanne
+  2. Mehr Beete: 9 Felder, 3 reife Karotten, 60 geliefert, 850 verdient → Weißrübe, Erntekorb, Wachstumstotem
+  3. Die erste Medaille: Bronze, 2 Knollis, 12 Felder, 2,3K → Kompostpilz, Tiefe Wurzeln
+  4. Der Hof wehrt sich: 6 Mauerstücke, 1 Nacht, 4 reife Weißrüben, 4K → Steinmoos, Wachturm, Kompostkunde
+  5. Grüne Beete: reifer Kompostpilz, 15 Felder, 300 geliefert, 8,5K → Salat, Erntetotem, Dornenranke
+  6. Steinerne Festung: 3 Steinmauern, 1 Wachturm, 2 Nächte, 12,5K → Goldene Handschuhe, Eisenbeschläge, Wurzelträger
+  7. Der Knolli-Trupp: 4 Knollis, 1 Hütte, 4 reife Salate, 22,5K → Trommelkraut, Glutblüte
+  8. Das Klickzentrum: reifes Trommelkraut, Silber, 19 Felder, 35K → Weizen, Frostdistel, Fleißtotem
+  9. Die Waffenschmiede: 3 Nächte, 1 Steinpult, 2 Totems, 65K → Giftpilz, Marktschreier, Stützranke, Glühwürmchen
+  10. Die Kornkammer: 4 reife Weizen, 26 Felder, 2000 geliefert, 100K → Mais, Wurzelherz, Buchhaltung
+  11. Hilfe von selbst: 3 reife Mais, 6 Knollis, 4 Nächte, 200K → Klopfwurz, Blitzkraut, Sprinkler-Gießkanne
+  12. Die Wachtürme: 2 Wachtürme, 8 Steinmauern, reife Klopfwurz, 500K → Taktgefühl, Schmetterlingsnetz, Saatgutmühle
+  13. Der Selbstläufer: 3 reife Klopfwurze, 35 Felder, 5000 geliefert, 950K → Pustesamen, Kristallhandschuhe, Mondblume
+  14. Das Nachtlicht: 6 Nächte, reifer Pustesamen, Gold, 2,3M → Glühpilz, Nachtwächter, Großhandel
+  15. Die Großfarm: 50 Felder, 4 reife Tauschilfe, 10.000 geliefert, 7M → Saftrohr, Uhrwerk, Genossenschaft, Sternenhandschuhe
+- **Anzeige:** Die Liste links zeigt „Ziel 3 von 15: Die erste Medaille“, darunter „Schaltet frei: …“ mit einem Satz, was das Paket bringt, und genau die vier Aufgaben (Bild, Aufgabe, Stand, Balken, Haken). Der Tagesauftrag hat wieder seine eigene Tafel darunter. Sammelbuch, Laden und Bauwerke sagen bei gesperrten Dingen „Kommt mit Ziel 7: Der Knolli-Trupp“.
+- Die Zahlen sind aus der bisherigen Kurve geschätzt, aber nicht durchgespielt.

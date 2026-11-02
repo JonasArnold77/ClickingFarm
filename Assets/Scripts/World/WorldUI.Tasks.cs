@@ -5,10 +5,9 @@ using UnityEngine.UI;
 namespace SeedClicker
 {
     /// <summary>
-    /// Aufgabenliste gross an der linken Seite, untereinander: oben der Auftrag fuer heute, darunter jede offene
-    /// Bedingung fuer die naechste Pflanze als eigene Aufgabe ("Baue 6 Mauerstücke – 3 / 6"), danach die naechste
-    /// Verbesserung bzw. das naechste Bauwerk, das noch an etwas auf dem Hof haengt. Jede Zeile: Bild, Titel, wofuer
-    /// sie ist, Fortschrittsbalken; erledigte bekommen einen Haken. Ersetzt die alten Ziel- und Auftragsfelder.
+    /// Aufgabenliste gross an der linken Seite: das aktuelle Ziel ("Ziel 3 von 15"), was es freischaltet, und genau
+    /// seine vier Aufgaben untereinander (Bild, Aufgabe, Stand, Balken, Haken wenn geschafft). Sind alle vier geschafft,
+    /// wird das Ziel erreicht (Feier, Banner) und die naechsten vier erscheinen. Der Tagesauftrag steht darunter.
     /// </summary>
     public partial class WorldUI
     {
@@ -17,11 +16,11 @@ namespace SeedClicker
         struct TaskData { public Sprite icon; public string title, sub, count; public float f; public bool done; public Color col; }
 
         RectTransform taskPanel;
-        Text taskHeader;
+        Text taskHeader, taskReward;
         readonly List<TaskRow> taskRows = new List<TaskRow>();
         float taskTimer;
-        const float TaskRowH = 112f, TaskTop = 64f;
-        const int TaskMax = 7;
+        const float TaskRowH = 112f, TaskTop = 140f;
+        const int TaskMax = 4;   // immer genau vier Aufgaben je Ziel
 
         void BuildTasks()
         {
@@ -31,6 +30,16 @@ namespace SeedClicker
             taskPanel.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -290), new Vector2(620, 200));
             taskHeader = UIKit.Txt(p.transform, "Aufgaben", 34, new Color(1f, 0.9f, 0.6f), TextAnchor.MiddleLeft, true, true);
             taskHeader.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(22, -8), new Vector2(-40, 50));
+            taskReward = UIKit.Txt(p.transform, "", 22, new Color(1f, 1f, 1f, 0.85f), TextAnchor.UpperLeft, false, true);
+            taskReward.supportRichText = true;
+            taskReward.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(22, -58), new Vector2(-44, 76));
+            wb.MilestoneReached += m =>
+            {
+                var names = new List<string>();
+                if (m.unlocks != null) foreach (var id in m.unlocks) names.Add(WorldBuilder.UnlockName(id));
+                Banner("Ziel erreicht: " + m.name + "!", "Neu: " + string.Join(", ", names) + " – " + m.desc);
+                taskTimer = 0f;
+            };
             for (int i = 0; i < TaskMax; i++) taskRows.Add(MakeTaskRow(p.transform, i));
             // die alten Felder (naechstes Ziel, Tagesauftrag) zeigt jetzt diese Liste
             if (goalText != null) goalText.transform.parent.gameObject.SetActive(false);
@@ -67,67 +76,36 @@ namespace SeedClicker
             return r;
         }
 
-        /// <summary>Welche Aufgaben gerade anstehen (in dieser Reihenfolge).</summary>
+        /// <summary>Die vier Aufgaben des aktuellen Ziels.</summary>
         List<TaskData> CollectTasks()
         {
             var l = new List<TaskData>();
-            // 1) Auftrag fuer heute
-            var ch = PlantBalance.I.Plant(wb.ChallengeType);
-            if (ch != null)
+            var m = wb.CurrentMilestone;
+            if (m == null || m.tasks == null) return l;
+            // Bild: die erste Pflanze, die das Ziel freischaltet (bei Pflanzen-Aufgaben die Pflanze selbst)
+            Sprite reward = null;
+            if (m.unlocks != null) foreach (var id in m.unlocks) { var c = PlantBalance.I.Plant(id); if (c != null) { reward = SpeciesSprite(c.Genome); break; } }
+            int i = 0;
+            foreach (var n in wb.NeedsProgress(m.tasks))
             {
-                var tiers = wb.ChallengeTiers;
-                int tier = wb.ChallengeTier, count = wb.ChallengeCount;
-                string[] medal = { "Bronze", "Silber", "Gold" };
-                bool all = tier >= tiers.Length;
-                int target = all ? tiers[tiers.Length - 1] : tiers[tier];
-                int prev = tier > 0 && !all ? tiers[tier - 1] : 0;
+                var pd = i < m.tasks.Length && m.tasks[i].StartsWith("plant:") ? PlantBalance.I.Plant(m.tasks[i].Split(':')[1]) : null;
+                bool done = n.v >= n.n;
                 l.Add(new TaskData
                 {
-                    icon = SpeciesSprite(ch.Genome),
-                    title = "Heute: liefere " + WorldBuilder.ProductName(ch),
-                    sub = all ? "Gold geschafft – morgen gibt es einen neuen Auftrag"
-                              : "Für " + medal[tier] + ": +" + Num.Short(wb.ChallengePreview(tier)) + " Münzen" + (tier == 1 ? ", 2 Runen" : tier == 2 ? " und ein Schatz" : ""),
-                    count = all ? count.ToString() : count + " / " + target,
-                    f = all ? 1f : (count - prev) / (float)Mathf.Max(1, target - prev),
-                    done = all,
-                    col = tier == 0 ? BronzeUi : tier == 1 ? SilverUi : GoldUi
+                    icon = pd != null ? SpeciesSprite(pd.Genome) : reward,
+                    title = n.task,
+                    sub = done ? "geschafft!" : "Aufgabe " + (i + 1) + " von 4",
+                    count = Num.Short(Mathf.Min(n.v, n.n)) + " / " + Num.Short(n.n),
+                    f = n.v / (float)Mathf.Max(1, n.n),
+                    done = done,
+                    col = TaskCols[i % TaskCols.Length]
                 });
-            }
-            // 2) naechste Pflanze: jede Bedingung als eigene Aufgabe
-            var next = wb.NextUnlock();
-            if (next != null)
-            {
-                var icon = SpeciesSprite(next.Genome);
-                string forWhat = "für " + next.name + ": " + Helps(next);
-                if (next.IsCombat)
-                    l.Add(new TaskData { icon = icon, title = "Überstehe Nacht " + next.unlockWave, sub = forWhat, count = wb.Save.wave + " / " + next.unlockWave, f = wb.Save.wave / (float)Mathf.Max(1, next.unlockWave), col = AccentWarm });
-                else
-                {
-                    bool coinsOk = wb.Earned >= next.unlockEarned;
-                    l.Add(new TaskData { icon = icon, title = "Verdiene " + Num.Short(next.unlockEarned) + " Münzen", sub = forWhat, count = Num.Short(System.Math.Min(wb.Earned, next.unlockEarned)) + " / " + Num.Short(next.unlockEarned), f = (float)(wb.Earned / System.Math.Max(1, next.unlockEarned)), done = coinsOk, col = GoldUi });
-                    if (next.unlockFields > 0)
-                        l.Add(new TaskData { icon = icon, title = "Baue " + next.unlockFields + " Felder", sub = forWhat, count = Mathf.Min(wb.FieldCount, next.unlockFields) + " / " + next.unlockFields, f = wb.FieldCount / (float)next.unlockFields, done = wb.FieldCount >= next.unlockFields, col = new Color(0.65f, 0.85f, 0.45f) });
-                    foreach (var n in wb.NeedsProgress(next.needs))
-                        l.Add(new TaskData { icon = icon, title = n.task, sub = forWhat, count = Mathf.Min(n.v, n.n) + " / " + n.n, f = n.v / (float)Mathf.Max(1, n.n), done = n.v >= n.n, col = new Color(0.6f, 0.8f, 1f) });
-                }
-            }
-            // 3) Verbesserung oder Bauwerk, das nur noch an Hof-Bedingungen haengt
-            foreach (var u in PlantBalance.I.upgrades)
-            {
-                if (wb.HasUpgrade(u.id) || wb.Earned < u.unlockEarned || wb.NeedsMet(u.needs)) continue;
-                foreach (var n in wb.NeedsProgress(u.needs))
-                    if (n.v < n.n) l.Add(new TaskData { icon = null, title = n.task, sub = "für die Verbesserung " + u.name + ": " + u.desc, count = n.v + " / " + n.n, f = n.v / (float)Mathf.Max(1, n.n), col = new Color(0.85f, 0.7f, 1f) });
-                break;
-            }
-            foreach (var s in PlantBalance.I.structures)
-            {
-                if (wb.Earned < s.unlockEarned || wb.NeedsMet(s.needs)) continue;
-                foreach (var n in wb.NeedsProgress(s.needs))
-                    if (n.v < n.n) l.Add(new TaskData { icon = null, title = n.task, sub = "für das Bauwerk " + s.name + ": " + s.desc, count = n.v + " / " + n.n, f = n.v / (float)Mathf.Max(1, n.n), col = new Color(0.85f, 0.7f, 1f) });
-                break;
+                i++;
             }
             return l;
         }
+
+        static readonly Color[] TaskCols = { new Color(0.95f, 0.78f, 0.36f), new Color(0.65f, 0.85f, 0.45f), new Color(0.6f, 0.8f, 1f), new Color(0.85f, 0.7f, 1f) };
 
         void UpdateTasks(float dt)
         {
@@ -152,8 +130,16 @@ namespace SeedClicker
                 r.barFill.color = t.done ? new Color(0.45f, 0.8f, 0.4f) : t.col;
                 r.check.gameObject.SetActive(t.done);
             }
-            taskPanel.sizeDelta = new Vector2(taskPanel.sizeDelta.x, TaskTop + n * TaskRowH + 10f);
-            taskHeader.text = n > 0 ? "Aufgaben" : "Aufgaben – alles erledigt!";
+            taskPanel.sizeDelta = new Vector2(taskPanel.sizeDelta.x, TaskTop + Mathf.Max(n, 1) * TaskRowH + 10f);
+            var m = wb.CurrentMilestone;
+            if (m == null) { taskHeader.text = "Alle Ziele erreicht!"; taskReward.text = "Dein Hof ist eine Großfarm – spiel weiter, so lange du magst."; }
+            else
+            {
+                var names = new List<string>();
+                if (m.unlocks != null) foreach (var id in m.unlocks) names.Add(WorldBuilder.UnlockName(id));
+                taskHeader.text = "Ziel " + (wb.MilestoneIndex + 1) + " von " + wb.MilestoneTotal + ": " + m.name;
+                taskReward.text = "<b>Schaltet frei: " + string.Join(", ", names) + "</b>\n" + m.desc;
+            }
         }
     }
 }

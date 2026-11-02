@@ -29,6 +29,8 @@ namespace SeedClicker
             switch (n.kind)
             {
                 case "fields": return FieldCount;
+                case "earned": return (int)System.Math.Min(save.earned, int.MaxValue);
+                case "delivered": return save.deliveredCount;
                 case "walls": { int c = 0; foreach (var w in save.walls) if (!w.gate) c++; return c; }
                 case "stonewalls": { int c = 0; foreach (var w in save.walls) if (w.stone) c++; return c; }
                 case "gates": { int c = 0; foreach (var w in save.walls) if (w.gate) c++; return c; }
@@ -58,6 +60,8 @@ namespace SeedClicker
             switch (n.kind)
             {
                 case "fields": return "Felder";
+                case "earned": return "verdiente Münzen";
+                case "delivered": return "gelieferte Ernte";
                 case "walls": return "Mauerstücke";
                 case "stonewalls": return "Steinmauern";
                 case "gates": return "Tore";
@@ -116,6 +120,8 @@ namespace SeedClicker
             switch (n.kind)
             {
                 case "fields": return "Baue " + n.n + " Felder";
+                case "earned": return "Verdiene insgesamt " + Num.Short(n.n) + " Münzen";
+                case "delivered": return "Liefere " + Num.Short(n.n) + " Ernte in die Kiste";
                 case "walls": return "Baue " + n.n + " Mauerstücke";
                 case "stonewalls": return "Mach " + n.n + " Mauerstücke zu Stein";
                 case "gates": return "Baue " + n.n + (n.n == 1 ? " Tor" : " Tore");

@@ -76,7 +76,7 @@ namespace SeedClicker
             wbi.PlantUnlocked += id =>
             {
                 var d = PlantBalance.I.Plant(id);
-                if (d != null && !d.IsCombat) Banner("Neue Pflanze: " + d.name, Helps(d));
+                if (d != null && !d.IsCombat && !wbi.GrantingMilestone) Banner("Neue Pflanze: " + d.name, Helps(d));
                 RefreshGoal();
             };
         }
@@ -131,7 +131,7 @@ namespace SeedClicker
                 bool any = false;
                 foreach (var u in PlantBalance.I.upgrades)
                 {
-                    if (wbi.HasUpgrade(u.id) || wbi.Earned < u.unlockEarned || !wbi.NeedsMet(u.needs)) continue;
+                    if (wbi.HasUpgrade(u.id) || !wbi.UpgradeAvailable(u)) continue;
                     any = true;
                     var uu = u;
                     ShopRow(content, u.name, u.desc, Num.Short(u.cost), wbi.Coins >= u.cost, () => { if (wbi.BuyUpgrade(uu)) OpenShop(0); });
@@ -139,10 +139,10 @@ namespace SeedClicker
                 if (!any) Label(content, "Gerade nichts zu kaufen – die nächsten Verbesserungen stehen unten.", 30, InkSoft, TextAnchor.MiddleCenter).LE(-1, 120);
                 // die naechsten zwei gesperrten: was sie bringen und ab wann es sie gibt (man sieht immer, was kommt)
                 var soon = new List<ShopUpgradeDef>();
-                foreach (var u in PlantBalance.I.upgrades) if (!wbi.HasUpgrade(u.id) && (wbi.Earned < u.unlockEarned || !wbi.NeedsMet(u.needs))) soon.Add(u);
-                soon.Sort((x, y) => x.unlockEarned.CompareTo(y.unlockEarned));
+                foreach (var u in PlantBalance.I.upgrades) if (!wbi.HasUpgrade(u.id) && !wbi.UpgradeAvailable(u)) soon.Add(u);
+                soon.Sort((x, y) => wbi.MilestoneOf(x.id).CompareTo(wbi.MilestoneOf(y.id)));
                 for (int i = 0; i < soon.Count && i < 2; i++)
-                    ShopRow(content, soon[i].name + " (bald)", soon[i].desc + "\nAb " + Num.Short(soon[i].unlockEarned) + " verdienten Münzen – jetzt " + Num.Short(wbi.Earned) + NeedsLine(wbi, soon[i].needs),
+                    ShopRow(content, soon[i].name + " (bald)", soon[i].desc + "\n" + UnlockWhen(wbi, soon[i].id, soon[i].unlockEarned, soon[i].needs),
                         Num.Short(soon[i].cost), false, () => Sfx.Play("error", 1.1f, 0.4f));
                 int owned = wbi.Save.upgrades.Count;
                 if (owned > 0) Label(content, "Gekauft: " + owned, 28, InkSoft, TextAnchor.MiddleCenter).LE(-1, 60);
@@ -166,6 +166,14 @@ namespace SeedClicker
         }
 
         /// <summary>Offene Hof-Bedingungen mit Stand als Zusatzzeile ("· Mauerstücke 3 / 5").</summary>
+        /// <summary>Wann es frei wird: mit welchem Ziel – oder (ohne Ziel) ab welchen Muenzen und Bedingungen.</summary>
+        static string UnlockWhen(WorldBuilder w, string id, float earned, string[] needs)
+        {
+            int k = w.MilestoneOf(id);
+            if (k >= 0) return "Kommt mit Ziel " + (k + 1) + ": " + PlantBalance.I.milestones[k].name;
+            return "Ab " + Num.Short(earned) + " verdienten Münzen – jetzt " + Num.Short(w.Earned) + NeedsLine(w, needs);
+        }
+
         static string NeedsLine(WorldBuilder w, string[] needs)
         {
             string s = "";

@@ -56,9 +56,10 @@ namespace SeedClicker
 
         void CheckEarnedUnlocks()
         {
+            CheckMilestones();   // vier Aufgaben geschafft -> Paket frei
             foreach (var c in PlantBalance.I.catalog)
             {
-                if (c.IsCombat || IsUnlocked(c.id) || c.unlockEarned > save.earned || c.unlockFields > FieldCount || !NeedsMet(c.needs)) continue;
+                if (c.IsCombat || IsUnlocked(c.id) || MilestoneOf(c.id) >= 0 || c.unlockEarned > save.earned || c.unlockFields > FieldCount || !NeedsMet(c.needs)) continue;   // Ziel-Pflanzen kommen nur ueber ihr Ziel
                 save.unlocked.Add(c.id);
                 PlantUnlocked?.Invoke(c.id);
             }

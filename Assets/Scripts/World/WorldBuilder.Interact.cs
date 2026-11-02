@@ -42,6 +42,7 @@ namespace SeedClicker
         public List<BuildingCount> buildings = new List<BuildingCount>();   // alt: Gebaeude gibt es nicht mehr
         public List<StructureState> structures = new List<StructureState>();
         public List<WeaponLevel> weaponLevels = new List<WeaponLevel>();   // an der Waffenbank geschmiedet
+        public int milestone;   // aktuelles Ziel (Index in milestones)
         public bool elementsReset;   // einmalig: durcheinandergeratene Waffen-Elemente geloescht (02.11.2026)
         public int farmLevel;
         public List<int> rocksGone = new List<int>();

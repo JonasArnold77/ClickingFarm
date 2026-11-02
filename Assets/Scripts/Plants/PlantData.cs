@@ -53,6 +53,9 @@ namespace SeedClicker
     /// <summary>Gartenfelder: die ersten free Felder gratis, danach kostet jedes neue Feld cost * growth^(Anzahl - free).</summary>
     [Serializable] public class FieldDef { public int free = 6; public float cost = 10f, growth = 1.1f; }
     /// <summary>Tagesaufgabe: so viele Stueck des Tages-Ernteguts fuer Bronze, Silber, Gold.</summary>
+    /// <summary>Ein Ziel: genau vier Aufgaben (Bedingungen wie bei needs) und was danach frei wird.</summary>
+    [Serializable] public class MilestoneDef { public string name, desc; public string[] tasks, unlocks; }
+
     [Serializable] public class ChallengeDef
     {
         public int[] tiers = { 10, 30, 60 };
@@ -231,6 +234,7 @@ namespace SeedClicker
         public OptionDef[] patterns, projectiles, elements, effects;
         public SpeciesDef[] species;
         public CatalogDef[] catalog;
+        public MilestoneDef[] milestones;   // Ziele mit je vier Aufgaben, nacheinander
         public MonsterDefW[] monsters;
         public WaveDef waves;
         public WeaponDef[] weapons;

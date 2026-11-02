@@ -1810,5 +1810,232 @@
     2.5,
     6,
     15
+  ],
+  "milestones": [
+    {
+      "name": "Der erste Acker",
+      "desc": "Mehr Ernte pro Klick, schnelleres Wachsen und die Karotte mit 3 Stück pro Klick.",
+      "tasks": [
+        "plant:radieschen:3",
+        "delivered:20",
+        "earned:100",
+        "plant:tauschilf:1"
+      ],
+      "unlocks": [
+        "karotte",
+        "handschuh1",
+        "kanne1"
+      ]
+    },
+    {
+      "name": "Mehr Beete",
+      "desc": "Die Weißrübe, der Erntekorb (doppelte Münzen) und das erste Totem für ganze Beete.",
+      "tasks": [
+        "fields:9",
+        "plant:karotte:3",
+        "delivered:60",
+        "earned:850"
+      ],
+      "unlocks": [
+        "weissruebe",
+        "korb1",
+        "totem_wachstum"
+      ]
+    },
+    {
+      "name": "Die erste Medaille",
+      "desc": "Kompostpilz als Dünger für Nachbarn und Tauschilf, das ein Feld weiter tropft.",
+      "tasks": [
+        "medal:2",
+        "knollis:2",
+        "fields:12",
+        "earned:2250"
+      ],
+      "unlocks": [
+        "kompostpilz",
+        "schilf1"
+      ]
+    },
+    {
+      "name": "Der Hof wehrt sich",
+      "desc": "Wachtürme, Steinmoos für steinerne Mauern und stärkerer Dünger.",
+      "tasks": [
+        "walls:6",
+        "waves:1",
+        "plant:weissruebe:4",
+        "earned:4000"
+      ],
+      "unlocks": [
+        "steinmoos",
+        "wachturm",
+        "kompost1"
+      ]
+    },
+    {
+      "name": "Grüne Beete",
+      "desc": "Salat, der im Block wächst, das Erntetotem und Dornenranken für die Mauer.",
+      "tasks": [
+        "plant:kompostpilz:1",
+        "fields:15",
+        "delivered:300",
+        "earned:8500"
+      ],
+      "unlocks": [
+        "salat",
+        "totem_ernte",
+        "dornenranke"
+      ]
+    },
+    {
+      "name": "Steinerne Festung",
+      "desc": "Goldene Handschuhe, Eisenbeschläge für die Mauern und der Wurzelträger fürs Holz.",
+      "tasks": [
+        "stonewalls:3",
+        "towers:1",
+        "waves:2",
+        "earned:12500"
+      ],
+      "unlocks": [
+        "handschuh2",
+        "mauer1",
+        "wurzeltraeger"
+      ]
+    },
+    {
+      "name": "Der Knolli-Trupp",
+      "desc": "Trommelkraut als Klickzentrum und die Glutblüte: Feuer für alle Waffen.",
+      "tasks": [
+        "knollis:4",
+        "huts:1",
+        "plant:salat:4",
+        "earned:22500"
+      ],
+      "unlocks": [
+        "trommelkraut",
+        "glutbluete"
+      ]
+    },
+    {
+      "name": "Das Klickzentrum",
+      "desc": "Weizen, der stark von selbst nachwächst, Frost für die Waffen und das Fleißtotem.",
+      "tasks": [
+        "plant:trommelkraut:1",
+        "medal:3",
+        "fields:19",
+        "earned:35000"
+      ],
+      "unlocks": [
+        "weizen",
+        "frostdistel",
+        "totem_fleiss"
+      ]
+    },
+    {
+      "name": "Die Waffenschmiede",
+      "desc": "Gift für die Waffen, der Marktschreier, die Stützranke und Glühwürmchen.",
+      "tasks": [
+        "waves:3",
+        "pedestals:1",
+        "totems:2",
+        "earned:65000"
+      ],
+      "unlocks": [
+        "giftpilz",
+        "korb2",
+        "stuetzranke",
+        "licht1"
+      ]
+    },
+    {
+      "name": "Die Kornkammer",
+      "desc": "Mais als wertvollster Klick, das Wurzelherz fürs Steinpult und die Buchhaltung.",
+      "tasks": [
+        "plant:weizen:4",
+        "fields:26",
+        "delivered:2000",
+        "earned:100000"
+      ],
+      "unlocks": [
+        "mais",
+        "wurzelherz",
+        "cps1"
+      ]
+    },
+    {
+      "name": "Hilfe von selbst",
+      "desc": "Die Klopfwurz klickt von selbst, Blitz für die Waffen und die Sprinkler-Gießkanne.",
+      "tasks": [
+        "plant:mais:3",
+        "knollis:6",
+        "waves:4",
+        "earned:200000"
+      ],
+      "unlocks": [
+        "klopfwurz",
+        "blitzkraut",
+        "kanne2"
+      ]
+    },
+    {
+      "name": "Die Wachtürme",
+      "desc": "Taktgefühl für schnellere Klopfwurz, das Schmetterlingsnetz und die Saatgutmühle.",
+      "tasks": [
+        "towers:2",
+        "stonewalls:8",
+        "plant:klopfwurz:1",
+        "earned:500000"
+      ],
+      "unlocks": [
+        "auto1",
+        "golden1",
+        "saatgutmuehle"
+      ]
+    },
+    {
+      "name": "Der Selbstläufer",
+      "desc": "Der Pustesamen sät von selbst, Kristallhandschuhe und die Mondblume für Türme.",
+      "tasks": [
+        "plant:klopfwurz:3",
+        "fields:35",
+        "delivered:5000",
+        "earned:950000"
+      ],
+      "unlocks": [
+        "pustesamen",
+        "handschuh3",
+        "mondblume"
+      ]
+    },
+    {
+      "name": "Das Nachtlicht",
+      "desc": "Der Glühpilz stärkt Kampfpflanzen, der Nachtwächter und der Großhandel.",
+      "tasks": [
+        "waves:6",
+        "plant:pustesamen:1",
+        "medal:4",
+        "earned:2250000"
+      ],
+      "unlocks": [
+        "gluehpilz",
+        "offline1",
+        "korb3"
+      ]
+    },
+    {
+      "name": "Die Großfarm",
+      "desc": "Das Saftrohr verlängert jedes Tauschilf, dazu Uhrwerk, Genossenschaft und Sternenhandschuhe.",
+      "tasks": [
+        "fields:50",
+        "plant:tauschilf:4",
+        "delivered:10000",
+        "earned:7000000"
+      ],
+      "unlocks": [
+        "saftrohr",
+        "auto2",
+        "cps2",
+        "handschuh4"
+      ]
+    }
   ]
 }

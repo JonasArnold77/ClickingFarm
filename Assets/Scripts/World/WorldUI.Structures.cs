@@ -139,9 +139,9 @@ namespace SeedClicker
                     ShopRow(content, d.name + "  · Stufe " + st.lv, st.placed ? wbi.StructSummary(st) : "Wartet auf seinen Platz", "Gebaut", false, () => { });
                     continue;
                 }
-                if (wbi.Earned < d.unlockEarned || !wbi.NeedsMet(d.needs))
+                if (!wbi.StructureAvailable(d))
                 {
-                    ShopRow(content, d.name, d.desc + "\nAb " + Num.Short(d.unlockEarned) + " verdienten Münzen" + NeedsLine(wbi, d.needs), price, false, () => { });
+                    ShopRow(content, d.name, d.desc + "\n" + UnlockWhen(wbi, d.id, d.unlockEarned, d.needs), price, false, () => { });
                     continue;
                 }
                 bool ok = wbi.Coins >= cost && wbi.Wood >= d.wood && wbi.PlacingStructure == null;

@@ -166,7 +166,9 @@ namespace SeedClicker
             name.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -imgH - 6), new Vector2(-16, fontSize + 14));
             if (locked)
             {
-                string need = def.IsCombat ? "Nach Welle " + def.unlockWave : "Ab " + Num.Short(def.unlockEarned) + " Münzen" + (def.unlockFields > 0 ? " und " + def.unlockFields + " Feldern" : "")
+                int mk = wb.MilestoneOf(def.id);
+                string need = def.IsCombat ? "Nach Welle " + def.unlockWave : mk >= 0 ? "Kommt mit Ziel " + (mk + 1) + ": " + PlantBalance.I.milestones[mk].name
+                    : "Ab " + Num.Short(def.unlockEarned) + " Münzen" + (def.unlockFields > 0 ? " und " + def.unlockFields + " Feldern" : "")
                     + (def.needs != null && def.needs.Length > 0 ? "\nDazu: " + WorldBuilder.NeedsShort(def.needs) : "");
                 string on = BuildsOnName(def);
                 var l = Label(rt, need + (on != null ? "\nBaut auf " + on + " auf" : "") + "\n\n" + Helps(def), fontSize - 4, InkSoft, TextAnchor.UpperCenter);

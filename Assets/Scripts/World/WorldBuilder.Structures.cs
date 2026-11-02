@@ -112,7 +112,7 @@ namespace SeedClicker
         public bool BuyStructure(StructureDef d)
         {
             float cost = StructCost(d);
-            if (d == null || (!d.multi && Struct(d.id) != null) || save.earned < d.unlockEarned || !NeedsMet(d.needs) || save.wood < d.wood || save.coins < cost) return false;
+            if (d == null || (!d.multi && Struct(d.id) != null) || !StructureAvailable(d) || save.wood < d.wood || save.coins < cost) return false;
             if (!TrySpend(cost)) return false;
             save.wood -= d.wood; WoodChanged?.Invoke(save.wood);
             var st = new StructureState { id = d.id, lv = 1 };

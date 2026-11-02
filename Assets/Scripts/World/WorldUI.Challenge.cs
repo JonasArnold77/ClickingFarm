@@ -22,7 +22,7 @@ namespace SeedClicker
         void BuildChallengeHud()
         {
             var p = Panel(safe, "Challenge", new Color(0.12f, 0.1f, 0.08f, 0.68f));
-            p.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(28, -500), new Vector2(640, 270));
+            p.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -900), new Vector2(620, 270));   // unter der Ziel-Liste
             p.raycastTarget = false;
             chPanel = p.rectTransform;
             chTitle = UIKit.Txt(p.transform, "Auftrag für heute", 32, new Color(1f, 0.9f, 0.6f), TextAnchor.MiddleLeft, true, true);
@@ -67,7 +67,7 @@ namespace SeedClicker
         {
             if (chPanel == null) return;
             var def = PlantBalance.I.Plant(wb.ChallengeType);
-            chPanel.gameObject.SetActive(def != null && taskPanel == null);   // die Aufgabenliste zeigt den Auftrag mit
+            chPanel.gameObject.SetActive(def != null);
             if (def == null) return;
             var tiers = wb.ChallengeTiers;
             int tier = wb.ChallengeTier, count = wb.ChallengeCount;
