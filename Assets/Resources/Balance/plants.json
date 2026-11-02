@@ -598,7 +598,10 @@
       "group": 0.25,
       "unlockFields": 14,
       "buildsOn": "weissruebe",
-      "helps": "+25 % je Salat-Nachbar: im 3×3-Block bringt jeder Salat das Dreifache."
+      "helps": "+25 % je Salat-Nachbar: im 3×3-Block bringt jeder Salat das Dreifache.",
+      "needs": [
+        "medal:2"
+      ]
     },
     {
       "id": "weizen",
@@ -625,7 +628,10 @@
       "taps": 0.5,
       "unlockFields": 19,
       "buildsOn": "salat",
-      "helps": "Wächst von selbst sehr stark nach – perfekt für Felder, die du nicht ständig klickst."
+      "helps": "Wächst von selbst sehr stark nach – perfekt für Felder, die du nicht ständig klickst.",
+      "needs": [
+        "plant:salat:4"
+      ]
     },
     {
       "id": "mais",
@@ -652,7 +658,10 @@
       "taps": 1.5,
       "unlockFields": 28,
       "buildsOn": "weizen",
-      "helps": "Der wertvollste Klick: dein Haupt-Klickfeld, am besten neben Trommelkraut."
+      "helps": "Der wertvollste Klick: dein Haupt-Klickfeld, am besten neben Trommelkraut.",
+      "needs": [
+        "medal:3"
+      ]
     },
     {
       "id": "kompostpilz",
@@ -700,7 +709,10 @@
       "effectLv": 1,
       "unlockFields": 17,
       "buildsOn": "kompostpilz",
-      "helps": "Deine Klicks im Umkreis von 2 zählen doppelt – mach daraus dein Klickzentrum."
+      "helps": "Deine Klicks im Umkreis von 2 zählen doppelt – mach daraus dein Klickzentrum.",
+      "needs": [
+        "plant:kompostpilz:1"
+      ]
     },
     {
       "id": "klopfwurz",
@@ -724,7 +736,10 @@
       "effectLv": 1,
       "unlockFields": 35,
       "buildsOn": "trommelkraut",
-      "helps": "Klickt selbst das Feld vor sich: erntet und levelt, während du woanders klickst."
+      "helps": "Klickt selbst das Feld vor sich: erntet und levelt, während du woanders klickst.",
+      "needs": [
+        "plant:trommelkraut:1"
+      ]
     },
     {
       "id": "gluehpilz",
@@ -748,7 +763,10 @@
       "effectLv": 1,
       "unlockFields": 49,
       "buildsOn": "Kampfpflanzen",
-      "helps": "Zu deinen Kampfpflanzen: Zombies in seinem Licht nehmen +50 % Schaden."
+      "helps": "Zu deinen Kampfpflanzen: Zombies in seinem Licht nehmen +50 % Schaden.",
+      "needs": [
+        "waves:3"
+      ]
     },
     {
       "id": "stuetzranke",
@@ -772,7 +790,10 @@
       "effectLv": 1,
       "unlockFields": 26,
       "buildsOn": "Waffenbank",
-      "helps": "Hämmert von selbst an der Waffenbank (Waffe wird stärker) und flickt Mauern."
+      "helps": "Hämmert von selbst an der Waffenbank (Waffe wird stärker) und flickt Mauern.",
+      "needs": [
+        "walls:10"
+      ]
     },
     {
       "id": "wurzeltraeger",
@@ -796,7 +817,10 @@
       "effectLv": 1,
       "unlockFields": 16,
       "buildsOn": "Knollis",
-      "helps": "Trägt Holz aus dem Wald zum Haus – du musst weniger selbst hacken."
+      "helps": "Trägt Holz aus dem Wald zum Haus – du musst weniger selbst hacken.",
+      "needs": [
+        "knollis:3"
+      ]
     },
     {
       "id": "pustesamen",
@@ -820,7 +844,10 @@
       "effectLv": 1,
       "unlockFields": 39,
       "buildsOn": "klopfwurz",
-      "helps": "Sät von selbst auf leere Felder im Umkreis von 2 – nie mehr selbst nachpflanzen."
+      "helps": "Sät von selbst auf leere Felder im Umkreis von 2 – nie mehr selbst nachpflanzen.",
+      "needs": [
+        "plant:klopfwurz:1"
+      ]
     },
     {
       "id": "saftrohr",
@@ -844,7 +871,10 @@
       "effectLv": 1,
       "unlockFields": 54,
       "buildsOn": "tauschilf",
-      "helps": "Tauschilf in der Nähe reicht 1 Feld weiter – ein Tauschilf versorgt ein ganzes Beet."
+      "helps": "Tauschilf in der Nähe reicht 1 Feld weiter – ein Tauschilf versorgt ein ganzes Beet.",
+      "needs": [
+        "plant:tauschilf:2"
+      ]
     },
     {
       "id": "steinmoos",
@@ -869,7 +899,10 @@
       "effectLv": 1,
       "unlockFields": 12,
       "buildsOn": "Mauer",
-      "helps": "Macht einen ganzen Mauerabschnitt zu Stein: 3× so stabil – die Mauer hält die Nacht."
+      "helps": "Macht einen ganzen Mauerabschnitt zu Stein: 3× so stabil – die Mauer hält die Nacht.",
+      "needs": [
+        "walls:6"
+      ]
     },
     {
       "id": "glutbluete",
@@ -919,7 +952,10 @@
       "effectLv": 1,
       "unlockFields": 22,
       "buildsOn": "glutbluete",
-      "helps": "Auf die Waffenbank: alle Waffen bremsen Zombies – mehr Zeit für deine Kampfpflanzen."
+      "helps": "Auf die Waffenbank: alle Waffen bremsen Zombies – mehr Zeit für deine Kampfpflanzen.",
+      "needs": [
+        "waves:2"
+      ]
     },
     {
       "id": "blitzkraut",
@@ -944,7 +980,10 @@
       "effectLv": 1,
       "unlockFields": 32,
       "buildsOn": "giftpilz",
-      "helps": "Auf die Waffenbank: Treffer springen als Blitz auf weitere Zombies über – gut gegen Gruppen."
+      "helps": "Auf die Waffenbank: Treffer springen als Blitz auf weitere Zombies über – gut gegen Gruppen.",
+      "needs": [
+        "waves:4"
+      ]
     },
     {
       "id": "giftpilz",
@@ -969,7 +1008,10 @@
       "effectLv": 1,
       "unlockFields": 24,
       "buildsOn": "frostdistel",
-      "helps": "Auf die Waffenbank: alle Waffen vergiften Zombies, das Gift wirkt nach."
+      "helps": "Auf die Waffenbank: alle Waffen vergiften Zombies, das Gift wirkt nach.",
+      "needs": [
+        "waves:3"
+      ]
     },
     {
       "id": "dornenranke",
@@ -994,7 +1036,10 @@
       "effectLv": 1,
       "unlockFields": 15,
       "buildsOn": "steinmoos",
-      "helps": "Dornen auf der Mauer: jeder Zombie, der draufschlägt, verletzt sich selbst."
+      "helps": "Dornen auf der Mauer: jeder Zombie, der draufschlägt, verletzt sich selbst.",
+      "needs": [
+        "stonewalls:3"
+      ]
     },
     {
       "id": "wurzelherz",
@@ -1019,7 +1064,10 @@
       "effectLv": 1,
       "unlockFields": 30,
       "buildsOn": "Steinpult",
-      "helps": "Ins Steinpult: die Kampfpflanze darin schießt weiter."
+      "helps": "Ins Steinpult: die Kampfpflanze darin schießt weiter.",
+      "needs": [
+        "pedestals:1"
+      ]
     },
     {
       "id": "mondblume",
@@ -1044,7 +1092,10 @@
       "effectLv": 1,
       "unlockFields": 43,
       "buildsOn": "Wachturm",
-      "helps": "Auf einen Wachturm: der Turm schießt doppelt."
+      "helps": "Auf einen Wachturm: der Turm schießt doppelt.",
+      "needs": [
+        "towers:1"
+      ]
     },
     {
       "id": "funkenmais",
@@ -1439,7 +1490,10 @@
       "valuePerLevel": 2,
       "radius": 4.0,
       "radiusPerLevel": 0.3,
-      "scale": 1.2
+      "scale": 1.2,
+      "needs": [
+        "walls:4"
+      ]
     },
     {
       "id": "saatgutmuehle",
@@ -1453,7 +1507,10 @@
       "valuePerLevel": 0.05,
       "radius": 0,
       "radiusPerLevel": 0,
-      "scale": 1.2
+      "scale": 1.2,
+      "needs": [
+        "fields:30"
+      ]
     },
     {
       "id": "totem_wachstum",
@@ -1489,7 +1546,10 @@
       "valuePerLevel": 0.15,
       "radius": 0,
       "radiusPerLevel": 0,
-      "scale": 0.85
+      "scale": 0.85,
+      "needs": [
+        "totems:1"
+      ]
     },
     {
       "id": "totem_fleiss",
@@ -1507,7 +1567,10 @@
       "valuePerLevel": 0.2,
       "radius": 0,
       "radiusPerLevel": 0,
-      "scale": 0.85
+      "scale": 0.85,
+      "needs": [
+        "totems:2"
+      ]
     }
   ],
   "support": {
@@ -1578,7 +1641,10 @@
       "effect": "water",
       "value": 1,
       "cost": 1000,
-      "unlockEarned": 1250
+      "unlockEarned": 1250,
+      "needs": [
+        "plant:tauschilf:1"
+      ]
     },
     {
       "id": "kompost1",
@@ -1587,7 +1653,10 @@
       "effect": "fert",
       "value": 2,
       "cost": 3250,
-      "unlockEarned": 4000
+      "unlockEarned": 4000,
+      "needs": [
+        "plant:kompostpilz:1"
+      ]
     },
     {
       "id": "handschuh2",
@@ -1605,7 +1674,10 @@
       "effect": "auto",
       "value": 2,
       "cost": 9000,
-      "unlockEarned": 25000
+      "unlockEarned": 25000,
+      "needs": [
+        "plant:klopfwurz:1"
+      ]
     },
     {
       "id": "korb2",
@@ -1623,7 +1695,10 @@
       "effect": "wall",
       "value": 2,
       "cost": 9500,
-      "unlockEarned": 40000
+      "unlockEarned": 40000,
+      "needs": [
+        "walls:5"
+      ]
     },
     {
       "id": "licht1",
@@ -1704,7 +1779,10 @@
       "effect": "auto",
       "value": 2,
       "cost": 2250000,
-      "unlockEarned": 10000000
+      "unlockEarned": 10000000,
+      "needs": [
+        "plant:klopfwurz:3"
+      ]
     },
     {
       "id": "handschuh4",

@@ -58,7 +58,7 @@ namespace SeedClicker
         {
             foreach (var c in PlantBalance.I.catalog)
             {
-                if (c.IsCombat || IsUnlocked(c.id) || c.unlockEarned > save.earned || c.unlockFields > FieldCount) continue;
+                if (c.IsCombat || IsUnlocked(c.id) || c.unlockEarned > save.earned || c.unlockFields > FieldCount || !NeedsMet(c.needs)) continue;
                 save.unlocked.Add(c.id);
                 PlantUnlocked?.Invoke(c.id);
             }
@@ -273,7 +273,7 @@ namespace SeedClicker
         void UpdateEconomy(float dt)
         {
             cpsTimer -= dt;
-            if (cpsTimer <= 0f) { cpsTimer = 0.5f; cps = ComputeCps(); produceCps = ComputeProduceCps(); }
+            if (cpsTimer <= 0f) { cpsTimer = 0.5f; cps = ComputeCps(); produceCps = ComputeProduceCps(); CheckEarnedUnlocks(); }   // auch Hof-Bedingungen (needs)
             if (goldenBoostT > 0f) { goldenBoostT -= dt; if (goldenBoostT <= 0f) goldenBoost = 1f; }
             // laufend gutschreiben
             coinFrac += cps * goldenBoost * dt;

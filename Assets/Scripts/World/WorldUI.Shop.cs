@@ -131,7 +131,7 @@ namespace SeedClicker
                 bool any = false;
                 foreach (var u in PlantBalance.I.upgrades)
                 {
-                    if (wbi.HasUpgrade(u.id) || wbi.Earned < u.unlockEarned) continue;
+                    if (wbi.HasUpgrade(u.id) || wbi.Earned < u.unlockEarned || !wbi.NeedsMet(u.needs)) continue;
                     any = true;
                     var uu = u;
                     ShopRow(content, u.name, u.desc, Num.Short(u.cost), wbi.Coins >= u.cost, () => { if (wbi.BuyUpgrade(uu)) OpenShop(0); });
@@ -139,10 +139,10 @@ namespace SeedClicker
                 if (!any) Label(content, "Gerade nichts zu kaufen – die nächsten Verbesserungen stehen unten.", 30, InkSoft, TextAnchor.MiddleCenter).LE(-1, 120);
                 // die naechsten zwei gesperrten: was sie bringen und ab wann es sie gibt (man sieht immer, was kommt)
                 var soon = new List<ShopUpgradeDef>();
-                foreach (var u in PlantBalance.I.upgrades) if (!wbi.HasUpgrade(u.id) && wbi.Earned < u.unlockEarned) soon.Add(u);
+                foreach (var u in PlantBalance.I.upgrades) if (!wbi.HasUpgrade(u.id) && (wbi.Earned < u.unlockEarned || !wbi.NeedsMet(u.needs))) soon.Add(u);
                 soon.Sort((x, y) => x.unlockEarned.CompareTo(y.unlockEarned));
                 for (int i = 0; i < soon.Count && i < 2; i++)
-                    ShopRow(content, soon[i].name + " (bald)", soon[i].desc + "\nAb " + Num.Short(soon[i].unlockEarned) + " verdienten Münzen – jetzt " + Num.Short(wbi.Earned),
+                    ShopRow(content, soon[i].name + " (bald)", soon[i].desc + "\nAb " + Num.Short(soon[i].unlockEarned) + " verdienten Münzen – jetzt " + Num.Short(wbi.Earned) + NeedsLine(wbi, soon[i].needs),
                         Num.Short(soon[i].cost), false, () => Sfx.Play("error", 1.1f, 0.4f));
                 int owned = wbi.Save.upgrades.Count;
                 if (owned > 0) Label(content, "Gekauft: " + owned, 28, InkSoft, TextAnchor.MiddleCenter).LE(-1, 60);
@@ -163,6 +163,14 @@ namespace SeedClicker
                     () => { if (wbi.HireKnolli()) OpenShop(2); });
                 Label(content, "Tipp: Bäume fällen gibt Holz, Felsbrocken antippen gibt Münzen und macht Platz.", 28, InkSoft, TextAnchor.MiddleCenter).LE(-1, 110);
             }
+        }
+
+        /// <summary>Offene Hof-Bedingungen mit Stand als Zusatzzeile ("· Mauerstücke 3 / 5").</summary>
+        static string NeedsLine(WorldBuilder w, string[] needs)
+        {
+            string s = "";
+            foreach (var n in w.NeedsList(needs)) s += "\n" + (n.ok ? "✓ " : "") + n.text;
+            return s;
         }
 
         void ShopRow(Transform parent, string title, string desc, string price, bool affordable, Action buy)

@@ -42,7 +42,7 @@ namespace SeedClicker
 
 
     /// <summary>Verbesserung im Laden (wie bei Cookie Clicker). effect: click, harvest, growth, water, fert, auto, bee, light, wall, cps, offline, golden.</summary>
-    [Serializable] public class ShopUpgradeDef { public string id, name, desc, effect; public float value, cost, unlockEarned; }
+    [Serializable] public class ShopUpgradeDef { public string id, name, desc, effect; public float value, cost, unlockEarned; public string[] needs; }   // needs: siehe WorldBuilder.Needs
     /// <summary>Gebaeude: erzeugt dauerhaft Muenzen pro Sekunde, Preis steigt mit jedem Kauf.</summary>
     /// <summary>Hof erweitern: Kosten der naechsten Stufe.</summary>
     [Serializable] public class FarmLevelDef { public float cost; public int wood; }
@@ -102,6 +102,7 @@ namespace SeedClicker
     {
         public string id, name, desc, effect;
         public float cost, unlockEarned, value, valuePerLevel, radius, radiusPerLevel, scale = 1f;
+        public string[] needs;   // Bedingungen auf dem Hof (siehe WorldBuilder.Needs)
         public int wood;
         // Totems (effect "totem"): mehrfach kaufbar (multi, jedes Stueck costGrowth-mal teurer), boost = growth | harvest | produce,
         // volle Wirkung fuer ein Beet bis fullCells Felder, darueber anteilig weniger
@@ -189,6 +190,7 @@ namespace SeedClicker
         public int unlockFields;   // zusaetzlich so viele Felder noetig (Ausbau gehoert zum Fortschritt)
         public string buildsOn;    // worauf sie aufbaut: eine Pflanzen-ID oder ein Ding auf dem Hof (Mauer, Waffenbank, Wachturm, Steinpult, Knollis, Kampfpflanzen)
         public string helps;       // konkret: was sie deiner Farm bringt und wie man sie einsetzt
+        public string[] needs;     // Bedingungen auf dem Hof, z. B. walls:6, plant:tauschilf:2, medal:3 (siehe WorldBuilder.Needs)
         public int growTaps;   // 0 = Standard (growTaps)
         // Ernte-Charakter: yield = Stueck pro Ernte-Tipp, prod = Faktor fuer Ernte von selbst, group = Bonus je gleicher
         // Nachbarpflanze (auch schraeg), taps = Faktor fuer den Wert eines Ernte-Tipps

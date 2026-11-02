@@ -318,3 +318,11 @@
 - **Banner bei Freischaltung:** zeigt den Nutzen.
 - **Laden → Verbesserungen:** Die nächsten zwei gesperrten Upgrades stehen mit „(bald)“, Wirkung, Schwelle und aktuellem Stand unten in der Liste.
 - **Tagesauftrag groß sichtbar** (`WorldUI.Challenge.cs`): eine eigene Tafel oben links unter dem Ziel (640×270). Sie zeigt „Auftrag für heute“ mit der Restzeit bis zur Nacht, großem Bild des Ernteguts, „Liefere Radieschen-Bund in die Kiste“, eine große Zahl „24 / 30“ und einen Balken über die ganze Strecke bis Gold, mit Strichen bei Bronze und Silber. Darunter stehen die drei Stufen mit Menge und Belohnung (Münzen, wie sie jetzt ausgezahlt würden, Silber + 2 Runensteine, Gold + ein Schatz). Geschafft = grün mit Haken, die nächste in ihrer Medaillenfarbe, spätere blasser.
+
+## Freischalten durch Erreichtes (02.11.2026)
+- Neues Bedingungssystem `needs` (`WorldBuilder.Needs.cs`) für Pflanzen, Verbesserungen und Bauwerke. Man muss auf dem Hof etwas erreicht haben. Arten: `fields`, `walls`, `stonewalls`, `gates`, `towers`, `pedestals`, `knollis`, `huts`, `totems`, `river`, `waves`, `medal:L` (eine Ernte-Pflanze mindestens auf dieser Medaille), `plant:ID:n` (n reife Pflanzen dieser Art). Geprüft wird alle 0,5 s und bei jedem Münzeingang.
+- Gesetzt:
+  - Pflanzen: Salat ← eine Pflanze auf Bronze; Weizen ← 4 reife Salate; Mais ← eine Pflanze auf Silber; Trommelkraut ← reifer Kompostpilz; Klopfwurz ← reifes Trommelkraut; Pustesamen ← reife Klopfwurz; Saftrohr ← 2 reife Tauschilfe; Steinmoos ← 6 Mauerstücke; Dornenranke ← 3 Steinmauern; Wurzelträger ← 3 Knollis; Stützranke ← 10 Mauerstücke; Wurzelherz ← 1 Steinpult; Mondblume ← 1 Wachturm; Frostdistel/Giftpilz/Blitzkraut/Glühpilz ← 2/3/4/3 überstandene Nächte.
+  - Bauwerke: Wachturm ← 4 Mauerstücke; Erntetotem ← 1 Totem; Fleißtotem ← 2 Totems; Saatgutmühle ← 30 Felder.
+  - Verbesserungen: Eisenbeschläge ← 5 Mauerstücke; Tiefe Wurzeln ← reifes Tauschilf; Kompostkunde ← reifer Kompostpilz; Taktgefühl ← reife Klopfwurz; Uhrwerk ← 3 reife Klopfwurze.
+- Anzeige: Die Zielanzeige listet jede Bedingung mit Stand („Mauerstücke 3 / 6“, erfüllt grün mit Haken). Das Sammelbuch zeigt „Dazu: 6 Mauerstücke“. Im Laden und bei den Bauwerken stehen gesperrte Dinge mit Beschreibung, Münz-Schwelle und den offenen Bedingungen samt Stand.
