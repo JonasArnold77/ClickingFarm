@@ -17,13 +17,13 @@ namespace SeedClicker
         SpriteRenderer host;
         readonly List<SpriteRenderer> copies = new List<SpriteRenderer>();
         int level, dirs = 16;
-        float width = 0.035f;   // Linienbreite in Welt-Einheiten
+        float width = 0.0175f;   // Linienbreite in Welt-Einheiten
         static Material silhouetteMat;
         static bool shaderLooked;
 
         /// <summary>Stufe setzen (unter 2 = keine Linie). width: Linienbreite in Welt-Einheiten, dirs: Zahl der Kopien
         /// (mehr = glatter; fuer viele kleine Erntestuecke reichen 8).</summary>
-        public static void Set(SpriteRenderer host, int level, float width = 0.035f, int dirs = 16)
+        public static void Set(SpriteRenderer host, int level, float width = 0.0175f, int dirs = 16)
         {
             if (host == null) return;
             var a = host.GetComponent<MedalAura>();
