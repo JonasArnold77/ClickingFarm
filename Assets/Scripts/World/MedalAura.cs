@@ -57,7 +57,7 @@ namespace SeedClicker
             sphere.transform.rotation = Quaternion.identity;   // nicht mit der Pflanze/dem Stueck mitdrehen
 
             var c = WorldBuilder.MedalColor(level);
-            sphere.color = new Color(c.r, c.g, c.b, 0.85f + 0.15f * Mathf.Sin(t * 1.3f));
+            sphere.color = new Color(c.r, c.g, c.b, 0.75f + 0.1f * Mathf.Sin(t * 1.3f));
             sphere.sortingLayerID = host.sortingLayerID;
             sphere.sortingOrder = host.sortingOrder + 1;   // vorn: die Mitte ist fast klar, man sieht die Pflanze in der Blase
 

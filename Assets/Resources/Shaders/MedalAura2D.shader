@@ -43,7 +43,7 @@ Shader "SeedClicker/MedalAura2D"
         float t = _Time.y * _Speed + _Seed;
 
         // Rand: drei Wellen mit verschiedener Zahl an Beulen laufen gegeneinander -> organisches Wabern
-        float wob = (0.055 * sin(a * 3.0 + t * 1.7) + 0.035 * sin(a * 5.0 - t * 2.3) + 0.022 * sin(a * 8.0 + t * 3.4)) * _Wobble;
+        float wob = (0.04 * sin(a * 3.0 + t * 1.7) + 0.025 * sin(a * 5.0 - t * 2.3) + 0.015 * sin(a * 8.0 + t * 3.4)) * _Wobble;
         float R = 0.8 + wob + 0.025 * sin(t * 1.1);
         float inside = 1.0 - smoothstep(R - 0.025, R + 0.025, r);
 
@@ -60,8 +60,9 @@ Shader "SeedClicker/MedalAura2D"
         float2 h = p - float2(-0.33 + 0.04 * sin(t * 0.9), 0.38 + 0.03 * cos(t * 1.2));
         float spot = exp(-dot(h, h) / 0.018) * inside;
 
-        half alpha = inside * (0.07 + 0.42 * shell + 0.13 * swirl * k) + rim * 0.85 + spot * 0.7;
-        half3 col = i.color.rgb * (0.85 + 0.5 * rim + 0.2 * swirl) + spot * 0.8;
+        // dezent: zarte Huelle, schmaler Saum, kleiner Glanz
+        half alpha = inside * (0.02 + 0.18 * shell + 0.05 * swirl * k) + rim * 0.32 + spot * 0.25;
+        half3 col = i.color.rgb * (0.9 + 0.15 * rim + 0.1 * swirl) + spot * 0.3;
         return half4(col, saturate(alpha) * i.color.a);
     }
     ENDHLSL

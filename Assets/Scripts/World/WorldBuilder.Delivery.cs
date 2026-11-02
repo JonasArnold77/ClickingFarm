@@ -114,7 +114,7 @@ namespace SeedClicker
                     sr.enabled = i < show && spr != null;
                     if (!sr.enabled) continue;
                     sr.sprite = spr;
-                    MedalAura.Set(sr, MedalOf(p), 1.9f);
+                    MedalAura.Set(sr, MedalOf(p), 1.4f);
                     float s = 0.15f / Mathf.Max(0.01f, spr.bounds.size.x);
                     sr.transform.localScale = Vector3.one * s;
                     var pos = ScatterPos(p, i);
@@ -407,7 +407,7 @@ namespace SeedClicker
                 sr.enabled = i < n && k.load[i] != null;
                 if (!sr.enabled) continue;
                 sr.sprite = k.load[i];
-                MedalAura.Set(sr, i < k.lmedal.Count ? k.lmedal[i] : 0, 1.9f);
+                MedalAura.Set(sr, i < k.lmedal.Count ? k.lmedal[i] : 0, 1.4f);
                 var goal = OrbitPos(k, i, n, hop, out bool front);
                 // Magnet-Folgen: Feder zum Platz in der Wolke, mit Nachziehen – weit weg zieht es staerker
                 while (k.lpos.Count <= i) { k.lpos.Add(goal); k.lvel.Add(Vector2.zero); }
@@ -466,7 +466,7 @@ namespace SeedClicker
             var sr = new GameObject("IntoCrate").AddComponent<SpriteRenderer>();
             sr.transform.SetParent(objects, false);
             sr.sprite = spr;
-            MedalAura.Set(sr, medal, 1.9f);
+            MedalAura.Set(sr, medal, 1.4f);
             sr.sortingOrder = 30005;
             float size = 0.19f / Mathf.Max(0.01f, spr.bounds.size.x);
             var to = cratePos + new Vector2(0, 0.45f);
