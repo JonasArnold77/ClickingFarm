@@ -212,7 +212,7 @@ namespace SeedClicker
             public TreeObj workTree; public float workT, swing; public int water, stops; public SpriteRenderer tool;   // Berufe   // Ort und Tempo jedes Stuecks (folgt wie an einem Magneten)
         }
 
-        const int OrbitMax = 12;
+        const int OrbitMax = 40;   // so viele Stuecke schweben hoechstens sichtbar um einen Knolli
 
         readonly List<Knolli> knollis = new List<Knolli>();
         static Sprite knolliSprite;
@@ -312,18 +312,27 @@ namespace SeedClicker
                     // Magnet: alle Ernte im Umkreis fliegt zum Knolli
                     float range = D.knolliRange * (HasPerk("magnet") ? 1.6f : 1f);
                     int flies = 0;
+                    var near = new List<PlantedState>();
                     foreach (var q in save.planted)
+                        if (q.stock > 0 && InBed(k, q) && (PilePos(q) - k.pos).sqrMagnitude <= range * range) near.Add(q);
+                    // jedes Stueck loest sich aus dem Haufen und wird vom Knolli angezogen (Startpunkt = sein Platz im Haufen) –
+                    // reihum aus allen Haufen, damit die ganze Ernte des Felds um ihn schwebt und nicht nur die einer Pflanze
+                    for (int i = 0, added = 1; added > 0 && k.load.Count < OrbitMax; i++)
                     {
-                        if (q.stock <= 0 || !InBed(k, q) || (PilePos(q) - k.pos).sqrMagnitude > range * range) continue;
-                        var qspr = plantViews.TryGetValue(new Cell(q.x, q.y), out var qv) && qv.sr != null ? qv.sr.sprite : null;
-                        // jedes Stueck loest sich aus dem Haufen und wird vom Knolli angezogen (Startpunkt = sein Platz im Haufen)
-                        for (int i = 0; i < q.stock && k.load.Count < OrbitMax; i++, flies++)
+                        added = 0;
+                        foreach (var q in near)
                         {
-                            k.load.Add(qspr);
+                            if (i >= q.stock || k.load.Count >= OrbitMax) continue;
+                            k.load.Add(plantViews.TryGetValue(new Cell(q.x, q.y), out var qv) && qv.sr != null ? qv.sr.sprite : null);
                             k.lmedal.Add(MedalOf(q));
                             k.lpos.Add(i < PileShown ? ScatterPos(q, i) : PilePos(q));
                             k.lvel.Add(new Vector2(UnityEngine.Random.Range(-0.6f, 0.6f), UnityEngine.Random.Range(1.2f, 2.2f)));   // kleiner Hopser beim Losreissen
+                            added++; flies++;
                         }
+                    }
+                    foreach (var q in near)
+                    {
+                        var qspr = plantViews.TryGetValue(new Cell(q.x, q.y), out var qv2) && qv2.sr != null ? qv2.sr.sprite : null;
                         k.carry += q.stock; k.carryValue += q.stockValue;
                         k.types.TryGetValue(q.type, out int had); k.types[q.type] = had + q.stock;
                         q.stock = 0; q.stockValue = 0;

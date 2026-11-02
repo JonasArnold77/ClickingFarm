@@ -279,3 +279,5 @@
 - **Tauschilf begünstigt das Aufleveln:** Ernte-Pflanzen in seiner Reichweite bekommen doppelten Stufen-Fortschritt, von Klicks, Tropfen und Klopfwurz (`helpers.waterLevelMult`).
 - Ernte-Pflanzen lassen sich nicht mehr zusammenlegen (das hätte Medaillen ohne Klicken verschenkt). Andere Pflanzen behalten Zahlen-Stufen und Zusammenlegen.
 - Alte Spielstände: Ernte-Pflanzen über Stufe 4 zählen als Gold.
+- Farben nachgestellt: Bronze bräunlicher (0,7 / 0,5 / 0,36) statt orange, Gold gedeckter (0,86 / 0,7 / 0,36) statt gelb.
+- Knollis tragen sichtbar die Ernte des ganzen Felds: Die schwebenden Stücke werden reihum aus allen eingesammelten Haufen genommen (vorher füllte die erste Pflanze alle Plätze). Es sind bis zu 40 Stücke sichtbar statt 12.

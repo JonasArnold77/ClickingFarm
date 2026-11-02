@@ -11,7 +11,7 @@ namespace SeedClicker
     /// </summary>
     public partial class WorldBuilder
     {
-        static readonly Color BronzeCol = new Color(0.86f, 0.5f, 0.24f), SilverCol = new Color(0.84f, 0.88f, 0.95f), GoldCol = new Color(1f, 0.8f, 0.24f);
+        static readonly Color BronzeCol = new Color(0.7f, 0.5f, 0.36f), SilverCol = new Color(0.84f, 0.88f, 0.95f), GoldCol = new Color(0.86f, 0.7f, 0.36f);   // Bronze braeunlich, Gold gedeckt
 
         public static bool HasMedals(PlantedState p) => p != null && p.Role == "harvest";
 
