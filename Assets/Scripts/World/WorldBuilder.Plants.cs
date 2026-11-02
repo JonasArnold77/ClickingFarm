@@ -216,6 +216,34 @@ namespace SeedClicker
             return true;
         }
 
+        /// <summary>Zwei Pflanzen tauschen den Platz (beide samt Stufe, Wachstum und Vorrat). Nur fuer Pflanzen auf einem Feld.</summary>
+        public bool SwapPlants(PlantedState a, PlantedState b)
+        {
+            if (a == null || b == null || a == b) return false;
+            var ca = new Cell(a.x, a.y); var cb = new Cell(b.x, b.y);
+            if (a.W != 1 || a.H != 1 || b.W != 1 || b.H != 1)
+            {
+                Floater?.Invoke(CellCenter(cb) + new Vector2(0, 0.9f), "Große Pflanzen lassen sich nicht tauschen", new Color(1f, 0.75f, 0.55f));
+                Sfx.Play("error", 1f, 0.5f);
+                return false;
+            }
+            if (!Fits(cb, a.type, true) || !Fits(ca, b.type, true)) return false;
+            RemovePlantView(ca); RemovePlantView(cb);
+            a.x = cb.x; a.y = cb.y; b.x = ca.x; b.y = ca.y;
+            CreatePlantView(a, true); CreatePlantView(b, true);
+            foreach (var c in new[] { ca, cb })
+            {
+                if (plantViews.TryGetValue(c, out var v)) v.readyAt = 0f;
+                PunchField(c, 1f);
+                Particles.I?.Burst(CellCenterOf(c), "square", new Color(0.45f, 0.3f, 0.18f), 8, 2.2f, 0.5f, 0.1f, 9f, 2f);
+            }
+            Sfx.Play("sow", 1.1f); Sfx.Play("pop", 1.1f, 0.6f);
+            Haptics.Tap(20);
+            RefreshGhosts();
+            save.Save();
+            return true;
+        }
+
         public void Unplant(PlantedState p)
         {
             var c = new Cell(p.x, p.y);

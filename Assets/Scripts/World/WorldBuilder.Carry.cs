@@ -60,6 +60,13 @@ namespace SeedClicker
             if (carrying == null) return false;
             var tp = PlantAt(TapCell(w));
             if (IsMergeTarget(tp)) return MergeInto(tp);
+            // auf eine andere Pflanze gezogen: die beiden tauschen den Platz
+            if (tp != null && tp != carrying)
+            {
+                var p = carrying; carrying = null;
+                if (SwapPlants(p, tp)) { PlacingChanged?.Invoke(null); return true; }
+                carrying = p;   // ging nicht: wie bisher zuruecklegen
+            }
             CancelPlacing();
             return false;
         }

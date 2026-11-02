@@ -281,3 +281,4 @@
 - Alte Spielstände: Ernte-Pflanzen über Stufe 4 zählen als Gold.
 - Farben nachgestellt: Bronze bräunlicher (0,7 / 0,5 / 0,36) statt orange, Gold gedeckter (0,86 / 0,7 / 0,36) statt gelb.
 - Knollis tragen sichtbar die Ernte des ganzen Felds: Die schwebenden Stücke werden reihum aus allen eingesammelten Haufen genommen (vorher füllte die erste Pflanze alle Plätze). Es sind bis zu 40 Stücke sichtbar statt 12.
+- **Pflanzen tauschen:** Zieht man eine Pflanze auf eine andere (keine gleiche zum Zusammenlegen), tauschen beide den Platz, samt Stufe/Medaille, Wachstum und liegender Ernte. Große (zusammengelegte) Pflanzen lassen sich nicht tauschen. Kampf- und Verteidigungspflanzen bleiben an die Steinpult-Regel gebunden.
