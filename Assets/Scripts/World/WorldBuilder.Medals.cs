@@ -6,7 +6,7 @@ namespace SeedClicker
     /// Medaillen der Ernte-Pflanzen: Statt Zahlen-Stufen werden sie normal -> Bronze -> Silber -> Gold.
     /// Jeder Aufstieg braucht deutlich mehr Klicks als der vorige (plants.json -> harvestLevelTaps) und bringt
     /// einen grossen Ertragssprung (harvestLevelMult). Pflanze und jedes Erntestueck bekommen dann eine
-    /// leuchtende Kontur in Medaillenfarbe (MedalAura).
+    /// Comic-Kontur in Medaillenfarbe (MedalAura).
     /// Ein reifes Tauschilf in Reichweite verdoppelt den Stufen-Fortschritt (helpers.waterLevelMult).
     /// </summary>
     public partial class WorldBuilder

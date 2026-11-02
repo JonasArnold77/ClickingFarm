@@ -4,10 +4,10 @@ using UnityEngine;
 namespace SeedClicker
 {
     /// <summary>
-    /// Leuchtende Kontur in Medaillenfarbe (Bronze, Silber, Gold) um ein Bild: um die Ernte-Pflanze selbst und um
+    /// Comic-Kontur in Medaillenfarbe (Bronze, Silber, Gold) um ein Bild: um die Ernte-Pflanze selbst und um
     /// jedes einzelne Erntestueck (fliegend, im Haufen, beim Knolli, auf dem Weg in die Kiste).
     /// Eine deckungsgleiche Kopie des Bildes liegt darueber; der Shader "SeedClicker/MedalOutline2D" zeichnet davon nur
-    /// die Leuchtlinie, die sich an die Aussenlinie schmiegt, und einen zarten, leicht strahlenden Schein.
+    /// eine harte Linie genau auf der Aussenlinie, aussen mit dunklem Tuschestrich – wie in einem Comic.
     /// Haengt als Komponente am Bild und folgt ihm selbst (Bild, sichtbar, Reihenfolge) – Aufrufer setzen nur die Stufe.
     /// </summary>
     public class MedalAura : MonoBehaviour

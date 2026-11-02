@@ -1,8 +1,7 @@
-// Leuchtende Medaillen-Kontur (URP 2D, unbeleuchtet – leuchtet auch nachts).
-// Liegt als deckungsgleiche Kopie ueber dem Bild und zeichnet nur den Rand der Silhouette: eine schmale
-// Leuchtlinie, die sich genau an die Aussenlinie schmiegt (innen am Rand, aussen wo Platz ist), und einen
-// zarten, leicht pulsierenden Schein, der in sanften Strahlen um die Form wandert. Farbe kommt vom SpriteRenderer (Bronze, Silber, Gold).
-// _UVRect: UV-Bereich des Bildes im Atlas (Proben ausserhalb zaehlen als leer), _Grow: Vergroesserung der Kopie.
+// Comic-Kontur der Medaillen (URP 2D, unbeleuchtet): eine harte, deckende Linie in Bronze, Silber oder Gold,
+// die genau auf der Aussenlinie des Bildes liegt (innen am Rand und direkt aussen, wo das Bild Platz hat),
+// aussen davon ein schmaler dunkler Tuschestrich. Kein Schein, kein Pulsieren.
+// Liegt als deckungsgleiche Kopie ueber dem Bild. _UVRect: UV-Bereich des Bildes im Atlas (Proben ausserhalb zaehlen als leer).
 Shader "SeedClicker/MedalOutline2D"
 {
     Properties
@@ -10,8 +9,7 @@ Shader "SeedClicker/MedalOutline2D"
         _MainTex("Sprite", 2D) = "white" {}
         _UVRect("UV-Bereich (min x, min y, max x, max y)", Vector) = (0, 0, 1, 1)
         _Grow("Vergroesserung der Kopie", Float) = 1
-        _Width("Linienbreite (Anteil der Bildgroesse)", Float) = 0.015
-        _Glow("Scheinbreite (Anteil der Bildgroesse)", Float) = 0.04
+        _Width("Linienbreite (Anteil der Bildgroesse)", Float) = 0.025
         _Seed("Versatz", Float) = 0
 
         [HideInInspector] _Color("Tint", Color) = (1,1,1,1)
@@ -27,7 +25,7 @@ Shader "SeedClicker/MedalOutline2D"
     TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
     float4 _MainTex_TexelSize;
     float4 _UVRect;
-    float _Grow, _Width, _Glow, _Seed;
+    float _Grow, _Width, _Seed;
 
     struct Attributes { float3 positionOS : POSITION; float4 color : COLOR; float2 uv : TEXCOORD0; };
     struct Varyings { float4 positionCS : SV_POSITION; half4 color : COLOR; float2 uv : TEXCOORD0; };
@@ -58,31 +56,22 @@ Shader "SeedClicker/MedalOutline2D"
         // Breiten in Texeln, gleich in x und y (sonst waere die Linie bei schmalen Bildern einseitig dick)
         float2 rectTex = (_UVRect.zw - _UVRect.xy) / _MainTex_TexelSize.xy;
         float2 px = _MainTex_TexelSize.xy * max(rectTex.x, rectTex.y);
-        half inMin = 1, outMax = 0, glow = 0;
-        [unroll] for (int k = 0; k < 12; k++)
+        // Comic-Kontur: harte, deckende Linie in Medaillenfarbe genau an der Aussenlinie, aussen ein dunkler Tuschestrich
+        half inMin = 1, outMax = 0, inkMax = 0;
+        [unroll] for (int k = 0; k < 16; k++)
         {
-            float ang = k * 0.5235988;   // 30 Grad
+            float ang = k * 0.3926991;   // 22,5 Grad
             float2 d = float2(cos(ang), sin(ang)) * px;
             half a1 = A(uv + d * _Width);
             inMin = min(inMin, a1);
             outMax = max(outMax, a1);
-            glow = max(glow, A(uv + d * _Glow) * 0.6);
+            inkMax = max(inkMax, A(uv + d * _Width * 1.6));
         }
-        // Linie genau an der Silhouette: ein schmaler Streifen innen am Rand und (wo Platz ist) direkt aussen
-        half inner = saturate(self - inMin) * step(0.1, self);
-        half outer = saturate(outMax - self);
-        half ring = saturate(inner + outer);
-        glow = saturate(glow - self);
-
-        // leichtes Strahlen: der Schein aussen pulsiert, ein paar weiche Strahlen wandern um die Form
-        float t = _Time.y + _Seed;
-        float2 p = i.uv - c;
-        float rays = 0.7 + 0.3 * sin(atan2(p.y, p.x) * 7.0 + t * 1.3);
-        float pulse = 0.85 + 0.15 * sin(t * 2.1);
-
-        half alpha = saturate(ring * 0.9 * pulse + glow * 0.35 * rays * pulse);
-        half3 col = i.color.rgb * (1.0 + 0.4 * ring);
-        return half4(col, alpha * i.color.a);
+        half solid = step(0.5, self);
+        half band = saturate(solid * (1 - step(0.5, inMin)) + (1 - solid) * step(0.5, outMax));   // innen am Rand + direkt aussen
+        half ink = (1 - solid) * (1 - step(0.5, outMax)) * step(0.5, inkMax);                     // schmaler dunkler Strich ganz aussen
+        half3 col = lerp(i.color.rgb, i.color.rgb * 0.35, ink);
+        return half4(col, saturate(band + ink) * i.color.a);
     }
     ENDHLSL
 
