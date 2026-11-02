@@ -83,7 +83,7 @@ namespace SeedClicker
                 HidePlantInfo();
             };
             wb.PlantTapped += _ => benchTimer = 0f;
-            wb.WeaponInfused += (w, el, lv) => Banner(w.name + ": " + WorldBuilder.ElementName(el) + " " + lv + "!",
+            wb.WeaponInfused += (w, el, lv) => Banner("Alle Waffen: " + WorldBuilder.ElementName(el) + " " + lv + "!",
                 el == "fire" ? "Treffer setzen Zombies in Brand" : el == "ice" ? "Treffer verlangsamen Zombies" : el == "lightning" ? "Treffer springen als Blitz über" : "Treffer vergiften Zombies");
             wb.WeaponLeveled += (w, lv) => Banner(w.name + " – Stufe " + lv + "!",
                 "Schaden ×" + wb.WeaponDamageMult(w.id).ToString("0.##") + " · lädt " + Mathf.RoundToInt((1f - wb.WeaponCooldownMult(w.id)) * 100) + " % schneller nach");

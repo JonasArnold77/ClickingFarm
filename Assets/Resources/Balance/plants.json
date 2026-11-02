@@ -1309,7 +1309,8 @@
     "damagePerLevel": 0.25,
     "cooldownPerLevel": 0.04,
     "minCooldown": 0.5,
-    "maxLevel": 30
+    "maxLevel": 30,
+    "weaponPower": 0.4
   },
   "structureTaps": {
     "tapsBase": 15,

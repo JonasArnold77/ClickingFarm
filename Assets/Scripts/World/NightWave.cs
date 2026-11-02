@@ -456,10 +456,13 @@ namespace SeedClicker
                 }
                 else { m.bashT = 0f; m.pos += step + m.knock * dt; }
                 m.knock = Vector2.MoveTowards(m.knock, Vector2.zero, dt * 6f);
-                Color c = Color.white;
-                if (m.slowT > 0) c = new Color(0.7f, 0.88f, 1f);
-                if (m.burnT > 0) c = new Color(1f, 0.75f, 0.55f);
-                if (m.poisonT > 0) c = Color.Lerp(c, new Color(0.8f, 0.65f, 1f), 0.6f);
+                // alle Zustaende zusammen faerben (gemischt, nicht einer ueber dem anderen)
+                Color c = Color.white; int nc = 0; Color sum = Color.black;
+                if (m.slowT > 0) { sum += new Color(0.7f, 0.88f, 1f); nc++; }
+                if (m.burnT > 0) { sum += new Color(1f, 0.75f, 0.55f); nc++; }
+                if (m.poisonT > 0) { sum += new Color(0.75f, 1f, 0.6f); nc++; }
+                if (m.shockT > 0) { sum += new Color(1f, 1f, 0.65f); nc++; }
+                if (nc > 0) { c = sum / nc; c.a = 1f; }
                 if (m.walk != null)
                 {
                     // Pixel-Zombie: Bild je Richtung, Tempo der Animation passt zur Laufgeschwindigkeit

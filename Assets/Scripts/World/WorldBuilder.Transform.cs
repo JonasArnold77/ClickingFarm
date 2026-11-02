@@ -35,18 +35,29 @@ namespace SeedClicker
         /// <summary>Haltbarkeit einer Mauer: Stein haelt ein Vielfaches.</summary>
         float MaxHp(WallState st) => WallMaxHp * (st.stone ? PlantBalance.I.Transforms.stoneHpMult : 1f) * (st.gate ? GateHpMult : 1f);
 
-        /// <summary>Alle Elemente der Waffe – sie bleiben fuer immer und sammeln sich.</summary>
+        const string SharedElements = "_bench";   // Elemente liegen auf der Waffenbank und gelten fuer jede Waffe
+
+        /// <summary>Alle Elemente der Waffenbank – sie bleiben fuer immer, sammeln sich und gelten fuer alle Waffen
+        /// (vorher hingen sie an der gerade gewaehlten Waffe; beim Wechsel schienen sie verschwunden).</summary>
         public List<WeaponElementLv> WeaponElements(string id)
         {
-            var e = WLevel(id);
-            if (e.elements == null) e.elements = new List<WeaponElementLv>();
-            if (!string.IsNullOrEmpty(e.element))
+            var all = WLevel(SharedElements);
+            if (all.elements == null) all.elements = new List<WeaponElementLv>();
+            // alte Spielstaende: Elemente einzelner Waffen zusammenlegen (gleiches Element: die hoehere Stufe zaehlt)
+            foreach (var e in save.weaponLevels)
             {
-                // alter Spielstand: ein einzelnes Element uebernehmen
-                if (e.elements.Find(x => x.id == e.element) == null) e.elements.Add(new WeaponElementLv { id = e.element, lv = Mathf.Max(1, e.elementLv) });
-                e.element = null; e.elementLv = 0;
+                if (e == all) continue;
+                if (!string.IsNullOrEmpty(e.element)) { Merge(all.elements, e.element, Mathf.Max(1, e.elementLv)); e.element = null; e.elementLv = 0; }
+                if (e.elements != null && e.elements.Count > 0) { foreach (var x in e.elements) Merge(all.elements, x.id, x.lv); e.elements.Clear(); }
             }
-            return e.elements;
+            return all.elements;
+        }
+
+        static void Merge(List<WeaponElementLv> list, string id, int lv)
+        {
+            var have = list.Find(x => x.id == id);
+            if (have == null) list.Add(new WeaponElementLv { id = id, lv = lv });
+            else have.lv = Mathf.Max(have.lv, lv);
         }
 
         public string ElementsText(string id)

@@ -86,7 +86,8 @@ namespace SeedClicker
         public float stoneTowerDamage = 1.75f, stoneTowerRange = 1f;         // Steinmoos auf Wachturm
     }
     /// <summary>Waffenbank: Schlaege bis zur naechsten Waffenstufe (tapsBase * tapsGrowth^(Stufe-1)) und was eine Stufe bringt.</summary>
-    [Serializable] public class BenchDef { public float tapsBase = 12f, tapsGrowth = 1.3f, damagePerLevel = 0.25f, cooldownPerLevel = 0.04f, minCooldown = 0.5f; public int maxLevel = 30; }
+    [Serializable] public class BenchDef { public float tapsBase = 12f, tapsGrowth = 1.3f, damagePerLevel = 0.25f, cooldownPerLevel = 0.04f, minCooldown = 0.5f; public int maxLevel = 30;
+        public float weaponPower = 0.4f; }   // Faktor auf allen Waffenschaden: Zombies werden hauptsaechlich von Pflanzen besiegt
     /// <summary>Bauwerk zum Aufstellen (einmal kaufen, auf einen freien Platz im Hof setzen, per Klick verbessern).
     /// effect: scare (Tipps in der Naehe staerker), water (giesst Umkreis), light (Zombies nehmen mehr Schaden), tower (schiesst nachts),
     /// seedcost (Samen billiger), totem (verstaerkt eine aufgezogene Flaeche).
@@ -159,10 +160,10 @@ namespace SeedClicker
                 "thorns" => "Reif auf einen Mauerabschnitt ziehen: der ganze Abschnitt bekommt Dornen – schlagende Zombies verletzen sich.",
                 "heart" => "Reif in ein Steinpult ziehen: die Pflanze darin schießt weiter.",
                 "moon" => "Reif auf einen Wachturm ziehen: der Turm schießt doppelt.",
-                "fire" => "Reif auf die Waffenbank ziehen: die gewählte Waffe setzt Zombies in Brand.",
-                "ice" => "Reif auf die Waffenbank ziehen: Treffer der gewählten Waffe verlangsamen Zombies.",
+                "fire" => "Reif auf die Waffenbank ziehen: alle Waffen setzen Zombies in Brand.",
+                "ice" => "Reif auf die Waffenbank ziehen: Treffer aller Waffen verlangsamen Zombies.",
                 "lightning" => "Reif auf die Waffenbank ziehen: Treffer springen als Blitz auf weitere Zombies über.",
-                "poison" => "Reif auf die Waffenbank ziehen: Treffer der gewählten Waffe vergiften Zombies.",
+                "poison" => "Reif auf die Waffenbank ziehen: Treffer aller Waffen vergiften Zombies.",
                 _ => "Reif auf ein Ziel ziehen – dort verwandelt sie etwas."
             },
             "support" => "Hämmert an der Waffenbank und flickt Mauern in ihrer Nähe.",

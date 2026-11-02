@@ -102,7 +102,7 @@ namespace SeedClicker
         void Shoot(WeaponDef w, Vector2 aim)
         {
             // Stufe von der Waffenbank: mehr Schaden, schneller wieder bereit
-            float dmg = w.damage * (1f + w.damagePerWave * (WaveNumber - 1)) * wb.WeaponDamageMult(w.id);
+            float dmg = w.damage * (1f + w.damagePerWave * (WaveNumber - 1)) * wb.WeaponDamageMult(w.id) * PlantBalance.I.Bench.weaponPower;   // Waffen helfen, Pflanzen tragen die Abwehr
             weaponCd = w.cooldown * wb.WeaponCooldownMult(w.id);
             AddFx(Reticle, aim, 0.16f, 0.75f, 0.45f, new Color(1f, 1f, 1f, 0.9f));
             switch (w.kind)
@@ -175,7 +175,7 @@ namespace SeedClicker
         /// <summary>Waffe mit Element: am Einschlag passiert am Boden ein Effekt aus Cartoon FX, je Element passend:
         /// Feuer = kleine Feuerexplosion + kurz brennender Boden, Eis = blauer Frost-Treffer mit Leuchten,
         /// Gift = gruener Platscher + Gaswolke, Blitz = Einschlag + knisternder Boden, Natur = gruener Zauberwirbel.
-        /// Groesser mit der Element-Stufe; bei zwei Elementen beide leicht versetzt. Ohne Effekt-Paket: eigene Partikel.</summary>
+        /// Groesser mit der Element-Stufe; mehrere Elemente im kleinen Kreis um den Einschlag. Ohne Effekt-Paket: eigene Partikel.</summary>
         void GroundFire(WeaponDef w, Vector2 at, float size)
         {
             if (w == null || wb == null) return;
@@ -183,10 +183,12 @@ namespace SeedClicker
             int shown = 0;
             foreach (var e in els)
             {
-                if (e.lv <= 0 || shown >= 2) continue;
+                if (e.lv <= 0) continue;
                 shown++;
                 var col = WorldBuilder.ElementCol(e.id);
-                var p = at + new Vector2((shown - 1) * 0.22f, -0.05f);
+                int n = 0; foreach (var x in els) if (x.lv > 0) n++;
+                float ang = (shown - 1) * Mathf.PI * 2f / Mathf.Max(1, n);
+                var p = at + new Vector2(0, -0.05f) + (n > 1 ? new Vector2(Mathf.Cos(ang) * 0.22f, Mathf.Sin(ang) * 0.12f) : Vector2.zero);   // mehrere Elemente im Kreis um den Einschlag
                 float s = size * (1f + 0.15f * Mathf.Min(e.lv, 5));
                 GameObject a = null;
                 switch (e.id)
