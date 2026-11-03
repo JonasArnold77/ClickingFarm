@@ -46,6 +46,7 @@ namespace SeedClicker
         public int msBaseFor = -1; public List<double> msBase = new List<double>();   // Startwerte der Zaehler-Aufgaben des aktuellen Ziels
         public List<CropCount> storage = new List<CropCount>();   // gelieferte Ernte je Sorte (Baumaterial)
         public double deliveredTotal, killsTotal;   // fuer Grossprojekte (deliveredCount ist int und laeuft spaet ueber)
+        public bool showcase;   // Vorfuehr-Hof (Endlevel): der ganze Hof ist frei geraeumt
         public bool elementsReset;   // einmalig: durcheinandergeratene Waffen-Elemente geloescht (02.11.2026)
         public int farmLevel;
         public List<int> rocksGone = new List<int>();
@@ -181,6 +182,7 @@ namespace SeedClicker
             foreach (var id in save.felled)
                 if (id >= 0 && id < trees.Count) FellImmediate(trees[id], save.stumpsGone.Contains(id));
             InitRegrow();
+            if (save.showcase) ClearCalmZone();   // Vorfuehr-Hof: erst den ganzen Hof frei raeumen, sonst blockieren Felsen Felder
             foreach (var c in save.fields) PlaceField(c, false, false);
             if (PlantBalance.I.testUnlockAll)
                 foreach (var d in PlantBalance.I.catalog) if (!save.unlocked.Contains(d.id)) save.unlocked.Add(d.id);

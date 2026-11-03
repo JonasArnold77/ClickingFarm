@@ -263,6 +263,23 @@ namespace SeedClicker
                 Bootstrap.NewGame();
             }, 30);
             ng.GetComponent<RectTransform>().Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-28, -280), new Vector2(300, 78));
+
+            // Vorfuehr-Hof: Endlevel-Hof anschauen (eigener Stand wird gesichert) bzw. eigenen Stand zurueckholen
+            bool back = WorldBuilder.HasShowcaseBackup;
+            float showArmed = -1f;
+            Button sc = null;
+            sc = Btn(safe, back ? "Eigener Hof zurück" : "Endlevel-Hof", new Color(0.45f, 0.35f, 0.6f, 0.85f), () =>
+            {
+                if (back) { WorldBuilder.RestoreShowcaseBackup(); return; }
+                if (Time.unscaledTime > showArmed)
+                {
+                    showArmed = Time.unscaledTime + 3f;
+                    sc.GetComponentInChildren<Text>().text = "Laden? (wird gesichert)";
+                    return;
+                }
+                WorldBuilder.LoadShowcase();
+            }, 26);
+            sc.GetComponent<RectTransform>().Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-28, -366), new Vector2(300, 70));
         }
 
         System.Collections.IEnumerator ResetNewGameLabel(Button b, float after)

@@ -45,6 +45,7 @@ namespace SeedClicker
                 save.felled.Clear(); save.stumpsGone.Clear(); save.fellNights.Clear();
                 save.Save();
             }
+            calmLevel = save.showcase ? MaxFarmLevel + 1 : 2;
             rnd = new System.Random(save.mapSeed);
             salt = save.mapSeed % 9973;
             objects = new GameObject("Objects").transform;

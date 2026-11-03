@@ -32,6 +32,13 @@ namespace SeedClicker
             new GameObject("Restarter").AddComponent<Restarter>();
         }
 
+        /// <summary>Welt mit dem gespeicherten Stand neu aufbauen (z. B. nach dem Laden des Vorfuehr-Hofs).</summary>
+        public static void Reload()
+        {
+            PlayerPrefs.Save();
+            new GameObject("Restarter").AddComponent<Restarter>();
+        }
+
         class Restarter : MonoBehaviour
         {
             int frame;

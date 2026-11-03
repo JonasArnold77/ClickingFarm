@@ -390,3 +390,8 @@
   - Steigt die Lage einer reifen Pflanze um mindestens 25 % (und auf ≥ ×1,5), erscheint sofort „Kombo ×3,2! (4 Quellen)“ mit Sternen, Welle und Ton, gefärbt nach Stärke (weiß, grün, gold, violett).
   - Der Boost-Tooltip zeigt Freunde einzeln, „KOMBO aus n Quellen“ und „Lage zusammen: ×…“. Das Info-Fenster zeigt „Lage ×… (Quellen)“ und die Lieblingsnachbarn.
   - Freund- und Kombo-Faktor werden höchstens alle 0,4 s neu berechnet (sie stecken auch in der nachwachsenden Ernte, die jedes Bild läuft).
+
+## Endlevel-Hof zum Vorführen (03.11.2026)
+- Knopf „Endlevel-Hof“ oben rechts unter „Neues Spiel“ (zweimal tippen). Der eigene Spielstand wird vorher gesichert (`seedclicker_world_backup`); danach heißt der Knopf „Eigener Hof zurück“ und holt ihn wieder (`WorldBuilder.Showcase.cs`).
+- Aufbau: 8 Kombo-Beete (7×5; Weizen/Mais im Schachbrett als Freunde, je 4 Tauschilf, 2 Kompostpilze, 1 Trommelkraut in der Mitte; meist Gold, einige Silber), auf jedem ein Totem (Ernte/Wachstum/Fleiß), unter jeder Beetreihe ein Bach. Darunter 8 Knolli-Hütten, dann 4 Mauerreihen hintereinander (3 aus Stein, vorderste und hinterste mit Dornen, versetzte Tore), 12 steinerne Wachtürme zwischen den Reihen, Steinpulte mit allen Kampfpflanzen auf zwei Mauerreihen, seitliche Steinmauern bis hoch. 16 Knollis mit Berufen, alles frei, alle Verbesserungen, Hof Stufe 6, Ziel 15 + 2 Großprojekte, voller Vorrat, Granatwerfer mit Feuer.
+- Der Vorführ-Stand (`showcase`) räumt den ganzen Hof von Felsen, Bäumen und Kram, bevor die Felder geladen werden.

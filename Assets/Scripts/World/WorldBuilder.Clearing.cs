@@ -15,9 +15,11 @@ namespace SeedClicker
         readonly List<JunkObj> junk = new List<JunkObj>();
 
         /// <summary>Ruhiges Umfeld um den Hof: hier wird nichts Blockierendes erzeugt.</summary>
+        static int calmLevel = 2;   // Vorfuehr-Hof: der ganze Hof (Stufe 6) ist frei
+
         public static bool InCalmZone(Vector2 p)
         {
-            var r = FarmRect(2);
+            var r = FarmRect(calmLevel);
             return p.x > r.xMin - 1f && p.x < r.xMax + 1f && p.y > r.yMin - 1f && p.y < r.yMax + 3f;
         }
 
