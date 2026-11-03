@@ -81,6 +81,10 @@ namespace SeedClicker
             return n.kind;
         }
 
+        /// <summary>Zaehler, die bei Ziel-Aufgaben erst ab Zielbeginn zaehlen (verdient, geliefert, besiegt, Naechte).
+        /// Alles andere ist ein Zustand auf dem Hof (Felder, Mauern, reife Pflanzen, Medaille) und zaehlt, wie es gerade ist.</summary>
+        static bool IsCounter(string kind) => kind == "earned" || kind == "delivered" || kind == "kills" || kind == "waves";
+
         public bool NeedsMet(string[] needs)
         {
             if (needs == null) return true;
@@ -124,7 +128,7 @@ namespace SeedClicker
             switch (n.kind)
             {
                 case "fields": return "Baue " + k + " Felder";
-                case "earned": return "Verdiene insgesamt " + k + " Münzen";
+                case "earned": return "Verdiene " + k + " Münzen";
                 case "delivered": return "Liefere " + k + " Ernte in die Kiste";
                 case "kills": return "Besiege " + k + " Zombies";
                 case "walls": return "Baue " + k + " Mauerstücke";

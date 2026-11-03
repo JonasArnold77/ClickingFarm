@@ -82,13 +82,52 @@ namespace SeedClicker
         }
 
         /// <summary>Alle vier Aufgaben geschafft? Dann Ziel erreichen (auch mehrere hintereinander bei alten Spielstaenden).</summary>
+        /// <summary>Startwerte der Zaehler-Aufgaben merken, sobald ein Ziel beginnt (auch bei alten Spielstaenden beim Laden).</summary>
+        void EnsureMilestoneBase()
+        {
+            var m = CurrentMilestone;
+            if (m == null || save.msBaseFor == save.milestone) return;
+            save.msBaseFor = save.milestone;
+            save.msBase.Clear();
+            if (m.tasks != null)
+                foreach (var t in m.tasks)
+                {
+                    var n = ParseNeed(t);
+                    save.msBase.Add(IsCounter(n.kind) ? NeedValue(n) : 0);
+                }
+            save.Save();
+        }
+
+        /// <summary>Stand der vier Aufgaben: Zaehler (verdient, geliefert, besiegt, Naechte) erst ab Zielbeginn.</summary>
+        public List<(string task, double v, double n)> MilestoneProgress()
+        {
+            EnsureMilestoneBase();
+            var l = new List<(string, double, double)>();
+            var m = CurrentMilestone;
+            if (m?.tasks == null) return l;
+            for (int i = 0; i < m.tasks.Length; i++)
+            {
+                var n = ParseNeed(m.tasks[i]);
+                double v = NeedValue(n) - (i < save.msBase.Count ? save.msBase[i] : 0);
+                if (n.kind == "medal") v = Math.Min(v, n.n);
+                l.Add((NeedTask(n), Math.Max(0, v), n.n));
+            }
+            return l;
+        }
+
+        bool MilestoneMet()
+        {
+            foreach (var p in MilestoneProgress()) if (p.v < p.n) return false;
+            return true;
+        }
+
         void CheckMilestones()
         {
             int guard = 0;
             while (guard++ < 50)
             {
                 var m = CurrentMilestone;
-                if (m == null || !NeedsMet(m.tasks)) return;
+                if (m == null || !MilestoneMet()) return;
                 save.milestone++;
                 double coins = Math.Round(save.earned * m.coinShare);   // Belohnung: ein guter Batzen vom bisher Verdienten
                 GrantingMilestone = true;

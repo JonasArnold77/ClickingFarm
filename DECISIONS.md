@@ -373,3 +373,8 @@
 - Alte, aufgezogene Totemflächen werden beim Laden auf das Beet umgestellt, in dem ihr erstes Feld liegt.
 - Wie bisher verteilt sich die Wirkung über `fullCells` hinaus anteilig: ein sehr großes Beet bekommt je Feld etwas weniger, insgesamt bleibt die Wirkung gleich.
 - Laden → Bauwerke: Gesperrte Bauwerke zeigen auf dem Knopf „Gesperrt: Ziel 5“ statt des Preises. Bei kaufbaren, aber zu teuren steht unter der Beschreibung, was fehlt („Fehlt: 4 Holz – Holz gibt es beim Bäumefällen“ bzw. fehlende Münzen). Vorher sahen beide nur wie ein grauer Preisknopf aus.
+
+## Ziel-Aufgaben zählen ab Zielbeginn (03.11.2026)
+- Zähler-Aufgaben zählen erst ab dem Moment, in dem das Ziel beginnt: verdiente Münzen, gelieferte Ernte, besiegte Zombies, überstandene Nächte. „Verdiene 5K Münzen“ heißt 5K ab jetzt, „Übersteh 1 Nacht“ heißt die nächste Nacht. Die Startwerte merkt sich der Spielstand (`msBase`, `msBaseFor`); bei alten Spielständen beginnt die Zählung beim nächsten Laden.
+- Zustands-Aufgaben zählen weiter, wie der Hof gerade ist: Felder, Mauerstücke, Steinmauern, Türme, Steinpulte, Knollis, Hütten, Totems, reife Pflanzen einer Art, Medaille.
+- Weil Nächte jetzt erst ab Zielbeginn zählen, verlangen die Ziele je nur noch 1 Nacht („Das Nachtlicht“: 2), sonst hätte man bis zu 3 ganze Tage warten müssen.

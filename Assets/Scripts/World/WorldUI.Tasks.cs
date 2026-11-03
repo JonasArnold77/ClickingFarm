@@ -80,7 +80,7 @@ namespace SeedClicker
             Sprite reward = null;
             if (m.unlocks != null) foreach (var id in m.unlocks) { var c = PlantBalance.I.Plant(id); if (c != null) { reward = SpeciesSprite(c.Genome); break; } }
             int i = 0;
-            foreach (var n in wb.NeedsProgress(m.tasks))
+            foreach (var n in wb.MilestoneProgress())   // Zaehler laufen erst ab Zielbeginn
             {
                 var pd = i < m.tasks.Length && m.tasks[i].StartsWith("plant:") ? PlantBalance.I.Plant(m.tasks[i].Split(':')[1]) : null;
                 bool done = n.v >= n.n;

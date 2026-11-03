@@ -1902,7 +1902,7 @@
       "tasks": [
         "stonewalls:3",
         "towers:1",
-        "waves:2",
+        "waves:1",
         "earned:12500"
       ],
       "unlocks": [
@@ -1950,7 +1950,7 @@
       "name": "Die Waffenschmiede",
       "desc": "Gift für die Waffen, der Marktschreier, die Stützranke und Glühwürmchen.",
       "tasks": [
-        "waves:3",
+        "waves:1",
         "pedestals:1",
         "totems:2",
         "earned:65000"
@@ -1987,7 +1987,7 @@
       "tasks": [
         "plant:mais:3",
         "knollis:6",
-        "waves:4",
+        "waves:1",
         "earned:200000"
       ],
       "unlocks": [
@@ -2036,7 +2036,7 @@
       "name": "Das Nachtlicht",
       "desc": "Der Glühpilz stärkt Kampfpflanzen, der Nachtwächter und der Großhandel.",
       "tasks": [
-        "waves:6",
+        "waves:2",
         "plant:pustesamen:1",
         "medal:4",
         "earned:2250000"
