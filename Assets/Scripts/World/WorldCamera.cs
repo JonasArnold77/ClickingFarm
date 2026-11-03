@@ -205,7 +205,7 @@ namespace SeedClicker
             var cell = wb.TapCell(w);
             // Felder werden gerade geplant: dieser Tipp legt sie an
             if (wb.FieldPlanActive) { wb.FieldClick(w); return; }
-            if (wb.PlacingStructure != null) { if (WorldBuilder.IsTotem(wb.PlacingStructure)) wb.TotemClick(w); else wb.TryPlaceStructure(cell); return; }
+            if (wb.PlacingStructure != null) { wb.TryPlaceStructure(cell); return; }   // Totem: Tipp auf ein Feld – es gilt fuer das ganze Beet
             if (wb.HitBench(w)) { wb.TapBench(); return; }
             if (wb.HitAltar(w)) { wb.TapAltar(); return; }
             if (wb.HitCrate(w)) { wb.TapCrate(); return; }

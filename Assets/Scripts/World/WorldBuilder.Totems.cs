@@ -33,6 +33,7 @@ namespace SeedClicker
             totemMap.Clear(); totemBeds.Clear();
             foreach (var s in save.structures)
             {
+                if (s.placed && s.area && IsTotem(s)) AreaToBed(s);   // alte aufgezogene Flaeche: gilt jetzt fuer das ganze Beet
                 if (!s.placed || !(s.anchored || s.area) || !IsTotem(s)) continue;
                 var bed = s.area ? AreaOf(s) : Bed(new Cell(s.bx, s.by));
                 totemBeds[s] = bed;
@@ -42,6 +43,13 @@ namespace SeedClicker
                 foreach (var c in bed) totemMap[c] = s;
             }
         }
+        /// <summary>Alte Totemflaeche (Rechteck) auf das Beet umstellen, in dem sie liegt (erstes Feld darin).</summary>
+        void AreaToBed(StructureState s)
+        {
+            foreach (var c in AreaOf(s))
+                if (HasField(c)) { s.area = false; s.anchored = true; s.bx = c.x; s.by = c.y; return; }
+        }
+
         static HashSet<Cell> AreaOf(StructureState s)
         {
             var set = new HashSet<Cell>();
@@ -53,7 +61,7 @@ namespace SeedClicker
         /// <summary>Liegt diese Zelle schon in der Flaeche eines anderen Totems?</summary>
         bool TotemTaken(Cell c) { RefreshTotems(); return totemMap.TryGetValue(c, out var o) && o != pendingStruct; }
 
-        /// <summary>Totemflaeche aufziehen wie Felder: 1. Tipp Ecke, 2. Tipp Reihe fest, 3. Tipp Flaeche anlegen.</summary>
+        /// <summary>Alt: Totemflaeche aufziehen (wird nicht mehr benutzt – ein Totem gilt jetzt fuer ein ganzes Beet).</summary>
         public bool TotemClick(Vector2 w)
         {
             if (pendingStruct == null || !IsTotem(pendingStruct)) return false;

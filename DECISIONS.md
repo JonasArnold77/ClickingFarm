@@ -367,3 +367,8 @@
 - **Schnellauswahl unten** (ersetzt die alte Knopfreihe): Hand · Schaufel · Mauer · Steinpult · Bach · Laden. Das gewählte Werkzeug leuchtet orange. Ein zweiter Tipp auf die Schaufel oder ein Tipp auf „Hand“ legt das Werkzeug weg. Nachts ist die Leiste ausgeblendet und alle Bau-Werkzeuge gehen aus.
 - **Felder nur mit der Schaufel** (`WorldBuilder.Shovel.cs`): Mit der Hand legt ein Tipp auf freien Boden keine Felder mehr an (vorher entstanden sie aus Versehen). Mit der Schaufel: Anfang setzen, Vorschau ziehen, zweiter Tipp baut. Schaufel, Mauer, Steinpult und Bach schließen sich gegenseitig aus; Escape legt die Schaufel weg.
 - **Laden → neuer Reiter „Bauen“**: Felder (Schaufel, Preis des nächsten Felds), Mauer (Holz je Stück), Steinpult und Bach (Münzen je Stück), jeweils mit kurzer Erklärung. „Kaufen“ schließt den Laden und nimmt das Werkzeug in die Hand.
+
+## Totem gilt für ein ganzes Beet (03.11.2026)
+- Ein Totem wird nicht mehr als Rechteck aufgezogen. Ein Tipp auf ein Feld setzt es auf das **ganze Beet** (alle zusammenhängenden Felder). Wird das Beet erweitert, wächst die Totemfläche sofort mit (die Zuordnung wird jedes Bild neu berechnet). Werden zwei Beete mit Totem verbunden, gewinnt das erste.
+- Alte, aufgezogene Totemflächen werden beim Laden auf das Beet umgestellt, in dem ihr erstes Feld liegt.
+- Wie bisher verteilt sich die Wirkung über `fullCells` hinaus anteilig: ein sehr großes Beet bekommt je Feld etwas weniger, insgesamt bleibt die Wirkung gleich.

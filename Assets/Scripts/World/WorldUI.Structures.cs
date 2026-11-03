@@ -147,7 +147,7 @@ namespace SeedClicker
                 bool ok = wbi.Coins >= cost && wbi.Wood >= d.wood && wbi.PlacingStructure == null;
                 int have = d.multi ? wbi.StructCount(d.id) : 0;
                 string title = d.name + (have > 0 ? "  · " + have + " aufgestellt" : "");
-                string hint = WorldBuilder.IsTotem(dd) ? "Zieh seine Fläche über deine Felder auf – wie beim Felder anlegen" : "Tippe auf einen freien Platz im Hof";
+                string hint = WorldBuilder.IsTotem(dd) ? "Tippe auf ein Beet – das Totem gilt für das ganze Beet und wächst mit, wenn du es erweiterst" : "Tippe auf einen freien Platz im Hof";
                 ShopRow(content, title, d.desc, price, ok, () => { if (wbi.BuyStructure(dd)) Banner(dd.name + " gekauft!", hint); });
             }
         }
