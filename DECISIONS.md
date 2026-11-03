@@ -372,3 +372,4 @@
 - Ein Totem wird nicht mehr als Rechteck aufgezogen. Ein Tipp auf ein Feld setzt es auf das **ganze Beet** (alle zusammenhängenden Felder). Wird das Beet erweitert, wächst die Totemfläche sofort mit (die Zuordnung wird jedes Bild neu berechnet). Werden zwei Beete mit Totem verbunden, gewinnt das erste.
 - Alte, aufgezogene Totemflächen werden beim Laden auf das Beet umgestellt, in dem ihr erstes Feld liegt.
 - Wie bisher verteilt sich die Wirkung über `fullCells` hinaus anteilig: ein sehr großes Beet bekommt je Feld etwas weniger, insgesamt bleibt die Wirkung gleich.
+- Laden → Bauwerke: Gesperrte Bauwerke zeigen auf dem Knopf „Gesperrt: Ziel 5“ statt des Preises. Bei kaufbaren, aber zu teuren steht unter der Beschreibung, was fehlt („Fehlt: 4 Holz – Holz gibt es beim Bäumefällen“ bzw. fehlende Münzen). Vorher sahen beide nur wie ein grauer Preisknopf aus.
