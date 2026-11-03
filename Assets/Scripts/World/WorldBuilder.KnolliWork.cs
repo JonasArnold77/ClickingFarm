@@ -8,7 +8,8 @@ namespace SeedClicker
     ///  - Traeger (carrier): bringt die Ernte eines Felds zur Lieferkiste (wie bisher, Feld antippen).
     ///  - Giesser (water): holt Wasser am Bach (oder am Haus) und giesst die reifen Pflanzen eines Felds – jeder Guss laesst viel Ernte fallen.
     ///  - Holzfaeller (wood): faellt Baeume und graebt Stuempfe aus, das Holz kommt wie beim Spieler.
-    ///  - Maurer (mason): flickt die am staerksten beschaedigte Mauer.
+    ///  - Maurer (mason): holt reifes Steinmoos und bringt es zur Mauer (Stein, flicken, Granit, Kristall – siehe Masonry);
+    ///    ohne Steinmoos flickt er die am staerksten beschaedigte Mauer.
     ///  - Wache (guard): nachts wirft sie Steine auf Zombies in der Naehe des Hauses, tagsueber schlaeft sie.
     /// Wie viele Knollis es geben kann, bestimmen Wohnplaetze: das Haus hat ein paar, jede Knolli-Huette mehr.
     /// Jeder Knolli traegt das Werkzeug seines Berufs. Werte in plants.json -> delivery (work...).
@@ -20,7 +21,7 @@ namespace SeedClicker
             ("carrier", "Träger", "Bringt Ernte zur Lieferkiste – überall oder nur von einem Feld", true),
             ("water", "Gießer", "Holt Wasser am Bach und gießt ein Feld – jede Kanne lässt viel Ernte fallen", true),
             ("wood", "Holzfäller", "Fällt Bäume und bringt Holz", false),
-            ("mason", "Maurer", "Flickt beschädigte Mauern", false),
+            ("mason", "Maurer", "Bringt Steinmoos zu den Mauern (Stein, Granit, Kristall) und flickt sie", false),
             ("guard", "Wache", "Wirft nachts Steine auf Zombies", false),
         };
 
@@ -84,7 +85,7 @@ namespace SeedClicker
         {
             if (k.carry > 0 && RoleOf(k) != "carrier") { k.state = 2; k.target = CrateDrop; }   // Ladung noch abliefern
             else { k.state = k.carry > 0 ? 2 : 0; }
-            k.goal = null; k.workTree = null; k.workT = 0f; k.water = 0; k.stops = 0; k.idleT = 0f;
+            k.goal = null; k.workTree = null; k.workT = 0f; k.water = 0; k.stops = 0; k.idleT = 0f; k.moss = null; k.mossGoal = null;
         }
 
         // ------------------------------------------------------------------ Wohnplaetze
@@ -245,6 +246,8 @@ namespace SeedClicker
         bool WorkMason(Knolli k, float dt)
         {
             bool moving;
+            RefreshMossTargets();
+            if (WorkMoss(k, dt, out moving)) return moving;   // Steinmoos holen und verbauen geht vor
             WallView worst = null; Cell wc = default; float wr = 0.999f;
             foreach (var kv in walls)
             {
@@ -252,7 +255,7 @@ namespace SeedClicker
                 if (r < wr) { wr = r; worst = kv.Value; wc = kv.Key; }
             }
             if (worst == null) { WalkTo(k, HousePos + new Vector2(-1.6f, -1.6f), 0.4f, dt, out moving); return moving; }
-            if (WalkTo(k, CellCenter(wc) + new Vector2(0.1f, -CellSize * 0.75f), 1f, dt, out moving))
+            if (WalkTo(k, WallStand(wc), 1f, dt, out moving))
             {
                 k.workT += dt;
                 if (k.workT > 0.55f)

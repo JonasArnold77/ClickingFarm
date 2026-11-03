@@ -95,6 +95,9 @@ namespace SeedClicker
                         if (!s.rivers.Exists(v => v.x == x0 + q && v.y == top - 5)) s.rivers.Add(new RiverState { x = x0 + q, y = top - 5, dir = 1, seq = s.rivers.Count });
                 }
 
+            // ---------------- Steinmoos-Beet oben links (Futter fuer die Maurer)
+            for (int q = 0; q < 7; q++) for (int r = 0; r < 2; r++) Plant(new Cell(-15 + q, 4 + r), "steinmoos", 1);
+
             // ---------------- Knolli-Huetten zwischen Beeten und Mauern
             foreach (int x in new[] { -14, -10, -6, -2, 2, 6, 10, 14 })
                 s.structures.Add(new StructureState { id = "knollihuette", x = x, y = -12, lv = 2, placed = true });
@@ -107,7 +110,8 @@ namespace SeedClicker
                 for (int x = -17; x <= 16; x++)
                 {
                     bool gate = (i % 2 == 0 && (x == -9 || x == 8)) || (i % 2 == 1 && (x == -1 || x == 0));
-                    s.walls.Add(new WallState { x = x, y = y, hp = 9999, stone = i < 3, thorns = i == 0 || i == 3 ? 3 : 0, gate = gate });
+                    // hinten Kristall, dann Granit, Stein, vorn noch Holz (das verbauen die Maurer mit dem Steinmoos-Beet)
+                    s.walls.Add(new WallState { x = x, y = y, hp = 9999, stone = i < 3, tier = i == 0 ? 2 : i == 1 ? 1 : 0, thorns = i == 0 || i == 3 ? 3 : 0, gate = gate });
                 }
             }
             // seitliche Mauern bis zum Hof hoch

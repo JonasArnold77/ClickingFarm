@@ -923,7 +923,7 @@
       "effectLv": 1,
       "unlockFields": 12,
       "buildsOn": "Mauer",
-      "helps": "Macht einen ganzen Mauerabschnitt zu Stein: 3× so stabil – die Mauer hält die Nacht.",
+      "helps": "Macht einen ganzen Mauerabschnitt zu Stein (3× so stabil), flickt ihn und verstärkt ihn weiter zu Granit (7×) und Kristall (16×). Ein Maurer-Knolli bringt es selbst hin.",
       "needs": [
         "walls:6"
       ]
@@ -1403,7 +1403,21 @@
     "heartRange": 0.6,
     "maxHeart": 3,
     "stoneTowerDamage": 1.75,
-    "stoneTowerRange": 1
+    "stoneTowerRange": 1,
+    "wallTierNames": [
+      "Granit",
+      "Kristall"
+    ],
+    "wallTierHpMults": [
+      7,
+      16
+    ],
+    "wallTierMoss": [
+      3,
+      6
+    ],
+    "mossHealBelow": 0.6,
+    "mossWallsPerFeed": 6
   },
   "altar": {
     "maxLevel": 5,

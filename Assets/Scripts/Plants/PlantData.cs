@@ -102,6 +102,11 @@ namespace SeedClicker
         public float thornDps = 2.5f; public int maxThorns = 5;              // Dornenranke: Schaden pro Sekunde je Stufe an schlagenden Zombies
         public float heartRange = 0.6f; public int maxHeart = 3;              // Wurzelherz: Reichweite je Stufe fuer die Pflanze im Pult
         public float stoneTowerDamage = 1.75f, stoneTowerRange = 1f;         // Steinmoos auf Wachturm
+        public string[] wallTierNames = { "Granit", "Kristall" };          // Stufen nach Stein
+        public float[] wallTierHpMults = { 7f, 16f };                        // Haltbarkeit je Stufe (Stein: stoneHpMult)
+        public int[] wallTierMoss = { 3, 6 };                                // Steinmoos je Mauer fuer die Stufe
+        public int mossWallsPerFeed = 6;                                     // so viele Mauern versorgt ein Steinmoos beim Verstaerken
+        public float mossHealBelow = 0.6f;                                   // darunter flickt Steinmoos den ganzen Abschnitt
     }
     /// <summary>Waffenbank: Schlaege bis zur naechsten Waffenstufe (tapsBase * tapsGrowth^(Stufe-1)) und was eine Stufe bringt.</summary>
     [Serializable] public class BenchDef { public float tapsBase = 12f, tapsGrowth = 1.3f, damagePerLevel = 0.25f, cooldownPerLevel = 0.04f, minCooldown = 0.5f; public int maxLevel = 30;
@@ -481,7 +486,7 @@ namespace SeedClicker
     /// <summary>Wann ein Baum gefaellt wurde (Nacht-Zaehler), fuers Nachwachsen.</summary>
     [Serializable] public class TreeFell { public int id, night; }
 
-    [Serializable] public class WallState { public int x, y; public float hp; public bool stone; public int thorns; public bool gate; }
+    [Serializable] public class WallState { public int x, y; public float hp; public bool stone; public int thorns; public bool gate; public int tier, moss; }   // tier: 0 Stein, 1 Granit, 2 Kristall; moss: Steinmoos zur naechsten Stufe
     /// <summary>Ein Steinpult (Spielstand): auf dem Boden oder auf einer Mauer.</summary>
     [Serializable] public class PedestalState { public int x, y; public int heart; }
 

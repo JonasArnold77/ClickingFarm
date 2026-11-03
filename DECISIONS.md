@@ -413,3 +413,13 @@
 - `PlantCps` hat einen kurzen Zwischenspeicher je Pflanze mit gestreutem Ablauf (0,4–0,8 s), Summen (`ComputeProduceCps`) lesen die reihum frisch gehaltenen Erträge.
 - Münz-Funken nur noch für Pflanzen im Bild. Jahreszeiten: Renderer alle 3 s einsammeln, 600 je Bild prüfen, Shader-Namen je Material merken.
 - Ergebnis (Editor, Endlevel-Hof): Münz-Berechnung Spitze 189 → ~20 ms, Ertrag 65 → ~30 ms, Jahreszeiten 21 → 3 ms. Offen: Knollis (Wegsuche) und Schimmer-Scan mit Spitzen um 15 ms.
+
+## Maurer-Knolli und Mauerstufen (03.11.2026)
+- Steinmoos tut auf einem Mauerabschnitt immer das Nächstbeste: Holz → Stein (ganzer Abschnitt), sonst stark beschädigten Abschnitt (unter 60 %) ganz flicken, sonst weiter verstärken: Stein (×3) → Granit (×7) → Kristall (×16).
+- Verstärken kostet je Mauer 3 bzw. 6 Steinmoos, ein Steinmoos versorgt 6 Mauern. Lange Mauern brauchen also viel Steinmoos – damit bleibt das Steinmoos-Beet dauerhaft wertvoll, auch wenn alles aus Stein ist. Neue Mauern im Abschnitt werden zuerst nachgezogen.
+- Der Maurer holt reifes Steinmoos selbst vom Feld (nicht das, was der Spieler gerade trägt) und trägt es sichtbar über dem Kopf. Reihenfolge: flicken, Holz → Stein, verstärken; ohne Steinmoos flickt er wie bisher gratis Stück für Stück.
+- Er nimmt Steinmoos nur, wenn eine Mauer etwas davon hätte. Wer Steinmoos für Wachtürme aufheben will, stellt keinen Maurer ab (offener Punkt: Einstellung „Steinmoos nicht anrühren“).
+- Der Maurer arbeitet immer von der Hof-Seite der Mauer aus (nie davor draußen).
+- Stufenfarben: Granit warm rotgrau, Kristall kühl blau. Werte in plants.json → transforms (wallTier…, mossHealBelow, mossWallsPerFeed).
+- Fließband: bewusst später, als allgemeine Logistik für alle Gegenstände (siehe TODO).
+

@@ -33,7 +33,7 @@ namespace SeedClicker
         };
 
         /// <summary>Haltbarkeit einer Mauer: Stein haelt ein Vielfaches.</summary>
-        float MaxHp(WallState st) => WallMaxHp * (st.stone ? PlantBalance.I.Transforms.stoneHpMult : 1f) * (st.gate ? GateHpMult : 1f);
+        float MaxHp(WallState st) => WallMaxHp * StoneMult(st) * (st.gate ? GateHpMult : 1f);
 
         const string SharedElements = "_bench";   // das Element liegt auf der Waffenbank und gilt fuer jede Waffe
 
@@ -104,7 +104,7 @@ namespace SeedClicker
             if ((t == "stone" || t == "thorns") && HasWall(c))
             {
                 var seg = WallSegment(c);
-                if (t == "stone" && seg.TrueForAll(x => walls[x].st.stone)) return false;   // schon alles Stein
+                if (t == "stone" && MossJob(seg) == null) return false;   // nichts mehr zu tun (alles Kristall und heil)
                 hoverCells = seg; hoverSlot = null; return true;
             }
             if (t == "heart" && HasPedestal(c)) { hoverSlot = c; return true; }
@@ -168,10 +168,10 @@ namespace SeedClicker
             {
                 var c = TapCell(w);
                 if (!walls.ContainsKey(c)) return false;
-                int n = StoneWalls(c);
-                if (n == 0) return false;   // schon alles Stein
+                var msg = FeedMoss(c);   // Stein, flicken oder weiter verstaerken
+                if (msg == null) return false;
                 Consume(p, CellCenter(c) + new Vector2(0, WallH));
-                Floater?.Invoke(CellCenter(c) + new Vector2(0, WallH + 0.7f), n + (n == 1 ? " Mauer" : " Mauern") + " aus Stein!", new Color(0.85f, 0.85f, 0.9f));
+                Floater?.Invoke(CellCenter(c) + new Vector2(0, WallH + 0.7f), msg, new Color(0.85f, 0.85f, 0.9f));
                 save.Save();
                 return true;
             }

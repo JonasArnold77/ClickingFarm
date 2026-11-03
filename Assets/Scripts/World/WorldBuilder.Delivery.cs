@@ -234,7 +234,7 @@ namespace SeedClicker
             public readonly List<SpriteRenderer> orbit = new List<SpriteRenderer>(); // schweben um den Knolli herum
             public readonly List<Vector2> lpos = new List<Vector2>(), lvel = new List<Vector2>();
             public readonly List<int> lmedal = new List<int>();   // Medaille je schwebendem Stueck (Kontur)
-            public TreeObj workTree; public float workT, swing; public int water, stops; public SpriteRenderer tool;   // Berufe   // Ort und Tempo jedes Stuecks (folgt wie an einem Magneten)
+            public TreeObj workTree; public float workT, swing; public int water, stops; public SpriteRenderer tool; public Sprite moss; public PlantedState mossGoal;   // Berufe   // Ort und Tempo jedes Stuecks (folgt wie an einem Magneten)
         }
 
         const int OrbitMax = 40;   // so viele Stuecke schweben hoechstens sichtbar um einen Knolli
@@ -406,6 +406,7 @@ namespace SeedClicker
             k.item.enabled = false;
             DrawOrbit(k, hop, dt);
             DrawTool(k, role, hop);
+            if (role == "mason") DrawMoss(k, hop);
         }
 
         // ------------------------------------------------------------------ Schwebende Ladung und Effektgewitter

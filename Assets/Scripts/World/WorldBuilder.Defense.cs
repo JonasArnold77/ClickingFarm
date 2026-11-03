@@ -201,7 +201,7 @@ namespace SeedClicker
                 v.sr.transform.localScale = Vector3.one * s * e;
                 v.sr.transform.position = (Vector3)WallFoot(kv.Key) + (Vector3)(UnityEngine.Random.insideUnitCircle * v.shake * 0.03f);
                 float hp = Mathf.Clamp01(v.st.hp / Mathf.Max(1f, MaxHp(v.st)));
-                v.sr.color = Color.Lerp(new Color(0.6f, 0.5f, 0.45f), Color.white, hp);
+                v.sr.color = Color.Lerp(new Color(0.6f, 0.5f, 0.45f), Color.white, hp) * WallTint(v.st);
             }
         }
 
