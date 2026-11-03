@@ -423,3 +423,10 @@
 - Stufenfarben: Granit warm rotgrau, Kristall kühl blau. Werte in plants.json → transforms (wallTier…, mossHealBelow, mossWallsPerFeed).
 - Fließband: bewusst später, als allgemeine Logistik für alle Gegenstände (siehe TODO).
 
+## Erst sparen, dann weiter (03.11.2026)
+- Ein Ziel schaltet Verbesserungen und Bauwerke frei, aber man kann sie sich nicht sofort leisten. Das wichtigste davon (das teuerste) ist die Aufgabe des nächsten Ziels: „Spar auf Gießkanne I und kauf es“ (neue Bedingung `own:ID`). Sie ersetzt dort die bisherige „Verdiene X Münzen“-Aufgabe – das Grinden hat so ein greifbares Ziel statt einer abstrakten Zahl.
+- Preise: Hauptziel = 1,5 × die frühere Münz-Aufgabe des nächsten Ziels, die übrigen Freischaltungen 0,6 × (nie billiger als vorher). Beispiele: Gießkanne I 175 → 1.300, Korb I 450 → 3.400, Wachturm 5.500 → 13.000, Gießkanne II 20.000 → 750.000.
+- Die Münz-Belohnung eines Ziels sinkt von 25 % auf 10 % des bisher Verdienten, sonst würde sie die Freischaltungen gleich mitbezahlen.
+- Ziele, die nur Pflanzen freischalten (Knolli-Trupp), behalten ihre Münz-Aufgabe. Großprojekte unverändert.
+- Ungetestet im Spielablauf: Ob die Spar-Phasen zu lang werden, zeigt erst echtes Spielen – die Faktoren lassen sich in plants.json (Preise, coinShare) direkt ändern.
+

@@ -8,7 +8,7 @@ namespace SeedClicker
     /// Dinge, die man auf dem Hof erreicht haben muss, z. B. "walls:6" (6 Mauerstuecke), "plant:tauschilf:2"
     /// (2 reife Tauschilfe), "medal:3" (eine Ernte-Pflanze auf Silber). So baut der Fortschritt auf dem auf,
     /// was man schon gemacht hat. Arten: fields, walls, stonewalls, gates, towers, pedestals, knollis, huts,
-    /// totems, river, waves, medal, plant:ID, earned, delivered, kills.
+    /// totems, river, waves, medal, plant:ID, earned, delivered, kills, own:ID (Verbesserung bzw. Bauwerk gekauft).
     /// </summary>
     public partial class WorldBuilder
     {
@@ -18,6 +18,7 @@ namespace SeedClicker
         {
             var p = s.Split(':');
             var n = new Need { kind = p[0].Trim() };
+            if (n.kind == "own") { n.arg = p.Length > 1 ? p[1].Trim() : ""; n.n = 1; return n; }
             var inv = System.Globalization.CultureInfo.InvariantCulture;
             if (p.Length >= 3) { n.arg = p[1].Trim(); double.TryParse(p[2], System.Globalization.NumberStyles.Float, inv, out n.n); }
             else if (p.Length == 2) double.TryParse(p[1], System.Globalization.NumberStyles.Float, inv, out n.n);
@@ -45,7 +46,23 @@ namespace SeedClicker
                 case "totems": return PlacedCount(s => IsTotem(s));
                 case "medal": { int best = 0; foreach (var p in save.planted) if (HasMedals(p) && p.Grown) best = Mathf.Max(best, p.Lv); return best; }
                 case "plant": { int c = 0; foreach (var p in save.planted) if (p.type == n.arg && p.Grown) c++; return c; }
+                case "own":
+                    {
+                        // "own:korb1" (ohne Zahl) heisst: einmal kaufen
+                        if (HasUpgrade(n.arg)) return 1;
+                        int c = 0; foreach (var st in save.structures) if (st.id == n.arg) c++;
+                        return c;
+                    }
             }
+            return 0;
+        }
+
+        /// <summary>Muenzpreis einer Verbesserung bzw. eines Bauwerks (fuer "Spar auf ...").</summary>
+        static double OwnPrice(string id)
+        {
+            var B = PlantBalance.I;
+            var st = B.Structure(id); if (st != null) return st.cost;
+            if (B.upgrades != null) foreach (var u in B.upgrades) if (u.id == id) return u.cost;
             return 0;
         }
 
@@ -77,6 +94,7 @@ namespace SeedClicker
                 case "totems": return "Totems";
                 case "medal": return "Ernte-Pflanze auf " + MedalName((int)n.n);
                 case "plant": return "reife " + (PlantBalance.I.Plant(n.arg)?.name ?? n.arg);
+                case "own": return UnlockName(n.arg) + " gekauft";
             }
             return n.kind;
         }
@@ -143,6 +161,7 @@ namespace SeedClicker
                 case "totems": return "Stell " + k + (one ? " Totem" : " Totems") + " auf";
                 case "medal": return "Bring eine Ernte-Pflanze auf " + MedalName((int)n.n);
                 case "plant": return "Lass " + k + " " + (PlantBalance.I.Plant(n.arg)?.name ?? n.arg) + " reif werden";
+                case "own": return "Spar auf " + UnlockName(n.arg) + " und kauf es (" + Num.Short(OwnPrice(n.arg)) + " Münzen)";
             }
             return NeedName(n);
         }

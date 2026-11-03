@@ -1535,7 +1535,7 @@
       "name": "Wachturm",
       "desc": "Schießt nachts selbst auf Zombies",
       "effect": "tower",
-      "cost": 5500,
+      "cost": 13000,
       "wood": 10,
       "unlockEarned": 17500,
       "value": 4,
@@ -1555,7 +1555,7 @@
       "name": "Saatgutmühle",
       "desc": "Alle Samen werden billiger",
       "effect": "seedcost",
-      "cost": 175000,
+      "cost": 570000,
       "wood": 10,
       "unlockEarned": 300000,
       "value": 0.25,
@@ -1579,7 +1579,7 @@
       "multi": true,
       "fullCells": 6,
       "costGrowth": 1.8,
-      "cost": 200,
+      "cost": 1400,
       "wood": 2,
       "unlockEarned": 250,
       "value": 1,
@@ -1600,7 +1600,7 @@
       "multi": true,
       "fullCells": 6,
       "costGrowth": 1.8,
-      "cost": 3250,
+      "cost": 19000,
       "wood": 4,
       "unlockEarned": 8500,
       "value": 0.75,
@@ -1624,7 +1624,7 @@
       "multi": true,
       "fullCells": 6,
       "costGrowth": 1.8,
-      "cost": 7000,
+      "cost": 98000,
       "wood": 6,
       "unlockEarned": 45000,
       "value": 1,
@@ -1700,7 +1700,7 @@
       "desc": "Jeder Tipp zählt doppelt",
       "effect": "click",
       "value": 2,
-      "cost": 55,
+      "cost": 510,
       "unlockEarned": 30
     },
     {
@@ -1709,7 +1709,7 @@
       "desc": "Pflanzen wachsen doppelt so schnell",
       "effect": "growth",
       "value": 2,
-      "cost": 175,
+      "cost": 1300,
       "unlockEarned": 125
     },
     {
@@ -1718,7 +1718,7 @@
       "desc": "Ernte bringt doppelt so viele Münzen",
       "effect": "harvest",
       "value": 2,
-      "cost": 450,
+      "cost": 3400,
       "unlockEarned": 500
     },
     {
@@ -1727,7 +1727,7 @@
       "desc": "Wasserpflanzen gießen 1 Feld weiter",
       "effect": "water",
       "value": 1,
-      "cost": 1000,
+      "cost": 6000,
       "unlockEarned": 1250,
       "needs": [
         "plant:tauschilf:1"
@@ -1739,7 +1739,7 @@
       "desc": "Dünger wirkt doppelt so stark",
       "effect": "fert",
       "value": 2,
-      "cost": 3250,
+      "cost": 5100,
       "unlockEarned": 4000,
       "needs": [
         "plant:kompostpilz:1"
@@ -1751,7 +1751,7 @@
       "desc": "Jeder Tipp zählt doppelt",
       "effect": "click",
       "value": 2,
-      "cost": 6000,
+      "cost": 14000,
       "unlockEarned": 12500
     },
     {
@@ -1760,7 +1760,7 @@
       "desc": "Automatik-Pflanzen klicken doppelt so schnell",
       "effect": "auto",
       "value": 2,
-      "cost": 9000,
+      "cost": 570000,
       "unlockEarned": 25000,
       "needs": [
         "plant:klopfwurz:1"
@@ -1772,7 +1772,7 @@
       "desc": "Ernte bringt doppelt so viele Münzen",
       "effect": "harvest",
       "value": 2,
-      "cost": 10000,
+      "cost": 60000,
       "unlockEarned": 60000
     },
     {
@@ -1781,7 +1781,7 @@
       "desc": "Mauern halten doppelt so viel aus",
       "effect": "wall",
       "value": 2,
-      "cost": 9500,
+      "cost": 34000,
       "unlockEarned": 40000,
       "needs": [
         "walls:5"
@@ -1793,7 +1793,7 @@
       "desc": "Licht verstärkt Schaden um weitere 50 %",
       "effect": "light",
       "value": 0.5,
-      "cost": 20000,
+      "cost": 150000,
       "unlockEarned": 85000
     },
     {
@@ -1802,7 +1802,7 @@
       "desc": "Alle Einnahmen von selbst +50 %",
       "effect": "cps",
       "value": 1.5,
-      "cost": 25000,
+      "cost": 300000,
       "unlockEarned": 150000
     },
     {
@@ -1811,7 +1811,7 @@
       "desc": "Pflanzen wachsen doppelt so schnell",
       "effect": "growth",
       "value": 2,
-      "cost": 20000,
+      "cost": 750000,
       "unlockEarned": 200000
     },
     {
@@ -1820,7 +1820,7 @@
       "desc": "Jeder Tipp zählt dreifach",
       "effect": "click",
       "value": 3,
-      "cost": 275000,
+      "cost": 3400000,
       "unlockEarned": 1000000
     },
     {
@@ -1829,7 +1829,7 @@
       "desc": "Goldene Schmetterlinge kommen doppelt so oft",
       "effect": "golden",
       "value": 2,
-      "cost": 225000,
+      "cost": 1500000,
       "unlockEarned": 500000
     },
     {
@@ -1838,7 +1838,7 @@
       "desc": "Offline-Ertrag hält 4 Stunden länger",
       "effect": "offline",
       "value": 4,
-      "cost": 500000,
+      "cost": 4200000,
       "unlockEarned": 2250000
     },
     {
@@ -1847,7 +1847,7 @@
       "desc": "Ernte bringt doppelt so viele Münzen",
       "effect": "harvest",
       "value": 2,
-      "cost": 950000,
+      "cost": 11000000,
       "unlockEarned": 5000000
     },
     {
@@ -1913,7 +1913,7 @@
         "handschuh1",
         "kanne1"
       ],
-      "coinShare": 0.25,
+      "coinShare": 0.1,
       "runes": 1
     },
     {
@@ -1923,14 +1923,14 @@
         "fields:9",
         "plant:karotte:3",
         "delivered:60",
-        "earned:850"
+        "own:kanne1"
       ],
       "unlocks": [
         "weissruebe",
         "korb1",
         "totem_wachstum"
       ],
-      "coinShare": 0.25,
+      "coinShare": 0.1,
       "runes": 1
     },
     {
@@ -1940,13 +1940,13 @@
         "medal:2",
         "knollis:2",
         "fields:12",
-        "earned:2250"
+        "own:korb1"
       ],
       "unlocks": [
         "kompostpilz",
         "schilf1"
       ],
-      "coinShare": 0.25,
+      "coinShare": 0.1,
       "runes": 1
     },
     {
@@ -1956,14 +1956,14 @@
         "walls:6",
         "waves:1",
         "plant:weissruebe:4",
-        "earned:4000"
+        "own:schilf1"
       ],
       "unlocks": [
         "steinmoos",
         "wachturm",
         "kompost1"
       ],
-      "coinShare": 0.25,
+      "coinShare": 0.1,
       "runes": 1
     },
     {
@@ -1973,14 +1973,14 @@
         "plant:kompostpilz:1",
         "fields:15",
         "delivered:300",
-        "earned:8500"
+        "own:wachturm"
       ],
       "unlocks": [
         "salat",
         "totem_ernte",
         "dornenranke"
       ],
-      "coinShare": 0.25,
+      "coinShare": 0.1,
       "runes": 2
     },
     {
@@ -1990,14 +1990,14 @@
         "stonewalls:3",
         "towers:1",
         "waves:1",
-        "earned:12500"
+        "own:totem_ernte"
       ],
       "unlocks": [
         "handschuh2",
         "mauer1",
         "wurzeltraeger"
       ],
-      "coinShare": 0.25,
+      "coinShare": 0.1,
       "runes": 2
     },
     {
@@ -2007,13 +2007,13 @@
         "knollis:4",
         "huts:1",
         "plant:salat:4",
-        "earned:22500"
+        "own:mauer1"
       ],
       "unlocks": [
         "trommelkraut",
         "glutbluete"
       ],
-      "coinShare": 0.25,
+      "coinShare": 0.1,
       "runes": 2
     },
     {
@@ -2030,7 +2030,7 @@
         "frostdistel",
         "totem_fleiss"
       ],
-      "coinShare": 0.25,
+      "coinShare": 0.1,
       "runes": 2
     },
     {
@@ -2040,7 +2040,7 @@
         "waves:1",
         "pedestals:1",
         "totems:2",
-        "earned:65000"
+        "own:totem_fleiss"
       ],
       "unlocks": [
         "giftpilz",
@@ -2048,7 +2048,7 @@
         "stuetzranke",
         "licht1"
       ],
-      "coinShare": 0.25,
+      "coinShare": 0.1,
       "runes": 3
     },
     {
@@ -2058,14 +2058,14 @@
         "plant:weizen:4",
         "fields:26",
         "delivered:2000",
-        "earned:100000"
+        "own:licht1"
       ],
       "unlocks": [
         "mais",
         "wurzelherz",
         "cps1"
       ],
-      "coinShare": 0.25,
+      "coinShare": 0.1,
       "runes": 3
     },
     {
@@ -2075,14 +2075,14 @@
         "plant:mais:3",
         "knollis:6",
         "waves:1",
-        "earned:200000"
+        "own:cps1"
       ],
       "unlocks": [
         "klopfwurz",
         "blitzkraut",
         "kanne2"
       ],
-      "coinShare": 0.25,
+      "coinShare": 0.1,
       "runes": 3
     },
     {
@@ -2092,14 +2092,14 @@
         "towers:2",
         "stonewalls:8",
         "plant:klopfwurz:1",
-        "earned:500000"
+        "own:kanne2"
       ],
       "unlocks": [
         "auto1",
         "golden1",
         "saatgutmuehle"
       ],
-      "coinShare": 0.25,
+      "coinShare": 0.1,
       "runes": 3
     },
     {
@@ -2109,14 +2109,14 @@
         "plant:klopfwurz:3",
         "fields:35",
         "delivered:5000",
-        "earned:950000"
+        "own:golden1"
       ],
       "unlocks": [
         "pustesamen",
         "handschuh3",
         "mondblume"
       ],
-      "coinShare": 0.25,
+      "coinShare": 0.1,
       "runes": 4
     },
     {
@@ -2126,14 +2126,14 @@
         "waves:2",
         "plant:pustesamen:1",
         "medal:4",
-        "earned:2250000"
+        "own:handschuh3"
       ],
       "unlocks": [
         "gluehpilz",
         "offline1",
         "korb3"
       ],
-      "coinShare": 0.25,
+      "coinShare": 0.1,
       "runes": 4
     },
     {
@@ -2143,7 +2143,7 @@
         "fields:50",
         "plant:tauschilf:4",
         "delivered:10000",
-        "earned:7000000"
+        "own:korb3"
       ],
       "unlocks": [
         "saftrohr",
@@ -2151,7 +2151,7 @@
         "cps2",
         "handschuh4"
       ],
-      "coinShare": 0.25,
+      "coinShare": 0.1,
       "runes": 4
     }
   ],
