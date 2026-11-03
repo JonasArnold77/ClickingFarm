@@ -176,6 +176,7 @@ namespace SeedClicker
         void Deposit(int n, double value, Vector2 at, Dictionary<string, int> types = null)
         {
             CountDelivered(types);
+            if (types != null) { foreach (var kv in types) AddStored(kv.Key, kv.Value); StorageChanged?.Invoke(); }   // auch in den Vorrat (Baumaterial)
             // sofort bezahlt, sobald die Ernte in der Kiste liegt
             save.deliveredCount += n;
             if (save.deliveredTotal < save.deliveredCount - n) save.deliveredTotal = save.deliveredCount - n;   // alte Spielstaende

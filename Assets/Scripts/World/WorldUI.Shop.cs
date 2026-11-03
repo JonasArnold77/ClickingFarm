@@ -179,7 +179,7 @@ namespace SeedClicker
                 var b = Btn(tabs.transform, names[i], k == tab ? AccentWarm : new Color(0.55f, 0.5f, 0.45f), () => OpenShop(k), names[i].Length > 10 ? 22 : 27);
                 b.GetComponent<RectTransform>().LE(0, 80, 1);   // Reiter teilen sich die Breite
             }
-            var coins = Label(panel, "Münzen: " + Num.Short(wbi.Coins) + "   Holz: " + wbi.Wood + "   (+" + Num.Short(wbi.Cps) + "/s)", 32, InkSoft, TextAnchor.MiddleCenter, true);
+            var coins = Label(panel, "Münzen: " + Num.Short(wbi.Coins) + "   Holz: " + wbi.Wood + "   (+" + Num.Short(wbi.Cps) + "/s)\nVorrat: " + StockLine(wbi), 28, InkSoft, TextAnchor.MiddleCenter, true);
             coins.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -215), new Vector2(-40, 50));
             var content = UIKit.Scroll(panel, out var scroll);
             scroll.GetComponent<RectTransform>().Stretch(24, 24, 275, 30);
@@ -211,8 +211,13 @@ namespace SeedClicker
             {
                 var next = wbi.NextFarmLevel();
                 if (next != null)
-                    ShopRow(content, "Hof erweitern (Stufe " + (wbi.FarmLevel + 1) + ")", "Mehr Platz für Felder und Mauern – braucht auch " + next.wood + " Holz",
-                        Num.Short(next.cost), wbi.Coins >= next.cost && wbi.Wood >= next.wood, () => { if (wbi.BuyFarm()) { CloseModal(); Banner("Der Hof wächst!", "Neue Fläche zum Bebauen"); } });
+                {
+                    var fc = wbi.CropCost(next.crops);
+                    string fm = wbi.CropMissing(fc);
+                    ShopRow(content, "Hof erweitern (Stufe " + (wbi.FarmLevel + 1) + ")", "Mehr Platz für Felder und Mauern – braucht auch " + next.wood + " Holz" + (fc.Count > 0 ? " und " + wbi.CropCostText(fc) : "")
+                        + (fm != "" ? "\nFehlt im Vorrat: " + fm : ""),
+                        Num.Short(next.cost), wbi.Coins >= next.cost && wbi.Wood >= next.wood && wbi.HasCrops(fc), () => { if (wbi.BuyFarm()) { CloseModal(); Banner("Der Hof wächst!", "Neue Fläche zum Bebauen"); } });
+                }
                 else Label(content, "Der Hof ist voll ausgebaut.", 32, InkSoft, TextAnchor.MiddleCenter).LE(-1, 120);
                 double kc = wbi.KnolliCost;
                 bool full = wbi.HousingFull;
@@ -231,6 +236,15 @@ namespace SeedClicker
             int k = w.MilestoneOf(id);
             if (k >= 0) return "Kommt mit Ziel " + (k + 1) + ": " + PlantBalance.I.milestones[k].name;
             return "Ab " + Num.Short(earned) + " verdienten Münzen – jetzt " + Num.Short(w.Earned) + NeedsLine(w, needs);
+        }
+
+        /// <summary>Vorrat an Ernte (Baumaterial), z. B. "Radieschen 40 · Karotte 12".</summary>
+        static string StockLine(WorldBuilder w)
+        {
+            var parts = new List<string>();
+            foreach (var c in PlantBalance.I.catalog)
+                if (c.role == "harvest" && w.Stored(c.id) > 0) parts.Add(c.name + " " + Num.Short(w.Stored(c.id)));
+            return parts.Count > 0 ? string.Join(" · ", parts) : "noch leer – gelieferte Ernte landet hier";
         }
 
         static string NeedsLine(WorldBuilder w, string[] needs)

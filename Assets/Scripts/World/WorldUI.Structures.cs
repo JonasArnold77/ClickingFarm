@@ -145,12 +145,17 @@ namespace SeedClicker
                     ShopRow(content, d.name, d.desc + "\n" + UnlockWhen(wbi, d.id, d.unlockEarned, d.needs), mk >= 0 ? "Gesperrt: Ziel " + (mk + 1) : "Gesperrt", false, () => { });
                     continue;
                 }
-                bool ok = wbi.Coins >= cost && wbi.Wood >= d.wood && wbi.PlacingStructure == null;
+                var cc = wbi.CropCost(d.crops, d.multi ? wbi.StructCount(d.id) : 0);
+                if (cc.Count > 0) price += "\n+ " + wbi.CropCostText(cc, false);
+                bool ok = wbi.Coins >= cost && wbi.Wood >= d.wood && wbi.HasCrops(cc) && wbi.PlacingStructure == null;
                 int have = d.multi ? wbi.StructCount(d.id) : 0;
                 string title = d.name + (have > 0 ? "  · " + have + " aufgestellt" : "");
                 string hint = WorldBuilder.IsTotem(dd) ? "Tippe auf ein Beet – das Totem gilt für das ganze Beet und wächst mit, wenn du es erweiterst" : "Tippe auf einen freien Platz im Hof";
                 // was fehlt, steht direkt dabei (sonst sieht ein grauer Knopf aus wie gesperrt)
-                string missing = wbi.Wood < d.wood ? "Fehlt: " + (d.wood - wbi.Wood) + " Holz – Holz gibt es beim Bäumefällen" : wbi.Coins < cost ? "Fehlt: " + Num.Short(cost - wbi.Coins) + " Münzen" : null;
+                string cm = wbi.CropMissing(cc);
+                string missing = wbi.Wood < d.wood ? "Fehlt: " + (d.wood - wbi.Wood) + " Holz – Holz gibt es beim Bäumefällen"
+                    : cm != "" ? "Fehlt im Vorrat: " + cm + " – liefere mehr davon in die Kiste"
+                    : wbi.Coins < cost ? "Fehlt: " + Num.Short(cost - wbi.Coins) + " Münzen" : null;
                 ShopRow(content, title, d.desc + (missing != null ? "\n" + missing : ""), price, ok, () => { if (wbi.BuyStructure(dd)) Banner(dd.name + " gekauft!", hint); });
             }
         }

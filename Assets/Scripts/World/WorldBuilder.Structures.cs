@@ -113,7 +113,10 @@ namespace SeedClicker
         {
             float cost = StructCost(d);
             if (d == null || (!d.multi && Struct(d.id) != null) || !StructureAvailable(d) || save.wood < d.wood || save.coins < cost) return false;
+            var cc = CropCost(d.crops, d.multi ? StructCount(d.id) : 0);
+            if (!HasCrops(cc)) { Sfx.Play("error", 1f, 0.5f); return false; }
             if (!TrySpend(cost)) return false;
+            TakeCrops(cc);
             save.wood -= d.wood; WoodChanged?.Invoke(save.wood);
             var st = new StructureState { id = d.id, lv = 1 };
             save.structures.Add(st);

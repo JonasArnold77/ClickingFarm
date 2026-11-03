@@ -497,7 +497,11 @@
       "effectLv": 1,
       "unlockFields": 0,
       "buildsOn": "",
-      "helps": "Deine erste Erntepflanze: wachsen lassen, ernten – die Knollis bringen sie zur Kiste."
+      "helps": "Deine erste Erntepflanze: wachsen lassen, ernten – die Knollis bringen sie zur Kiste. Liebt Karotte und Salat als Nachbarn: je Freund +50 %.",
+      "friends": [
+        "karotte",
+        "salat"
+      ]
     },
     {
       "id": "tauschilf",
@@ -546,7 +550,11 @@
       "effectLv": 1,
       "unlockFields": 9,
       "buildsOn": "karotte",
-      "helps": "Wertvoller als die Karotte und wächst gut von selbst nach – ersetzt deine Radieschen."
+      "helps": "Wertvoller als die Karotte und wächst gut von selbst nach – ersetzt deine Radieschen. Liebt Karotte und Mais als Nachbarn: je Freund +50 %.",
+      "friends": [
+        "karotte",
+        "mais"
+      ]
     },
     {
       "id": "karotte",
@@ -572,7 +580,11 @@
       "yield": 3,
       "unlockFields": 0,
       "buildsOn": "radieschen",
-      "helps": "3 Stück pro Klick statt 1 – jeder Klick bringt sofort viel mehr."
+      "helps": "3 Stück pro Klick statt 1 – jeder Klick bringt sofort viel mehr. Liebt Radieschen und Weißrübe als Nachbarn: je Freund +50 %.",
+      "friends": [
+        "radieschen",
+        "weissruebe"
+      ]
     },
     {
       "id": "salat",
@@ -598,9 +610,13 @@
       "group": 0.25,
       "unlockFields": 14,
       "buildsOn": "weissruebe",
-      "helps": "+25 % je Salat-Nachbar: im 3×3-Block bringt jeder Salat das Dreifache.",
+      "helps": "+25 % je Salat-Nachbar: im 3×3-Block bringt jeder Salat das Dreifache. Liebt Radieschen und Weizen als Nachbarn: je Freund +50 %.",
       "needs": [
         "medal:2"
+      ],
+      "friends": [
+        "radieschen",
+        "weizen"
       ]
     },
     {
@@ -628,9 +644,13 @@
       "taps": 0.5,
       "unlockFields": 19,
       "buildsOn": "salat",
-      "helps": "Wächst von selbst sehr stark nach – perfekt für Felder, die du nicht ständig klickst.",
+      "helps": "Wächst von selbst sehr stark nach – perfekt für Felder, die du nicht ständig klickst. Liebt Salat und Mais als Nachbarn: je Freund +50 %.",
       "needs": [
         "plant:salat:4"
+      ],
+      "friends": [
+        "salat",
+        "mais"
       ]
     },
     {
@@ -658,9 +678,13 @@
       "taps": 1.5,
       "unlockFields": 28,
       "buildsOn": "weizen",
-      "helps": "Der wertvollste Klick: dein Haupt-Klickfeld, am besten neben Trommelkraut.",
+      "helps": "Der wertvollste Klick: dein Haupt-Klickfeld, am besten neben Trommelkraut. Liebt Weizen und Weißrübe als Nachbarn: je Freund +50 %.",
       "needs": [
         "medal:3"
+      ],
+      "friends": [
+        "weizen",
+        "weissruebe"
       ]
     },
     {
@@ -1459,7 +1483,18 @@
     "autoInterval": 0.7,
     "autoMaxRate": 6,
     "autoValue": 0.5,
-    "waterLevelMult": 2
+    "waterLevelMult": 2,
+    "friendBonus": 0.5,
+    "comboMults": [
+      1,
+      1,
+      1,
+      1.5,
+      2,
+      3,
+      4,
+      5
+    ]
   },
   "structures": [
     {
@@ -1476,7 +1511,10 @@
       "valuePerLevel": 0.5,
       "radius": 0,
       "radiusPerLevel": 0,
-      "scale": 0.9
+      "scale": 0.9,
+      "crops": [
+        "karotte:15"
+      ]
     },
     {
       "id": "wachturm",
@@ -1493,6 +1531,9 @@
       "scale": 1.2,
       "needs": [
         "walls:4"
+      ],
+      "crops": [
+        "weissruebe:20"
       ]
     },
     {
@@ -1510,6 +1551,9 @@
       "scale": 1.2,
       "needs": [
         "fields:30"
+      ],
+      "crops": [
+        "mais:40"
       ]
     },
     {
@@ -1528,7 +1572,10 @@
       "valuePerLevel": 0.2,
       "radius": 0,
       "radiusPerLevel": 0,
-      "scale": 0.85
+      "scale": 0.85,
+      "crops": [
+        "radieschen:20"
+      ]
     },
     {
       "id": "totem_ernte",
@@ -1549,6 +1596,9 @@
       "scale": 0.85,
       "needs": [
         "totems:1"
+      ],
+      "crops": [
+        "salat:15"
       ]
     },
     {
@@ -1570,6 +1620,9 @@
       "scale": 0.85,
       "needs": [
         "totems:2"
+      ],
+      "crops": [
+        "weizen:25"
       ]
     }
   ],
@@ -1583,27 +1636,47 @@
   "farmLevels": [
     {
       "cost": 700,
-      "wood": 10
+      "wood": 10,
+      "crops": [
+        "radieschen:30"
+      ]
     },
     {
       "cost": 7000,
-      "wood": 25
+      "wood": 25,
+      "crops": [
+        "karotte:40"
+      ]
     },
     {
       "cost": 12500,
-      "wood": 50
+      "wood": 50,
+      "crops": [
+        "weissruebe:60",
+        "salat:40"
+      ]
     },
     {
       "cost": 25000,
-      "wood": 90
+      "wood": 90,
+      "crops": [
+        "weizen:80"
+      ]
     },
     {
       "cost": 700000,
-      "wood": 150
+      "wood": 150,
+      "crops": [
+        "mais:100"
+      ]
     },
     {
       "cost": 7000000,
-      "wood": 250
+      "wood": 250,
+      "crops": [
+        "mais:200",
+        "weizen:200"
+      ]
     }
   ],
   "upgrades": [

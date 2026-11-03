@@ -378,3 +378,15 @@
 - Zähler-Aufgaben zählen erst ab dem Moment, in dem das Ziel beginnt: verdiente Münzen, gelieferte Ernte, besiegte Zombies, überstandene Nächte. „Verdiene 5K Münzen“ heißt 5K ab jetzt, „Übersteh 1 Nacht“ heißt die nächste Nacht. Die Startwerte merkt sich der Spielstand (`msBase`, `msBaseFor`); bei alten Spielständen beginnt die Zählung beim nächsten Laden.
 - Zustands-Aufgaben zählen weiter, wie der Hof gerade ist: Felder, Mauerstücke, Steinmauern, Türme, Steinpulte, Knollis, Hütten, Totems, reife Pflanzen einer Art, Medaille.
 - Weil Nächte jetzt erst ab Zielbeginn zählen, verlangen die Ziele je nur noch 1 Nacht („Das Nachtlicht“: 2), sonst hätte man bis zu 3 ganze Tage warten müssen.
+
+## Erntegut als Baumaterial, Nachbarn und Kombos (03.11.2026)
+- **Vorrat** (`WorldBuilder.Storage.cs`): Jede gelieferte Ernte wird bezahlt und zählt zusätzlich in den Vorrat ihrer Sorte (`save.storage`). Der Laden zeigt oben „Vorrat: Radieschen 40 · Karotte 12 …“.
+- **Erntekosten** (`crops`): Bauwerke und Hof-Ausbau kosten neben Münzen und Holz Ernte aus dem Vorrat, mehrfach gekaufte Bauwerke je Stück +50 %.
+  - Knolli-Hütte 15 Karotten; Wachturm 20 Weißrüben; Wachstumstotem 20 Radieschen; Erntetotem 15 Salat; Fleißtotem 25 Weizen; Saatgutmühle 40 Mais.
+  - Hof-Stufen: 30 Radieschen; 40 Karotten; 60 Weißrüben und 40 Salat; 80 Weizen; 100 Mais; 200 Mais und 200 Weizen.
+  - Im Laden steht der Preis mit Ernte, und was im Vorrat fehlt („Fehlt im Vorrat: 12 Salat – liefere mehr davon in die Kiste“).
+- **Lieblingsnachbarn** (`friends`): Ein Ring aus Paaren, damit gemischte Beete sich lohnen: Radieschen ↔ Karotte, Salat; Karotte ↔ Weißrübe; Weißrübe ↔ Mais; Salat ↔ Weizen; Weizen ↔ Mais. Je reifer Freund rundherum (auch schräg): +50 % Ernte (`helpers.friendBonus`).
+- **Kombo** (Wunsch: Austüfteln perfekter Beete soll sich sofort mächtig anfühlen): Gezählt werden die verschiedenen Quellen, die ein Feld verstärken (Freunde, Tauschilf, Bach, Dünger, Trommelkraut, Totem, Gruppe). Ab 3 Quellen gibt es obendrauf ×1,5, ab 4 ×2, ab 5 ×3, ab 6 ×4, alle 7 ×5 (`helpers.comboMults`). Das multipliziert sich mit allen Einzelboni.
+  - Steigt die Lage einer reifen Pflanze um mindestens 25 % (und auf ≥ ×1,5), erscheint sofort „Kombo ×3,2! (4 Quellen)“ mit Sternen, Welle und Ton, gefärbt nach Stärke (weiß, grün, gold, violett).
+  - Der Boost-Tooltip zeigt Freunde einzeln, „KOMBO aus n Quellen“ und „Lage zusammen: ×…“. Das Info-Fenster zeigt „Lage ×… (Quellen)“ und die Lieblingsnachbarn.
+  - Freund- und Kombo-Faktor werden höchstens alle 0,4 s neu berechnet (sie stecken auch in der nachwachsenden Ernte, die jedes Bild läuft).

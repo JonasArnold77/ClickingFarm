@@ -59,6 +59,19 @@ namespace SeedClicker
             }
             var pc = PlantAt(c);
             var pd = pc != null ? PlantBalance.I.Plant(pc.type) : null;
+            // Lieblingsnachbarn und Kombo
+            if (pc != null && pd != null && pd.friends != null)
+                foreach (var q in save.planted)
+                    if (q != pc && q.Grown && q.type != pc.type && Cheb(c, q.x, q.y) <= 1 && System.Array.IndexOf(pd.friends, q.type) >= 0)
+                        list.Add(new BoostSource { label = (PlantBalance.I.Plant(q.type)?.name ?? q.type) + ": Freund, Ernte +" + Mathf.RoundToInt(PlantBalance.I.Helpers.friendBonus * 100) + " %", from = CellCenter(new Cell(q.x, q.y)), col = new Color(1f, 0.6f, 0.75f) });
+            if (pc != null && pc.Role == "harvest")
+            {
+                var src = ComboSources(pc);
+                if (src.Count >= 3)
+                    list.Add(new BoostSource { label = "KOMBO aus " + src.Count + " Quellen: ×" + ComboMult(pc).ToString("0.#") + " obendrauf", from = CellCenter(c), col = ComboColor(PlacementMult(pc)), noLink = true });
+                if (PlacementMult(pc) > 1.01f)
+                    list.Add(new BoostSource { label = "Lage zusammen: ×" + PlacementMult(pc).ToString("0.#"), from = CellCenter(c), col = ComboColor(PlacementMult(pc)), noLink = true });
+            }
             if (pd != null && pd.group > 0f && GroupMult(pc, pd) > 1f)
                 list.Add(new BoostSource { label = pd.name + "-Gruppe: Ertrag ×" + GroupMult(pc, pd).ToString("0.##"), from = CellCenter(c), col = new Color(0.6f, 1f, 0.5f), noLink = true });
             return list;
@@ -68,6 +81,7 @@ namespace SeedClicker
 
         void UpdateBoosts(float dt)
         {
+            UpdateCombos(dt);   // Kombo gestiegen? sofort feiern
             // alle paar Augenblicke neu bestimmen, welche Felder geboostet sind
             boostScanT -= dt;
             if (boostScanT <= 0f)

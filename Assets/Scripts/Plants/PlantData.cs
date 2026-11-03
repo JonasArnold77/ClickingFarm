@@ -45,7 +45,9 @@ namespace SeedClicker
     [Serializable] public class ShopUpgradeDef { public string id, name, desc, effect; public float value, cost, unlockEarned; public string[] needs; }   // needs: siehe WorldBuilder.Needs
     /// <summary>Gebaeude: erzeugt dauerhaft Muenzen pro Sekunde, Preis steigt mit jedem Kauf.</summary>
     /// <summary>Hof erweitern: Kosten der naechsten Stufe.</summary>
-    [Serializable] public class FarmLevelDef { public float cost; public int wood; }
+    [Serializable] public class FarmLevelDef { public float cost; public int wood; public string[] crops; }   // crops: Erntekosten, z. B. "weizen:30"
+    /// <summary>Ernte im Vorrat (gelieferte Stuecke je Sorte, fuer Baukosten).</summary>
+    [Serializable] public class CropCount { public string id; public double n; }
     /// <summary>Mauer: Holz pro Stueck (darf ein Bruchteil sein, z. B. 0,2 = fuenf Mauern pro Holz) und Haltbarkeit.</summary>
     [Serializable] public class WallDef { public float wood = 2f; public float hp = 30f; }
     /// <summary>Steinpult: Preis in Muenzen (Abbauen gibt ihn zurueck).</summary>
@@ -113,6 +115,7 @@ namespace SeedClicker
         public string id, name, desc, effect;
         public float cost, unlockEarned, value, valuePerLevel, radius, radiusPerLevel, scale = 1f;
         public string[] needs;   // Bedingungen auf dem Hof (siehe WorldBuilder.Needs)
+        public string[] crops;   // Erntekosten, z. B. "weizen:30" (WorldBuilder.Storage)
         public int wood;
         // Totems (effect "totem"): mehrfach kaufbar (multi, jedes Stueck costGrowth-mal teurer), boost = growth | harvest | produce,
         // volle Wirkung fuer ein Beet bis fullCells Felder, darueber anteilig weniger
@@ -134,6 +137,10 @@ namespace SeedClicker
         public float autoInterval = 0.7f, autoMaxRate = 6f, autoValue = 0.5f;
         // Ernte-Pflanzen in Reichweite eines reifen Tauschilfs bekommen so viel mal mehr Stufen-Fortschritt (Klicks und Tropfen)
         public float waterLevelMult = 2f;
+        public float friendBonus = 0.5f;   // je reifer Lieblingsnachbar (8 Felder rundherum) +50 % Ernte
+        // Kombo: je mehr verschiedene Quellen ein Feld verstaerken (Freunde, Tauschilf, Bach, Duenger, Trommelkraut, Totem, Gruppe),
+        // desto mehr obendrauf – Index = Zahl der Quellen
+        public float[] comboMults = { 1f, 1f, 1f, 1.5f, 2f, 3f, 4f, 5f };
         public int pipeRadius = 2, pipeBonus = 1;
     }
     /// <summary>Stuetzranke: Reichweite, Gebaeude-Bonus, Hammerschlaege an der Waffenbank, Mauer-Reparatur (Anteil der vollen Haltbarkeit).</summary>
@@ -201,6 +208,7 @@ namespace SeedClicker
         public string buildsOn;    // worauf sie aufbaut: eine Pflanzen-ID oder ein Ding auf dem Hof (Mauer, Waffenbank, Wachturm, Steinpult, Knollis, Kampfpflanzen)
         public string helps;       // konkret: was sie deiner Farm bringt und wie man sie einsetzt
         public string[] needs;     // Bedingungen auf dem Hof, z. B. walls:6, plant:tauschilf:2, medal:3 (siehe WorldBuilder.Needs)
+        public string[] friends;   // Lieblingsnachbarn (Ernte-Sorten): je reifer Freund rundherum mehr Ertrag
         public int growTaps;   // 0 = Standard (growTaps)
         // Ernte-Charakter: yield = Stueck pro Ernte-Tipp, prod = Faktor fuer Ernte von selbst, group = Bonus je gleicher
         // Nachbarpflanze (auch schraeg), taps = Faktor fuer den Wert eines Ernte-Tipps

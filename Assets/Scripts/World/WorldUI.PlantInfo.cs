@@ -214,6 +214,12 @@ namespace SeedClicker
             {
                 case "harvest":
                     s = "1 " + WorldBuilder.ProductName(def) + " = " + Num.Short(wb.ItemValue(p)) + " Münzen · Vorrat " + p.stock;
+                    {
+                        float pm = wb.PlacementMult(p);
+                        var src = wb.ComboSources(p);
+                        if (pm > 1.01f) s += " · Lage ×" + pm.ToString("0.#") + (src.Count > 0 ? " (" + string.Join(", ", src) + ")" : "");
+                        if (def.friends != null && def.friends.Length > 0) s += " · Freunde: " + WorldBuilder.FriendNames(def);
+                    }
                     break;
                 case "water": s = "Gießt gerade " + wb.WaterTargetCount(p) + " Pflanzen"; break;
                 case "support": s = p.Grown ? wb.SupportSummary(p) : ""; break;
