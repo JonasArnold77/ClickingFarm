@@ -81,24 +81,28 @@ namespace SeedClicker
 
         /// <summary>Von selbst nachproduzieren (vorher verdienten diese Pflanzen Muenzen pro Sekunde).</summary>
         readonly Dictionary<PlantedState, (double cps, double val)> prodRate = new Dictionary<PlantedState, (double, double)>();
-        float prodCalcT;
+        int prodCalcAt;
 
         void UpdateProducts(float dt)
         {
             // Ertrag je Pflanze nur alle 0,5 s neu berechnen (Nachbarn, Totem, Kombo ...), dazwischen mit dem letzten Wert weiter
-            prodCalcT -= dt;
-            bool recalc = prodCalcT <= 0f;
-            if (recalc) prodCalcT = 0.5f;
-            foreach (var p in save.planted)
+            // reihum je Bild ein Stueck der Pflanzen (einmal rundum in etwa 0,5 s) – nie alle im selben Bild
+            int count = save.planted.Count;
+            if (prodCalcAt >= count) prodCalcAt = 0;
+            int calcEnd = Mathf.Min(count, prodCalcAt + Mathf.Max(10, count / 30));
+            for (int i = 0; i < count; i++)
             {
+                var p = save.planted[i];
                 if (!p.Grown || !MakesProduct(p)) continue;
+                bool recalc = i >= prodCalcAt && i < calcEnd;
                 if (recalc || !prodRate.TryGetValue(p, out var rv)) { rv = (PlantCps(p), ItemValue(p)); prodRate[p] = rv; }
                 prodFrac.TryGetValue(p, out var f);
                 f += rv.cps * dt;
                 if (f >= rv.val) { f -= rv.val; AddProduct(p, 1, rv.val, null); }
                 prodFrac[p] = f;
             }
-            if (recalc && prodRate.Count > save.planted.Count * 2) prodRate.Clear();
+            prodCalcAt = calcEnd;
+            if (prodRate.Count > count * 2 + 50) prodRate.Clear();
             UpdatePiles();
         }
 

@@ -406,3 +406,10 @@
   - Schimmer- und Kombo-Prüfung laufen verteilt über mehrere Bilder statt alle auf einmal.
   - Pflanzen außerhalb des Bildes werden nicht animiert.
 - Ergebnis im Batch-Test: Ernte-Berechnung 243 → 1,6 ms je Bild, Boost-Scan ~500 ms alle 0,4 s → ~3 ms, Hof-Logik insgesamt ~23 ms; im Editor-Batchbetrieb 9 Bilder/s (dort ohne echte Grafik und mit Editor-Overhead, im Spiel/Build schneller).
+
+## Ruckel-Spitzen auf großen Höfen (03.11.2026)
+- Neu gemessen: nicht der Durchschnitt, sondern das teuerste einzelne Bild je Teil. Spitzen lagen bei der Münz-Berechnung (189 ms), dem Ertrag (65 ms), der Jahreszeiten-Prüfung (21 ms).
+- Regel: Nichts rechnet mehr alle Pflanzen/Felder im selben Bild durch. Ertrag je Pflanze, Feld-Färbung (gegossen) und Jahreszeiten-Material laufen reihum in kleinen Stücken über mehrere Bilder.
+- `PlantCps` hat einen kurzen Zwischenspeicher je Pflanze mit gestreutem Ablauf (0,4–0,8 s), Summen (`ComputeProduceCps`) lesen die reihum frisch gehaltenen Erträge.
+- Münz-Funken nur noch für Pflanzen im Bild. Jahreszeiten: Renderer alle 3 s einsammeln, 600 je Bild prüfen, Shader-Namen je Material merken.
+- Ergebnis (Editor, Endlevel-Hof): Münz-Berechnung Spitze 189 → ~20 ms, Ertrag 65 → ~30 ms, Jahreszeiten 21 → 3 ms. Offen: Knollis (Wegsuche) und Schimmer-Scan mit Spitzen um 15 ms.

@@ -12,7 +12,7 @@ namespace SeedClicker
     /// </summary>
     public partial class WorldBuilder
     {
-        float cps, produceCps, cpsTimer, saveTimer, butterflyTimer = 60f, goldenBoostT, goldenBoost = 1f, fieldTintT, prodFxT;
+        float cps, produceCps, cpsTimer, saveTimer, butterflyTimer = 60f, goldenBoostT, goldenBoost = 1f, prodFxT;
         double coinFrac;
         readonly Dictionary<PlantedState, float> autoTimers = new Dictionary<PlantedState, float>();
         Transform butterfly; SpriteRenderer butterflySr; Vector2 bfFrom, bfTo; float bfT, bfDur;
@@ -165,9 +165,20 @@ namespace SeedClicker
         }
 
         /// <summary>Muenzen pro Sekunde dieser Pflanze (Ernte waechst auch ohne Tippen nach).</summary>
+        readonly Dictionary<PlantedState, (float until, float v)> cpsCache = new Dictionary<PlantedState, (float, float)>();
+
         public float PlantCps(PlantedState p)
         {
             if (!p.Grown) return 0f;
+            if (cpsCache.TryGetValue(p, out var cc) && Time.time < cc.until) return cc.v;
+            if (cpsCache.Count > save.planted.Count * 2 + 50) cpsCache.Clear();
+            float v = PlantCpsNow(p);
+            cpsCache[p] = (Time.time + UnityEngine.Random.Range(0.4f, 0.8f), v);
+            return v;
+        }
+
+        float PlantCpsNow(PlantedState p)
+        {
             var c = PlantBalance.I.Plant(p.type);
             if (c == null) return 0f;
             if (p.Role == "harvest") return c.value * c.prod * LevelMult(p) * ProjectMult * FriendMult(p) * ComboMult(p) * 0.15f * UpgradeMult("harvest") * UpgradeMult("cps") * FertMult(p) * TotemMult(p, "produce") * RiverMult(p, "produce") * GroupMult(p, c);
@@ -198,7 +209,8 @@ namespace SeedClicker
         float ComputeProduceCps()
         {
             float sum = 0f;
-            foreach (var p in save.planted) if (MakesProduct(p)) sum += PlantCps(p);
+            // die Ertraege werden in UpdateProducts reihum frisch gehalten – hier nur zusammenzaehlen
+            foreach (var p in save.planted) if (MakesProduct(p) && p.Grown) sum += prodRate.TryGetValue(p, out var rv) ? (float)rv.cps : PlantCps(p);
             return sum;
         }
 
@@ -274,6 +286,19 @@ namespace SeedClicker
         void OnApplicationPause(bool paused) { if (paused) { save.lastSeen = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); save.Save(); } }
         void OnApplicationQuit() { save.lastSeen = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); save.Save(); }
 
+        readonly List<Cell> tintScanList = new List<Cell>();
+        int tintScanAt;
+
+        /// <summary>Sichtbarer Bereich der Kamera (plus Rand) in Welt-Koordinaten.</summary>
+        Rect ViewRect(float margin)
+        {
+            var cam = Camera.main;
+            if (cam == null) return new Rect(-1e6f, -1e6f, 2e6f, 2e6f);
+            float h = cam.orthographicSize + margin, w = cam.orthographicSize * cam.aspect + margin;
+            Vector2 c = cam.transform.position;
+            return new Rect(c.x - w, c.y - h, w * 2f, h * 2f);
+        }
+
         void UpdateEconomy(float dt)
         {
             cpsTimer -= dt;
@@ -288,26 +313,27 @@ namespace SeedClicker
             if (prodFxT <= 0f)
             {
                 prodFxT = 1.2f;
+                var view = ViewRect(1f);
                 foreach (var p in save.planted)
                 {
-                    float pc = PlantCps(p);
+                    if (!p.Grown || UnityEngine.Random.value > 0.5f || !view.Contains(CellCenter(new Cell(p.x, p.y)))) continue;
+                    float pc = prodRate.TryGetValue(p, out var rv) ? (float)rv.cps : PlantCps(p);
                     if (pc <= 0f || UnityEngine.Random.value > 0.5f) continue;
                     var pos = CellCenter(new Cell(p.x, p.y)) + new Vector2(0, 0.4f);
                     Particles.I?.Spawn(pos, "square", new Color(1f, 0.88f, 0.35f), Vector3.up * 0.8f, 0.7f, 0.06f, 0.03f, 0f);
                 }
             }
             // gegossene Felder sind dunkler
-            fieldTintT -= dt;
-            if (fieldTintT <= 0f)
+            // gegossene Felder dunkler – je Bild nur ein Stueck der Felder (einmal rundum in etwa 0,5 s)
+            if (tintScanAt >= tintScanList.Count) { tintScanList.Clear(); tintScanList.AddRange(fields.Keys); tintScanAt = 0; }
+            int tintPer = Mathf.Max(20, tintScanList.Count / 30);
+            for (int n = 0; n < tintPer && tintScanAt < tintScanList.Count; n++, tintScanAt++)
             {
-                fieldTintT = 0.5f;
-                foreach (var kv in fields)
-                {
-                    if (kv.Value == null || wetFlash.ContainsKey(kv.Key)) continue;
-                    var p = PlantAt(kv.Key);
-                    bool wet = p != null ? IsWatered(p) : IsWatered(new PlantedState { x = kv.Key.x, y = kv.Key.y });
-                    kv.Value.color = wet ? new Color(0.7f, 0.68f, 0.8f) : Color.white;
-                }
+                var fc = tintScanList[tintScanAt];
+                if (!fields.TryGetValue(fc, out var fsr) || fsr == null || wetFlash.ContainsKey(fc)) continue;
+                var p = PlantAt(fc);
+                bool wet = p != null ? IsWatered(p) : IsWatered(new PlantedState { x = fc.x, y = fc.y });
+                fsr.color = wet ? new Color(0.7f, 0.68f, 0.8f) : Color.white;
             }
             UpdateButterfly(dt);
             saveTimer -= dt;

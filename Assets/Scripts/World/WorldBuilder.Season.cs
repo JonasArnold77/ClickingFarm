@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace SeedClicker
@@ -59,23 +60,55 @@ namespace SeedClicker
         void ApplySeasonMaterials()
         {
             if (seasonMat == null) return;
-            foreach (var r in GetComponentsInChildren<Renderer>(true))
+            foreach (var r in GetComponentsInChildren<Renderer>(true)) ApplySeasonMaterial(r);
+        }
+
+        // laufend: alle 3 s die Renderer einsammeln, dann je Bild ein Stueck pruefen (kein Ruckeln auf grossen Hoefen)
+        readonly List<Renderer> seasonScanList = new List<Renderer>();
+        readonly Dictionary<Material, bool> isDefaultMat = new Dictionary<Material, bool>();
+        readonly HashSet<Renderer> seasonSkip = new HashSet<Renderer>();   // schon geprueft, bleibt wie es ist
+        int seasonScanAt;
+
+        void ApplySeasonMaterialsStep()
+        {
+            if (seasonMat == null) return;
+            if (seasonScanAt >= seasonScanList.Count)
             {
-                var m = r.sharedMaterial;
-                if (m == null) continue;
-                bool isDefault = m == defaultSpriteMat || m.shader.name.Contains("Sprite-Lit-Default");
-                if (!isDefault) continue;
-                string n = r.gameObject.name;
-                if (n.StartsWith("Pot") || n == "Sprite" || n == "Plant" || n == "FieldFlash" || n == "Footprint" || n == "BarBack" || n == "BarFill" || n == "CellCursor") continue;
-                if (r is SpriteRenderer)
-                    r.sharedMaterial = n.Contains("sk_Tree_1") || n.Contains("sk_Tree_2") || n.ToLower().Contains("pine") ? evergreenMat : seasonMat;
-                else if (r is MeshRenderer)
-                {
-                    // Berg-Baender: eigenes Material mit gleicher Textur
-                    var mm = new Material(seasonMat) { mainTexture = m.mainTexture };
-                    r.sharedMaterial = mm;
-                }
+                if (seasonScanT > 0f) return;
+                seasonScanT = 3f;
+                GetComponentsInChildren(true, seasonScanList);
+                seasonScanAt = 0;
             }
+            int end = Mathf.Min(seasonScanList.Count, seasonScanAt + 600);
+            for (; seasonScanAt < end; seasonScanAt++)
+            {
+                var r = seasonScanList[seasonScanAt];
+                if (r == null || seasonSkip.Contains(r)) continue;
+                if (!ApplySeasonMaterial(r)) seasonSkip.Add(r);
+            }
+            if (seasonSkip.Count > 40000) seasonSkip.Clear();
+        }
+
+        /// <summary>false = dieser Renderer bekommt nie ein Jahreszeiten-Material (Name oder Material passt nicht).</summary>
+        bool ApplySeasonMaterial(Renderer r)
+        {
+            if (r == null) return true;
+            var m = r.sharedMaterial;
+            if (m == null || m == seasonMat || m == evergreenMat) return true;
+            if (!isDefaultMat.TryGetValue(m, out bool isDefault))
+                isDefaultMat[m] = isDefault = m == defaultSpriteMat || m.shader.name.Contains("Sprite-Lit-Default");
+            if (!isDefault) return true;
+            string n = r.gameObject.name;
+            if (n.StartsWith("Pot") || n == "Sprite" || n == "Plant" || n == "FieldFlash" || n == "Footprint" || n == "BarBack" || n == "BarFill" || n == "CellCursor") return false;
+            if (r is SpriteRenderer)
+                r.sharedMaterial = n.Contains("sk_Tree_1") || n.Contains("sk_Tree_2") || n.ToLower().Contains("pine") ? evergreenMat : seasonMat;
+            else if (r is MeshRenderer)
+            {
+                // Berg-Baender: eigenes Material mit gleicher Textur
+                var mm = new Material(seasonMat) { mainTexture = m.mainTexture };
+                r.sharedMaterial = mm;
+            }
+            return true;
         }
 
         void UpdateSeason(float dt)
@@ -86,7 +119,7 @@ namespace SeedClicker
             Shader.SetGlobalFloat(AutumnId, autumnAmt);
             Shader.SetGlobalFloat(WinterId, winterAmt);
             seasonScanT -= dt;
-            if (seasonScanT <= 0f) { seasonScanT = 1.5f; ApplySeasonMaterials(); }
+            ApplySeasonMaterialsStep();
 
             // fallende Blaetter / Schneeflocken rund um die Kamera
             var P = Particles.I;
