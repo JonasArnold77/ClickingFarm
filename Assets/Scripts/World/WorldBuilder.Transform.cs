@@ -190,7 +190,7 @@ namespace SeedClicker
         {
             var c = new Cell(p.x, p.y);
             RemovePlantView(c);
-            save.planted.Remove(p);
+            save.planted.Remove(p); DirtyPlants();
             Particles.I?.Burst(at + new Vector2(0, 0.2f), "leaf", new Color(0.5f, 0.85f, 0.4f), 12, 3f, 0.7f, 0.4f, 3f, 1.5f);
             Particles.I?.Burst(at + new Vector2(0, 0.3f), "star", new Color(1f, 0.95f, 0.7f), 14, 3f, 0.8f, 0.25f, 1f, 1.2f);
             WorldVfx.Play("eat", at + new Vector2(0, 0.2f), 1.1f, 30010, null, 2f);

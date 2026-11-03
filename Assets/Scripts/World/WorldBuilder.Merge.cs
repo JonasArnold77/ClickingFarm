@@ -148,7 +148,7 @@ namespace SeedClicker
             var size2 = PlantBalance.I.Footprint(lv);
             // Zustand sofort umstellen (Spielstand), die Darstellung waechst bei der Landung
             target.level = lv;
-            target.x = anchor.x; target.y = anchor.y;
+            target.x = anchor.x; target.y = anchor.y; DirtyPlants();
             target.w = Mathf.Max(size2.x, target.W); target.h = Mathf.Max(size2.y, target.H);
             var f = LaunchCarried(PlantBase(target) + new Vector2(0, CellSize * 1.2f * target.H), 1f);
             f.mergeTarget = target; f.oldAnchor = oldAnchor; f.newLevel = lv; f.oldLevel = oldLv;
@@ -170,7 +170,7 @@ namespace SeedClicker
             if (plantViews.TryGetValue(c, out var pv) && pv.sr != null) { sprite = pv.sr.sprite; from = pv.sr.bounds.center; sx = pv.sr.transform.lossyScale.x; }
             foreach (var fc in PlantCells(p)) PunchField(fc, 0.6f);
             RemovePlantView(c);
-            save.planted.Remove(p);
+            save.planted.Remove(p); DirtyPlants();
             var fsr = new GameObject("FlyingPlant").AddComponent<SpriteRenderer>();
             fsr.transform.SetParent(transform, false);
             fsr.sprite = sprite;

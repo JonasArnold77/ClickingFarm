@@ -72,10 +72,48 @@ namespace SeedClicker
         public bool IsUnlocked(string id) => save.unlocked.Contains(id);
         public int Combo => combo;
 
+        // Index Zelle -> Pflanze (jede Pflanze belegt genau ein Feld). Wird neu gebaut, wenn sich die Liste aendert
+        // oder eine Pflanze umzieht (DirtyPlants); vorher wurde bei jeder Abfrage die ganze Liste durchsucht.
+        readonly Dictionary<Cell, PlantedState> plantIndex = new Dictionary<Cell, PlantedState>();
+        int plantIndexCount = -1;
+        bool plantIndexDirty = true;
+
+        void DirtyPlants() => plantIndexDirty = true;
+
         public PlantedState PlantAt(Cell c)
         {
-            foreach (var p in save.planted) if (p.Covers(c)) return p;   // grosse Pflanzen belegen mehrere Felder
-            return null;
+            if (plantIndexDirty || plantIndexCount != save.planted.Count)
+            {
+                plantIndex.Clear();
+                foreach (var q in save.planted) plantIndex[new Cell(q.x, q.y)] = q;
+                plantIndexCount = save.planted.Count;
+                plantIndexDirty = false;
+            }
+            return plantIndex.TryGetValue(c, out var p) && p.x == c.x && p.y == c.y ? p : null;
+        }
+
+        /// <summary>Reife Pflanzen im Quadrat um p (ohne p selbst) – statt die ganze Liste zu durchsuchen.</summary>
+        IEnumerable<PlantedState> GrownAround(PlantedState p, int radius)
+        {
+            for (int dx = -radius; dx <= radius; dx++)
+                for (int dy = -radius; dy <= radius; dy++)
+                {
+                    if (dx == 0 && dy == 0) continue;
+                    var q = PlantAt(new Cell(p.x + dx, p.y + dy));
+                    if (q != null && q.Grown) yield return q;
+                }
+        }
+
+        /// <summary>Reife Tauschilfe, deren Tropfen diese Zelle erreichen (sucht im Kreuz um die Zelle).</summary>
+        IEnumerable<PlantedState> WaterersOf(Cell c)
+        {
+            int maxR = WaterRadius + 4;   // Saftrohre verlaengern hoechstens um ein paar Felder
+            for (int d = 0; d < 4; d++)
+                for (int k = 1; k <= maxR; k++)
+                {
+                    var q = PlantAt(new Cell(c.x + (d == 0 ? k : d == 1 ? -k : 0), c.y + (d == 2 ? k : d == 3 ? -k : 0)));
+                    if (q != null && q.Grown && q.Role == "water" && k <= WaterRadiusOf(q)) yield return q;
+                }
         }
 
         /// <summary>Fusspunkt einer Pflanze: Mitte ihrer Flaeche, knapp ueber dem unteren Feldrand.</summary>
@@ -187,7 +225,7 @@ namespace SeedClicker
             var def = PlantBalance.I.Plant(type);
             if (def != null && def.cost > 0 && !TrySpend(SeedCost(def), CellCenterOf(c) + new Vector2(0, 0.6f))) return false;
             var p = new PlantedState { x = c.x, y = c.y, type = type, growth = 0 };
-            save.planted.Add(p);
+            save.planted.Add(p); DirtyPlants();
             CreatePlantView(p, true);
             var pos = CellCenterOf(c);
             Particles.I?.Burst(pos, "square", new Color(0.45f, 0.3f, 0.18f), 8, 2.2f, 0.45f, 0.7f, 6f, 1f);
@@ -204,7 +242,7 @@ namespace SeedClicker
             if (p == null || !IsSlot(to) || PlantAt(to) != null || !Fits(to, p.type, true)) return false;
             var from = new Cell(p.x, p.y);
             RemovePlantView(from);
-            p.x = to.x; p.y = to.y;
+            p.x = to.x; p.y = to.y; DirtyPlants();
             CreatePlantView(p, true);
             if (plantViews.TryGetValue(to, out var v)) v.readyAt = 0f;
             PunchField(to, 1f);
@@ -229,7 +267,7 @@ namespace SeedClicker
             }
             if (!Fits(cb, a.type, true) || !Fits(ca, b.type, true)) return false;
             RemovePlantView(ca); RemovePlantView(cb);
-            a.x = cb.x; a.y = cb.y; b.x = ca.x; b.y = ca.y;
+            a.x = cb.x; a.y = cb.y; b.x = ca.x; b.y = ca.y; DirtyPlants();
             CreatePlantView(a, true); CreatePlantView(b, true);
             foreach (var c in new[] { ca, cb })
             {
@@ -286,7 +324,7 @@ namespace SeedClicker
         {
             var c = new Cell(p.x, p.y);
             RemovePlantView(c);
-            save.planted.Remove(p);
+            save.planted.Remove(p); DirtyPlants();
             Particles.I?.Burst(CellCenterOf(c), "leaf", new Color(0.5f, 0.8f, 0.35f), 8, 2.5f, 0.6f, 0.5f, 4f, 1.5f);
             Sfx.Play("dig");
             NotifyInventory();
@@ -824,7 +862,7 @@ namespace SeedClicker
         void LoadPlants()
         {
             MigratePlantIds();
-            if (!save.plantsCleared) { save.planted.Clear(); save.plantsCleared = true; save.Save(); }
+            if (!save.plantsCleared) { save.planted.Clear(); DirtyPlants(); save.plantsCleared = true; save.Save(); }
             foreach (var q in save.planted) { q.w = 1; q.h = 1; }   // Pflanzen belegen nur noch ein Feld
             if (save.starterChosen && !string.IsNullOrEmpty(save.selectedPlant) && !save.unlocked.Contains(save.selectedPlant)) save.unlocked.Add(save.selectedPlant);
             UnlockForWave(save.wave);
@@ -832,7 +870,7 @@ namespace SeedClicker
             {
                 var p = save.planted[i];
                 if (IsSlot(new Cell(p.x, p.y)) && PlantBalance.I.Plant(p.type) != null) CreatePlantView(p, false);
-                else save.planted.RemoveAt(i);
+                else { save.planted.RemoveAt(i); DirtyPlants(); }
             }
         }
 
@@ -845,10 +883,15 @@ namespace SeedClicker
             UpdateShocks(udt);
             UpdateMerge(udt);
             UpdateAreaView();
+            // nur Pflanzen im Bild (plus Rand) animieren – auf grossen Hoefen spart das viel Arbeit
+            var cam = Camera.main;
+            Rect view = default; bool cull = cam != null;
+            if (cull) { float hh = cam.orthographicSize + 1.5f, hw = cam.orthographicSize * cam.aspect + 1.5f; Vector2 cp = cam.transform.position; view = new Rect(cp.x - hw, cp.y - hh, hw * 2f, hh * 2f); }
             foreach (var p in save.planted)
             {
                 var c = new Cell(p.x, p.y);
                 if (!plantViews.TryGetValue(c, out var v)) continue;
+                if (cull && carrying != p && !view.Contains(CellCenter(c))) continue;
                 v.pop = Mathf.MoveTowards(v.pop, 1f, udt * 3f);
                 v.barPunch = Mathf.MoveTowards(v.barPunch, 0, udt * 6f);
                 v.flash = Mathf.MoveTowards(v.flash, 0f, udt * 9f);

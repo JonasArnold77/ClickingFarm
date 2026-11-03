@@ -107,11 +107,8 @@ namespace SeedClicker
         int FriendCount(PlantedState p, CatalogDef c)
         {
             int n = 0;
-            foreach (var q in save.planted)
-            {
-                if (q == p || !q.Grown || q.type == p.type || Cheb(p, q) > 1) continue;
-                if (Array.IndexOf(c.friends, q.type) >= 0) n++;
-            }
+            foreach (var q in GrownAround(p, 1))
+                if (q.type != p.type && Array.IndexOf(c.friends, q.type) >= 0) n++;
             return n;
         }
 
@@ -164,15 +161,17 @@ namespace SeedClicker
 
         // Kombo-Rueckmeldung: steigt die Kombo einer reifen Pflanze spuerbar, gibt es sofort "Kombo ×3,2!"
         readonly Dictionary<PlantedState, float> lastCombo = new Dictionary<PlantedState, float>();
-        float comboScanT;
+        int comboScanAt;
 
         void UpdateCombos(float dt)
         {
-            comboScanT -= dt;
-            if (comboScanT > 0f) return;
-            comboScanT = 0.5f;
-            foreach (var p in save.planted)
+            // je Bild ein Stueck der Pflanzen pruefen (einmal rundum in etwa 0,5 s)
+            if (comboScanAt >= save.planted.Count) comboScanAt = 0;
+            int per = Mathf.Max(10, save.planted.Count / 30);
+            int end = Mathf.Min(save.planted.Count, comboScanAt + per);
+            for (; comboScanAt < end; comboScanAt++)
             {
+                var p = save.planted[comboScanAt];
                 if (!p.Grown || p.Role != "harvest") continue;
                 float m = PlacementMult(p);
                 bool known = lastCombo.TryGetValue(p, out float old);

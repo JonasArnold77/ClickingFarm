@@ -20,7 +20,7 @@ namespace SeedClicker
 
         readonly Dictionary<Cell, Color> boosted = new Dictionary<Cell, Color>();
         readonly List<SpriteRenderer> shimmerPool = new List<SpriteRenderer>(), linkPool = new List<SpriteRenderer>();
-        float boostScanT, shimmerSparkT;
+        float shimmerSparkT;
         int linkUsed;
 
         static readonly Color RiverCol = new Color(0.35f, 0.75f, 1f), SchilfCol = new Color(0.45f, 0.9f, 1f),
@@ -48,21 +48,25 @@ namespace SeedClicker
                     list.Add(new BoostSource { label = "Bach: Wachstum ×" + r.growth.ToString("0.#") + ", Ernte ×" + r.produce.ToString("0.#"), from = CellCenter(rc), col = RiverCol });
                     dx = 2; break;   // ein Bach reicht
                 }
-            foreach (var q in save.planted)
-            {
-                if (!q.Grown || (q.x == c.x && q.y == c.y)) continue;
-                string name = PlantBalance.I.Plant(q.type)?.name ?? q.type;
-                var from = CellCenter(new Cell(q.x, q.y));
-                if (q.Role == "water" && InCross(new Cell(q.x, q.y), c, WaterRadiusOf(q))) list.Add(new BoostSource { label = name + ": tropft, Ernte fällt heraus", from = from, col = SchilfCol });
-                else if (q.Role == "fert" && Cheb(c, q.x, q.y) <= 1) list.Add(new BoostSource { label = name + ": Dünger, Ernte ×1,5", from = from, col = FertCol });
-                else if (q.Role == "boost" && Cheb(c, q.x, q.y) <= 2) list.Add(new BoostSource { label = name + ": Tipps ×2", from = from, col = BoostCol });
-            }
+            foreach (var q in WaterersOf(c))
+                list.Add(new BoostSource { label = (PlantBalance.I.Plant(q.type)?.name ?? q.type) + ": tropft, Ernte fällt heraus", from = CellCenter(new Cell(q.x, q.y)), col = SchilfCol });
+            for (int dx = -2; dx <= 2; dx++)
+                for (int dy = -2; dy <= 2; dy++)
+                {
+                    if (dx == 0 && dy == 0) continue;
+                    var q = PlantAt(new Cell(c.x + dx, c.y + dy));
+                    if (q == null || !q.Grown) continue;
+                    string name = PlantBalance.I.Plant(q.type)?.name ?? q.type;
+                    var from = CellCenter(new Cell(q.x, q.y));
+                    if (q.Role == "fert" && Cheb(c, q.x, q.y) <= 1) list.Add(new BoostSource { label = name + ": Dünger, Ernte ×1,5", from = from, col = FertCol });
+                    else if (q.Role == "boost") list.Add(new BoostSource { label = name + ": Tipps ×2", from = from, col = BoostCol });
+                }
             var pc = PlantAt(c);
             var pd = pc != null ? PlantBalance.I.Plant(pc.type) : null;
             // Lieblingsnachbarn und Kombo
             if (pc != null && pd != null && pd.friends != null)
-                foreach (var q in save.planted)
-                    if (q != pc && q.Grown && q.type != pc.type && Cheb(c, q.x, q.y) <= 1 && System.Array.IndexOf(pd.friends, q.type) >= 0)
+                foreach (var q in GrownAround(pc, 1))
+                    if (q.type != pc.type && System.Array.IndexOf(pd.friends, q.type) >= 0)
                         list.Add(new BoostSource { label = (PlantBalance.I.Plant(q.type)?.name ?? q.type) + ": Freund, Ernte +" + Mathf.RoundToInt(PlantBalance.I.Helpers.friendBonus * 100) + " %", from = CellCenter(new Cell(q.x, q.y)), col = new Color(1f, 0.6f, 0.75f) });
             if (pc != null && pc.Role == "harvest")
             {
@@ -79,20 +83,43 @@ namespace SeedClicker
 
         // ------------------------------------------------------------------ Schimmern
 
+        readonly List<Cell> boostScanList = new List<Cell>();
+        int boostScanAt;
+
+        /// <summary>Wird dieses Feld verstaerkt, und in welcher Farbe schimmert es? (wie BoostSources, nur ohne Texte)</summary>
+        bool QuickBoost(Cell c, out Color col)
+        {
+            RefreshTotems();
+            if (totemMap.TryGetValue(c, out var t) && TotemActive(t)) { col = OutlineColor(TotemStrength(t)); return true; }
+            for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++) if ((dx != 0 || dy != 0) && rivers.ContainsKey(new Cell(c.x + dx, c.y + dy))) { col = RiverCol; return true; }
+            foreach (var q in WaterersOf(c)) { col = SchilfCol; return true; }
+            for (int dx = -2; dx <= 2; dx++)
+                for (int dy = -2; dy <= 2; dy++)
+                {
+                    if (dx == 0 && dy == 0) continue;
+                    var q = PlantAt(new Cell(c.x + dx, c.y + dy));
+                    if (q == null || !q.Grown) continue;
+                    if (q.Role == "fert" && Mathf.Abs(dx) <= 1 && Mathf.Abs(dy) <= 1) { col = FertCol; return true; }
+                    if (q.Role == "boost") { col = BoostCol; return true; }
+                }
+            var pc = PlantAt(c);
+            if (pc != null && pc.Role == "harvest" && FriendMult(pc) > 1f) { col = new Color(1f, 0.6f, 0.75f); return true; }
+            col = default;
+            return false;
+        }
+
         void UpdateBoosts(float dt)
         {
             UpdateCombos(dt);   // Kombo gestiegen? sofort feiern
             // alle paar Augenblicke neu bestimmen, welche Felder geboostet sind
-            boostScanT -= dt;
-            if (boostScanT <= 0f)
+            // je Bild nur ein Stueck der Felder pruefen (verteilt die Arbeit, kein Ruckeln auf grossen Hoefen)
+            if (boostScanList.Count == 0 || boostScanAt >= boostScanList.Count) { boostScanList.Clear(); boostScanList.AddRange(fields.Keys); boostScanAt = 0; }
+            int per = Mathf.Max(20, boostScanList.Count / 12);
+            for (int n = 0; n < per && boostScanAt < boostScanList.Count; n++, boostScanAt++)
             {
-                boostScanT = 0.4f;
-                boosted.Clear();
-                foreach (var c in fields.Keys)
-                {
-                    var src = BoostSources(c);
-                    if (src.Count > 0) boosted[c] = src[0].col;
-                }
+                var c = boostScanList[boostScanAt];
+                if (!fields.ContainsKey(c)) { boosted.Remove(c); continue; }
+                if (QuickBoost(c, out var bc)) boosted[c] = bc; else boosted.Remove(c);
             }
             int i = 0;
             float t = Time.time;

@@ -17,8 +17,8 @@ namespace SeedClicker
         {
             var h = PlantBalance.I.Helpers;
             int best = 0;
-            foreach (var q in save.planted)
-                if (q.Grown && q.Role == "pipe" && Cheb(w, q) <= h.pipeRadius) best = Mathf.Max(best, h.pipeBonus + (q.Lv - 1) / 3);
+            foreach (var q in GrownAround(w, h.pipeRadius))
+                if (q.Role == "pipe") best = Mathf.Max(best, h.pipeBonus + (q.Lv - 1) / 3);
             return best;
         }
 

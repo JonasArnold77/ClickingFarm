@@ -18,6 +18,8 @@ namespace SeedClicker
         readonly List<SpriteRenderer> copies = new List<SpriteRenderer>();
         int level, dirs = 16;
         float width = 0.0175f;   // Linienbreite in Welt-Einheiten
+        (Sprite, int, int, bool, int, int) lastKey;
+        bool shown;
         static Material silhouetteMat;
         static bool shaderLooked;
 
@@ -39,10 +41,15 @@ namespace SeedClicker
         void LateUpdate()
         {
             bool on = host != null && host.enabled && host.sprite != null && level >= 2 && Mat != null;
-            if (!on) { Show(0); return; }
+            if (!on) { if (shown) { Show(0); shown = false; } return; }
             while (copies.Count < dirs) copies.Add(Make());
-            Show(dirs);
+            if (!shown) Show(dirs);
 
+            // nur neu setzen, wenn sich Bild, Stufe, Reihenfolge, Spiegelung oder Groesse geaendert haben
+            var ls0 = host.transform.lossyScale;
+            var key = (host.sprite, level, host.sortingOrder, host.flipX, Mathf.RoundToInt(ls0.x * 200f), Mathf.RoundToInt(ls0.y * 200f));
+            if (shown && key.Equals(lastKey)) return;
+            lastKey = key; shown = true;
             var c = WorldBuilder.MedalColor(level);
             var col = new Color(c.r, c.g, c.b, 1f);
             // feste Breite in der Welt, umgerechnet in die (skalierte) Einheit des Bildes
@@ -66,7 +73,7 @@ namespace SeedClicker
             for (int i = 0; i < copies.Count; i++) if (copies[i] != null) copies[i].enabled = i < n;
         }
 
-        void OnDisable() => Show(0);
+        void OnDisable() { Show(0); shown = false; }
 
         SpriteRenderer Make()
         {

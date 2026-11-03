@@ -142,8 +142,7 @@ namespace SeedClicker
         int WaterLevelBonus(Cell c)
         {
             int best = 0;
-            foreach (var q in save.planted)
-                if (q.Grown && q.Role == "water" && InCross(new Cell(q.x, q.y), c, WaterRadiusOf(q))) best = Mathf.Max(best, (q.Lv - 1) / 2);
+            foreach (var q in WaterersOf(c)) best = Mathf.Max(best, (q.Lv - 1) / 2);
             return best;
         }
 

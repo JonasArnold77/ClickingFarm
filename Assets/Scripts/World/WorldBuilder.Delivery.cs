@@ -22,7 +22,9 @@ namespace SeedClicker
 
         public static bool MakesProduct(PlantedState p) => p != null && p.Role == "harvest";
         public static string ProductName(CatalogDef d) => d == null ? "" : !string.IsNullOrEmpty(d.product) ? d.product : d.name;
-        const int PileShown = 48;   // so viele Stuecke werden gezeigt (der Vorrat selbst ist unbegrenzt)
+        // so viele Stuecke je Pflanze werden gezeigt (der Vorrat selbst ist unbegrenzt) – auf grossen Hoefen weniger,
+        // damit nicht zehntausende Bilder herumliegen
+        int PileShown => save.planted.Count > 150 ? 8 : save.planted.Count > 60 ? 20 : 48;
 
         /// <summary>Wert eines Produkts dieser Pflanze (wie frueher ein Ernte-Tipp).</summary>
         public double ItemValue(PlantedState p)
@@ -78,21 +80,33 @@ namespace SeedClicker
         }
 
         /// <summary>Von selbst nachproduzieren (vorher verdienten diese Pflanzen Muenzen pro Sekunde).</summary>
+        readonly Dictionary<PlantedState, (double cps, double val)> prodRate = new Dictionary<PlantedState, (double, double)>();
+        float prodCalcT;
+
         void UpdateProducts(float dt)
         {
+            // Ertrag je Pflanze nur alle 0,5 s neu berechnen (Nachbarn, Totem, Kombo ...), dazwischen mit dem letzten Wert weiter
+            prodCalcT -= dt;
+            bool recalc = prodCalcT <= 0f;
+            if (recalc) prodCalcT = 0.5f;
             foreach (var p in save.planted)
             {
                 if (!p.Grown || !MakesProduct(p)) continue;
+                if (recalc || !prodRate.TryGetValue(p, out var rv)) { rv = (PlantCps(p), ItemValue(p)); prodRate[p] = rv; }
                 prodFrac.TryGetValue(p, out var f);
-                f += PlantCps(p) * dt;
-                double val = ItemValue(p);
-                if (f >= val) { f -= val; AddProduct(p, 1, val, null); }
+                f += rv.cps * dt;
+                if (f >= rv.val) { f -= rv.val; AddProduct(p, 1, rv.val, null); }
                 prodFrac[p] = f;
             }
+            if (recalc && prodRate.Count > save.planted.Count * 2) prodRate.Clear();
             UpdatePiles();
         }
 
         /// <summary>Die Ernte liegt wild im und ums Feld verstreut: ein Mini-Bild je Stueck im Vorrat.</summary>
+        // Haufen nur neu zeichnen, wenn sich etwas geaendert hat (Stueckzahl, Bild, Ort, Medaille) – vorher jedes Bild alles
+        readonly Dictionary<PlantedState, (int show, Sprite spr, int x, int y, int medal)> pileState = new Dictionary<PlantedState, (int, Sprite, int, int, int)>();
+        readonly HashSet<PlantedState> pileAlive = new HashSet<PlantedState>();
+
         void UpdatePiles()
         {
             foreach (var p in save.planted)
@@ -102,6 +116,9 @@ namespace SeedClicker
                 if (list == null && show == 0) continue;
                 if (list == null) pileViews[p] = list = new List<SpriteRenderer>();
                 var spr = plantViews.TryGetValue(new Cell(p.x, p.y), out var v) && v.sr != null ? v.sr.sprite : null;
+                var key = (show, spr, p.x, p.y, MedalOf(p));
+                if (pileState.TryGetValue(p, out var had) && had == key) continue;
+                pileState[p] = key;
                 while (list.Count < show)
                 {
                     var sr = new GameObject("Pile").AddComponent<SpriteRenderer>();
@@ -114,7 +131,6 @@ namespace SeedClicker
                     sr.enabled = i < show && spr != null;
                     if (!sr.enabled) continue;
                     sr.sprite = spr;
-                    MedalAura.Set(sr, MedalOf(p), 0.009f, 8);   // Erntestueck: duenne Linie, 8 Kopien reichen
                     float s = 0.15f / Mathf.Max(0.01f, spr.bounds.size.x);
                     sr.transform.localScale = Vector3.one * s;
                     var pos = ScatterPos(p, i);
@@ -126,9 +142,11 @@ namespace SeedClicker
                     sr.transform.rotation = Quaternion.Euler(0, 0, (Hash(p, i, 3) * 2f - 1f) * 35f);
                 }
             }
-            // Haeufchen von Pflanzen, die es nicht mehr gibt
+            // Haeufchen von Pflanzen, die es nicht mehr gibt (selten pruefen, mit Menge statt Liste)
+            if (pileViews.Count == 0 || Time.frameCount % 30 != 0) return;
+            pileAlive.Clear(); foreach (var q in save.planted) pileAlive.Add(q);
             foreach (var key in new List<PlantedState>(pileViews.Keys))
-                if (!save.planted.Contains(key)) { foreach (var sr in pileViews[key]) if (sr != null) Destroy(sr.gameObject); pileViews.Remove(key); }
+                if (!pileAlive.Contains(key)) { foreach (var sr in pileViews[key]) if (sr != null) Destroy(sr.gameObject); pileViews.Remove(key); pileState.Remove(key); }
         }
 
         // ------------------------------------------------------------------ Lieferkiste
@@ -419,7 +437,7 @@ namespace SeedClicker
                 sr.enabled = i < n && k.load[i] != null;
                 if (!sr.enabled) continue;
                 sr.sprite = k.load[i];
-                MedalAura.Set(sr, i < k.lmedal.Count ? k.lmedal[i] : 0, 0.009f, 8);   // Erntestueck: duenne Linie, 8 Kopien reichen
+                MedalAura.Set(sr, i < k.lmedal.Count ? k.lmedal[i] : 0, 0.009f, 4);   // getragenes Stueck: duenne Linie, 4 Kopien reichen (viele Knollis, viele Stuecke)
                 var goal = OrbitPos(k, i, n, hop, out bool front);
                 // Magnet-Folgen: Feder zum Platz in der Wolke, mit Nachziehen – weit weg zieht es staerker
                 while (k.lpos.Count <= i) { k.lpos.Add(goal); k.lvel.Add(Vector2.zero); }

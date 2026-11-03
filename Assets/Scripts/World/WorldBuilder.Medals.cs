@@ -40,8 +40,7 @@ namespace SeedClicker
         /// <summary>Steht ein reifes Tauschilf so nah, dass es dieses Feld betropft?</summary>
         bool InTauschilfReach(PlantedState p)
         {
-            foreach (var q in save.planted)
-                if (q != p && q.Grown && q.Role == "water" && InCross(new Cell(q.x, q.y), new Cell(p.x, p.y), WaterRadiusOf(q))) return true;
+            foreach (var q in WaterersOf(new Cell(p.x, p.y))) if (q != p) return true;
             return false;
         }
 

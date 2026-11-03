@@ -128,14 +128,14 @@ namespace SeedClicker
         int GrownNear(PlantedState p, string role, int radius)
         {
             int n = 0;
-            foreach (var q in save.planted) if (q != p && q.Grown && q.Role == role && Cheb(p, q) <= radius) n++;
+            foreach (var q in GrownAround(p, radius)) if (q.Role == role) n++;
             return n;
         }
 
         /// <summary>Nass (nur Optik): ein Tauschilf erreicht das Feld (Saftrohre verlaengern), das Feld liegt am Bach oder ein Giesser war da.</summary>
         public bool IsWatered(PlantedState p)
         {
-            foreach (var q in save.planted) if (q != p && q.Grown && q.Role == "water" && InCross(new Cell(q.x, q.y), new Cell(p.x, p.y), WaterRadiusOf(q))) return true;
+            foreach (var q in WaterersOf(new Cell(p.x, p.y))) if (q != p) return true;
             return NearRiver(p) || WetByKnolli(p);   // am Bach oder von einem Giesser-Knolli gegossen
         }
         /// <summary>Gruppen-Pflanzen (z. B. Salat): je reifer gleicher Nachbar (auch schraeg) mehr Ertrag.</summary>
@@ -143,7 +143,7 @@ namespace SeedClicker
         {
             if (c == null || c.group <= 0f) return 1f;
             int n = 0;
-            foreach (var q in save.planted) if (q != p && q.type == p.type && q.Grown && Cheb(p, q) <= 1) n++;
+            foreach (var q in GrownAround(p, 1)) if (q.type == p.type) n++;
             return 1f + c.group * n;
         }
         float FertMult(PlantedState p) => 1f + 0.5f * GrownNear(p, "fert", 1) * UpgradeMult("fert");

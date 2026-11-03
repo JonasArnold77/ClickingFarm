@@ -395,3 +395,14 @@
 - Knopf „Endlevel-Hof“ oben rechts unter „Neues Spiel“ (zweimal tippen). Der eigene Spielstand wird vorher gesichert (`seedclicker_world_backup`); danach heißt der Knopf „Eigener Hof zurück“ und holt ihn wieder (`WorldBuilder.Showcase.cs`).
 - Aufbau: 8 Kombo-Beete (7×5; Weizen/Mais im Schachbrett als Freunde, je 4 Tauschilf, 2 Kompostpilze, 1 Trommelkraut in der Mitte; meist Gold, einige Silber), auf jedem ein Totem (Ernte/Wachstum/Fleiß), unter jeder Beetreihe ein Bach. Darunter 8 Knolli-Hütten, dann 4 Mauerreihen hintereinander (3 aus Stein, vorderste und hinterste mit Dornen, versetzte Tore), 12 steinerne Wachtürme zwischen den Reihen, Steinpulte mit allen Kampfpflanzen auf zwei Mauerreihen, seitliche Steinmauern bis hoch. 16 Knollis mit Berufen, alles frei, alle Verbesserungen, Hof Stufe 6, Ziel 15 + 2 Großprojekte, voller Vorrat, Granatwerfer mit Feuer.
 - Der Vorführ-Stand (`showcase`) räumt den ganzen Hof von Felsen, Bäumen und Kram, bevor die Felder geladen werden.
+
+## Leistung auf großen Höfen (03.11.2026)
+- Gemessen mit dem Endlevel-Hof (~300 Pflanzen): vorher 0,3 Bilder/s. Hauptursache: viele Abfragen gingen für jede Pflanze die ganze Pflanzenliste durch (quadratisch).
+- Umbau:
+  - `PlantAt` über einen Zellen-Index statt Listensuche; Nachbar-Abfragen (Dünger, Trommelkraut, Gruppe, Freunde, Saftrohr) schauen nur die Felder ringsum an (`GrownAround`); Tauschilf-Reichweite über eine Kreuzsuche um die Zelle (`WaterersOf`).
+  - Nachwachsende Ernte: Rate und Wert je Pflanze nur alle 0,5 s neu.
+  - Erntehaufen werden nur neu gezeichnet, wenn sich etwas ändert; auf großen Höfen liegen höchstens 8 (über 150 Pflanzen) bzw. 20 (über 60) Stücke je Pflanze sichtbar; liegende Stücke haben keine Medaillen-Kontur mehr; getragene nur 4 Kopien.
+  - Medaillen-Kontur setzt ihre Kopien nur neu, wenn sich Bild, Stufe, Reihenfolge oder Größe ändern.
+  - Schimmer- und Kombo-Prüfung laufen verteilt über mehrere Bilder statt alle auf einmal.
+  - Pflanzen außerhalb des Bildes werden nicht animiert.
+- Ergebnis im Batch-Test: Ernte-Berechnung 243 → 1,6 ms je Bild, Boost-Scan ~500 ms alle 0,4 s → ~3 ms, Hof-Logik insgesamt ~23 ms; im Editor-Batchbetrieb 9 Bilder/s (dort ohne echte Grafik und mit Editor-Overhead, im Spiel/Build schneller).
