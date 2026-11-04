@@ -28,6 +28,7 @@ namespace SeedClicker
             if (WorldBuilder.I != null)
             {
                 WorldBuilder.I.Floater += (w, txt, col) => SpawnFloater(w, txt, col);
+                WorldBuilder.I.ShopTapped += () => { if (modal == null) OpenShop(shopTab); };   // Hofladen antippen
             }
             SelectTool(WorldTool.Axe);
             InitPlantsUI();

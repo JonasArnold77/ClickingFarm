@@ -234,7 +234,8 @@ namespace SeedClicker
         void PlaceHouse()
         {
             Shadow(HousePos + new Vector2(0.2f, 0.05f), 5.2f, 0.8f, 0.35f);
-            Place("sk_House_0", HousePos, HouseScale, false, 0.02f);
+            var house = Place("sk_House_0", HousePos, HouseScale, false, 0.02f);
+            PlaceStorefront(house);   // das Haus ist der Hofladen
             Reserve(HousePos + new Vector2(0, 1.3f), 2.7f);
             Reserve(HousePos + new Vector2(0, -0.8f), 1.6f); // Vorplatz frei halten
             // ein paar Happy-Harvest-Props direkt am Haus

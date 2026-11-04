@@ -209,6 +209,7 @@ namespace SeedClicker
             if (wb.HitBench(w)) { wb.TapBench(); return; }
             if (wb.HitAltar(w)) { wb.TapAltar(); return; }
             if (wb.HitCrate(w)) { wb.TapCrate(); return; }
+            if (!wb.Placing && !wb.BuildMode && wb.HitShop(w)) { wb.TapShop(); return; }   // Hofladen: Laden-Fenster
             var hs = wb.HitStructure(w);
             if (hs != null && !wb.Placing && !wb.BuildMode) { wb.TapStructure(hs); return; }
             if (wb.Placing)
