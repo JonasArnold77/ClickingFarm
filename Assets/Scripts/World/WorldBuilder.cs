@@ -18,7 +18,7 @@ namespace SeedClicker
         public const float MapW = 22f, MapH = 30f;
         public static readonly Vector2 HousePos = new Vector2(0f, 4.5f);   // Mitte der Hausunterkante
         const int MaskPerUnit = 8;
-        const float HouseScale = 2.3f;
+        const float HouseWidth = 3.7f;   // Haupthaus (City-Paket, building_08 in Hausfarben) in Welt-Einheiten
 
         Texture2D mask;
         Color[] maskPixels;
@@ -234,7 +234,19 @@ namespace SeedClicker
         void PlaceHouse()
         {
             Shadow(HousePos + new Vector2(0.2f, 0.05f), 5.2f, 0.8f, 0.35f);
-            Place("sk_House_0", HousePos, HouseScale, false, 0.02f);
+            // Haupthaus aus dem City-Paket; seine Front steht dort, wo die Front des alten Hauses war (HousePos + 1)
+            var hs = BuildingArt.Get("haus");
+            if (hs != null)
+            {
+                var house = new GameObject("Haus").AddComponent<SpriteRenderer>();
+                house.transform.SetParent(objects, false);
+                house.sprite = hs;
+                float k = HouseWidth / Mathf.Max(0.01f, hs.bounds.size.x);
+                house.transform.localScale = new Vector3(k, k, 1f);
+                house.transform.position = HousePos + new Vector2(0f, 0.95f);
+                house.sortingOrder = Order(HousePos.y);
+            }
+            else Place("sk_House_0", HousePos, 2.3f, false, 0.02f);   // Rueckfall: altes Haus
             PlaceShop();   // Laden rechts neben dem Haus
             Reserve(HousePos + new Vector2(0, 1.3f), 2.7f);
             Reserve(HousePos + new Vector2(0, -0.8f), 1.6f); // Vorplatz frei halten

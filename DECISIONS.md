@@ -457,3 +457,8 @@
 - Nachtrag 2: Laden insgesamt dunkler und satter (Faktor 0,74 auf die Helligkeit), Wachtürme mit dem Hausblau als Dach (auch die Rostflecken dunkelblau) und etwas dunkler (×0,78); der Steinturm mittelgrau statt hellgrau. Die Skripte zum Umfärben liegen nicht im Repo, die Ergebnisse als PNG in Resources/Buildings.
 - Nachtrag 3: Laden und Wachturm noch dunkler (Laden ×0,64, Turm ×0,68). Der Wachturm ist immer aus Holz; nach Steinmoos bekommt er nur Steinbeine (Kanzel und Dach bleiben Holz bzw. Hausblau), damit das Upgrade sichtbar bleibt.
 
+## Haupthaus aus dem City-Paket, eine Palette für alle Gebäude (04.11.2026)
+- Das Haupthaus ist jetzt building_08 (Backsteinhaus mit Satteldach) statt des alten Cozy-Farm-Hauses, damit alle Gebäude im selben Comic-Stil sind. Seine Front steht dort, wo die alte Front war; Breite 3,7 Einheiten. Fällt das Bild weg, kommt das alte Haus zurück.
+- Gemeinsame Palette: Dächer im Hausblau, blaue Wände werden heller Putz, Konturen dunkelbraun, alles dunkler (×0,66) und etwas satter. Gilt für Haupthaus, Knolli-Hütten, Saatgutmühle (Laden und Turm hatten das schon).
+- Saatgutmühle jetzt building_05 – das Satteldachhaus ist das Haupthaus und soll nicht doppelt vorkommen.
+

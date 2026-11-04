@@ -176,7 +176,7 @@ namespace SeedClicker
             switch (s.id)
             {
                 case "knollihuette": return Get(((s.x + s.y) & 1) == 0 ? "huette_a" : "huette_b");
-                case "saatgutmuehle": return Get("muehle");
+                case "saatgutmuehle": return Get("muehle");   // building_05 (das Satteldachhaus ist jetzt das Haupthaus)
                 case "wachturm": return Get(s.stone ? "turm_stein" : "turm_holz");   // Holzturm aus City-Teilen zusammengesetzt, nach Steinmoos mit Steinbeinen
             }
             return null;
