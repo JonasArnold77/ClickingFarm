@@ -75,7 +75,7 @@ namespace SeedClicker
         public int WeaponTapsNeeded(string id)
         {
             var b = PlantBalance.I.Bench;
-            return Mathf.Max(1, Mathf.RoundToInt(b.tapsBase * Mathf.Pow(b.tapsGrowth, WeaponLv(id) - 1)));
+            return PlantBalance.I.Clicks(b.tapsBase * Mathf.Pow(b.tapsGrowth, WeaponLv(id) - 1), "forge");
         }
         public bool WeaponMaxed(string id) => WeaponLv(id) >= PlantBalance.I.Bench.maxLevel;
         public float WeaponDamageMult(string id) => 1f + PlantBalance.I.Bench.damagePerLevel * (WeaponLv(id) - 1);

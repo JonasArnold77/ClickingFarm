@@ -1887,6 +1887,14 @@
     "growth": 1.12
   },
   "levelGrowth": 1.35,
+  "clicks": {
+    "scale": 3,
+    "grow": 1,
+    "medal": 1,
+    "clear": 1,
+    "forge": 1,
+    "build": 1
+  },
   "harvestLevelTaps": [
     60,
     300,

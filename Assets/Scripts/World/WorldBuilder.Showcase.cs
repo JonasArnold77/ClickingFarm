@@ -47,6 +47,7 @@ namespace SeedClicker
                 coins = 5e8, earned = 2e9, wood = 999, runes = 60, wave = 12, nights = 14,
                 milestone = (B.milestones != null ? B.milestones.Length : 0) + 2, knollis = 16,
                 weapon = "granatwerfer", selectedPlant = "mais", elementsReset = true,
+                clickGrow = B.Click("grow"), clickMedal = B.Click("medal"), clickForge = B.Click("forge"), clickBuild = B.Click("build"),
                 deliveredTotal = 250000, killsTotal = 2500, deliveredCount = 250000
             };
             foreach (var c in B.catalog) s.unlocked.Add(c.id);

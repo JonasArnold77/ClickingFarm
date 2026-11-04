@@ -430,3 +430,11 @@
 - Ziele, die nur Pflanzen freischalten (Knolli-Trupp), behalten ihre Münz-Aufgabe. Großprojekte unverändert.
 - Ungetestet im Spielablauf: Ob die Spar-Phasen zu lang werden, zeigt erst echtes Spielen – die Faktoren lassen sich in plants.json (Preise, coinShare) direkt ändern.
 
+## Mehr Klicks wie in einem Klickspiel (04.11.2026)
+- Wunsch: eher wie Cookie Clicker – für alles deutlich mehr Klicks.
+- Neuer zentraler Klick-Regler in plants.json → `clicks`: `scale` (gilt für alles, Start: 3) und je Bereich ein eigener Faktor: `grow` (Wachsen), `medal` (Medaillen und Kampf-Stufen), `clear` (Bäume, Stümpfe, Steine, Gerümpel), `forge` (Waffenbank), `build` (Bauwerke).
+- Damit z. B.: Radieschen 15 → 45 Klicks, Bronze/Silber/Gold 60/300/1500 → 180/900/4500, großer Baum 8 → 24, großer Stein 5 → 15.
+- Alte Spielstände: Beim Laden wird angefangener Fortschritt mit umgerechnet (Wachstum, Medaillen-, Waffen- und Bauwerks-Klicks), reife Pflanzen bleiben reif. Der zuletzt angewandte Regler steht im Spielstand.
+- Steine zeigen jetzt wie Gerümpel „noch N“ beim Klicken, damit man bei vielen Klicks sieht, wie weit es noch ist.
+- Automatik (Klopfwurz, Knollis) wird dadurch relativ schwächer – gewollt, Klicken bleibt das stärkste Werkzeug.
+

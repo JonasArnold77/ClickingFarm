@@ -25,7 +25,7 @@ namespace SeedClicker
 
         void AddJunk(SpriteRenderer sr, SpriteRenderer shadow, Vector2 p, int occ, int hp, bool wood)
         {
-            junk.Add(new JunkObj { id = junk.Count, occ = occ, hp = hp, p = p, sr = sr, shadow = shadow, wood = wood });
+            junk.Add(new JunkObj { id = junk.Count, occ = occ, hp = PlantBalance.I.Clicks(hp, "clear"), p = p, sr = sr, shadow = shadow, wood = wood });
         }
 
         /// <summary>Nach dem Laden: Umfeld des Hofs frei raeumen und bereits weggeklickten Kram entfernen.</summary>

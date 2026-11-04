@@ -505,7 +505,7 @@ namespace SeedClicker
                     wb.SelectPlant(cc.id);
                     CloseModal();
                     wb.PlantInto(cell, cc.id);
-                    hintText.text = "Tippe " + cc.name + " ~" + PlantBalance.I.growTaps + "× an, damit sie wächst";
+                    hintText.text = "Tippe " + cc.name + " ~" + PlantBalance.I.GrowTapsFor(cc.id) + "× an, damit sie wächst";
                 }, 26);
             }
             if (shown == 0) Label(content, "Hier ist noch nichts freigeschaltet.", 32, InkSoft, TextAnchor.MiddleCenter).LE(600, 300);

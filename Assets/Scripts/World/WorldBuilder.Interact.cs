@@ -14,6 +14,7 @@ namespace SeedClicker
     {
         public int wood;
         public float woodDebt;   // angefangenes Holz (Mauern kosten Bruchteile)
+        public float clickGrow, clickMedal, clickForge, clickBuild;   // zuletzt angewandter Klick-Regler (0 = alter Stand ohne Regler)
         public int runes, altarLevel;   // Runensteine; fuer die naechste Welle geopferte Runen
         public bool runesInit;
         public int depotCount, knollis; public double depotValue;   // depot*: alter Rest der Lieferkiste (wird morgens bezahlt)
@@ -163,7 +164,7 @@ namespace SeedClicker
             pivot.SetParent(objects, false);
             pivot.position = foot;
             sr.transform.SetParent(pivot, true);   // Drehpunkt am Stammfuss: wackeln und umfallen
-            int hp = big ? TreeHpBig : TreeHpSmall;
+            int hp = PlantBalance.I.Clicks(big ? TreeHpBig : TreeHpSmall, "clear");
             trees.Add(new TreeObj
             {
                 id = trees.Count, pivot = pivot, sr = sr, foot = foot, big = big, occ = occ, hp = hp, maxHp = hp,
@@ -182,10 +183,31 @@ namespace SeedClicker
             foreach (var id in save.felled)
                 if (id >= 0 && id < trees.Count) FellImmediate(trees[id], save.stumpsGone.Contains(id));
             InitRegrow();
+            ApplyClickScale();
             if (save.showcase) ClearCalmZone();   // Vorfuehr-Hof: erst den ganzen Hof frei raeumen, sonst blockieren Felsen Felder
             foreach (var c in save.fields) PlaceField(c, false, false);
             if (PlantBalance.I.testUnlockAll)
                 foreach (var d in PlantBalance.I.catalog) if (!save.unlocked.Contains(d.id)) save.unlocked.Add(d.id);
+        }
+
+        /// <summary>Klick-Regler geaendert: angefangene Klicks im Spielstand mitskalieren, damit reife Pflanzen reif,
+        /// Medaillen-, Waffen- und Bauwerks-Fortschritt anteilig erhalten bleiben.</summary>
+        void ApplyClickScale()
+        {
+            var B = PlantBalance.I;
+            float g = B.Click("grow"), m = B.Click("medal"), f = B.Click("forge"), b = B.Click("build");
+            float rg = g / (save.clickGrow > 0f ? save.clickGrow : 1f), rm = m / (save.clickMedal > 0f ? save.clickMedal : 1f);
+            float rf = f / (save.clickForge > 0f ? save.clickForge : 1f), rb = b / (save.clickBuild > 0f ? save.clickBuild : 1f);
+            if (Mathf.Approximately(rg, 1f) && Mathf.Approximately(rm, 1f) && Mathf.Approximately(rf, 1f) && Mathf.Approximately(rb, 1f)) return;
+            foreach (var p in save.planted)
+            {
+                p.growth = Mathf.RoundToInt(p.growth * rg);
+                p.xp = Mathf.RoundToInt(p.xp * rm);
+            }
+            foreach (var w in save.weaponLevels) w.xp *= rf;
+            foreach (var s in save.structures) s.xp *= rb;
+            save.clickGrow = g; save.clickMedal = m; save.clickForge = f; save.clickBuild = b;
+            save.Save();
         }
 
         void FellImmediate(TreeObj t, bool stumpGone)
@@ -265,7 +287,7 @@ namespace SeedClicker
             var sr = Place("sk_Tree_4", t.foot + new Vector2(0, -0.05f), StumpSize(t), t.id % 2 == 0, 0.02f);
             if (sr == null) return;
             t.stump = sr;
-            t.stumpHp = StumpHp;
+            t.stumpHp = PlantBalance.I.Clicks(StumpHp, "clear");
             if (fx) { sr.transform.localScale *= 0.01f; popping.Add((sr.transform, 0f)); }
         }
 

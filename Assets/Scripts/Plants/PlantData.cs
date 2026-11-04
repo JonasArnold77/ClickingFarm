@@ -96,6 +96,9 @@ namespace SeedClicker
         public float coinsPerLevel = 1f, victoryBonus = 40f, runeDrop = 0.05f, runeDropPerLevel = 0.05f, rockRune = 0.2f;
     }
     /// <summary>Verwandlungen: wie viele Holzmauern Steinmoos umwandelt, wie viel Stein haelt, hoechste Element-Stufe einer Waffe.</summary>
+    /// <summary>Klick-Regler (plants.json -> clicks): scale gilt fuer alles, die anderen nur fuer ihren Bereich –
+    /// grow: Wachsen, medal: Medaillen und Kampf-Stufen, clear: Baeume, Steine, Geruempel, forge: Waffenbank, build: Bauwerke.</summary>
+    [Serializable] public class ClicksDef { public float scale = 3f, grow = 1f, medal = 1f, clear = 1f, forge = 1f, build = 1f; }
     [Serializable] public class TransformsDef
     {
         public float stoneHpMult = 3f; public int maxElementLevel = 5;   // Steinmoos wandelt immer den ganzen Mauerabschnitt
@@ -249,7 +252,18 @@ namespace SeedClicker
         public int HarvestMaxLevel => (harvestLevelTaps?.Length ?? 0) + 1;
 
         /// <summary>Klicks, die eine reife Pflanze auf Stufe lv bis zur naechsten Stufe braucht.</summary>
-        public int LevelTapsFor(int lv) => Mathf.Max(1, Mathf.RoundToInt(levelTaps * Mathf.Pow(levelGrowth, Mathf.Max(0, lv - 1))));
+        public int LevelTapsFor(int lv) => Mathf.Max(1, Mathf.RoundToInt(levelTaps * Mathf.Pow(levelGrowth, Mathf.Max(0, lv - 1)) * Click("medal")));
+
+        /// <summary>Zentraler Klick-Regler: alle Klickzahlen mal clicks.scale, dazu je Bereich ein eigener Faktor.</summary>
+        public ClicksDef clicks = new ClicksDef();
+        public float Click(string kind)
+        {
+            var c = clicks ?? new ClicksDef();
+            float k = kind switch { "grow" => c.grow, "medal" => c.medal, "clear" => c.clear, "forge" => c.forge, "build" => c.build, _ => 1f };
+            return Mathf.Max(0.01f, c.scale * k);
+        }
+        /// <summary>Klickzahl mit Regler, mindestens 1.</summary>
+        public int Clicks(float baseTaps, string kind) => Mathf.Max(1, Mathf.RoundToInt(baseTaps * Click(kind)));
         public int[] growMilestones;
         public OptionDef[] patterns, projectiles, elements, effects;
         public SpeciesDef[] species;
@@ -379,7 +393,7 @@ namespace SeedClicker
         public SpeciesDef Species(string id) { foreach (var s in species) if (s.id == id) return s; return species[0]; }
         public MonsterDefW Monster(string id) { foreach (var m in monsters) if (m.id == id) return m; return monsters[0]; }
         public CatalogDef Plant(string id) { foreach (var c in catalog) if (c.id == id) return c; return null; }
-        public int GrowTapsFor(string id) { var c = Plant(id); return c != null && c.growTaps > 0 ? c.growTaps : growTaps; }
+        public int GrowTapsFor(string id) { var c = Plant(id); return Clicks(c != null && c.growTaps > 0 ? c.growTaps : growTaps, "grow"); }
         public string RoleOf(string id) { var c = Plant(id); return c == null || string.IsNullOrEmpty(c.role) ? "combat" : c.role; }
         public WallDef Wall => wall ?? (wall = new WallDef());
         public PedestalDef Pedestal => pedestal ?? (pedestal = new PedestalDef());

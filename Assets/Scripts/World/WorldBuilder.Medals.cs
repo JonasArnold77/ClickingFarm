@@ -23,7 +23,7 @@ namespace SeedClicker
             var B = PlantBalance.I;
             if (!HasMedals(p)) return B.LevelTapsFor(p.Lv);
             if (LevelMaxed(p)) return int.MaxValue / 4;
-            return Mathf.Max(1, B.harvestLevelTaps[Mathf.Clamp(p.Lv - 1, 0, B.harvestLevelTaps.Length - 1)]);
+            return B.Clicks(B.harvestLevelTaps[Mathf.Clamp(p.Lv - 1, 0, B.harvestLevelTaps.Length - 1)], "medal");
         }
 
         /// <summary>Ertrags-Faktor der Stufe: Medaillen springen gross, alle anderen wachsen mit der Stufe.</summary>

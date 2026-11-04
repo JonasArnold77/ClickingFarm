@@ -82,7 +82,7 @@ namespace SeedClicker
         public int StructTapsNeeded(StructureState s)
         {
             var t = PlantBalance.I.StructureTaps;
-            return Mathf.Max(1, Mathf.RoundToInt(t.tapsBase * Mathf.Pow(t.tapsGrowth, s.lv - 1)));
+            return PlantBalance.I.Clicks(t.tapsBase * Mathf.Pow(t.tapsGrowth, s.lv - 1), "build");
         }
         public bool StructMaxed(StructureState s) => s.lv >= PlantBalance.I.StructureTaps.maxLevel;
 

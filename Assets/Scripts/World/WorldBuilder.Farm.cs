@@ -171,7 +171,7 @@ namespace SeedClicker
                     if (roll < 0.5f) { sr = PlaceSized("hh_rock_medium", p, 0.45f + R() * 0.15f, R() < 0.5f); sh = Shadow(p, 0.65f, 0.16f); }
                     else sr = Place("sk_Stones", p, 0.65f + R() * 0.3f, R() < 0.5f, 0.04f);
                 }
-                if (sr != null) rocks.Add(new RockObj { id = rocks.Count, occ = occ, hp = big ? 5 : 3, p = p, sr = sr, shadow = sh });
+                if (sr != null) rocks.Add(new RockObj { id = rocks.Count, occ = occ, hp = PlantBalance.I.Clicks(big ? 5 : 3, "clear"), p = p, sr = sr, shadow = sh });
             }
         }
 
@@ -199,6 +199,7 @@ namespace SeedClicker
             Sfx.Play("chop", UnityEngine.Random.Range(1.3f, 1.5f), 0.8f);
             Haptics.Tap(12);
             WorldCamera.I?.Shake(0.02f);
+            Floater?.Invoke(best.p + new Vector2(UnityEngine.Random.Range(-0.15f, 0.15f), 0.6f), best.hp > 0 ? "noch " + best.hp : "weg!", new Color(1f, 0.95f, 0.8f));
             if (best.hp <= 0)
             {
                 RemoveRock(best, true);
