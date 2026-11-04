@@ -454,4 +454,5 @@
 - Laden auf die Farben des Wohnhauses umgefärbt (blaues Dach und Markise, heller Putz, Ocker-/Holzrahmen, braune Konturen). Erzeugt per Skript aus building_04, Ergebnis liegt als Resources/Buildings/laden.png.
 - Knopf sitzt jetzt im oberen Teil des Gebäudes (nicht in der Mitte, wo man klickt), darüber Name/Stufe und ein Fortschrittsbalken bis zur nächsten Stufe.
 - Testknopf „Alle Gebäude gratis“ (oben rechts unter „Endlevel-Hof“): schaltet einen Gratis-Modus an/aus (nicht gespeichert) und öffnet den Reiter „Bauwerke“ – dort sind alle Bauwerke sichtbar und kosten nichts.
+- Nachtrag 2: Laden insgesamt dunkler und satter (Faktor 0,74 auf die Helligkeit), Wachtürme mit dem Hausblau als Dach (auch die Rostflecken dunkelblau) und etwas dunkler (×0,78); der Steinturm mittelgrau statt hellgrau. Die Skripte zum Umfärben liegen nicht im Repo, die Ergebnisse als PNG in Resources/Buildings.
 
