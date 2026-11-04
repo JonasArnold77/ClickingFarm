@@ -470,4 +470,5 @@
 - Strahlen mit eigenem additiven Shader (Resources/Shaders/GlowAdditive.shader), damit sie aufhellen statt zu verdecken – sonst gingen sie auf der hellen Wiese unter.
 - Endlevel-Hof: Hütten Stufe 2–16 und Türme 6–20, damit alle drei Glanzstufen zu sehen sind.
 - Nachtrag: Strahlen jetzt vor dem Gebäude gerendert (steigen aus dem Dach auf statt dahinter), sieben statt fünf, länger, breiter und mit voller Kraft; Farbe leicht aufgehellt, damit Bronze, Silber und Gold als Licht wirken.
+- Glanz mit Cartoon-FX-Texturen: Glitzerpunkte aus zwei gekreuzten Lichtreflexen (cfxr flare) blitzen auf dem Dach auf, drehen sich und verglimmen (Bronze 2, Silber 3, Gold 6 gleichzeitig); die Strahlen nutzen jetzt die weiche Strahl-Textur (cfxr stretch ray blur), schmal und etwas schwächer. Der fertige Effekt „CFXR Magical Source“ wurde getestet und verworfen: groß deckt er das Gebäude zu, klein blitzt er nur kurz. Die Texturen liegen weiß mit Alpha als Resources/Buildings/fx_flare, fx_ray, fx_star.
 
