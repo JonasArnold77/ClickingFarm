@@ -235,6 +235,7 @@ namespace SeedClicker
         {
             Shadow(HousePos + new Vector2(0.2f, 0.05f), 5.2f, 0.8f, 0.35f);
             Place("sk_House_0", HousePos, HouseScale, false, 0.02f);
+            PlaceShop();   // Laden rechts neben dem Haus
             Reserve(HousePos + new Vector2(0, 1.3f), 2.7f);
             Reserve(HousePos + new Vector2(0, -0.8f), 1.6f); // Vorplatz frei halten
             // ein paar Happy-Harvest-Props direkt am Haus
@@ -376,6 +377,7 @@ namespace SeedClicker
             UpdateBoosts(Time.deltaTime);
             UpdateHelpers(Time.deltaTime);
             UpdateSeason(Time.deltaTime);
+            UpdateShop(Time.deltaTime);
             ambientT -= Time.deltaTime;
             if (ambientT > 0 || Particles.I == null) return;
             ambientT = 0.2f;

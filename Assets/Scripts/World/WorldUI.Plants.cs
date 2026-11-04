@@ -37,6 +37,7 @@ namespace SeedClicker
             BuildPlantInfo();
             BuildBenchInfo();
             BuildStructureInfo();
+            BuildBuildingButton();
             BuildAltarInfo();
             BuildChallengeHud();
             BuildTasks();   // grosse Aufgabenliste an der Seite (ersetzt Ziel- und Auftragsfeld)
@@ -355,6 +356,7 @@ namespace SeedClicker
             UpdatePlantInfo(dt);
             UpdateBenchInfo(dt);
             UpdateStructureInfo(dt);
+            UpdateBuildingButton(dt);
             UpdateAltarInfo(dt);
             UpdateChallengeHud(dt);
             UpdateTasks(dt);

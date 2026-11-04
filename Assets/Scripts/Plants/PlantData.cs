@@ -100,6 +100,9 @@ namespace SeedClicker
     /// grow: Wachsen, medal: Medaillen und Kampf-Stufen, clear: Baeume, Steine, Geruempel, forge: Waffenbank, build: Bauwerke.</summary>
     /// <summary>Klick-Belohnung (plants.json -> clickReward): jeder Klick, der selbst nichts erntet (Wachsen, Aufraeumen,
     /// Schmieden, Bauwerk ausbauen), bringt base + cpsShare × Muenzen pro Sekunde, mal Handschuh-Verbesserungen.</summary>
+    /// <summary>Laden neben dem Haus (plants.json -> shopLevel): jede Stufe bringt coinBonusPerLevel mehr Muenzen auf alles.
+    /// Klicks je Stufe wie bei Bauwerken (structureTaps).</summary>
+    [Serializable] public class ShopLevelDef { public float coinBonusPerLevel = 0.04f; }
     [Serializable] public class ClickRewardDef { public float @base = 1f, cpsShare = 0.05f; }
     [Serializable] public class ClicksDef { public float scale = 3f, grow = 1f, medal = 1f, clear = 1f, forge = 1f, build = 1f; }
     [Serializable] public class TransformsDef
@@ -260,6 +263,7 @@ namespace SeedClicker
         /// <summary>Zentraler Klick-Regler: alle Klickzahlen mal clicks.scale, dazu je Bereich ein eigener Faktor.</summary>
         public ClicksDef clicks = new ClicksDef();
         public ClickRewardDef clickReward = new ClickRewardDef();
+        public ShopLevelDef shopLevel = new ShopLevelDef();
         public float Click(string kind)
         {
             var c = clicks ?? new ClicksDef();

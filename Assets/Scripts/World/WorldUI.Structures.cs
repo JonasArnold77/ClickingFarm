@@ -73,16 +73,7 @@ namespace SeedClicker
             var x = Btn(root, "X", new Color(0.8f, 0.45f, 0.35f), () => structTimer = 0f, 40);
             x.GetComponent<RectTransform>().Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-18, -18), new Vector2(96, 84));
 
-            wb.StructureTapped += st =>
-            {
-                if (modal != null) return;
-                if (structTimer <= 0f || structShown != st) structPanel.localScale = Vector3.one * 0.9f;
-                structShown = st;
-                structTimer = InfoShowTime;
-                // die anderen Fenster sofort weg, nicht ueberblenden
-                HidePlantInfo(); infoGroup.alpha = 0f;
-                benchTimer = 0f; if (benchGroup != null) benchGroup.alpha = 0f;
-            };
+            // Antippen levelt das Bauwerk; das Fenster oeffnet der Knopf oben am Gebaeude (WorldUI.BuildingButton)
             wb.PlantTapped += _ => { structTimer = 0f; structGroup.alpha = 0f; if (benchGroup != null) { benchTimer = 0f; benchGroup.alpha = 0f; } };
             wb.BenchTapped += () => { structTimer = 0f; structGroup.alpha = 0f; infoGroup.alpha = 0f; };
             wb.StructureLeveled += (d, st) => Banner(d.name + " – Stufe " + st.lv + "!", wb.StructSummary(st));
@@ -91,6 +82,18 @@ namespace SeedClicker
                 if (d != null) { CloseModal(); hintText.text = WorldBuilder.IsTotem(d) ? d.name + ": Ecke antippen, Reihe aufziehen, in die Breite ziehen" : "Tippe auf einen freien Platz im Hof: " + d.name + " aufstellen"; }
                 else hintText.text = ToolHint(WorldCamera.Tool);
             };
+        }
+
+        /// <summary>Fenster eines Bauwerks zeigen (Wirkung, Fortschritt, Verbessern, Versetzen).</summary>
+        void ShowStructureInfo(StructureState st)
+        {
+            if (modal != null || st == null) return;
+            if (structTimer <= 0f || structShown != st) structPanel.localScale = Vector3.one * 0.9f;
+            structShown = st;
+            structTimer = InfoShowTime;
+            // die anderen Fenster sofort weg, nicht ueberblenden
+            HidePlantInfo(); infoGroup.alpha = 0f;
+            benchTimer = 0f; if (benchGroup != null) benchGroup.alpha = 0f;
         }
 
         void UpdateStructureInfo(float dt)

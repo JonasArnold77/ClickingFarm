@@ -14,6 +14,7 @@ namespace SeedClicker
     {
         public int wood;
         public float woodDebt;   // angefangenes Holz (Mauern kosten Bruchteile)
+        public int shopLv = 1; public float shopXp;   // Laden neben dem Haus: Stufe und Klicks zur naechsten
         public float clickGrow, clickMedal, clickForge, clickBuild;   // zuletzt angewandter Klick-Regler (0 = alter Stand ohne Regler)
         public int runes, altarLevel;   // Runensteine; fuer die naechste Welle geopferte Runen
         public bool runesInit;

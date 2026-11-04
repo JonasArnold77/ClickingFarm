@@ -31,6 +31,7 @@ namespace SeedClicker
         public void AddCoins(double n, Vector2? at = null, bool floater = true)
         {
             if (n <= 0) return;
+            n *= ShopCoinMult;   // Laden-Stufe: mehr Muenzen auf alles
             save.coins += n;
             save.earned += n;
             if (at.HasValue && floater) Floater?.Invoke(at.Value, "+" + Num.Short(n), new Color(1f, 0.88f, 0.35f));

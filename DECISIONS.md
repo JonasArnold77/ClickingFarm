@@ -443,3 +443,11 @@
 - Höhe: `clickReward.base` + `clickReward.cpsShare` × Münzen pro Sekunde (Start: 1 + 5 %), mal Handschuh-Verbesserungen. So wächst der Klick mit dem Hof mit – wie in Cookie Clicker.
 - Ernte-Pflanzen beim Leveln zahlen weiter über ihre Ernte, Helfer und Knollis bekommen nichts.
 
+## Gebäude aus dem City-Paket, Klick = leveln, Knopf oben am Gebäude (04.11.2026)
+- Bilder: „City Assets Pack - Basic“ für Gebäude, „Pixel Crawler - Free Pack“ nur für kleine Deko (Wunsch: einheitlicher Stil). Die genutzten Bilder liegen als Kopie in Resources/Buildings (laden, huette_a/b, muehle, pc_farm) und werden zur Laufzeit geladen – die beiden Paket-Ordner selbst sind nicht im Repo.
+- Laden: eigenes Gebäude rechts neben dem Wohnhaus (City building_04 mit Markise), davor Pixel-Crawler-Gemüsekisten und eine Vogelscheuche.
+- Knolli-Hütte: zwei City-Häuschen im Wechsel (nach Platz), Saatgutmühle: City-Haus mit Satteldach. Hütte und Mühle etwas größer (scale 1,3 / 1,6). Wachturm bleibt gemalt (im City-Paket gibt es keinen Turm), Totems auch.
+- Jeder Klick auf ein Gebäude levelt es (Laden und alle Bauwerke) – vorher öffnete der erste Tipp nur das Fenster.
+- Funktionen über einen Knopf oben am Gebäude: erscheint beim Darüberfahren mit der Maus, am Handy nach dem Antippen für 3 s. Darüber „Name · Stufe N · x/y“. Laden: „Laden öffnen“, Bauwerke: „Ansehen“ (Fenster mit Wirkung, Verbessern, Versetzen).
+- Laden-Stufen: Klicks wie Bauwerke (structureTaps), jede Stufe +4 % auf alle Münzen (plants.json → shopLevel.coinBonusPerLevel).
+

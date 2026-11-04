@@ -47,7 +47,7 @@ namespace SeedClicker
         }
 
         /// <summary>Bild eines Bauwerks (Wachturm aus Holz oder Stein).</summary>
-        public static Sprite StructSprite(StructureState s) => StructureArt.Get(s.stone ? s.id + "_stone" : s.id);
+        public static Sprite StructSprite(StructureState s) => (s.stone ? null : BuildingArt.ForStructure(s)) ?? StructureArt.Get(s.stone ? s.id + "_stone" : s.id);   // Haus-Bilder aus dem City-Paket, sonst gemalt
         Vector2 StructPos(StructureState s) => s.anchored && IsTotem(s) ? TotemCenter(s) : CellCenter(new Cell(s.x, s.y));
 
         /// <summary>Summe der Wirkung aller Bauwerke dieser Art, deren Umkreis pos erreicht (radius 0 = ueberall).</summary>
@@ -270,14 +270,7 @@ namespace SeedClicker
 
         public void TapStructure(StructureState st)
         {
-            if (OpenStructure == st) UpgradeStructure(st, 1f, true);
-            else
-            {
-                var v = structViews.Find(x => x.st == st);
-                if (v != null) v.squash = Mathf.Max(v.squash, 0.5f);
-                Sfx.Play("pop", 0.9f);
-                Haptics.Tap(10);
-            }
+            UpgradeStructure(st, 1f, true);   // jeder Klick levelt; Wirkung und Versetzen ueber den Knopf oben am Gebaeude
             StructureTapped?.Invoke(st);
         }
 
