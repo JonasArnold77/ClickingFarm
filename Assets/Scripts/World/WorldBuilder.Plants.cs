@@ -478,6 +478,7 @@ namespace SeedClicker
             int power = TapPower(p, !leveling);
             if (leveling) { if (!LevelMaxed(p)) p.xp += WaterLevelGain(p, power); }   // Gold: nur noch ernten
             else p.growth = Mathf.Min(taps, p.growth + power);
+            if (!leveling || p.Role != "harvest") PayClick((Vector2)v.root.position + new Vector2(0, 0.5f));   // Ernte-Pflanzen zahlen beim Leveln schon mit Ernte
             float progress = (leveling ? p.xp : p.growth) / (float)taps;
             var g = p.Genome;
             var basePos = (Vector2)v.root.position;

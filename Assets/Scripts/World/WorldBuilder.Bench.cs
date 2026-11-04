@@ -99,6 +99,7 @@ namespace SeedClicker
             }
             float gain = Mathf.Max(1f, Mathf.Round(power * (loud ? UpgradeMult("click") : 1f)));
             e.xp += gain;
+            if (loud) PayClick(top);
             benchSquash = loud ? 1f : Mathf.Max(benchSquash, 0.45f);
             var P = Particles.I;
             // Funken spruehen vom Amboss

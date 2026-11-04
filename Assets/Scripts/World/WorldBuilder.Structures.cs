@@ -293,6 +293,7 @@ namespace SeedClicker
             }
             float gain = Mathf.Max(1f, Mathf.Round(power * (loud ? UpgradeMult("click") : 1f)));
             st.xp += gain;
+            if (loud) PayClick(top);
             v.squash = loud ? 1f : Mathf.Max(v.squash, 0.45f);
             if (loud)
             {

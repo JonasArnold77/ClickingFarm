@@ -195,6 +195,7 @@ namespace SeedClicker
             if (best == null) return false;
             best.hp--;
             best.shake = 1f;
+            PayClick(best.p + new Vector2(0.3f, 0.2f));
             Particles.I?.Burst(best.p + new Vector2(0, 0.2f), "square", new Color(0.6f, 0.58f, 0.55f), 6, 2.4f, 0.45f, 0.08f, 9f, 2f);
             Sfx.Play("chop", UnityEngine.Random.Range(1.3f, 1.5f), 0.8f);
             Haptics.Tap(12);

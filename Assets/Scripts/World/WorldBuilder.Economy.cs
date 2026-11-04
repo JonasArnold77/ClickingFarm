@@ -38,6 +38,19 @@ namespace SeedClicker
             CheckEarnedUnlocks();
         }
 
+        /// <summary>Muenzen fuer einen Klick, der selbst nichts erntet – waechst mit dem Einkommen (wie in Klickspielen).</summary>
+        public double ClickCoins
+        {
+            get
+            {
+                var r = PlantBalance.I.clickReward ?? new ClickRewardDef();
+                return Math.Max(1, Math.Round((r.@base + r.cpsShare * (cps + produceCps)) * UpgradeMult("click")));
+            }
+        }
+
+        /// <summary>Klick-Belohnung auszahlen (nur fuer Klicks des Spielers, nicht fuer Helfer und Knollis).</summary>
+        void PayClick(Vector2 at) => AddCoins(ClickCoins, at + new Vector2(UnityEngine.Random.Range(-0.2f, 0.2f), 0.25f));
+
         public bool TrySpend(double n, Vector2? at = null)
         {
             if (save.coins + 1e-6 < n)

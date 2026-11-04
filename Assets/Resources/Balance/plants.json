@@ -1895,6 +1895,10 @@
     "forge": 1,
     "build": 1
   },
+  "clickReward": {
+    "base": 1,
+    "cpsShare": 0.05
+  },
   "harvestLevelTaps": [
     60,
     300,

@@ -249,6 +249,7 @@ namespace SeedClicker
                 // Stumpf ausgraben
                 t.stumpHp--;
                 t.pop = 0.75f;
+                if (!quiet) PayClick(t.foot + new Vector2(0, 0.3f));
                 P?.Burst(t.foot + new Vector2(0, 0.15f), "square", new Color(0.55f, 0.38f, 0.22f), 6, 2.2f, 0.45f, 0.9f, 6f, 1.5f);
                 Sfx.Play("chop", UnityEngine.Random.Range(0.8f, 0.95f));
                 Haptics.Tap(10);
@@ -265,6 +266,7 @@ namespace SeedClicker
             t.hp--;
             t.shake = 1f;
             t.hpShowT = 2f;
+            if (!quiet) PayClick(t.foot + new Vector2(0, 0.9f));
             hpTree = t;
             var trunk = t.foot + new Vector2(0, 0.35f);
             P?.Burst(trunk, "square", new Color(0.82f, 0.62f, 0.38f), 5, 2.6f, 0.5f, 0.9f, 7f, 1.5f);

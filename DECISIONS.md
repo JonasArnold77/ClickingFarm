@@ -438,3 +438,8 @@
 - Steine zeigen jetzt wie Gerümpel „noch N“ beim Klicken, damit man bei vielen Klicks sieht, wie weit es noch ist.
 - Automatik (Klopfwurz, Knollis) wird dadurch relativ schwächer – gewollt, Klicken bleibt das stärkste Werkzeug.
 
+## Klick-Belohnung (04.11.2026)
+- Jeder Klick des Spielers, der selbst nichts erntet (Pflanze wachsen lassen, Kampf-/Helferpflanze leveln, Baum, Stumpf, Stein, Gerümpel, Waffenbank, Bauwerk ausbauen), bringt sofort Münzen mit „+N“ an der Stelle.
+- Höhe: `clickReward.base` + `clickReward.cpsShare` × Münzen pro Sekunde (Start: 1 + 5 %), mal Handschuh-Verbesserungen. So wächst der Klick mit dem Hof mit – wie in Cookie Clicker.
+- Ernte-Pflanzen beim Leveln zahlen weiter über ihre Ernte, Helfer und Knollis bekommen nichts.
+
