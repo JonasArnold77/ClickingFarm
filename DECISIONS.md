@@ -443,8 +443,3 @@
 - Höhe: `clickReward.base` + `clickReward.cpsShare` × Münzen pro Sekunde (Start: 1 + 5 %), mal Handschuh-Verbesserungen. So wächst der Klick mit dem Hof mit – wie in Cookie Clicker.
 - Ernte-Pflanzen beim Leveln zahlen weiter über ihre Ernte, Helfer und Knollis bekommen nichts.
 
-## Das Haus ist der Hofladen (04.11.2026)
-- Es gibt in den Assets kein Laden-Bild, also bleibt das Bauernhaus und bekommt eine Ladenfront: rot-weiße Markise über der ganzen Front, Holzschild „LADEN“ mit zwei Münzen, vor den Fenstern Kisten voller Karotten bzw. Mais und Weizen, daneben Samentüten. Markise, Schild und Kisten sind im Code gemalt (WorldBuilder.Storefront.cs), Gemüse und Tüten sind die vorhandenen Happy-Harvest-Bilder.
-- Ein Tipp auf die Ladenfront öffnet das Laden-Fenster (mit Glocke und wippender Markise) – außer beim Bauen oder Tragen.
-- Später mit echter Grafik ersetzbar: nur PlaceStorefront austauschen.
-
