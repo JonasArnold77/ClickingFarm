@@ -102,6 +102,8 @@ namespace SeedClicker
     /// Schmieden, Bauwerk ausbauen), bringt base + cpsShare × Muenzen pro Sekunde, mal Handschuh-Verbesserungen.</summary>
     /// <summary>Laden neben dem Haus (plants.json -> shopLevel): jede Stufe bringt coinBonusPerLevel mehr Muenzen auf alles.
     /// Klicks je Stufe wie bei Bauwerken (structureTaps).</summary>
+    /// <summary>Gebaeude schimmern ab diesen Stufen ueber dem Dach: Bronze, Silber, Gold.</summary>
+    [Serializable] public class BuildingGlowDef { public int[] levels = { 5, 10, 15 }; }
     [Serializable] public class ShopLevelDef { public float coinBonusPerLevel = 0.04f; }
     [Serializable] public class ClickRewardDef { public float @base = 1f, cpsShare = 0.05f; }
     [Serializable] public class ClicksDef { public float scale = 3f, grow = 1f, medal = 1f, clear = 1f, forge = 1f, build = 1f; }
@@ -264,6 +266,7 @@ namespace SeedClicker
         public ClicksDef clicks = new ClicksDef();
         public ClickRewardDef clickReward = new ClickRewardDef();
         public ShopLevelDef shopLevel = new ShopLevelDef();
+        public BuildingGlowDef buildingGlow = new BuildingGlowDef();
         public float Click(string kind)
         {
             var c = clicks ?? new ClicksDef();

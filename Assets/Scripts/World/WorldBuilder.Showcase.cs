@@ -101,7 +101,7 @@ namespace SeedClicker
 
             // ---------------- Knolli-Huetten zwischen Beeten und Mauern
             foreach (int x in new[] { -14, -10, -6, -2, 2, 6, 10, 14 })
-                s.structures.Add(new StructureState { id = "knollihuette", x = x, y = -12, lv = 2, placed = true });
+                s.structures.Add(new StructureState { id = "knollihuette", x = x, y = -12, lv = 2 + (x + 14) / 2, placed = true });   // Stufen 2..16: ohne, Bronze, Silber, Gold
 
             // ---------------- vier Mauerreihen hintereinander, versetzte Tore, Steinmauern und Dornen
             int[] wallRows = { -14, -16, -18, -20 };
@@ -120,9 +120,11 @@ namespace SeedClicker
                 for (int y = -13; y <= 3; y++) s.walls.Add(new WallState { x = x, y = y, hp = 9999, stone = true });
 
             // Wachtuerme zwischen den Mauerreihen
-            foreach (int y in new[] { -15, -17, -19 })
-                foreach (int x in new[] { -13, -5, 4, 12 })
-                    s.structures.Add(new StructureState { id = "wachturm", x = x, y = y, lv = 4, placed = true, stone = true });
+            // versetzt, damit sich die grossen Tuerme nicht ueberdecken; Stufen zeigen den Schimmer (Bronze, Silber, Gold)
+            int tw = 0;
+            foreach (int y in new[] { -15, -19 })
+                foreach (int x in y == -15 ? new[] { -13, 4 } : new[] { -5, 12 })
+                    s.structures.Add(new StructureState { id = "wachturm", x = x, y = y, lv = new[] { 6, 11, 16, 20 }[tw++ % 4], placed = true, stone = true });
 
             // Steinpulte mit Kampfpflanzen auf der vordersten und der zweiten Mauerreihe
             string[] combat = { "funkenmais", "glutweizen", "giftruebe", "blitzmais", "sumpfruebe", "aschenweizen" };

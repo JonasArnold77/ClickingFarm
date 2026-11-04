@@ -464,3 +464,9 @@
 - Schilder in den Bildern, damit man den Zweck erkennt: Haupthaus „HOF“, Laden „LADEN“ in der Werbetafel plus Münzen, Knolli-Hütten hängendes Schild „KNOLLIS“ mit Knolli-Gesicht, Saatgutmühle „SAATGUT“ mit Samentüte, Wachturm „WACHE“ mit Schild. Schrift: Curse Casual (wie die Oberfläche).
 - Die Skripte, die alle Gebäudebilder erzeugen (Umfärben, Turm, Schilder), liegen jetzt in Tools/Buildings (mit Reihenfolge im README).
 
+## Wachturm größer, Gebäude schimmern nach Stufe (04.11.2026)
+- Wachturm doppelt so groß (scale 1,4). Im Endlevel-Hof stehen die Türme jetzt versetzt (zwei Reihen statt drei), sonst überdecken sie sich.
+- Gebäude (Laden und alle Bauwerke außer Totems) schimmern ab Stufe 5 Bronze, ab 10 Silber, ab 15 Gold (plants.json → buildingGlow.levels): fünf weiche Lichtstrahlen steigen hinter dem Dach auf und wabern (Länge, Breite, Helligkeit, leichtes Schwanken), dazu ein weiches Licht in der Stufenfarbe und ab und zu ein aufsteigender Funke. Beim Wechsel der Glanzstufe ein kurzer Lichtstoß.
+- Strahlen mit eigenem additiven Shader (Resources/Shaders/GlowAdditive.shader), damit sie aufhellen statt zu verdecken – sonst gingen sie auf der hellen Wiese unter.
+- Endlevel-Hof: Hütten Stufe 2–16 und Türme 6–20, damit alle drei Glanzstufen zu sehen sind.
+

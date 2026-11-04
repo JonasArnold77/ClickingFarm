@@ -1542,7 +1542,7 @@
       "valuePerLevel": 2,
       "radius": 4.0,
       "radiusPerLevel": 0.3,
-      "scale": 0.7,
+      "scale": 1.4,
       "needs": [
         "walls:4"
       ],
@@ -1894,6 +1894,13 @@
     "clear": 1,
     "forge": 1,
     "build": 1
+  },
+  "buildingGlow": {
+    "levels": [
+      5,
+      10,
+      15
+    ]
   },
   "shopLevel": {
     "coinBonusPerLevel": 0.04
