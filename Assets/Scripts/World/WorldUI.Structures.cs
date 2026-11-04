@@ -142,6 +142,13 @@ namespace SeedClicker
                     ShopRow(content, d.name + "  · Stufe " + st.lv, st.placed ? wbi.StructSummary(st) : "Wartet auf seinen Platz", "Gebaut", false, () => { });
                     continue;
                 }
+                if (WorldBuilder.FreeBuild)
+                {
+                    int n = d.multi ? wbi.StructCount(d.id) : 0;
+                    ShopRow(content, d.name + (n > 0 ? "  · " + n + " aufgestellt" : ""), d.desc, "Gratis", wbi.PlacingStructure == null,
+                        () => { if (wbi.BuyStructure(dd)) Banner(dd.name + " – gratis!", "Tippe auf einen Platz im Hof"); });
+                    continue;
+                }
                 if (!wbi.StructureAvailable(d))
                 {
                     int mk = wbi.MilestoneOf(d.id);

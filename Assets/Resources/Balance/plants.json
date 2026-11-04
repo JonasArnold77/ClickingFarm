@@ -1542,7 +1542,7 @@
       "valuePerLevel": 2,
       "radius": 4.0,
       "radiusPerLevel": 0.3,
-      "scale": 1.2,
+      "scale": 0.7,
       "needs": [
         "walls:4"
       ],

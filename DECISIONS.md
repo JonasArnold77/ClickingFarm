@@ -450,4 +450,8 @@
 - Jeder Klick auf ein Gebäude levelt es (Laden und alle Bauwerke) – vorher öffnete der erste Tipp nur das Fenster.
 - Funktionen über einen Knopf oben am Gebäude: erscheint beim Darüberfahren mit der Maus, am Handy nach dem Antippen für 3 s. Darüber „Name · Stufe N · x/y“. Laden: „Laden öffnen“, Bauwerke: „Ansehen“ (Fenster mit Wirkung, Verbessern, Versetzen).
 - Laden-Stufen: Klicks wie Bauwerke (structureTaps), jede Stufe +4 % auf alle Münzen (plants.json → shopLevel.coinBonusPerLevel).
+- Nachtrag: Wachturm aus City-Teilen zusammengesetzt (Blechdach von building_08, Bretterkanzel deco_12, gemalte Beine mit X-Strebe), der Steinturm ist derselbe Turm in Grau mit Schieferdach (scale 0,7, passt zwischen Mauerreihen). Das schmale Stadthaus als Turm war zu hoch.
+- Laden auf die Farben des Wohnhauses umgefärbt (blaues Dach und Markise, heller Putz, Ocker-/Holzrahmen, braune Konturen). Erzeugt per Skript aus building_04, Ergebnis liegt als Resources/Buildings/laden.png.
+- Knopf sitzt jetzt im oberen Teil des Gebäudes (nicht in der Mitte, wo man klickt), darüber Name/Stufe und ein Fortschrittsbalken bis zur nächsten Stufe.
+- Testknopf „Alle Gebäude gratis“ (oben rechts unter „Endlevel-Hof“): schaltet einen Gratis-Modus an/aus (nicht gespeichert) und öffnet den Reiter „Bauwerke“ – dort sind alle Bauwerke sichtbar und kosten nichts.
 

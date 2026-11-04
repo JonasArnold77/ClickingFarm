@@ -47,7 +47,7 @@ namespace SeedClicker
         }
 
         /// <summary>Bild eines Bauwerks (Wachturm aus Holz oder Stein).</summary>
-        public static Sprite StructSprite(StructureState s) => (s.stone ? null : BuildingArt.ForStructure(s)) ?? StructureArt.Get(s.stone ? s.id + "_stone" : s.id);   // Haus-Bilder aus dem City-Paket, sonst gemalt
+        public static Sprite StructSprite(StructureState s) => BuildingArt.ForStructure(s) ?? StructureArt.Get(s.stone ? s.id + "_stone" : s.id);   // Haus-Bilder aus dem City-Paket, sonst gemalt
         Vector2 StructPos(StructureState s) => s.anchored && IsTotem(s) ? TotemCenter(s) : CellCenter(new Cell(s.x, s.y));
 
         /// <summary>Summe der Wirkung aller Bauwerke dieser Art, deren Umkreis pos erreicht (radius 0 = ueberall).</summary>
@@ -112,12 +112,16 @@ namespace SeedClicker
         public bool BuyStructure(StructureDef d)
         {
             float cost = StructCost(d);
-            if (d == null || (!d.multi && Struct(d.id) != null) || !StructureAvailable(d) || save.wood < d.wood || save.coins < cost) return false;
-            var cc = CropCost(d.crops, d.multi ? StructCount(d.id) : 0);
-            if (!HasCrops(cc)) { Sfx.Play("error", 1f, 0.5f); return false; }
-            if (!TrySpend(cost)) return false;
-            TakeCrops(cc);
-            save.wood -= d.wood; WoodChanged?.Invoke(save.wood);
+            if (d == null || (!d.multi && Struct(d.id) != null)) return false;
+            if (!FreeBuild)   // Gratis-Modus: keine Kosten, alles verfuegbar
+            {
+                if (!StructureAvailable(d) || save.wood < d.wood || save.coins < cost) return false;
+                var cc = CropCost(d.crops, d.multi ? StructCount(d.id) : 0);
+                if (!HasCrops(cc)) { Sfx.Play("error", 1f, 0.5f); return false; }
+                if (!TrySpend(cost)) return false;
+                TakeCrops(cc);
+                save.wood -= d.wood; WoodChanged?.Invoke(save.wood);
+            }
             var st = new StructureState { id = d.id, lv = 1 };
             save.structures.Add(st);
             Sfx.Play("levelup", 1.2f, 0.7f);

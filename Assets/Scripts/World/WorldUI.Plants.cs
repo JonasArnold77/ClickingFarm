@@ -281,6 +281,17 @@ namespace SeedClicker
                 WorldBuilder.LoadShowcase();
             }, 26);
             sc.GetComponent<RectTransform>().Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-28, -366), new Vector2(300, 70));
+
+            // Zum Ausprobieren: alle Bauwerke sehen und gratis kaufen (an/aus, oeffnet gleich den Reiter "Bauwerke")
+            Button fb = null;
+            fb = Btn(safe, WorldBuilder.FreeBuild ? "Gratis-Bauen: an" : "Alle Gebäude gratis", new Color(0.3f, 0.5f, 0.35f, 0.85f), () =>
+            {
+                WorldBuilder.FreeBuild = !WorldBuilder.FreeBuild;
+                fb.GetComponentInChildren<Text>().text = WorldBuilder.FreeBuild ? "Gratis-Bauen: an" : "Alle Gebäude gratis";
+                fb.GetComponent<Image>().color = WorldBuilder.FreeBuild ? new Color(0.35f, 0.7f, 0.35f, 0.95f) : new Color(0.3f, 0.5f, 0.35f, 0.85f);
+                if (WorldBuilder.FreeBuild) OpenShop(3);
+            }, 26);
+            fb.GetComponent<RectTransform>().Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-28, -444), new Vector2(300, 70));
         }
 
         System.Collections.IEnumerator ResetNewGameLabel(Button b, float after)

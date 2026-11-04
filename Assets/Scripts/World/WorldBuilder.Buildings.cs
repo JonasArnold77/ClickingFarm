@@ -11,7 +11,8 @@ namespace SeedClicker
     ///  - Alle Gebaeude: Klick = leveln. Die Funktion (Laden-Fenster, Bauwerk-Fenster) oeffnet ein Knopf oben am Gebaeude,
     ///    der beim Darueberfahren erscheint (am Handy nach dem Antippen) – siehe BuildingUnder und WorldUI.BuildingButton.
     ///  - Knolli-Huetten (zwei Haeuschen im Wechsel) und die Saatgutmuehle bekommen Haus-Bilder statt der Platzhalter.
-    ///  - Der Wachturm bleibt gemalt: im City-Paket gibt es keinen Turm.
+    ///  - Wachturm: Holzturm aus City-Teilen (Dach, Bretterkanzel, Beine), Steinturm = derselbe Turm in Stein mit Schieferdach.
+    ///  - Gratis-Modus (FreeBuild, zum Ausprobieren): alle Bauwerke sichtbar und kostenlos.
     /// </summary>
     public partial class WorldBuilder
     {
@@ -111,6 +112,18 @@ namespace SeedClicker
             ShopTapped?.Invoke();
         }
 
+        /// <summary>Zum Ausprobieren: alle Bauwerke freigeschaltet und kostenlos (wird nicht gespeichert).</summary>
+        public static bool FreeBuild;
+
+        /// <summary>Wo Knopf und Fortschrittsbalken sitzen: im oberen Teil des Gebaeudes (nicht in der Mitte, wo man klickt).</summary>
+        public Vector2 BuildingAnchor(bool shop, StructureState st)
+        {
+            SpriteRenderer sr = shop ? shopSr : structViews.Find(x => x.st == st)?.sr;
+            if (sr == null) return BuildingTop(shop, st);
+            var b = sr.bounds;
+            return new Vector2(b.center.x, b.max.y - b.size.y * 0.24f);
+        }
+
         /// <summary>Gebaeude unter dem Zeiger: Laden (shop = true) oder Bauwerk; top = Oberkante fuer den Knopf.</summary>
         public bool BuildingUnder(Vector2 w, out bool shop, out StructureState st, out Vector2 top)
         {
@@ -164,6 +177,7 @@ namespace SeedClicker
             {
                 case "knollihuette": return Get(((s.x + s.y) & 1) == 0 ? "huette_a" : "huette_b");
                 case "saatgutmuehle": return Get("muehle");
+                case "wachturm": return Get(s.stone ? "turm_stein" : "turm_holz");   // Holzturm aus City-Teilen zusammengesetzt, Steinturm = derselbe in Stein mit Schieferdach
             }
             return null;
         }
