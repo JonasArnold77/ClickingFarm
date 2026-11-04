@@ -469,4 +469,5 @@
 - Gebäude (Laden und alle Bauwerke außer Totems) schimmern ab Stufe 5 Bronze, ab 10 Silber, ab 15 Gold (plants.json → buildingGlow.levels): fünf weiche Lichtstrahlen steigen hinter dem Dach auf und wabern (Länge, Breite, Helligkeit, leichtes Schwanken), dazu ein weiches Licht in der Stufenfarbe und ab und zu ein aufsteigender Funke. Beim Wechsel der Glanzstufe ein kurzer Lichtstoß.
 - Strahlen mit eigenem additiven Shader (Resources/Shaders/GlowAdditive.shader), damit sie aufhellen statt zu verdecken – sonst gingen sie auf der hellen Wiese unter.
 - Endlevel-Hof: Hütten Stufe 2–16 und Türme 6–20, damit alle drei Glanzstufen zu sehen sind.
+- Nachtrag: Strahlen jetzt vor dem Gebäude gerendert (steigen aus dem Dach auf statt dahinter), sieben statt fünf, länger, breiter und mit voller Kraft; Farbe leicht aufgehellt, damit Bronze, Silber und Gold als Licht wirken.
 

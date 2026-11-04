@@ -6,14 +6,14 @@ namespace SeedClicker
 {
     /// <summary>
     /// Lichtstrahlen ueber dem Dach: Ab einer bestimmten Stufe schimmert ein Gebaeude (Laden und alle Bauwerke ausser
-    /// Totems) – weiche Strahlen steigen hinter dem Dach auf und wabern, dazu ab und zu ein Funke. Farbe nach Stufe:
+    /// Totems) – weiche Strahlen steigen ueber dem Dach auf (vor dem Gebaeude gerendert) und wabern, dazu ab und zu ein Funke. Farbe nach Stufe:
     /// Bronze, Silber, Gold (Schwellen in plants.json -> buildingGlow.levels).
     /// </summary>
     public partial class WorldBuilder
     {
         class Glow { public SpriteRenderer[] rays; public Light2D light; public int tier = -1; public float sparkT; }
         readonly Dictionary<object, Glow> glows = new Dictionary<object, Glow>();
-        const int GlowRays = 5;
+        const int GlowRays = 7;
         static Sprite raySprite;
         static Material glowMat; static bool glowLooked;
         static Material GlowMat
@@ -102,23 +102,24 @@ namespace SeedClicker
             var b = host.bounds;
             float w = b.size.x, h = b.size.y;
             float t = Time.time, seed = (key.GetHashCode() & 255) * 0.13f;
-            float strength = 0.85f + 0.1f * tier;             // additiv: Gold leuchtet am kraeftigsten
+            float strength = 1f;                              // additiv, volle Kraft – die Farbe zeigt die Stufe
             for (int i = 0; i < GlowRays; i++)
             {
                 var sr = g.rays[i];
                 sr.enabled = true;
                 float k = i / (GlowRays - 1f) - 0.5f;          // -0,5 .. 0,5 ueber die Dachbreite
                 float sway = Mathf.Sin(t * 0.8f + i * 1.9f + seed) * w * 0.035f;
-                float len = h * (0.75f + 0.2f * tier) * (0.8f + 0.25f * Mathf.Sin(t * 1.3f + i * 1.7f + seed));
-                float rw = w * (0.2f + 0.06f * Mathf.Sin(t * 0.9f + i * 2.3f + seed));
-                // Fuss der Strahlen knapp unter dem Dachfirst: das Dach verdeckt ihren Anfang, sie steigen dahinter auf
-                var foot = new Vector2(b.center.x + k * w * 0.62f + sway, b.max.y - h * 0.22f);
+                float len = h * (0.95f + 0.2f * tier) * (0.8f + 0.25f * Mathf.Sin(t * 1.3f + i * 1.7f + seed));
+                float rw = w * (0.24f + 0.07f * Mathf.Sin(t * 0.9f + i * 2.3f + seed));
+                // Fuss der Strahlen im Dach: sie blenden weich ein und steigen ueber dem Gebaeude auf
+                var foot = new Vector2(b.center.x + k * w * 0.7f + sway, b.max.y - h * 0.3f);
                 sr.transform.position = foot;
                 sr.transform.localScale = new Vector3(rw / RaySprite.bounds.size.x, len / RaySprite.bounds.size.y, 1f);
                 sr.transform.rotation = Quaternion.Euler(0, 0, k * -14f + Mathf.Sin(t * 0.6f + i + seed) * 3f);
-                float a = strength * (0.55f + 0.45f * Mathf.Sin(t * 1.1f + i * 2.9f + seed));
-                sr.color = new Color(col.r, col.g, col.b, Mathf.Min(1f, a));
-                sr.sortingOrder = host.sortingOrder - 1;
+                float a = strength * (0.6f + 0.4f * Mathf.Sin(t * 1.1f + i * 2.9f + seed));
+                var lit = Color.Lerp(col, Color.white, 0.15f);   // Licht: etwas heller als die Medaille, Farbe bleibt erkennbar
+                sr.color = new Color(lit.r, lit.g, lit.b, Mathf.Min(1f, a));
+                sr.sortingOrder = host.sortingOrder + 3;   // vor dem Gebaeude
             }
             if (g.light != null)
             {
