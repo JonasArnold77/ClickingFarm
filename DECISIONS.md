@@ -461,4 +461,6 @@
 - Das Haupthaus ist jetzt building_08 (Backsteinhaus mit Satteldach) statt des alten Cozy-Farm-Hauses, damit alle Gebäude im selben Comic-Stil sind. Seine Front steht dort, wo die alte Front war; Breite 3,7 Einheiten. Fällt das Bild weg, kommt das alte Haus zurück.
 - Gemeinsame Palette: Dächer im Hausblau, blaue Wände werden heller Putz, Konturen dunkelbraun, alles dunkler (×0,66) und etwas satter. Gilt für Haupthaus, Knolli-Hütten, Saatgutmühle (Laden und Turm hatten das schon).
 - Saatgutmühle jetzt building_05 – das Satteldachhaus ist das Haupthaus und soll nicht doppelt vorkommen.
+- Schilder in den Bildern, damit man den Zweck erkennt: Haupthaus „HOF“, Laden „LADEN“ in der Werbetafel plus Münzen, Knolli-Hütten hängendes Schild „KNOLLIS“ mit Knolli-Gesicht, Saatgutmühle „SAATGUT“ mit Samentüte, Wachturm „WACHE“ mit Schild. Schrift: Curse Casual (wie die Oberfläche).
+- Die Skripte, die alle Gebäudebilder erzeugen (Umfärben, Turm, Schilder), liegen jetzt in Tools/Buildings (mit Reihenfolge im README).
 
