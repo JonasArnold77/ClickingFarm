@@ -11,7 +11,7 @@ namespace SeedClicker
     ///  - Alle Gebaeude: Klick = leveln. Die Funktion (Laden-Fenster, Bauwerk-Fenster) oeffnet ein Knopf oben am Gebaeude,
     ///    der beim Darueberfahren erscheint (am Handy nach dem Antippen) – siehe BuildingUnder und WorldUI.BuildingButton.
     ///  - Knolli-Huetten (zwei Haeuschen im Wechsel) und die Saatgutmuehle bekommen Haus-Bilder statt der Platzhalter.
-    ///  - Wachturm: Holzturm aus City-Teilen (Dach, Bretterkanzel, Beine), Steinturm = derselbe Turm in Stein mit Schieferdach.
+    ///  - Wachturm: Holzturm aus City-Teilen (Dach, Bretterkanzel, Beine), nach Steinmoos nur Steinbeine (Kanzel bleibt Holz).
     ///  - Gratis-Modus (FreeBuild, zum Ausprobieren): alle Bauwerke sichtbar und kostenlos.
     /// </summary>
     public partial class WorldBuilder
@@ -177,7 +177,7 @@ namespace SeedClicker
             {
                 case "knollihuette": return Get(((s.x + s.y) & 1) == 0 ? "huette_a" : "huette_b");
                 case "saatgutmuehle": return Get("muehle");
-                case "wachturm": return Get(s.stone ? "turm_stein" : "turm_holz");   // Holzturm aus City-Teilen zusammengesetzt, Steinturm = derselbe in Stein mit Schieferdach
+                case "wachturm": return Get(s.stone ? "turm_stein" : "turm_holz");   // Holzturm aus City-Teilen zusammengesetzt, nach Steinmoos mit Steinbeinen
             }
             return null;
         }
