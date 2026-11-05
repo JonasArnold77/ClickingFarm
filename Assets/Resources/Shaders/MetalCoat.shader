@@ -1,4 +1,4 @@
-// Metall-Ueberzug fuer Ernte-Pflanzen und Erntestuecke (Bronze, Silber, Gold):
+// Metall-Ueberzug fuer Ernte-Pflanzen und Erntestuecke (Bronze, Silber, Gold) – nur auf den gruenen Teilen (Blaetter):
 // Farbe = Metallton (Vertexfarbe des SpriteRenderers) mal Helligkeit des Bildes – die Schattierungen darunter bleiben
 // erkennbar, helle Stellen bekommen einen Glanz. Deckkraft = Alpha des Bildes mal Alpha der Vertexfarbe.
 Shader "SeedClicker/MetalCoat"
@@ -44,9 +44,9 @@ Shader "SeedClicker/MetalCoat"
                 // Kontrast etwas anheben, damit Blaetter und Fruechte als Metall-Relief wirken
                 half k = saturate((lum - 0.08) * 1.35);
                 half3 c = i.color.rgb * (0.22 + 1.05 * k) + pow(k, 4) * _Sheen * 0.55;
-                // etwas von der echten Farbe mitnehmen (im Metallton), damit die Pflanze erkennbar bleibt
-                c = lerp(c, t.rgb * (i.color.rgb * 0.6 + 0.55), 0.3);
-                return fixed4(c, t.a * i.color.a);
+                // nur die gruenen Teile (Blaetter, Stiele) werden Metall – Fruechte und Koerner behalten ihre Farbe
+                half green = saturate((t.g - max(t.r, t.b)) * 7.0);
+                return fixed4(c, t.a * i.color.a * green);
             }
             ENDCG
         }

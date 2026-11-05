@@ -3,7 +3,7 @@ using UnityEngine;
 namespace SeedClicker
 {
     /// <summary>
-    /// Metall-Ueberzug in Medaillenfarbe (Bronze, Silber, Gold) ueber einem Bild: ueber der Ernte-Pflanze selbst und ueber
+    /// Metall-Ueberzug in Medaillenfarbe (Bronze, Silber, Gold) auf den Blaettern eines Bildes: ueber der Ernte-Pflanze selbst und ueber
     /// jedem einzelnen Erntestueck (fliegend, beim Knolli, auf dem Weg in die Kiste).
     /// Eine Kopie des Bildes liegt direkt darueber und wird vom Shader "SeedClicker/MetalCoat" eingefaerbt: Metallton mal
     /// Helligkeit des Bildes – die Schattierungen der Pflanze bleiben darunter erkennbar, helle Stellen glaenzen.
@@ -16,8 +16,8 @@ namespace SeedClicker
         (Sprite, int, int, bool, bool) lastKey;
         static Material coatMat;
         static bool shaderLooked;
-        /// <summary>Deckkraft des Ueberzugs: Gold dezent, damit die echte Farbe der Pflanze durchschimmert.</summary>
-        static float Cover(int level) => level >= 4 ? 0.5f : 0.9f;
+        /// <summary>Deckkraft des Ueberzugs auf den Blaettern (Fruechte bleiben ohnehin frei, siehe Shader).</summary>
+        static float Cover(int level) => 0.95f;
 
         /// <summary>Stufe setzen (unter 2 = kein Ueberzug). width/dirs stammen von der frueheren Kontur und werden ignoriert.</summary>
         public static void Set(SpriteRenderer host, int level, float width = 0f, int dirs = 0)

@@ -482,4 +482,5 @@
 - Ernte-Pflanzen auf Bronze, Silber, Gold (und ihre Erntestücke) sind nicht mehr umrandet, sondern von Metall überzogen: eine Kopie des Bildes liegt direkt darüber, Shader „SeedClicker/MetalCoat“ färbt sie im Metallton × Helligkeit des Bildes (Kontrast leicht angehoben, Glanz auf hellen Stellen), Deckkraft 90 %. So bleiben Blätter, Früchte und Schattierungen erkennbar.
 - MedalAura.cs nutzt jetzt eine Kopie statt 16 Konturkopien – auch günstiger auf großen Höfen.
 - Nachtrag: Gold-Überzug dezenter (Deckkraft 50 % statt 90 %), und der Überzug nimmt 30 % der echten Farbe mit – die Pflanze schimmert golden, ihre Farbe bleibt erkennbar.
+- Nachtrag 2: Der Überzug liegt nur noch auf den grünen Teilen (Blätter, Stiele; Maske im Shader: Grün deutlich über Rot und Blau). Früchte, Kolben und Körner behalten ihre echte Farbe – die Pflanze bleibt erkennbar, die Stufe sieht man an den Blättern.
 
