@@ -85,7 +85,8 @@ namespace SeedClicker
         /// Schwanken), dazu pulsiert die Linie und Funken steigen auf – nur solange die Pflanze im Bild ist.</summary>
         void UpdateGlow()
         {
-            while (glow.Count < RayCount) glow.Add(MakeRay());
+            int rays = level >= 4 ? 12 : level == 3 ? 9 : 6;   // je hoeher die Medaille, desto mehr Strahlen
+            while (glow.Count < 12) glow.Add(MakeRay());
             if (!host.isVisible) return;   // ausserhalb des Bilds nichts bewegen (grosse Hoefe)
             var c = WorldBuilder.MedalColor(level);
             float power = level >= 4 ? 1.3f : level == 3 ? 1f : 0.8f;
@@ -99,9 +100,10 @@ namespace SeedClicker
             for (int i = 0; i < glow.Count; i++)
             {
                 var r = glow[i];
-                r.enabled = true;
+                r.enabled = i < rays;
+                if (i >= rays) continue;
                 float ph = i * 2.39996f + transform.position.y * 3.1f;   // jeder Strahl im eigenen Takt
-                float ang = (i + 0.5f) * Mathf.PI * 2f / RayCount + Mathf.Sin(t * 0.45f + ph) * 0.12f;
+                float ang = (i + 0.5f) * Mathf.PI * 2f / rays + Mathf.Sin(t * 0.45f + ph) * 0.12f;
                 var dir = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang));
                 float len = size * (0.36f + 0.2f * Mathf.Sin(t * 1.15f + ph)) * power;
                 float wid = size * (0.13f + 0.04f * Mathf.Sin(t * 0.8f + ph * 1.3f));
@@ -127,7 +129,6 @@ namespace SeedClicker
             Particles.I?.Spawn(p, "spark", mc, new Vector3(Random.Range(-0.06f, 0.06f), Random.Range(0.25f, 0.45f), 0), 1.4f, 0.06f, 0.015f, 0f);
         }
 
-        const int RayCount = 10;
         static Sprite raySprite;
         static Material rayMat;
         static Transform rayRoot;
