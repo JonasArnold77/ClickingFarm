@@ -82,6 +82,7 @@ namespace SeedClicker
             save.farmLevel = FarmLevel + 1;
             save.Save();
             RefreshGhosts();
+            RebuildFog(true);   // der Nebel weicht an die neue Grenze zurueck
             var r = FarmRect(FarmLevel);
             foreach (var x in new[] { r.xMin, r.xMax })
                 for (float y = r.yMin; y < r.yMax; y += 0.6f) Particles.I?.Spawn(new Vector2(x, y), "star", new Color(1f, 0.95f, 0.6f), Vector3.up * 0.5f, 1f, 0.15f, 0f, 0f);

@@ -283,13 +283,17 @@ namespace SeedClicker
             MonsterDefW def = B.monsters[0];
             foreach (var d in B.monsters) { if (d.firstWave > wave) continue; roll -= d.weight; if (roll <= 0) { def = d; break; } }
 
-            // aus dem Wald: von links, rechts oder unten – die Festung muss rundum halten
+            // aus dem Nebel: knapp hinter der Hofgrenze links, rechts oder unten – die Festung muss rundum halten
             float hw = WorldBuilder.MapW / 2f, hh = WorldBuilder.MapH / 2f;
             Vector2 p;
-            int side = rnd.Next(4);
-            if (side == 0) p = new Vector2(-hw + 0.4f, -hh + 1.5f + (float)rnd.NextDouble() * (hh + 2f));
-            else if (side == 1) p = new Vector2(hw - 0.4f, -hh + 1.5f + (float)rnd.NextDouble() * (hh + 2f));
-            else p = new Vector2(-hw + 1.5f + (float)rnd.NextDouble() * (hw * 2 - 3), -hh + 0.4f);
+            if (WorldBuilder.I != null) p = WorldBuilder.I.FogSpawnPoint(rnd);
+            else
+            {
+                int side = rnd.Next(4);
+                if (side == 0) p = new Vector2(-hw + 0.4f, -hh + 1.5f + (float)rnd.NextDouble() * (hh + 2f));
+                else if (side == 1) p = new Vector2(hw - 0.4f, -hh + 1.5f + (float)rnd.NextDouble() * (hh + 2f));
+                else p = new Vector2(-hw + 1.5f + (float)rnd.NextDouble() * (hw * 2 - 3), -hh + 0.4f);
+            }
 
             var root = new GameObject("Monster_" + def.id).transform;
             root.SetParent(transform, false);

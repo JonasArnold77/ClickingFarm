@@ -87,7 +87,7 @@ namespace SeedClicker
         public bool StructMaxed(StructureState s) => s.lv >= PlantBalance.I.StructureTaps.maxLevel;
 
         /// <summary>Samenpreis nach Rabatt der Saatgutmuehle.</summary>
-        public float SeedCost(CatalogDef d) => d == null ? 0f : d.cost * Mathf.Max(0.1f, 1f - StructGlobal("seedcost"));
+        public float SeedCost(CatalogDef d) => d == null ? 0f : d.role == "fogclear" ? FogPlantCost() : d.cost * Mathf.Max(0.1f, 1f - StructGlobal("seedcost"));   // Sonnenlilie: Preis haengt an der Ausbaustufe
 
         /// <summary>Kurzer Text, was das Bauwerk gerade bewirkt (Fenster).</summary>
         public string StructSummary(StructureState s)

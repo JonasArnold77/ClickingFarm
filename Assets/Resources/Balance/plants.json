@@ -1228,6 +1228,31 @@
       "effectLv": 3,
       "role": "combat",
       "cost": 92
+    },
+    {
+      "id": "sonnenlilie",
+      "name": "Sonnenlilie",
+      "species": "flowers",
+      "starter": false,
+      "unlockWave": 999,
+      "role": "fogclear",
+      "cost": 1,
+      "value": 0,
+      "growTaps": 120,
+      "unlockEarned": 0,
+      "pattern": "single",
+      "patternLv": 1,
+      "rangeLv": 1,
+      "projectile": "seed",
+      "projectileLv": 1,
+      "element": "nature",
+      "elementLv": 1,
+      "effect": "none",
+      "effectLv": 1,
+      "unlockFields": 0,
+      "buildsOn": "Nebel",
+      "helps": "Sehr teuer: Wenn sie reif ist, vertreibt ihr Licht den Nebel – der Hof wird um eine Stufe größer. Nur eine zur Zeit.",
+      "needs": []
     }
   ],
   "monsters": [
@@ -2195,5 +2220,8 @@
     "bonusPerProject": 0.2,
     "coinShare": 0.3,
     "runes": 3
+  },
+  "fog": {
+    "costMult": 2
   }
 }

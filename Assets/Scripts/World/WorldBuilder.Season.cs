@@ -99,7 +99,7 @@ namespace SeedClicker
                 isDefaultMat[m] = isDefault = m == defaultSpriteMat || m.shader.name.Contains("Sprite-Lit-Default");
             if (!isDefault) return true;
             string n = r.gameObject.name;
-            if (n.StartsWith("Pot") || n == "Sprite" || n == "Plant" || n == "FieldFlash" || n == "Footprint" || n == "BarBack" || n == "BarFill" || n == "CellCursor") return false;
+            if (n.StartsWith("Pot") || n == "Fog" || n == "Sprite" || n == "Plant" || n == "FieldFlash" || n == "Footprint" || n == "BarBack" || n == "BarFill" || n == "CellCursor") return false;
             if (r is SpriteRenderer)
                 r.sharedMaterial = n.Contains("sk_Tree_1") || n.Contains("sk_Tree_2") || n.ToLower().Contains("pine") ? evergreenMat : seasonMat;
             else if (r is MeshRenderer)

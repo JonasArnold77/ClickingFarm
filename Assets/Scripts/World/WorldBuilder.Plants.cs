@@ -223,7 +223,10 @@ namespace SeedClicker
         {
             if (!IsSlot(c) || PlantAt(c) != null || !IsUnlocked(type) || !Fits(c, type, true)) return false;
             var def = PlantBalance.I.Plant(type);
-            if (def != null && def.cost > 0 && !TrySpend(SeedCost(def), CellCenterOf(c) + new Vector2(0, 0.6f))) return false;
+            bool fog = def != null && def.role == "fogclear";
+            if (fog && !CanPlantFog(c)) return false;   // Sonnenlilie: Hof nicht voll, nur eine zur Zeit, Holz und Ernte
+            if (def != null && (def.cost > 0 || fog) && !TrySpend(SeedCost(def), CellCenterOf(c) + new Vector2(0, 0.6f))) return false;
+            if (fog) PayFogExtras();
             var p = new PlantedState { x = c.x, y = c.y, type = type, growth = 0 };
             save.planted.Add(p); DirtyPlants();
             CreatePlantView(p, true);

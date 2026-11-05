@@ -491,3 +491,9 @@
 - Außerhalb des Bilds wird der Schein nicht bewegt (große Höfe).
 - Nachtrag: Statt des weichen Scheins ragen jetzt zehn Sonnenstrahlen rundherum aus der Kontur und wabern (Länge, Breite, Helligkeit, leichtes Schwanken, jeder Strahl im eigenen Takt). Sie liegen über den Nachbarpflanzen (sonst in dichten Beeten verdeckt), setzen an der Kontur an und blenden dort weich ein. Eigener Behälter ohne Skalierung, sonst verzerrt die Pflanzen-Skalierung gedrehte Strahlen.
 
+## Nebel als Hofgrenze, Sonnenlilie lichtet ihn (05.11.2026)
+- Die Grenze des Hofs ist jetzt dichter, weißer, wabernder Nebel statt Wald: viele weiche Wolkenballen (am Rand dicht und kleiner, weiter draußen groß), die langsam treiben, atmen und sich drehen. Er liegt überall außerhalb des Hofs der aktuellen Ausbaustufe; der Platz um Haus und Laden bleibt immer frei. Nur Ballen im Bild bewegen sich (Leistung).
+- Die Bäume bleiben in der Welt (Holz), liegen außerhalb des Hofs aber unter dem Nebel; wird er gelichtet, kommen sie zum Vorschein.
+- Zombies kommen aus dem Nebel: sie erscheinen knapp hinter der Hofgrenze links, rechts oder unten (statt am Kartenrand).
+- Hof-Ausbau nur noch über die Sonnenlilie (neue Pflanze, Rolle „fogclear“, von Anfang an verfügbar): Preis = 2 × Kosten der nächsten Ausbaustufe (plants.json → fog.costMult) plus deren Holz und Ernte; nur eine zur Zeit; 120 Klicks Wachstum. Ist sie reif, lichtet ihr Licht den Nebel: Hof +1 Stufe, der Nebel am alten Rand treibt nach außen und löst sich auf, am neuen Rand zieht er auf. Im Laden (Reiter „Hof“) steht statt „Hof erweitern“ jetzt „Nebel lichten“, der Knopf wählt die Sonnenlilie.
+

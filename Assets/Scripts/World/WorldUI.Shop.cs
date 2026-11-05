@@ -214,9 +214,18 @@ namespace SeedClicker
                 {
                     var fc = wbi.CropCost(next.crops);
                     string fm = wbi.CropMissing(fc);
-                    ShopRow(content, "Hof erweitern (Stufe " + (wbi.FarmLevel + 1) + ")", "Mehr Platz für Felder und Mauern – braucht auch " + next.wood + " Holz" + (fc.Count > 0 ? " und " + wbi.CropCostText(fc) : "")
+                    // Ausbau nur ueber die Sonnenlilie: sie lichtet den Nebel, wenn sie reif ist
+                    var lily = PlantBalance.I.Plant("sonnenlilie");
+                    float lc = lily != null ? wbi.SeedCost(lily) : next.cost;
+                    ShopRow(content, "Nebel lichten (Hof-Stufe " + (wbi.FarmLevel + 1) + ")", "Pflanze eine Sonnenlilie und lass sie reifen – ihr Licht vertreibt den Nebel und der Hof wird größer. Braucht auch " + next.wood + " Holz" + (fc.Count > 0 ? " und " + wbi.CropCostText(fc) : "")
                         + (fm != "" ? "\nFehlt im Vorrat: " + fm : ""),
-                        Num.Short(next.cost), wbi.Coins >= next.cost && wbi.Wood >= next.wood && wbi.HasCrops(fc), () => { if (wbi.BuyFarm()) { CloseModal(); Banner("Der Hof wächst!", "Neue Fläche zum Bebauen"); } });
+                        Num.Short(lc), wbi.Coins >= lc && wbi.Wood >= next.wood && wbi.HasCrops(fc), () =>
+                        {
+                            if (lily == null) return;
+                            wbi.SelectPlant(lily.id);
+                            CloseModal();
+                            Banner("Sonnenlilie gewählt", "Tippe auf ein freies Feld und lass sie wachsen");
+                        });
                 }
                 else Label(content, "Der Hof ist voll ausgebaut.", 32, InkSoft, TextAnchor.MiddleCenter).LE(-1, 120);
                 double kc = wbi.KnolliCost;

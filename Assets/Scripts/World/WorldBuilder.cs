@@ -391,6 +391,7 @@ namespace SeedClicker
             UpdateSeason(Time.deltaTime);
             UpdateShop(Time.deltaTime);
             UpdateBuildingGlow(Time.deltaTime);
+            UpdateFog(Time.deltaTime);
             ambientT -= Time.deltaTime;
             if (ambientT > 0 || Particles.I == null) return;
             ambientT = 0.2f;
