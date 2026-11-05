@@ -227,7 +227,7 @@ namespace SeedClicker
             if (fog && !CanPlantFog(c)) return false;   // Sonnenlilie: Hof nicht voll, nur eine zur Zeit, Holz und Ernte
             if (def != null && (def.cost > 0 || fog) && !TrySpend(SeedCost(def), CellCenterOf(c) + new Vector2(0, 0.6f))) return false;
             if (fog) PayFogExtras();
-            var p = new PlantedState { x = c.x, y = c.y, type = type, growth = 0 };
+            var p = new PlantedState { x = c.x, y = c.y, type = type, growth = fog && FreeBuild ? PlantBalance.I.GrowTapsFor(type) : 0 };   // Testmodus: Sonnenlilie gleich reif
             save.planted.Add(p); DirtyPlants();
             CreatePlantView(p, true);
             var pos = CellCenterOf(c);

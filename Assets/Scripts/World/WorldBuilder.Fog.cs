@@ -291,7 +291,7 @@ namespace SeedClicker
         }
 
         /// <summary>Preis der Sonnenlilie: ein Vielfaches des naechsten Areals.</summary>
-        float FogPlantCost() { var n = NextAreaCost(); return n == null ? float.MaxValue : n.cost * PlantBalance.I.Fog.costMult; }
+        float FogPlantCost() { if (FreeBuild) return 0f; var n = NextAreaCost(); return n == null ? float.MaxValue : n.cost * PlantBalance.I.Fog.costMult; }   // Testmodus "Alle Gebaeude gratis": gratis
 
         /// <summary>Darf jetzt eine Sonnenlilie gepflanzt werden? Prueft Nebel, Holz und Ernte (Muenzen prueft das Pflanzen).</summary>
         bool CanPlantFog(Cell c)
@@ -300,8 +300,8 @@ namespace SeedClicker
             var next = NextAreaCost();
             string why = next == null || !AnyAreaClearable() ? "Kein Nebel mehr zu lichten"
                 : save.planted.Exists(q => q.Role == "fogclear") ? "Es wächst schon eine Sonnenlilie"
-                : save.wood < next.wood ? "Die Sonnenlilie braucht " + next.wood + " Holz"
-                : !HasCrops(CropCost(next.crops)) ? "Die Sonnenlilie braucht " + CropCostText(CropCost(next.crops))
+                : !FreeBuild && save.wood < next.wood ? "Die Sonnenlilie braucht " + next.wood + " Holz"
+                : !FreeBuild && !HasCrops(CropCost(next.crops)) ? "Die Sonnenlilie braucht " + CropCostText(CropCost(next.crops))
                 : null;
             if (why == null) return true;
             Floater?.Invoke(at, why, new Color(1f, 0.75f, 0.55f));
@@ -313,7 +313,7 @@ namespace SeedClicker
         void PayFogExtras()
         {
             var next = NextAreaCost();
-            if (next == null) return;
+            if (next == null || FreeBuild) return;
             TakeCrops(CropCost(next.crops));
             save.wood -= next.wood; WoodChanged?.Invoke(save.wood);
         }
