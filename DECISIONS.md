@@ -508,3 +508,7 @@
 - Zombies kommen aus den Nebel-Arealen, die an den Hof grenzen.
 - Alte Spielstände: Beim ersten Laden werden alle Areale geöffnet, die der bisherige Hof berührte oder in denen schon etwas steht; die bisherigen Ausbauten zählen für den Preis.
 
+## Ziehen sichtbar machen (05.11.2026)
+- Jede Pflanze sagt, wohin man sie ziehen kann: im Hover-Schild (zweite Zeile) und im Pflanzen-Fenster, z. B. „Ziehen: auf eine Mauer oder einen Wachturm“ (Steinmoos), „auf die Waffenbank“ (Elemente), „in ein Steinpult“ (Wurzelherz), „auf ein Nebel-Feld am Hof“ (reife Sonnenlilie), sonst „auf eine gleiche Pflanze oder ein freies Feld“.
+- Während man eine Pflanze trägt, leuchten alle Orte grün und durchsichtig (pulsierend), an denen man sie ablegen kann: freie Felder, gleiche reife Pflanzen, passende Mauerabschnitte, Steinpulte, Wachtürme, die Waffenbank. Für die Sonnenlilie färbt sich der Nebel der lichtbaren Areale grün. Berechnet nur für den sichtbaren Bereich, alle 0,3 s.
+

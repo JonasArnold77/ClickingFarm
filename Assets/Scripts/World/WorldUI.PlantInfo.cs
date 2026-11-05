@@ -112,7 +112,7 @@ namespace SeedClicker
 
             // Hover-Schild (nur mit Maus)
             hoverText = UIKit.Txt(canvasRt, "", 40, Color.white, TextAnchor.MiddleCenter, true, true);
-            hoverText.rectTransform.sizeDelta = new Vector2(600, 70);
+            hoverText.rectTransform.sizeDelta = new Vector2(700, 120);
             hoverText.horizontalOverflow = HorizontalWrapMode.Overflow;
             hoverText.raycastTarget = false;
             hoverText.color = new Color(1, 1, 1, 0);
@@ -179,7 +179,7 @@ namespace SeedClicker
             }
             else infoRole.text = Roles.Name(def.role);
 
-            infoStats.text = Stats(p, def, g);
+            infoStats.text = Stats(p, def, g) + "\n<color=#3c8a3c>" + wb.DragHint(p) + "</color>";
             bool turn = p.Grown && WorldBuilder.HasDirection(p);
             infoTurn.gameObject.SetActive(turn);
             var ar = infoAct.GetComponent<RectTransform>();
@@ -281,7 +281,7 @@ namespace SeedClicker
             if (hoverPlant != null && cam != null)
             {
                 var def = PlantBalance.I.Plant(hoverPlant.type);
-                hoverText.text = (def != null ? def.name : "") + " · Stufe " + hoverPlant.Lv;
+                hoverText.text = (def != null ? def.name : "") + " · Stufe " + hoverPlant.Lv + "\n<size=30>" + wb.DragHint(hoverPlant) + "</size>";   // man sieht: die Pflanze laesst sich ziehen
                 var sp = cam.WorldToScreenPoint(WorldBuilder.PlantBase(hoverPlant) + new Vector2(0, WorldBuilder.CellSize * 1.7f + a * 0.06f));
                 RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRt, sp, null, out var local);
                 hoverText.rectTransform.anchoredPosition = local;
