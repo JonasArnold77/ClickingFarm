@@ -476,4 +476,5 @@
 - Wunsch: kein Leuchten, sondern Bronze-, Silber- und Goldelemente. Das Leuchten (Strahlen, Glitzer, Licht, Glanz-Shader und fx-Texturen) ist wieder entfernt.
 - Ab Stufe 5/10/15 (buildingGlow.levels) zeigt das Gebäude ein anderes Bild: das Schild wird zur Metallplatte mit Nieten (Laden: Metallrahmen um die Werbetafel, Schriftzug und Ring ums runde Schild in Metall), auf dem Dach sitzt eine Zier – Bronze-Kugel, Silberkugel mit Spitze, goldener Stern. Beim Wechsel gibt es einen kurzen Funkenregen.
 - Die Stufenbilder heißen name_t1/_t2/_t3.png und werden mit Tools/Buildings/metals.py aus den fertigen Holz-Bildern erzeugt (oben 120 px Platz für die Zier).
+- Wandelemente in Metall: Tür- und Fensterrahmen, Ecksteine (Laden) und beim Wachturm die Querbalken unter dem Dach nehmen die Stufenfarbe an; Farbe = Metall-Grundton × Helligkeit, damit die Schattierung bleibt, helle Stellen bekommen Glanz. Erkannt werden die Elemente auf den Originalbildern des City-Pakets (Tools/Buildings/trim_rules.py, Glasflächen und Markise ausgenommen).
 

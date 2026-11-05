@@ -1,9 +1,13 @@
 """Stufen-Varianten der Gebaeude: Bronze, Silber, Gold (name_t1/_t2/_t3.png).
 Je Stufe wird das Schild zur Metallplatte mit Nieten und auf dem Dach sitzt eine Zier (Bronze: Kugel, Silber: Kugel
-mit Spitze, Gold: Stern). Nach signs.py ausfuehren. Aufruf: python metals.py <Buildings-Ordner> <Assets-Ordner>"""
+mit Spitze, Gold: Stern). Wandelemente (Tuer- und Fensterrahmen, Ecksteine; Regeln in trim_rules.py, auf den
+Originalbildern des City-Pakets erkannt) nehmen die Metallfarbe an, die Schattierung bleibt.
+Nach signs.py ausfuehren. Aufruf: python metals.py <Buildings-Ordner> <Assets-Ordner>"""
 import sys
 from PIL import Image, ImageDraw
 import signs
+import colorsys
+from trim_rules import RULES, mask
 
 bdir, assets = sys.argv[1], sys.argv[2]
 signs.FONT = f"{assets}/Resources/Fonts/CurseCasual.ttf"
@@ -64,6 +68,40 @@ def finial(im, x, y, tier, pal):
         d.ellipse([x - 9, cy - 11, x, cy - 2], fill=hi)
 
 
+# Grundfarbe des Metalls je Stufe (die Schattierung kommt aus der Helligkeit des Bildes)
+METAL = {1: (196, 124, 66), 2: (198, 205, 218), 3: (236, 184, 58)}
+city = f"{assets}/City Assets Pack - Basic"
+TRIMS = {}
+for _name, (_src, _wall, _rule) in RULES.items():
+    _skip = (lambda x, y: 430 <= y <= 540) if _name == "laden" else None   # Markise bleibt Stoff
+    TRIMS[_name] = mask(Image.open(f"{city}/{_src}").convert("RGBA"), _wall, _rule, _skip)
+
+
+def tower_trim(im):
+    """Wachturm: Querbalken und Streben unter dem Dach (Holzpixel in diesem Band)."""
+    m = set(); px = im.load(); W, H = im.size
+    for y in range(172, 218):
+        for x in range(W):
+            r, g, b, a = px[x, y]
+            if a < 200: continue
+            h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+            if 10 <= h * 360 < 50 and s > 0.2: m.add((x, y))
+    return m
+
+
+def metallize(im, pts, tier, dy=0):
+    """Pixel in Metall: Grundfarbe mal Helligkeit (Schattierung bleibt), Glanz auf hellen Stellen."""
+    base = METAL[tier]; px = im.load()
+    for (x, y) in pts:
+        r, g, b, a = px[x, y + dy]
+        if a == 0: continue
+        v = max(r, g, b) / 255
+        k = 0.45 + 0.9 * v
+        hi = max(0.0, v - 0.75) * 1.6   # Glanzlicht
+        c = tuple(int(min(255, base[i] * k + 255 * hi)) for i in range(3))
+        px[x, y + dy] = c + (a,)
+
+
 def padded(im):
     out = Image.new("RGBA", (im.size[0], im.size[1] + PAD), (0, 0, 0, 0))
     out.alpha_composite(im, (0, PAD))
@@ -73,7 +111,10 @@ def padded(im):
 for tier, pal in PALS.items():
     frame, fill, hi, txt, ink = pal
     for name, (sign, (rx, ry)) in JOBS.items():
-        im = padded(Image.open(f"{bdir}/{name}.png").convert("RGBA"))
+        src = Image.open(f"{bdir}/{name}.png").convert("RGBA")
+        trims = TRIMS.get(name) or (tower_trim(src) if name.startswith("turm") else set())
+        im = padded(src)
+        metallize(im, trims, tier, PAD)
         cx, cy, w, h = sign[0], sign[1] + PAD, sign[2], sign[3]
         signs.board(im, cx, cy, w, h, *sign[4:], pal=pal)
         rivets(ImageDraw.Draw(im), cx - w // 2, cy - h // 2, cx + w // 2, cy + h // 2, pal)
@@ -81,7 +122,9 @@ for tier, pal in PALS.items():
         im.save(f"{bdir}/{name}_t{tier}.png")
 
     # Laden: Metallrahmen um die Werbetafel, Schriftzug in Metall, Ring ums runde Schild, Zier auf dem Dach
-    im = padded(Image.open(f"{bdir}/laden.png").convert("RGBA")); d = ImageDraw.Draw(im)
+    im = padded(Image.open(f"{bdir}/laden.png").convert("RGBA"))
+    metallize(im, TRIMS["laden"], tier, PAD)
+    d = ImageDraw.Draw(im)
     x0, y0, x1, y1 = 72, 236 + PAD, 408, 372 + PAD
     d.rectangle([x0, y0, x1, y1], outline=frame, width=12)
     d.rectangle([x0 + 3, y0 + 3, x1 - 3, y1 - 3], outline=fill, width=6)
