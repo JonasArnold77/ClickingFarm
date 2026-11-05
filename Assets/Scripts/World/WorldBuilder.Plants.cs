@@ -927,7 +927,7 @@ namespace SeedClicker
                 v.body.localRotation = Quaternion.Euler(0, 0, sway + v.tilt);
                 v.shadow.color = new Color(0.05f, 0.04f, 0.02f, 0.42f * (1f + v.sy * 0.8f));
                 if (v.mat != null) v.mat.SetFloat("_Flash", v.flash);
-                MedalAura.Set(v.sr, MedalOf(p));   // Bronze/Silber/Gold: Metall-Ueberzug ueber der Pflanze
+                MedalAura.Set(v.sr, MedalOf(p));   // Bronze/Silber/Gold: Comic-Kontur und leichtes Strahlen
                 var g = p.Genome;
                 var col = g.ElementColor;
                 float glowA = p.Grown ? 0.22f + 0.1f * Mathf.Sin(t * 2f + p.x) + nightAmt * 0.2f : v.heat * 0.45f;

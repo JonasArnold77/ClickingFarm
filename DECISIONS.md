@@ -484,3 +484,9 @@
 - Nachtrag: Gold-Überzug dezenter (Deckkraft 50 % statt 90 %), und der Überzug nimmt 30 % der echten Farbe mit – die Pflanze schimmert golden, ihre Farbe bleibt erkennbar.
 - Nachtrag 2: Der Überzug liegt nur noch auf den grünen Teilen (Blätter, Stiele; Maske im Shader: Grün deutlich über Rot und Blau). Früchte, Kolben und Körner behalten ihre echte Farbe – die Pflanze bleibt erkennbar, die Stufe sieht man an den Blättern.
 
+## Medaillen-Pflanzen: Kontur zurück, mit Strahlen wie verzauberte Waffen (05.11.2026)
+- Der Metall-Überzug (auch nur auf Blättern) hat nicht überzeugt – die feste Comic-Kontur ist zurück (MetalCoat-Shader entfernt).
+- Neu: Die Kontur strahlt wie eine verzauberte Waffe in Online-Rollenspielen. Sie ist heller und pulsiert langsam, dahinter liegt ein weicher Schein aus drei vergrößerten, durchsichtigen Silhouetten (1,05/1,11/1,18-fach), und leuchtende Funken steigen auf. Gold strahlt am stärksten, Bronze am schwächsten. Nur die Pflanzen selbst strahlen, die kleinen Erntestücke behalten die einfache Linie.
+- In den Assets gibt es keinen fertigen Verzauberungs-Effekt (Cartoon FX: Explosionen, Blitze, Magical Source zu groß; Happy Harvest: Ernte, Rauch, Motten) – daher selbst gebaut.
+- Außerhalb des Bilds wird der Schein nicht bewegt (große Höfe).
+
