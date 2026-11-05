@@ -20,14 +20,22 @@ namespace SeedClicker
         float fogCheckT;
         const int FogOrder = 30500;   // ueber Baeumen, Steinen und Zombies (die kommen aus dem Nebel), unter der Oberflaeche
 
-        /// <summary>Nebelfreier Hof: die Flaeche der aktuellen Ausbaustufe mit etwas Rand.</summary>
-        public Rect FogClearRect
+        /// <summary>Nebelfreier Hof: die Flaeche der aktuellen Ausbaustufe, dazu alles, was schon steht (Felder, Pflanzen,
+        /// Mauern, Bauwerke) – der Nebel deckt nie den eigenen Hof zu. Nach oben bis zum Kartenrand frei: Nebel nur links,
+        /// rechts und unten. Wird bei jedem Neuaufbau des Nebels ermittelt.</summary>
+        public Rect FogClearRect => fogClear.width > 0f ? fogClear : (fogClear = ComputeFogClear());
+        Rect fogClear;
+
+        Rect ComputeFogClear()
         {
-            get
-            {
-                var r = FarmRect(FarmLevel);
-                return UnityEngine.Rect.MinMaxRect(r.xMin - 0.3f, r.yMin - 0.3f, r.xMax + 0.3f, r.yMax + 0.3f);
-            }
+            var r = FarmRect(FarmLevel);
+            float x0 = r.xMin, x1 = r.xMax, y0 = r.yMin;
+            void Grow(Vector2 p) { x0 = Mathf.Min(x0, p.x - CellSize); x1 = Mathf.Max(x1, p.x + CellSize); y0 = Mathf.Min(y0, p.y - CellSize); }
+            foreach (var c in save.fields) Grow(CellCenter(c));
+            foreach (var p in save.planted) Grow(CellCenter(new Cell(p.x, p.y)));
+            foreach (var w in save.walls) Grow(CellCenter(new Cell(w.x, w.y)));
+            foreach (var st in save.structures) if (st.placed) Grow(CellCenter(new Cell(st.x, st.y)));
+            return UnityEngine.Rect.MinMaxRect(x0 - 0.3f, y0 - 0.3f, x1 + 0.3f, MapH / 2f + 4f);
         }
 
         /// <summary>Platz um Haus und Laden (oben) – dort ist nie Nebel.</summary>
@@ -60,11 +68,12 @@ namespace SeedClicker
         /// <summary>Nebel an die aktuelle Hofgrenze anpassen: Ballen im neuen Hof loesen sich auf, am neuen Rand kommen neue dazu.</summary>
         void RebuildFog(bool fadeIn)
         {
+            fogClear = ComputeFogClear();
             // Ballen, die jetzt im freien Hof liegen, treiben nach aussen und loesen sich auf
             var c = FogClearRect.center;
             foreach (var f in fogPuffs)
             {
-                if (f.dying || FogDist(f.home) > 0.15f) continue;
+                if (f.dying || FogDist(f.home) > f.size * 0.42f) continue;
                 f.dying = true;
                 f.outDir = (f.home - c).normalized;
             }
@@ -89,7 +98,7 @@ namespace SeedClicker
                     var key = new Vector2Int(ix * 4 + layer, iy);
                     if (fogKeys.Contains(key)) continue;
                     float d = FogDist(home);
-                    if (d <= Mathf.Max(dMin, 0.02f) || d > dMax) continue;   // nie im freien Hof
+                    if (d <= Mathf.Max(dMin, size * 0.42f) || d > dMax) continue;   // ragt nicht in den freien Hof hinein
                     fogKeys.Add(key);
                     var sr = new GameObject("Fog").AddComponent<SpriteRenderer>();
                     sr.transform.SetParent(objects, false);

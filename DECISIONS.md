@@ -496,4 +496,5 @@
 - Die Bäume bleiben in der Welt (Holz), liegen außerhalb des Hofs aber unter dem Nebel; wird er gelichtet, kommen sie zum Vorschein.
 - Zombies kommen aus dem Nebel: sie erscheinen knapp hinter der Hofgrenze links, rechts oder unten (statt am Kartenrand).
 - Hof-Ausbau nur noch über die Sonnenlilie (neue Pflanze, Rolle „fogclear“, von Anfang an verfügbar): Preis = 2 × Kosten der nächsten Ausbaustufe (plants.json → fog.costMult) plus deren Holz und Ernte; nur eine zur Zeit; 120 Klicks Wachstum. Ist sie reif, lichtet ihr Licht den Nebel: Hof +1 Stufe, der Nebel am alten Rand treibt nach außen und löst sich auf, am neuen Rand zieht er auf. Im Laden (Reiter „Hof“) steht statt „Hof erweitern“ jetzt „Nebel lichten“, der Knopf wählt die Sonnenlilie.
+- Nachtrag: Der Nebel deckt nie den eigenen Hof zu – der freie Bereich umfasst die Ausbaustufe und alles, was schon steht (Felder, Pflanzen, Mauern, Bauwerke), und reicht nach oben bis zum Kartenrand: Nebel nur links, rechts und unten. Die Wolkenballen am Rand ragen nicht mehr in den freien Bereich hinein.
 
