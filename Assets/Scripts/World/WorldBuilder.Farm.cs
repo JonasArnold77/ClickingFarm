@@ -33,39 +33,11 @@ namespace SeedClicker
 
         public int FarmLevel => Mathf.Clamp(save.farmLevel, 0, MaxFarmLevel);
 
-        // Seitenweise Ausbau (Sonnenlilie): links und rechts je 4 Felder, unten 5 Felder pro Schritt, bis zum Kartenrand
-        const float SideStepX = 2.4f, SideStepY = 3.0f, SideMaxX = 10.4f, SideMinY = -14.0f;
-
-        /// <summary>Aktueller Hof. Alte Spielstaende (nur Stufe) werden beim ersten Zugriff in Seitengrenzen umgerechnet.</summary>
-        public Rect FarmBounds
-        {
-            get
-            {
-                if (!save.farmSides)
-                {
-                    var r0 = FarmRect(FarmLevel);
-                    save.farmX0 = r0.xMin; save.farmX1 = r0.xMax; save.farmY0 = r0.yMin; save.farmSides = true;
-                }
-                return UnityEngine.Rect.MinMaxRect(save.farmX0, save.farmY0, save.farmX1, FarmRect(0).yMax);
-            }
-        }
-
-        /// <summary>Kann der Hof auf dieser Seite noch wachsen? 0 links, 1 rechts, 2 unten.</summary>
-        public bool CanExpand(int side)
-        {
-            var r = FarmBounds;
-            return side == 0 ? r.xMin - SideStepX >= -SideMaxX - 0.01f : side == 1 ? r.xMax + SideStepX <= SideMaxX + 0.01f : r.yMin - SideStepY >= SideMinY - 0.01f;
-        }
-
-        public static string SideName(int side) => side == 0 ? "links" : side == 1 ? "rechts" : "unten";
-
-        /// <summary>Liegt die ganze Zelle im aktuellen Hof?</summary>
+        /// <summary>Liegt die Zelle im Hof? Der Hof sind die offenen Nebel-Areale (siehe Fog), nicht die Hausreihe darueber.</summary>
         public bool IsBuildable(Cell c)
         {
-            var r = FarmBounds;
-            var ctr = CellCenter(c);
-            float h = CellSize * 0.5f;
-            return ctr.x - h >= r.xMin - 0.01f && ctr.x + h <= r.xMax + 0.01f && ctr.y - h >= r.yMin - 0.01f && ctr.y + h <= r.yMax + 0.01f;
+            var a = AreaOf(c);
+            return a.y <= AreaMaxY && IsAreaOpen(a);
         }
 
         Vector2Int ghostView = new Vector2Int(int.MinValue, 0);
@@ -92,40 +64,18 @@ namespace SeedClicker
             RefreshGhosts();
         }
 
-        /// <summary>Alle Zellen im aktuellen Hof.</summary>
+        /// <summary>Alle Zellen im aktuellen Hof (alle offenen Areale).</summary>
         IEnumerable<Cell> FarmCells()
         {
-            var r = FarmBounds;
-            var a = CellAt(r.min + new Vector2(0.01f, 0.01f));
-            var b = CellAt(r.max - new Vector2(0.01f, 0.01f));
-            for (int x = a.x; x <= b.x; x++) for (int y = a.y; y <= b.y; y++) { var c = new Cell(x, y); if (IsBuildable(c)) yield return c; }
-        }
-
-        /// <summary>Hof auf irgendeiner Seite vergroessern (zuerst unten, dann links, rechts).</summary>
-        public void ExpandFarm()
-        {
-            foreach (int side in new[] { 2, 0, 1 }) if (CanExpand(side)) { ExpandFarm(side); return; }
-        }
-
-        /// <summary>Hof auf einer Seite vergroessern (0 links, 1 rechts, 2 unten). Neue Flaeche schimmert sofort.</summary>
-        public bool ExpandFarm(int side)
-        {
-            if (FarmLevel >= MaxFarmLevel || !CanExpand(side)) return false;
-            var b = FarmBounds;
-            if (side == 0) save.farmX0 = b.xMin - SideStepX;
-            else if (side == 1) save.farmX1 = b.xMax + SideStepX;
-            else save.farmY0 = b.yMin - SideStepY;
-            save.farmLevel = FarmLevel + 1;
-            save.Save();
-            RefreshGhosts();
-            RebuildFog(true);   // der Nebel weicht an die neue Grenze zurueck
-            var r = FarmBounds;
-            if (side == 2) for (float x = r.xMin; x < r.xMax; x += 0.6f) Particles.I?.Spawn(new Vector2(x, r.yMin), "star", new Color(1f, 0.95f, 0.6f), Vector3.up * 0.5f, 1f, 0.15f, 0f, 0f);
-            else { float x = side == 0 ? r.xMin : r.xMax; for (float y = r.yMin; y < r.yMax; y += 0.6f) Particles.I?.Spawn(new Vector2(x, y), "star", new Color(1f, 0.95f, 0.6f), Vector3.up * 0.5f, 1f, 0.15f, 0f, 0f); }
-            Sfx.Play("levelup", 0.9f, 0.8f);
-            Haptics.Tap(40);
-            WorldPostFX.Punch(0.6f);
-            return true;
+            for (int ax = AreaMinX - 1; ax <= AreaMaxX + 1; ax++)
+                for (int ay = AreaMinY - 1; ay <= AreaMaxY; ay++)
+                {
+                    var a = new Vector2Int(ax, ay);
+                    if (!IsAreaOpen(a)) continue;
+                    int x0 = AreaOX + ax * FogAreaCells, y0 = AreaOY + ay * FogAreaCells;
+                    for (int x = x0; x < x0 + FogAreaCells; x++)
+                        for (int y = y0; y < y0 + FogAreaCells; y++) yield return new Cell(x, y);
+                }
         }
 
         /// <summary>Ueberall, wo ein Feld (oder im Mauer-Modus eine Mauer) angelegt werden kann, schimmert es ganz leicht durch.</summary>

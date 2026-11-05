@@ -14,7 +14,9 @@ namespace SeedClicker
     {
         public int wood;
         public float woodDebt;   // angefangenes Holz (Mauern kosten Bruchteile)
-        public bool farmSides; public float farmX0, farmX1, farmY0;   // Hofgrenzen je Seite (links, rechts, unten), seit dem Nebel
+        public bool farmSides; public float farmX0, farmX1, farmY0;   // alt: Hofgrenzen je Seite (wird in Areale umgerechnet)
+        public bool areasInit; public int areasOpened;                  // Nebel-Areale: umgerechnet? wie viele gelichtet (fuer den Preis)
+        public List<UnityEngine.Vector2Int> openAreas = new List<UnityEngine.Vector2Int>();   // gelichtete Areale (ohne Start-Hof)
         public int shopLv = 1; public float shopXp;   // Laden neben dem Haus: Stufe und Klicks zur naechsten
         public float clickGrow, clickMedal, clickForge, clickBuild;   // zuletzt angewandter Klick-Regler (0 = alter Stand ohne Regler)
         public int runes, altarLevel;   // Runensteine; fuer die naechste Welle geopferte Runen

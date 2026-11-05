@@ -2222,6 +2222,7 @@
     "runes": 3
   },
   "fog": {
-    "costMult": 2
+    "costMult": 2,
+    "growth": 1.6
   }
 }

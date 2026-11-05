@@ -104,7 +104,7 @@ namespace SeedClicker
     /// Klicks je Stufe wie bei Bauwerken (structureTaps).</summary>
     /// <summary>Gebaeude schimmern ab diesen Stufen ueber dem Dach: Bronze, Silber, Gold.</summary>
     /// <summary>Nebel: die Sonnenlilie kostet costMult × den Preis der naechsten Ausbaustufe (dazu deren Holz und Ernte).</summary>
-    [Serializable] public class FogDef { public float costMult = 2f; }
+    [Serializable] public class FogDef { public float costMult = 2f, growth = 1.6f; }   // growth: jedes Areal nach den Ausbaustufen so viel teurer
     [Serializable] public class BuildingGlowDef { public int[] levels = { 5, 10, 15 }; }
     [Serializable] public class ShopLevelDef { public float coinBonusPerLevel = 0.04f; }
     [Serializable] public class ClickRewardDef { public float @base = 1f, cpsShare = 0.05f; }

@@ -500,3 +500,11 @@
 - Nachtrag: Die reife Sonnenlilie wirkt nicht mehr von selbst. Man wählt die Seite: im Pflanzen-Fenster mit drei Knöpfen (← Links, ↓ Unten, Rechts →) oder indem man die Lilie in den Nebel links, rechts oder unten zieht. Beim Reifen sagt ein Hinweis, wie es geht.
 - Der Hof wächst dafür seitenweise: links und rechts je 4 Felder (2,4 Einheiten), unten 5 Felder (3 Einheiten) pro Lilie, bis zum Kartenrand; die Ausbaustufe zählt weiter mit (für Preise). Alte Spielstände werden beim ersten Laden aus ihrer Stufe in Seitengrenzen umgerechnet (save.farmSides).
 
+## Nebel-Areale wie ein Schachbrett, größere Karte (05.11.2026)
+- Kein Waldrand mehr: Die Karte ist deutlich größer (36 × 46 statt 22 × 30), Bäume stehen nur noch locker in Hainen. Rund um den Hof ist das Land in quadratische Areale von 5 × 5 Feldern geteilt (11 × 8 Areale), jedes unter eigenem dichten, wabernden Nebel; benachbarte Areale sind leicht unterschiedlich hell, feine Nähte zeigen das Schachbrett. Die Reihe mit Haus und Laden ist nie im Nebel.
+- Start-Hof: 3 × 2 Areale (15 × 10 Felder). Bebaubar ist jede Zelle in einem offenen Areal.
+- Sonnenlilie: Reif auf ein Nebel-Areal ziehen, das an den Hof grenzt (beim Tragen leuchten diese grün) – oder im Pflanzen-Fenster „Nebel lichten!“ drücken (nimmt das nächste Areal an der Lilie). So wächst der Hof Stück für Stück in jede Richtung und Form.
+- Preis je Areal: die bisherigen Ausbaustufen aus plants.json, danach jedes weitere Areal ×1,6 (fog.growth); die Lilie kostet das Doppelte (fog.costMult) plus Holz und Ernte des Areals.
+- Zombies kommen aus den Nebel-Arealen, die an den Hof grenzen.
+- Alte Spielstände: Beim ersten Laden werden alle Areale geöffnet, die der bisherige Hof berührte oder in denen schon etwas steht; die bisherigen Ausbauten zählen für den Preis.
+

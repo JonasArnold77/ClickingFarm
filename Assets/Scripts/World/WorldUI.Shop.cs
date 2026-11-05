@@ -209,7 +209,7 @@ namespace SeedClicker
             else if (tab == 4) BuildShop(content, wbi);
             else
             {
-                var next = wbi.NextFarmLevel();
+                var next = wbi.NextAreaCost();
                 if (next != null)
                 {
                     var fc = wbi.CropCost(next.crops);
@@ -217,7 +217,7 @@ namespace SeedClicker
                     // Ausbau nur ueber die Sonnenlilie: sie lichtet den Nebel, wenn sie reif ist
                     var lily = PlantBalance.I.Plant("sonnenlilie");
                     float lc = lily != null ? wbi.SeedCost(lily) : next.cost;
-                    ShopRow(content, "Nebel lichten (Hof-Stufe " + (wbi.FarmLevel + 1) + ")", "Pflanze eine Sonnenlilie und lass sie reifen – ihr Licht vertreibt den Nebel und der Hof wird größer. Braucht auch " + next.wood + " Holz" + (fc.Count > 0 ? " und " + wbi.CropCostText(fc) : "")
+                    ShopRow(content, "Nebel lichten (" + (wbi.Save.areasOpened + 1) + ". Areal)", "Pflanze eine Sonnenlilie und lass sie reifen, dann zieh sie auf ein Nebel-Feld am Hof – ihr Licht vertreibt dort den Nebel. Braucht auch " + next.wood + " Holz" + (fc.Count > 0 ? " und " + wbi.CropCostText(fc) : "")
                         + (fm != "" ? "\nFehlt im Vorrat: " + fm : ""),
                         Num.Short(lc), wbi.Coins >= lc && wbi.Wood >= next.wood && wbi.HasCrops(fc), () =>
                         {

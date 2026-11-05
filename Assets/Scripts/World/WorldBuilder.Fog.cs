@@ -4,118 +4,170 @@ using UnityEngine;
 namespace SeedClicker
 {
     /// <summary>
-    /// Nebel als Grenze des Hofs: Rund um den Hof der aktuellen Ausbaustufe liegt dichter, weisser, wabernder Nebel
-    /// (viele weiche Wolkenballen, die langsam treiben, atmen und sich drehen). Der Platz um Haus und Laden bleibt frei.
-    /// Nachts kommen die Zombies aus dem Nebel (NightWave fragt FogSpawnPoint).
-    /// Den Hof vergroessert man mit einer Sonnenlilie (Rolle "fogclear"): sehr teuer, nur eine zur Zeit. Ist sie reif,
-    /// waehlt man die Seite – Knopf im Pflanzen-Fenster (links, unten, rechts) oder die Lilie in den Nebel ziehen. Dort
-    /// lichtet ihr Licht den Nebel, der Hof waechst auf dieser Seite, die Lilie ist verbraucht.
-    /// Werte in plants.json -> fog.
+    /// Nebel-Areale: Rund um den Hof ist das Land wie ein Schachbrett in quadratische Areale (5×5 Felder) geteilt, jedes
+    /// unter eigenem, dichtem, weissem, wabernden Nebel (weiche Wolkenballen, die treiben, atmen und sich drehen; benachbarte
+    /// Areale leicht unterschiedlich hell, damit man die Felder des Schachbretts erkennt). Der Platz um Haus und Laden ist frei.
+    /// Nachts kommen die Zombies aus den Nebel-Arealen am Hof (FogSpawnPoint).
+    /// Den Hof vergroessert man Areal fuer Areal mit einer Sonnenlilie (Rolle "fogclear"): sehr teuer, nur eine zur Zeit.
+    /// Ist sie reif, zieht man sie auf ein Nebel-Areal, das an den Hof grenzt (beim Tragen leuchten diese gruen), oder
+    /// drueckt im Pflanzen-Fenster "Nebel lichten" (dann das naechste Areal an der Lilie). Ihr Licht lichtet dort den Nebel,
+    /// das Areal gehoert zum Hof, die Lilie ist verbraucht. Preise in plants.json -> farmLevels und fog.
     /// </summary>
     public partial class WorldBuilder
     {
-        class FogPuff { public SpriteRenderer sr; public Vector2 home; public float size, phase, alpha, fade; public bool dying; public Vector2 outDir; }
+        class FogPuff { public SpriteRenderer sr; public Vector2Int area; public Vector2 home; public float size, phase, alpha, fade; public bool dying; public Vector2 outDir; }
         readonly List<FogPuff> fogPuffs = new List<FogPuff>();
-        readonly HashSet<Vector2Int> fogKeys = new HashSet<Vector2Int>();
+        readonly HashSet<Vector2Int> fogDrawn = new HashSet<Vector2Int>();
+        readonly HashSet<Vector2Int> openAreas = new HashSet<Vector2Int>();
         static Sprite fogSprite;
         float fogCheckT;
         const int FogOrder = 30500;   // ueber Baeumen, Steinen und Zombies (die kommen aus dem Nebel), unter der Oberflaeche
 
-        /// <summary>Nebelfreier Hof: die Flaeche der aktuellen Ausbaustufe, dazu alles, was schon steht (Felder, Pflanzen,
-        /// Mauern, Bauwerke) – der Nebel deckt nie den eigenen Hof zu. Nach oben bis zum Kartenrand frei: Nebel nur links,
-        /// rechts und unten. Wird bei jedem Neuaufbau des Nebels ermittelt.</summary>
-        public Rect FogClearRect => fogClear.width > 0f ? fogClear : (fogClear = ComputeFogClear());
-        Rect fogClear;
+        // Raster der Areale: 5×5 Felder, Ursprung so, dass der Start-Hof genau 3×2 Areale ist
+        const int FogAreaCells = 5, AreaOX = -8, AreaOY = -6;
+        const int AreaMinX = -4, AreaMaxX = 6, AreaMinY = -6, AreaMaxY = 1;   // Areale, die man lichten kann (darueber: Haus)
 
-        Rect ComputeFogClear()
+        static int FloorDiv(int a, int b) => a >= 0 ? a / b : -((-a + b - 1) / b);
+        public static Vector2Int AreaOf(Cell c) => new Vector2Int(FloorDiv(c.x - AreaOX, FogAreaCells), FloorDiv(c.y - AreaOY, FogAreaCells));
+        public static Vector2Int AreaAt(Vector2 w) => AreaOf(CellAt(w));
+
+        /// <summary>Welt-Rechteck eines Areals.</summary>
+        public static Rect AreaRect(Vector2Int a)
         {
-            var r = FarmBounds;
-            float x0 = r.xMin, x1 = r.xMax, y0 = r.yMin;
-            void Grow(Vector2 p) { x0 = Mathf.Min(x0, p.x - CellSize); x1 = Mathf.Max(x1, p.x + CellSize); y0 = Mathf.Min(y0, p.y - CellSize); }
-            foreach (var c in save.fields) Grow(CellCenter(c));
-            foreach (var p in save.planted) Grow(CellCenter(new Cell(p.x, p.y)));
-            foreach (var w in save.walls) Grow(CellCenter(new Cell(w.x, w.y)));
-            foreach (var st in save.structures) if (st.placed) Grow(CellCenter(new Cell(st.x, st.y)));
-            return UnityEngine.Rect.MinMaxRect(x0 - 0.3f, y0 - 0.3f, x1 + 0.3f, MapH / 2f + 4f);
+            float x0 = (AreaOX + a.x * FogAreaCells) * CellSize, y0 = (AreaOY + a.y * FogAreaCells) * CellSize, s = FogAreaCells * CellSize;
+            return new Rect(x0, y0, s, s);
         }
 
-        /// <summary>Platz um Haus und Laden (oben) – dort ist nie Nebel.</summary>
-        static Rect HouseZone => UnityEngine.Rect.MinMaxRect(-7.8f, 2.0f, 7.8f, MapH / 2f + 4f);
+        static bool InAreaRange(Vector2Int a) => a.x >= AreaMinX && a.x <= AreaMaxX && a.y >= AreaMinY && a.y <= AreaMaxY;
+        static bool StartArea_(Vector2Int a) => a.x >= 0 && a.x <= 2 && a.y >= 0 && a.y <= 1;
 
-        static float RectDist(Vector2 p, Rect r)
+        /// <summary>Gehoert das Areal zum Hof (oder liegt es oben beim Haus, wo nie Nebel ist)?</summary>
+        public bool IsAreaOpen(Vector2Int a)
         {
-            float dx = Mathf.Max(r.xMin - p.x, 0f, p.x - r.xMax), dy = Mathf.Max(r.yMin - p.y, 0f, p.y - r.yMax);
-            return Mathf.Sqrt(dx * dx + dy * dy);
+            EnsureAreas();
+            return a.y > AreaMaxY || StartArea_(a) || openAreas.Contains(a);
         }
 
-        /// <summary>Abstand zum nebelfreien Bereich (0 = drin).</summary>
-        float FogDist(Vector2 p) => Mathf.Min(RectDist(p, FogClearRect), RectDist(p, HouseZone));
+        /// <summary>Kann dieses Areal jetzt gelichtet werden? Im Nebel, im Raster und neben einem Hof-Areal.</summary>
+        public bool AreaClearable(Vector2Int a)
+        {
+            if (!InAreaRange(a) || IsAreaOpen(a)) return false;
+            foreach (var d in new[] { Vector2Int.left, Vector2Int.right, Vector2Int.up, Vector2Int.down })
+            {
+                var n = a + d;
+                if (n.y <= AreaMaxY && IsAreaOpen(n)) return true;
+            }
+            return false;
+        }
 
-        /// <summary>Wo ein Zombie aus dem Nebel tritt: knapp hinter dem Nebelrand links, rechts oder unten.</summary>
+        /// <summary>Alte Spielstaende: alles, was der Hof schon war oder wo schon etwas steht, wird offen.</summary>
+        void EnsureAreas()
+        {
+            if (save.areasInit) { if (openAreas.Count == 0) foreach (var a in save.openAreas) openAreas.Add(a); return; }
+            save.areasInit = true;
+            var old = save.farmSides ? UnityEngine.Rect.MinMaxRect(save.farmX0, save.farmY0, save.farmX1, FarmRect(0).yMax) : FarmRect(FarmLevel);
+            for (int ax = AreaMinX; ax <= AreaMaxX; ax++)
+                for (int ay = AreaMinY; ay <= AreaMaxY; ay++)
+                {
+                    var a = new Vector2Int(ax, ay);
+                    var r = AreaRect(a);
+                    if (r.xMax > old.xMin + 0.05f && r.xMin < old.xMax - 0.05f && r.yMax > old.yMin + 0.05f && r.yMin < old.yMax - 0.05f) Open(a);
+                }
+            foreach (var c in save.fields) Open(AreaOf(c));
+            foreach (var p in save.planted) Open(AreaOf(new Cell(p.x, p.y)));
+            foreach (var w in save.walls) Open(AreaOf(new Cell(w.x, w.y)));
+            foreach (var st in save.structures) if (st.placed) Open(AreaOf(new Cell(st.x, st.y)));
+            save.areasOpened = Mathf.Max(save.areasOpened, FarmLevel);   // bisherige Ausbauten zaehlen fuer den Preis
+            void Open(Vector2Int a)
+            {
+                if (a.y > AreaMaxY || StartArea_(a) || openAreas.Contains(a)) return;
+                openAreas.Add(a); save.openAreas.Add(a);
+            }
+        }
+
+        /// <summary>Areal zum Hof nehmen (ohne Kosten) – der Nebel dort loest sich auf.</summary>
+        void OpenArea(Vector2Int a)
+        {
+            EnsureAreas();
+            if (IsAreaOpen(a)) return;
+            openAreas.Add(a); save.openAreas.Add(a);
+            save.areasOpened++;
+            if (save.farmLevel < MaxFarmLevel) save.farmLevel++;
+            var c = AreaRect(a).center;
+            foreach (var f in fogPuffs)
+                if (!f.dying && f.area == a) { f.dying = true; f.outDir = (f.home - c).normalized + (c - (Vector2)HousePos).normalized * 0.6f; }
+            RefreshGhosts();
+            save.Save();
+        }
+
+        /// <summary>Wo ein Zombie aus dem Nebel tritt: irgendwo in einem Nebel-Areal, das an den Hof grenzt.</summary>
         public Vector2 FogSpawnPoint(System.Random rnd)
         {
-            var r = FogClearRect;
+            var edge = new List<Vector2Int>();
+            for (int ax = AreaMinX; ax <= AreaMaxX; ax++)
+                for (int ay = AreaMinY; ay <= AreaMaxY; ay++) { var a = new Vector2Int(ax, ay); if (AreaClearable(a)) edge.Add(a); }
             float hw = MapW / 2f - 0.3f, hh = MapH / 2f - 0.3f;
-            int side = rnd.Next(4);
-            float u = (float)rnd.NextDouble();
-            Vector2 p = side == 0 ? new Vector2(r.xMin - 1.1f, Mathf.Lerp(r.yMin, r.yMax, u))
-                      : side == 1 ? new Vector2(r.xMax + 1.1f, Mathf.Lerp(r.yMin, r.yMax, u))
-                      : new Vector2(Mathf.Lerp(r.xMin, r.xMax, u), r.yMin - 1.1f);
+            if (edge.Count == 0) return new Vector2((float)(rnd.NextDouble() * 2 - 1) * hw, -hh);
+            var r = AreaRect(edge[rnd.Next(edge.Count)]);
+            var p = new Vector2(Mathf.Lerp(r.xMin + 0.4f, r.xMax - 0.4f, (float)rnd.NextDouble()), Mathf.Lerp(r.yMin + 0.4f, r.yMax - 0.4f, (float)rnd.NextDouble()));
             return new Vector2(Mathf.Clamp(p.x, -hw, hw), Mathf.Clamp(p.y, -hh, hh));
         }
 
         // ------------------------------------------------------------------ Aufbau
 
-        /// <summary>Nebel an die aktuelle Hofgrenze anpassen: Ballen im neuen Hof loesen sich auf, am neuen Rand kommen neue dazu.</summary>
+        /// <summary>Nebel fuer jedes Areal ausserhalb des Hofs (auch ein Ring ueber das Raster hinaus bis zum Kartenrand).</summary>
         void RebuildFog(bool fadeIn)
         {
-            fogClear = ComputeFogClear();
-            // Ballen, die jetzt im freien Hof liegen, treiben nach aussen und loesen sich auf
-            var c = FogClearRect.center;
-            foreach (var f in fogPuffs)
-            {
-                if (f.dying || FogDist(f.home) > f.size * 0.42f) continue;
-                f.dying = true;
-                f.outDir = (f.home - c).normalized;
-            }
-            float hw = MapW / 2f + 2f, hh = MapH / 2f + 2f;
-            // Randband: dicht, kleinere Ballen; weiter draussen: grosse Ballen, lockerer verteilt
-            AddFogGrid(0.75f, 0f, 2.6f, 1.5f, 2.3f, 0.82f, 0, hw, hh, fadeIn);
-            AddFogGrid(2.1f, 2.6f, 99f, 3.4f, 4.4f, 0.93f, 1, hw, hh, fadeIn);
-        }
-
-        void AddFogGrid(float step, float dMin, float dMax, float sMin, float sMax, float alpha, int layer, float hw, float hh, bool fadeIn)
-        {
-            var rnd = new System.Random(4711 + layer * 977 + save.mapSeed);
-            int nx = Mathf.CeilToInt(hw * 2f / step), ny = Mathf.CeilToInt(hh * 2f / step);
-            for (int ix = 0; ix <= nx; ix++)
-                for (int iy = 0; iy <= ny; iy++)
+            EnsureAreas();
+            for (int ax = AreaMinX - 2; ax <= AreaMaxX + 2; ax++)
+                for (int ay = AreaMinY - 2; ay <= AreaMaxY; ay++)
                 {
-                    // zufaellig verschoben, damit kein Raster zu sehen ist (fest je Karte)
-                    var home = new Vector2(-hw + ix * step + (float)(rnd.NextDouble() - 0.5) * step * 0.8f,
-                                           -hh + iy * step + (float)(rnd.NextDouble() - 0.5) * step * 0.8f);
-                    float size = Mathf.Lerp(sMin, sMax, (float)rnd.NextDouble());
-                    float phase = (float)rnd.NextDouble() * 50f;
-                    var key = new Vector2Int(ix * 4 + layer, iy);
-                    if (fogKeys.Contains(key)) continue;
-                    float d = FogDist(home);
-                    if (d <= Mathf.Max(dMin, size * 0.42f) || d > dMax) continue;   // ragt nicht in den freien Hof hinein
-                    fogKeys.Add(key);
-                    var sr = new GameObject("Fog").AddComponent<SpriteRenderer>();
-                    sr.transform.SetParent(objects, false);
-                    sr.sprite = FogSprite;
-                    sr.sortingOrder = FogOrder + layer;
-                    fogPuffs.Add(new FogPuff { sr = sr, home = home, size = size, phase = phase, alpha = alpha, fade = fadeIn ? 0f : 1f });
+                    var a = new Vector2Int(ax, ay);
+                    if (IsAreaOpen(a) || fogDrawn.Contains(a)) continue;
+                    fogDrawn.Add(a);
+                    AddAreaFog(a, fadeIn);
                 }
         }
 
-        // ------------------------------------------------------------------ Bewegung und Sonnenlilie
+        void AddAreaFog(Vector2Int a, bool fadeIn)
+        {
+            var rnd = new System.Random(4711 + a.x * 7919 + a.y * 104729 + save.mapSeed);
+            var r = AreaRect(a);
+            bool light = ((a.x + a.y) & 1) == 0;   // Schachbrett: jedes zweite Areal etwas heller
+            float alpha = light ? 0.86f : 0.95f;
+            // vier Ballen in den Vierteln, einer in der Mitte – sie bleiben im Areal, damit die Felder zu erkennen sind
+            var spots = new[] { new Vector2(0.27f, 0.27f), new Vector2(0.73f, 0.27f), new Vector2(0.27f, 0.73f), new Vector2(0.73f, 0.73f), new Vector2(0.5f, 0.5f) };
+            foreach (var s in spots)
+            {
+                var home = new Vector2(r.x + r.width * (s.x + (float)(rnd.NextDouble() - 0.5) * 0.08f), r.y + r.height * (s.y + (float)(rnd.NextDouble() - 0.5) * 0.08f));
+                var sr = new GameObject("Fog").AddComponent<SpriteRenderer>();
+                sr.transform.SetParent(objects, false);
+                sr.sprite = FogSprite;
+                sr.sortingOrder = FogOrder;
+                var f = new FogPuff
+                {
+                    sr = sr, area = a, home = home, size = r.width * (0.86f + (float)rnd.NextDouble() * 0.1f),
+                    phase = (float)rnd.NextDouble() * 50f, alpha = alpha, fade = fadeIn ? 0f : 1f
+                };
+                // gleich an seinen Platz – sonst haengt er bis zum ersten Blick in der Kartenmitte
+                sr.transform.position = home;
+                float sc = f.size / FogSprite.bounds.size.x;
+                sr.transform.localScale = new Vector3(sc, sc, 1f);
+                sr.color = new Color(0.96f, 0.97f, 1f, alpha * f.fade);
+                fogPuffs.Add(f);
+            }
+        }
+
+        // ------------------------------------------------------------------ Bewegung, Hervorheben und Sonnenlilie
 
         void UpdateFog(float dt)
         {
             if (fogPuffs.Count == 0) RebuildFog(false);
             float t = Time.time;
             var view = ViewRect(3f);
+            // traegt man eine reife Sonnenlilie, leuchten die Areale golden, die man jetzt lichten kann
+            bool lily = carrying != null && carrying.Grown && carrying.Role == "fogclear";
+            Vector2Int under = lily ? AreaAt(dragPos) : new Vector2Int(int.MinValue, 0);
             for (int i = fogPuffs.Count - 1; i >= 0; i--)
             {
                 var f = fogPuffs[i];
@@ -127,13 +179,20 @@ namespace SeedClicker
                 }
                 else if (f.fade < 1f) f.fade = Mathf.Min(1f, f.fade + dt * 0.5f);
                 if (!view.Contains(f.home)) continue;   // nur was man sieht bewegt sich
-                // langsam treiben, atmen, drehen
-                var off = new Vector2(Mathf.Sin(t * 0.23f + f.phase) * 0.35f, Mathf.Cos(t * 0.19f + f.phase * 1.3f) * 0.22f);
+                // langsam treiben, atmen, drehen (im eigenen Areal)
+                var off = new Vector2(Mathf.Sin(t * 0.23f + f.phase) * 0.22f, Mathf.Cos(t * 0.19f + f.phase * 1.3f) * 0.16f);
                 f.sr.transform.position = f.home + off;
-                float s = f.size * (1f + 0.07f * Mathf.Sin(t * 0.37f + f.phase * 0.7f)) / FogSprite.bounds.size.x;
+                float s = f.size * (1f + 0.06f * Mathf.Sin(t * 0.37f + f.phase * 0.7f)) / FogSprite.bounds.size.x;
                 f.sr.transform.localScale = new Vector3(s, s, 1f);
                 f.sr.transform.rotation = Quaternion.Euler(0, 0, f.phase * 30f + t * (3f + f.phase % 4f));
-                f.sr.color = new Color(0.96f, 0.97f, 1f, f.alpha * f.fade * (0.88f + 0.12f * Mathf.Sin(t * 0.5f + f.phase)));
+                var col = new Color(0.96f, 0.97f, 1f);
+                if (lily && !f.dying && AreaClearable(f.area))
+                {
+                    float glow = f.area == under ? 0.75f : 0.35f + 0.15f * Mathf.Sin(t * 4f);
+                    col = Color.Lerp(col, new Color(0.35f, 1f, 0.45f), glow);   // gruen wie alle Ablageziele
+                }
+                col.a = f.alpha * f.fade * (0.9f + 0.1f * Mathf.Sin(t * 0.5f + f.phase));
+                f.sr.color = col;
             }
 
             // reife Sonnenlilie: einmal Bescheid sagen, wie man sie anwendet
@@ -144,54 +203,102 @@ namespace SeedClicker
                 if (p.Grown && p.Role == "fogclear" && fogLilyTold != p)
                 {
                     fogLilyTold = p;
-                    Floater?.Invoke(PlantBase(p) + new Vector2(0, 1.1f), "Sonnenlilie bereit! Antippen und Seite wählen – oder in den Nebel ziehen", new Color(1f, 0.95f, 0.7f));
+                    Floater?.Invoke(PlantBase(p) + new Vector2(0, 1.1f), "Sonnenlilie bereit! Auf ein Nebel-Feld am Hof ziehen – oder antippen", new Color(1f, 0.95f, 0.7f));
                     Sfx.Play("unlock", 1.3f, 0.7f);
                 }
         }
         PlantedState fogLilyTold;
 
-        /// <summary>Reife Sonnenlilie auf einer Seite anwenden (0 links, 1 rechts, 2 unten): Nebel lichten, Hof waechst.</summary>
-        public bool UseFogLily(PlantedState p, int side)
+        /// <summary>Reife Sonnenlilie auf ein Areal anwenden: Nebel lichten, das Areal gehoert zum Hof.</summary>
+        public bool UseFogLily(PlantedState p, Vector2Int area)
         {
             if (p == null || !p.Grown || p.Role != "fogclear") return false;
             var at = PlantBase(p) + new Vector2(0, 0.4f);
-            if (!CanExpand(side) || FarmLevel >= MaxFarmLevel)
+            if (!AreaClearable(area))
             {
-                Floater?.Invoke(at + new Vector2(0, 0.6f), "Nach " + SideName(side) + " geht es nicht weiter – dort ist der Rand der Welt", new Color(1f, 0.75f, 0.55f));
+                Floater?.Invoke(at + new Vector2(0, 0.6f), IsAreaOpen(area) ? "Dort ist kein Nebel" : "Nur Nebel direkt am Hof lässt sich lichten", new Color(1f, 0.75f, 0.55f));
                 Sfx.Play("error", 1f, 0.5f);
                 return false;
             }
             RemovePlantView(new Cell(p.x, p.y));
             save.planted.Remove(p); DirtyPlants();
-            ExpandFarm(side);   // groesserer Hof auf dieser Seite, der Nebel weicht (RebuildFog in ExpandFarm)
-            Shockwave(at, 6f, 1.2f, new Color(1f, 0.95f, 0.7f, 0.9f));
-            Particles.I?.Burst(at, "star", new Color(1f, 0.92f, 0.55f), 40, 4f, 1.2f, 0.35f, -0.4f, 1.4f);
-            Floater?.Invoke(at + new Vector2(0, 0.8f), "Der Nebel lichtet sich – " + SideName(side) + "!", new Color(1f, 0.95f, 0.7f));
+            OpenArea(area);
+            var c = AreaRect(area).center;
+            Shockwave(c, 5f, 1.2f, new Color(1f, 0.95f, 0.7f, 0.9f));
+            Particles.I?.Burst(c, "star", new Color(1f, 0.92f, 0.55f), 40, 4f, 1.2f, 0.35f, -0.4f, 1.4f);
+            Floater?.Invoke(c + new Vector2(0, 0.8f), "Der Nebel lichtet sich!", new Color(1f, 0.95f, 0.7f));
+            Sfx.Play("levelup", 0.9f, 0.8f);
+            Haptics.Tap(40);
+            WorldPostFX.Punch(0.6f);
             NotifyInventory();
             save.Save();
             return true;
         }
 
-        /// <summary>Lilie losgelassen: liegt der Punkt im Nebel links, rechts oder unten? -1 = nicht im Nebel.</summary>
-        public int FogSideAt(Vector2 w)
+        /// <summary>Knopf im Pflanzen-Fenster: das Nebel-Areal am Hof, das der Lilie am naechsten liegt.</summary>
+        public bool UseFogLilyNearest(PlantedState p)
         {
-            var r = FarmBounds;
-            if (w.y < r.yMin) return 2;
-            if (w.x < r.xMin) return 0;
-            if (w.x > r.xMax) return 1;
-            return -1;
+            if (p == null) return false;
+            var at = PlantBase(p);
+            Vector2Int best = default; float bd = float.MaxValue; bool found = false;
+            for (int ax = AreaMinX; ax <= AreaMaxX; ax++)
+                for (int ay = AreaMinY; ay <= AreaMaxY; ay++)
+                {
+                    var a = new Vector2Int(ax, ay);
+                    if (!AreaClearable(a)) continue;
+                    float d = (AreaRect(a).center - at).sqrMagnitude;
+                    if (d < bd) { bd = d; best = a; found = true; }
+                }
+            if (!found) { Floater?.Invoke(at + new Vector2(0, 1f), "Kein Nebel mehr zu lichten", new Color(1f, 0.75f, 0.55f)); return false; }
+            return UseFogLily(p, best);
         }
 
-        /// <summary>Preis der Sonnenlilie: ein Vielfaches der naechsten Ausbaustufe (unendlich, wenn der Hof voll ist).</summary>
-        float FogPlantCost() { var n = NextFarmLevel(); return n == null ? float.MaxValue : n.cost * PlantBalance.I.Fog.costMult; }
+        /// <summary>Hof um ein Areal vergroessern (ohne Lilie, z. B. alter Laden-Weg): das naechste am Start-Hof.</summary>
+        public void ExpandFarm()
+        {
+            Vector2Int best = default; float bd = float.MaxValue; bool found = false;
+            var home = AreaRect(new Vector2Int(1, 0)).center;
+            for (int ax = AreaMinX; ax <= AreaMaxX; ax++)
+                for (int ay = AreaMinY; ay <= AreaMaxY; ay++)
+                {
+                    var a = new Vector2Int(ax, ay);
+                    if (!AreaClearable(a)) continue;
+                    float d = (AreaRect(a).center - home).sqrMagnitude;
+                    if (d < bd) { bd = d; best = a; found = true; }
+                }
+            if (found) OpenArea(best);
+        }
 
-        /// <summary>Darf jetzt eine Sonnenlilie gepflanzt werden? Prueft Hof, Holz und Ernte (Muenzen prueft das Pflanzen).</summary>
+        // ------------------------------------------------------------------ Preis
+
+        /// <summary>Preis des naechsten Areals: die Ausbaustufen aus plants.json, danach wird jede weitere teurer (×fog.growth).</summary>
+        public FarmLevelDef NextAreaCost()
+        {
+            var l = PlantBalance.I.farmLevels;
+            if (l == null || l.Length == 0) return null;
+            int n = save.areasOpened;
+            var b = l[Mathf.Min(n, l.Length - 1)];
+            if (n < l.Length) return b;
+            float g = Mathf.Pow(PlantBalance.I.Fog.growth, n - l.Length + 1);
+            return new FarmLevelDef { cost = b.cost * g, wood = Mathf.CeilToInt(b.wood * Mathf.Sqrt(g)), crops = b.crops };
+        }
+
+        bool AnyAreaClearable()
+        {
+            for (int ax = AreaMinX; ax <= AreaMaxX; ax++)
+                for (int ay = AreaMinY; ay <= AreaMaxY; ay++) if (AreaClearable(new Vector2Int(ax, ay))) return true;
+            return false;
+        }
+
+        /// <summary>Preis der Sonnenlilie: ein Vielfaches des naechsten Areals.</summary>
+        float FogPlantCost() { var n = NextAreaCost(); return n == null ? float.MaxValue : n.cost * PlantBalance.I.Fog.costMult; }
+
+        /// <summary>Darf jetzt eine Sonnenlilie gepflanzt werden? Prueft Nebel, Holz und Ernte (Muenzen prueft das Pflanzen).</summary>
         bool CanPlantFog(Cell c)
         {
             var at = CellCenter(c) + new Vector2(0, 0.7f);
-            var next = NextFarmLevel();
-            bool room = CanExpand(0) || CanExpand(1) || CanExpand(2);
-            string why = next == null || !room ? "Der Hof ist voll ausgebaut – kein Nebel mehr zu lichten"
+            var next = NextAreaCost();
+            string why = next == null || !AnyAreaClearable() ? "Kein Nebel mehr zu lichten"
                 : save.planted.Exists(q => q.Role == "fogclear") ? "Es wächst schon eine Sonnenlilie"
                 : save.wood < next.wood ? "Die Sonnenlilie braucht " + next.wood + " Holz"
                 : !HasCrops(CropCost(next.crops)) ? "Die Sonnenlilie braucht " + CropCostText(CropCost(next.crops))
@@ -205,7 +312,7 @@ namespace SeedClicker
         /// <summary>Holz und Ernte fuer die Sonnenlilie abziehen (nach dem Bezahlen).</summary>
         void PayFogExtras()
         {
-            var next = NextFarmLevel();
+            var next = NextAreaCost();
             if (next == null) return;
             TakeCrops(CropCost(next.crops));
             save.wood -= next.wood; WoodChanged?.Invoke(save.wood);

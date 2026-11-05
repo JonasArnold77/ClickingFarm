@@ -15,7 +15,7 @@ namespace SeedClicker
     {
         public static WorldBuilder I { get; private set; }
 
-        public const float MapW = 22f, MapH = 30f;
+        public const float MapW = 36f, MapH = 46f;   // gross: rundum Nebel-Areale zum Lichten
         public static readonly Vector2 HousePos = new Vector2(0f, 4.5f);   // Mitte der Hausunterkante
         const int MaskPerUnit = 8;
         const float HouseWidth = 3.7f;   // Haupthaus (City-Paket, building_08 in Hausfarben) in Welt-Einheiten
@@ -279,7 +279,7 @@ namespace SeedClicker
                 var p = RandomPoint(-1.5f);
                 float edge = Mathf.Min(hw - Mathf.Abs(p.x), hh - Mathf.Abs(p.y));
                 float grove = Fbm(p.x * 0.2f, p.y * 0.2f, 31 + salt);
-                float density = edge < 2.5f ? 1f : grove > 0.62f ? 0.5f : 0.02f;
+                float density = grove > 0.62f ? 0.5f : 0.03f;   // kein Waldrand mehr – die Grenze ist der Nebel
                 if (R() > density) continue;
                 if ((p - HousePos).magnitude < 5.5f || !OnBareGrass(p, 0f)) continue;
                 bool big = R() < 0.6f;
