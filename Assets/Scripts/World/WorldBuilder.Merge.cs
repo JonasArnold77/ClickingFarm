@@ -78,6 +78,12 @@ namespace SeedClicker
             var p = carrying;
             // reife Verwandlungs-Pflanze auf ihrem Ziel: wirkt und ist verbraucht
             if (p != null && TryTransform(p, w)) { carrying = null; PlacingChanged?.Invoke(null); return; }
+            // reife Sonnenlilie in den Nebel gezogen: lichtet ihn auf dieser Seite (klappt es nicht, faellt sie zurueck)
+            if (p != null && p.Grown && p.Role == "fogclear" && FogSideAt(w) >= 0 && UseFogLily(p, FogSideAt(w)))
+            {
+                carrying = null; PlacingChanged?.Invoke(null);
+                return;
+            }
             if (p != null && PlantAt(cell) == null && IsSlot(cell) && Fits(cell, p.type, true))
             {
                 carrying = null;

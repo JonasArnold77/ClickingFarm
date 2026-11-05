@@ -7,8 +7,9 @@ namespace SeedClicker
     /// Nebel als Grenze des Hofs: Rund um den Hof der aktuellen Ausbaustufe liegt dichter, weisser, wabernder Nebel
     /// (viele weiche Wolkenballen, die langsam treiben, atmen und sich drehen). Der Platz um Haus und Laden bleibt frei.
     /// Nachts kommen die Zombies aus dem Nebel (NightWave fragt FogSpawnPoint).
-    /// Den Hof vergroessert man mit einer Sonnenlilie (Rolle "fogclear"): sehr teuer, nur eine zur Zeit; ist sie reif,
-    /// lichtet ihr Licht den Nebel – der Hof waechst um eine Stufe, der Nebel weicht zurueck, die Lilie ist verbraucht.
+    /// Den Hof vergroessert man mit einer Sonnenlilie (Rolle "fogclear"): sehr teuer, nur eine zur Zeit. Ist sie reif,
+    /// waehlt man die Seite – Knopf im Pflanzen-Fenster (links, unten, rechts) oder die Lilie in den Nebel ziehen. Dort
+    /// lichtet ihr Licht den Nebel, der Hof waechst auf dieser Seite, die Lilie ist verbraucht.
     /// Werte in plants.json -> fog.
     /// </summary>
     public partial class WorldBuilder
@@ -28,7 +29,7 @@ namespace SeedClicker
 
         Rect ComputeFogClear()
         {
-            var r = FarmRect(FarmLevel);
+            var r = FarmBounds;
             float x0 = r.xMin, x1 = r.xMax, y0 = r.yMin;
             void Grow(Vector2 p) { x0 = Mathf.Min(x0, p.x - CellSize); x1 = Mathf.Max(x1, p.x + CellSize); y0 = Mathf.Min(y0, p.y - CellSize); }
             foreach (var c in save.fields) Grow(CellCenter(c));
@@ -135,25 +136,50 @@ namespace SeedClicker
                 f.sr.color = new Color(0.96f, 0.97f, 1f, f.alpha * f.fade * (0.88f + 0.12f * Mathf.Sin(t * 0.5f + f.phase)));
             }
 
-            // reife Sonnenlilie: Nebel lichten
+            // reife Sonnenlilie: einmal Bescheid sagen, wie man sie anwendet
             fogCheckT -= dt;
             if (fogCheckT > 0f) return;
-            fogCheckT = 0.4f;
+            fogCheckT = 0.5f;
             foreach (var p in save.planted)
-                if (p.Grown && p.Role == "fogclear") { ClearFogWith(p); break; }
+                if (p.Grown && p.Role == "fogclear" && fogLilyTold != p)
+                {
+                    fogLilyTold = p;
+                    Floater?.Invoke(PlantBase(p) + new Vector2(0, 1.1f), "Sonnenlilie bereit! Antippen und Seite wählen – oder in den Nebel ziehen", new Color(1f, 0.95f, 0.7f));
+                    Sfx.Play("unlock", 1.3f, 0.7f);
+                }
         }
+        PlantedState fogLilyTold;
 
-        void ClearFogWith(PlantedState p)
+        /// <summary>Reife Sonnenlilie auf einer Seite anwenden (0 links, 1 rechts, 2 unten): Nebel lichten, Hof waechst.</summary>
+        public bool UseFogLily(PlantedState p, int side)
         {
+            if (p == null || !p.Grown || p.Role != "fogclear") return false;
             var at = PlantBase(p) + new Vector2(0, 0.4f);
+            if (!CanExpand(side) || FarmLevel >= MaxFarmLevel)
+            {
+                Floater?.Invoke(at + new Vector2(0, 0.6f), "Nach " + SideName(side) + " geht es nicht weiter – dort ist der Rand der Welt", new Color(1f, 0.75f, 0.55f));
+                Sfx.Play("error", 1f, 0.5f);
+                return false;
+            }
             RemovePlantView(new Cell(p.x, p.y));
             save.planted.Remove(p); DirtyPlants();
-            ExpandFarm();   // groesserer Hof, der Nebel weicht (RebuildFog in ExpandFarm)
+            ExpandFarm(side);   // groesserer Hof auf dieser Seite, der Nebel weicht (RebuildFog in ExpandFarm)
             Shockwave(at, 6f, 1.2f, new Color(1f, 0.95f, 0.7f, 0.9f));
             Particles.I?.Burst(at, "star", new Color(1f, 0.92f, 0.55f), 40, 4f, 1.2f, 0.35f, -0.4f, 1.4f);
-            Floater?.Invoke(at + new Vector2(0, 0.8f), "Der Nebel lichtet sich!", new Color(1f, 0.95f, 0.7f));
+            Floater?.Invoke(at + new Vector2(0, 0.8f), "Der Nebel lichtet sich – " + SideName(side) + "!", new Color(1f, 0.95f, 0.7f));
             NotifyInventory();
             save.Save();
+            return true;
+        }
+
+        /// <summary>Lilie losgelassen: liegt der Punkt im Nebel links, rechts oder unten? -1 = nicht im Nebel.</summary>
+        public int FogSideAt(Vector2 w)
+        {
+            var r = FarmBounds;
+            if (w.y < r.yMin) return 2;
+            if (w.x < r.xMin) return 0;
+            if (w.x > r.xMax) return 1;
+            return -1;
         }
 
         /// <summary>Preis der Sonnenlilie: ein Vielfaches der naechsten Ausbaustufe (unendlich, wenn der Hof voll ist).</summary>
@@ -164,7 +190,8 @@ namespace SeedClicker
         {
             var at = CellCenter(c) + new Vector2(0, 0.7f);
             var next = NextFarmLevel();
-            string why = next == null ? "Der Hof ist voll ausgebaut – kein Nebel mehr zu lichten"
+            bool room = CanExpand(0) || CanExpand(1) || CanExpand(2);
+            string why = next == null || !room ? "Der Hof ist voll ausgebaut – kein Nebel mehr zu lichten"
                 : save.planted.Exists(q => q.Role == "fogclear") ? "Es wächst schon eine Sonnenlilie"
                 : save.wood < next.wood ? "Die Sonnenlilie braucht " + next.wood + " Holz"
                 : !HasCrops(CropCost(next.crops)) ? "Die Sonnenlilie braucht " + CropCostText(CropCost(next.crops))

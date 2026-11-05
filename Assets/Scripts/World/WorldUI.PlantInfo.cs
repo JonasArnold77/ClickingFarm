@@ -21,6 +21,7 @@ namespace SeedClicker
         string infoBuiltFor;
 
         Button infoAct, infoTurn, infoDig;
+        RectTransform infoFog;   // reife Sonnenlilie: Knoepfe links, unten, rechts
         float digArmedT;   // erster Tipp auf "Ausgraben" macht scharf, der zweite (innerhalb 3 s) graebt aus
         Text infoActText;
         Image infoActImg;
@@ -77,6 +78,22 @@ namespace SeedClicker
             infoAct.GetComponent<RectTransform>().Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 88), new Vector2(-60, 104));
             infoActText = infoAct.GetComponentInChildren<Text>();
             infoActImg = infoAct.GetComponent<Image>();
+
+            // Reife Sonnenlilie: Seite waehlen, auf der der Nebel gelichtet wird (statt des Hauptknopfs)
+            infoFog = UIKit.Rect(root, "FogSides");
+            infoFog.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 88), new Vector2(-60, 104));
+            string[] sideNames = { "← Links", "↓ Unten", "Rechts →" };
+            int[] sides = { 0, 2, 1 };
+            for (int i = 0; i < 3; i++)
+            {
+                int side = sides[i];
+                var sb = Btn(infoFog, sideNames[i], new Color(0.95f, 0.78f, 0.3f), () =>
+                {
+                    if (infoPlant != null && wb.UseFogLily(infoPlant, side)) HidePlantInfo();
+                }, 34);
+                sb.GetComponent<RectTransform>().Place(new Vector2(i / 3f, 0), new Vector2((i + 1) / 3f, 1), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-12, 0));
+            }
+            infoFog.gameObject.SetActive(false);
 
             // Wasser- und Klick-Pflanzen: Blickrichtung drehen
             // gross im Fenster neben dem Hauptknopf; der wird dafuer schmaler (siehe FillPlantInfo)
@@ -196,6 +213,11 @@ namespace SeedClicker
             infoBarText.text = bar;
             bool locked = p.Grown && !wb.IsReadyForTaps(p);
             infoActText.text = locked ? "Gleich bereit …" : !p.Grown ? "Wachsen lassen!" : def.role == "harvest" ? "Ernten!" : def.role == "water" ? "Gießen!" : "Stärker machen!";
+            // reife Sonnenlilie: Seite fuer den Nebel waehlen statt klicken
+            bool fogReady = p.Grown && def.role == "fogclear";
+            infoFog.gameObject.SetActive(fogReady);
+            infoAct.gameObject.SetActive(!fogReady);
+            if (fogReady) infoBarText.text = "Bereit! Wo soll der Nebel weichen? (oder Lilie in den Nebel ziehen)";
             infoActImg.color = !p.Grown ? Accent : def.role == "harvest" ? new Color(0.92f, 0.68f, 0.2f) : def.role == "water" ? new Color(0.35f, 0.62f, 0.92f) : new Color(0.6f, 0.45f, 0.9f);
         }
 
