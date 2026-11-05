@@ -3,8 +3,7 @@ Aufruf: python signs.py <Buildings-Ordner> <Assets-Ordner>"""
 import sys
 from PIL import Image, ImageDraw, ImageFont
 
-bdir, assets = sys.argv[1], sys.argv[2]
-FONT = f"{assets}/Resources/Fonts/CurseCasual.ttf"
+FONT = None   # in main bzw. von metals.py gesetzt
 WOOD, WOOD_HI, FRAME = (104, 66, 38), (128, 84, 50), (46, 29, 18)
 CREAM, INK = (242, 228, 192), (40, 25, 15)
 
@@ -12,16 +11,18 @@ CREAM, INK = (242, 228, 192), (40, 25, 15)
 def font(px): return ImageFont.truetype(FONT, px)
 
 
-def board(im, cx, cy, w, h, text, icon=None, hang=False):
-    """Holzschild mit Rahmen, Text in Creme mit dunkler Kontur, optional Bild links vom Text."""
+def board(im, cx, cy, w, h, text, icon=None, hang=False, pal=None):
+    """Holzschild mit Rahmen, Text in Creme mit dunkler Kontur, optional Bild links vom Text.
+    pal: (Rahmen, Flaeche, Glanzlinie, Schrift, Schriftkontur) – fuer Metallschilder (metals.py)."""
+    frame, fill, hi, txt, ink = pal or (FRAME, WOOD, WOOD_HI, CREAM, INK)
     d = ImageDraw.Draw(im)
     x0, y0, x1, y1 = cx - w // 2, cy - h // 2, cx + w // 2, cy + h // 2
     if hang:   # zwei Ketten nach oben
         for hx in (x0 + 18, x1 - 18):
-            d.line([(hx, y0 - 16), (hx, y0)], fill=FRAME, width=4)
-    d.rounded_rectangle([x0, y0, x1, y1], radius=8, fill=FRAME)
-    d.rounded_rectangle([x0 + 4, y0 + 4, x1 - 4, y1 - 4], radius=6, fill=WOOD)
-    d.line([(x0 + 8, y0 + 8), (x1 - 8, y0 + 8)], fill=WOOD_HI, width=2)
+            d.line([(hx, y0 - 16), (hx, y0)], fill=frame, width=4)
+    d.rounded_rectangle([x0, y0, x1, y1], radius=8, fill=frame)
+    d.rounded_rectangle([x0 + 4, y0 + 4, x1 - 4, y1 - 4], radius=6, fill=fill)
+    d.line([(x0 + 8, y0 + 8), (x1 - 8, y0 + 8)], fill=hi, width=2)
     size = int(h * 0.62)
     f = font(size)
     tw = d.textlength(text, font=f)
@@ -35,7 +36,7 @@ def board(im, cx, cy, w, h, text, icon=None, hang=False):
     tx = cx - (tw + iw) / 2 + iw
     if icon is not None:
         im.alpha_composite(ic, (int(cx - (tw + iw) / 2), int(cy - ic.size[1] / 2)))
-    d.text((tx, cy), text, font=f, fill=CREAM, anchor="lm", stroke_width=max(2, size // 9), stroke_fill=INK)
+    d.text((tx, cy), text, font=f, fill=txt, anchor="lm", stroke_width=max(2, size // 9), stroke_fill=ink)
 
 
 def knolli_icon(s=64):
@@ -61,29 +62,37 @@ def shield_icon(s=64):
     return im
 
 
-coin = Image.open(f"{assets}/HappyHarvest/Art/UI/Sprite_coin_icon.png").convert("RGBA")
-seed = Image.open(f"{assets}/HappyHarvest/Art/Crops/Wheat/Sprites/Sprite_Wheat_seedbag.png").convert("RGBA")
-seed = seed.crop(seed.getbbox())
+def main():
+  global FONT
+  bdir, assets = sys.argv[1], sys.argv[2]
+  FONT = f"{assets}/Resources/Fonts/CurseCasual.ttf"
+  coin = Image.open(f"{assets}/HappyHarvest/Art/UI/Sprite_coin_icon.png").convert("RGBA")
+  seed = Image.open(f"{assets}/HappyHarvest/Art/Crops/Wheat/Sprites/Sprite_Wheat_seedbag.png").convert("RGBA")
+  seed = seed.crop(seed.getbbox())
 
-# Laden: Schriftzug in die leere Werbetafel, Muenze ins runde Schild
-im = Image.open(f"{bdir}/laden.png").convert("RGBA"); d = ImageDraw.Draw(im)
-f = font(78)
-d.text((240, 305), "LADEN", font=f, fill=(70, 44, 24), anchor="mm", stroke_width=3, stroke_fill=(230, 210, 170))
-for cx in (110, 370):
-    c = coin.resize((54, 51), Image.LANCZOS); im.alpha_composite(c, (cx - 27, 280))
-c = coin.resize((62, 59), Image.LANCZOS); im.alpha_composite(c, (520 - 31, 390 - 30))
-im.save(f"{bdir}/laden.png")
+  # Laden: Schriftzug in die leere Werbetafel, Muenze ins runde Schild
+  im = Image.open(f"{bdir}/laden.png").convert("RGBA"); d = ImageDraw.Draw(im)
+  f = font(78)
+  d.text((240, 305), "LADEN", font=f, fill=(70, 44, 24), anchor="mm", stroke_width=3, stroke_fill=(230, 210, 170))
+  for cx in (110, 370):
+      c = coin.resize((54, 51), Image.LANCZOS); im.alpha_composite(c, (cx - 27, 280))
+  c = coin.resize((62, 59), Image.LANCZOS); im.alpha_composite(c, (520 - 31, 390 - 30))
+  im.save(f"{bdir}/laden.png")
 
-board_jobs = [
-    ("haus", (212, 268, 150, 44, "HOF", None, False)),
-    ("huette_a", (144, 238, 220, 46, "KNOLLIS", knolli_icon(), True)),
-    ("huette_b", (141, 232, 220, 46, "KNOLLIS", knolli_icon(), True)),
-    ("muehle", (230, 403, 270, 50, "SAATGUT", seed, False)),
-    ("turm_holz", (160, 285, 220, 60, "WACHE", shield_icon(), False)),
-    ("turm_stein", (160, 285, 220, 60, "WACHE", shield_icon(), False)),
-]
-for name, args in board_jobs:
-    im = Image.open(f"{bdir}/{name}.png").convert("RGBA")
-    board(im, *args)
-    im.save(f"{bdir}/{name}.png")
-    print("Schild:", name)
+  board_jobs = [
+      ("haus", (212, 268, 150, 44, "HOF", None, False)),
+      ("huette_a", (144, 238, 220, 46, "KNOLLIS", knolli_icon(), True)),
+      ("huette_b", (141, 232, 220, 46, "KNOLLIS", knolli_icon(), True)),
+      ("muehle", (230, 403, 270, 50, "SAATGUT", seed, False)),
+      ("turm_holz", (160, 285, 220, 60, "WACHE", shield_icon(), False)),
+      ("turm_stein", (160, 285, 220, 60, "WACHE", shield_icon(), False)),
+  ]
+  for name, args in board_jobs:
+      im = Image.open(f"{bdir}/{name}.png").convert("RGBA")
+      board(im, *args)
+      im.save(f"{bdir}/{name}.png")
+      print("Schild:", name)
+
+
+if __name__ == "__main__":
+    main()

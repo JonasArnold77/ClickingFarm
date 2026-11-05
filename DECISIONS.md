@@ -472,3 +472,8 @@
 - Nachtrag: Strahlen jetzt vor dem Gebäude gerendert (steigen aus dem Dach auf statt dahinter), sieben statt fünf, länger, breiter und mit voller Kraft; Farbe leicht aufgehellt, damit Bronze, Silber und Gold als Licht wirken.
 - Glanz mit Cartoon-FX-Texturen: Glitzerpunkte aus zwei gekreuzten Lichtreflexen (cfxr flare) blitzen auf dem Dach auf, drehen sich und verglimmen (Bronze 2, Silber 3, Gold 6 gleichzeitig); die Strahlen nutzen jetzt die weiche Strahl-Textur (cfxr stretch ray blur), schmal und etwas schwächer. Der fertige Effekt „CFXR Magical Source“ wurde getestet und verworfen: groß deckt er das Gebäude zu, klein blitzt er nur kurz. Die Texturen liegen weiß mit Alpha als Resources/Buildings/fx_flare, fx_ray, fx_star.
 
+## Gebäude-Stufen als Metall-Elemente statt Leuchten (05.11.2026)
+- Wunsch: kein Leuchten, sondern Bronze-, Silber- und Goldelemente. Das Leuchten (Strahlen, Glitzer, Licht, Glanz-Shader und fx-Texturen) ist wieder entfernt.
+- Ab Stufe 5/10/15 (buildingGlow.levels) zeigt das Gebäude ein anderes Bild: das Schild wird zur Metallplatte mit Nieten (Laden: Metallrahmen um die Werbetafel, Schriftzug und Ring ums runde Schild in Metall), auf dem Dach sitzt eine Zier – Bronze-Kugel, Silberkugel mit Spitze, goldener Stern. Beim Wechsel gibt es einen kurzen Funkenregen.
+- Die Stufenbilder heißen name_t1/_t2/_t3.png und werden mit Tools/Buildings/metals.py aus den fertigen Holz-Bildern erzeugt (oben 120 px Platz für die Zier).
+

@@ -171,13 +171,17 @@ namespace SeedClicker
 
         /// <summary>Bild fuer ein Bauwerk aus dem City-Paket (null = gemalter Platzhalter bleibt).
         /// Knolli-Huetten wechseln je nach Platz zwischen zwei Haeuschen.</summary>
+        /// <summary>Bild in der Metallstufe (0 = Holz); fehlt die Stufe, das normale Bild.</summary>
+        public static Sprite Tiered(string name, int tier) => (tier > 0 ? Get(name + "_t" + tier) : null) ?? Get(name);
+
         public static Sprite ForStructure(StructureState s)
         {
+            int tier = WorldBuilder.BuildingTier(s.lv);
             switch (s.id)
             {
-                case "knollihuette": return Get(((s.x + s.y) & 1) == 0 ? "huette_a" : "huette_b");
-                case "saatgutmuehle": return Get("muehle");   // building_05 (das Satteldachhaus ist jetzt das Haupthaus)
-                case "wachturm": return Get(s.stone ? "turm_stein" : "turm_holz");   // Holzturm aus City-Teilen zusammengesetzt, nach Steinmoos mit Steinbeinen
+                case "knollihuette": return Tiered(((s.x + s.y) & 1) == 0 ? "huette_a" : "huette_b", tier);
+                case "saatgutmuehle": return Tiered("muehle", tier);   // building_05 (das Satteldachhaus ist jetzt das Haupthaus)
+                case "wachturm": return Tiered(s.stone ? "turm_stein" : "turm_holz", tier);   // Holzturm aus City-Teilen zusammengesetzt, nach Steinmoos mit Steinbeinen
             }
             return null;
         }
