@@ -11,17 +11,15 @@ namespace SeedClicker
     /// die sich genau an die Aussenlinie legt – egal wie gross das Bild ist.
     /// Einfarbig fuellt der eingebaute Shader "GUI/Text Shader" (Farbe vom SpriteRenderer, Form aus dem Alpha des Bildes).
     /// Dazu bei der Pflanze selbst (nicht bei den kleinen Erntestuecken) ein leichtes Strahlen wie bei verzauberten Waffen:
-    /// ein weicher, pulsierender Schein aus vergroesserten, durchsichtigen Silhouetten hinter der Linie und leuchtende
-    /// Funken, die langsam aufsteigen. Gold strahlt am staerksten.
+    /// Strahlen ragen wie bei einer Sonne aus der Kontur und wabern, die Linie pulsiert hell, leuchtende Funken
+    /// steigen langsam auf. Gold strahlt am staerksten.
     /// Haengt als Komponente am Bild und folgt ihm selbst (Bild, sichtbar, Reihenfolge) – Aufrufer setzen nur die Stufe.
     /// </summary>
     public class MedalAura : MonoBehaviour
     {
         SpriteRenderer host;
         readonly List<SpriteRenderer> copies = new List<SpriteRenderer>();
-        readonly List<SpriteRenderer> glow = new List<SpriteRenderer>();   // Schein: vergroesserte Silhouetten
-        static readonly float[] GlowScale = { 1.05f, 1.11f, 1.18f };
-        static readonly float[] GlowAlpha = { 0.32f, 0.17f, 0.08f };
+        readonly List<SpriteRenderer> glow = new List<SpriteRenderer>();   // Sonnenstrahlen rund um die Kontur
         float moteT;
         int level, dirs = 16;
         float width = 0.0175f;   // Linienbreite in Welt-Einheiten
@@ -83,29 +81,39 @@ namespace SeedClicker
             if (n == 0) foreach (var g in glow) if (g != null) g.enabled = false;
         }
 
-        /// <summary>Weicher Schein (pulsiert) und aufsteigende Funken – nur solange die Pflanze im Bild ist.</summary>
+        /// <summary>Sonnenstrahlen: ragen rundherum aus der Kontur heraus und wabern (Laenge, Breite, Helligkeit, leichtes
+        /// Schwanken), dazu pulsiert die Linie und Funken steigen auf – nur solange die Pflanze im Bild ist.</summary>
         void UpdateGlow()
         {
-            while (glow.Count < GlowScale.Length) glow.Add(Make());
-            if (!host.isVisible && glow[0].enabled) return;   // ausserhalb des Bilds nichts bewegen (grosse Hoefe)
+            while (glow.Count < RayCount) glow.Add(MakeRay());
+            if (!host.isVisible) return;   // ausserhalb des Bilds nichts bewegen (grosse Hoefe)
             var c = WorldBuilder.MedalColor(level);
             float power = level >= 4 ? 1.3f : level == 3 ? 1f : 0.8f;
             float t = Time.time * 2.2f + transform.position.x * 1.7f;
             float pulse = 0.75f + 0.25f * Mathf.Sin(t);
-            // um die Mitte des Bildes vergroessern (der Drehpunkt liegt unten)
-            Vector2 center = host.sprite.bounds.center;
+
+            var b = host.bounds;
+            Vector2 center = b.center;
+            float rx = b.extents.x * 0.72f, ry = b.extents.y * 0.8f, size = Mathf.Max(b.size.x, b.size.y);
+            var rayCol = Color.Lerp(c, Color.white, 0.25f);
             for (int i = 0; i < glow.Count; i++)
             {
-                var g = glow[i];
-                g.enabled = true;
-                g.sprite = host.sprite;
-                g.flipX = host.flipX; g.flipY = host.flipY;
-                float s = GlowScale[i] * (1f + 0.02f * Mathf.Sin(t * 0.7f + i));
-                g.transform.localScale = new Vector3(s, s, 1f);
-                g.transform.localPosition = new Vector3(-center.x * (s - 1f), -center.y * (s - 1f), 0f);
-                g.color = new Color(c.r, c.g, c.b, Mathf.Clamp01(GlowAlpha[i] * pulse * power));
-                g.sortingLayerID = host.sortingLayerID;
-                g.sortingOrder = host.sortingOrder - 2;   // hinter der Linie
+                var r = glow[i];
+                r.enabled = true;
+                float ph = i * 2.39996f + transform.position.y * 3.1f;   // jeder Strahl im eigenen Takt
+                float ang = (i + 0.5f) * Mathf.PI * 2f / RayCount + Mathf.Sin(t * 0.45f + ph) * 0.12f;
+                var dir = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang));
+                float len = size * (0.36f + 0.2f * Mathf.Sin(t * 1.15f + ph)) * power;
+                float wid = size * (0.13f + 0.04f * Mathf.Sin(t * 0.8f + ph * 1.3f));
+                r.transform.position = center + new Vector2(dir.x * rx, dir.y * ry);
+                r.transform.rotation = Quaternion.Euler(0, 0, ang * Mathf.Rad2Deg - 90f);
+                // Groesse in der Welt (die Strahlen liegen in einem eigenen, unskalierten Behaelter)
+                float rw = RaySprite.bounds.size.x, rh = RaySprite.bounds.size.y;
+                r.transform.localScale = new Vector3(wid / rw, len / rh, 1f);
+                float a = (0.55f + 0.3f * Mathf.Sin(t * 1.6f + ph * 0.7f)) * power;
+                r.color = new Color(rayCol.r, rayCol.g, rayCol.b, Mathf.Clamp01(a));
+                r.sortingLayerID = host.sortingLayerID;
+                r.sortingOrder = host.sortingOrder + 30;   // ueber den Nachbarpflanzen; sie setzen an der Kontur an und blenden dort weich ein
             }
             // die Linie selbst strahlt (heller, pulsiert), Funken steigen auf
             var lineCol = Color.Lerp(c, Color.white, 0.12f + 0.28f * (pulse - 0.5f) * power);
@@ -114,13 +122,55 @@ namespace SeedClicker
             moteT -= Time.deltaTime * power;
             if (moteT > 0f) return;
             moteT = Random.Range(0.35f, 0.8f);
-            var b = host.bounds;
             var p = new Vector2(Random.Range(b.min.x + b.size.x * 0.2f, b.max.x - b.size.x * 0.2f), Random.Range(b.min.y + b.size.y * 0.3f, b.max.y));
             var mc = Color.Lerp(c, Color.white, 0.35f);
             Particles.I?.Spawn(p, "spark", mc, new Vector3(Random.Range(-0.06f, 0.06f), Random.Range(0.25f, 0.45f), 0), 1.4f, 0.06f, 0.015f, 0f);
         }
 
+        const int RayCount = 10;
+        static Sprite raySprite;
+        static Material rayMat;
+        static Transform rayRoot;
+
+        SpriteRenderer MakeRay()
+        {
+            // nicht ans Bild haengen: dessen ungleiche Skalierung wuerde gedrehte Strahlen verzerren
+            if (rayRoot == null) rayRoot = new GameObject("MedalRays").transform;
+            var sr = new GameObject("MedalRay").AddComponent<SpriteRenderer>();
+            sr.transform.SetParent(rayRoot, false);
+            sr.enabled = false;   // erst zeigen, wenn er einmal platziert ist
+            sr.sprite = RaySprite;
+            if (rayMat == null) { var sh = Shader.Find("Sprites/Default"); if (sh != null) rayMat = new Material(sh); }   // unbeleuchtet: Licht leuchtet auch nachts
+            if (rayMat != null) sr.sharedMaterial = rayMat;
+            return sr;
+        }
+
+        /// <summary>Spitz zulaufender Lichtstrahl: am Fuss breit und hell, zur Spitze schmal und durchsichtig.</summary>
+        static Sprite RaySprite
+        {
+            get
+            {
+                if (raySprite != null) return raySprite;
+                const int w = 32, h = 128;
+                var tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                var px = new Color[w * h];
+                for (int y = 0; y < h; y++)
+                    for (int x = 0; x < w; x++)
+                    {
+                        float fy = (y + 0.5f) / h, fx = Mathf.Abs((x + 0.5f) / w * 2f - 1f);
+                        float half = Mathf.Lerp(1f, 0.15f, fy);                       // verjuengt sich zur Spitze
+                        float side = Mathf.Clamp01(1f - fx / half);
+                        float a = side * side * Mathf.Pow(1f - fy, 1.3f) * Mathf.SmoothStep(0f, 1f, fy * 6f);
+                        px[y * w + x] = new Color(1f, 1f, 1f, a);
+                    }
+                tex.SetPixels(px); tex.Apply();
+                return raySprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0f), w);
+            }
+        }
+
         void OnDisable() { Show(0); shown = false; }
+
+        void OnDestroy() { foreach (var g in glow) if (g != null) Destroy(g.gameObject); }
 
         SpriteRenderer Make()
         {

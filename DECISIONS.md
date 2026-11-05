@@ -489,4 +489,5 @@
 - Neu: Die Kontur strahlt wie eine verzauberte Waffe in Online-Rollenspielen. Sie ist heller und pulsiert langsam, dahinter liegt ein weicher Schein aus drei vergrößerten, durchsichtigen Silhouetten (1,05/1,11/1,18-fach), und leuchtende Funken steigen auf. Gold strahlt am stärksten, Bronze am schwächsten. Nur die Pflanzen selbst strahlen, die kleinen Erntestücke behalten die einfache Linie.
 - In den Assets gibt es keinen fertigen Verzauberungs-Effekt (Cartoon FX: Explosionen, Blitze, Magical Source zu groß; Happy Harvest: Ernte, Rauch, Motten) – daher selbst gebaut.
 - Außerhalb des Bilds wird der Schein nicht bewegt (große Höfe).
+- Nachtrag: Statt des weichen Scheins ragen jetzt zehn Sonnenstrahlen rundherum aus der Kontur und wabern (Länge, Breite, Helligkeit, leichtes Schwanken, jeder Strahl im eigenen Takt). Sie liegen über den Nachbarpflanzen (sonst in dichten Beeten verdeckt), setzen an der Kontur an und blenden dort weich ein. Eigener Behälter ohne Skalierung, sonst verzerrt die Pflanzen-Skalierung gedrehte Strahlen.
 
