@@ -442,7 +442,7 @@ namespace SeedClicker
                 sr.enabled = i < n && k.load[i] != null;
                 if (!sr.enabled) continue;
                 sr.sprite = k.load[i];
-                MedalAura.Set(sr, i < k.lmedal.Count ? k.lmedal[i] : 0, 0.009f, 4);   // getragenes Stueck: duenne Linie, 4 Kopien reichen (viele Knollis, viele Stuecke)
+                MedalAura.Set(sr, i < k.lmedal.Count ? k.lmedal[i] : 0, 0.009f, 4);   // getragenes Stueck: Metall-Ueberzug
                 var goal = OrbitPos(k, i, n, hop, out bool front);
                 // Magnet-Folgen: Feder zum Platz in der Wolke, mit Nachziehen – weit weg zieht es staerker
                 while (k.lpos.Count <= i) { k.lpos.Add(goal); k.lvel.Add(Vector2.zero); }
@@ -501,7 +501,7 @@ namespace SeedClicker
             var sr = new GameObject("IntoCrate").AddComponent<SpriteRenderer>();
             sr.transform.SetParent(objects, false);
             sr.sprite = spr;
-            MedalAura.Set(sr, medal, 0.009f, 8);   // Erntestueck: duenne Linie, 8 Kopien reichen
+            MedalAura.Set(sr, medal, 0.009f, 8);   // Erntestueck: Metall-Ueberzug
             sr.sortingOrder = 30005;
             float size = 0.19f / Mathf.Max(0.01f, spr.bounds.size.x);
             var to = cratePos + new Vector2(0, 0.45f);

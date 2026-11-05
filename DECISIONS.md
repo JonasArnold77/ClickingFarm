@@ -478,3 +478,7 @@
 - Die Stufenbilder heißen name_t1/_t2/_t3.png und werden mit Tools/Buildings/metals.py aus den fertigen Holz-Bildern erzeugt (oben 120 px Platz für die Zier).
 - Wandelemente in Metall: Tür- und Fensterrahmen, Ecksteine (Laden) und beim Wachturm die Querbalken unter dem Dach nehmen die Stufenfarbe an; Farbe = Metall-Grundton × Helligkeit, damit die Schattierung bleibt, helle Stellen bekommen Glanz. Erkannt werden die Elemente auf den Originalbildern des City-Pakets (Tools/Buildings/trim_rules.py, Glasflächen und Markise ausgenommen).
 
+## Medaillen-Pflanzen mit Metall-Überzug statt Kontur (05.11.2026)
+- Ernte-Pflanzen auf Bronze, Silber, Gold (und ihre Erntestücke) sind nicht mehr umrandet, sondern von Metall überzogen: eine Kopie des Bildes liegt direkt darüber, Shader „SeedClicker/MetalCoat“ färbt sie im Metallton × Helligkeit des Bildes (Kontrast leicht angehoben, Glanz auf hellen Stellen), Deckkraft 90 %. So bleiben Blätter, Früchte und Schattierungen erkennbar.
+- MedalAura.cs nutzt jetzt eine Kopie statt 16 Konturkopien – auch günstiger auf großen Höfen.
+

@@ -67,7 +67,7 @@ namespace SeedClicker
             var sr = new GameObject("Drop").AddComponent<SpriteRenderer>();
             sr.transform.SetParent(objects, false);
             sr.sprite = spr;
-            MedalAura.Set(sr, MedalOf(p), 0.009f, 8);   // Erntestueck: duenne Linie, 8 Kopien reichen
+            MedalAura.Set(sr, MedalOf(p), 0.009f, 8);   // Erntestueck: Metall-Ueberzug
             float baseS = 0.15f / Mathf.Max(0.01f, spr.bounds.size.x);
             float finalRot = (Hash(p, idx, 3) * 2f - 1f) * 35f;
             var shadow = Shadow(target, 0.16f, 0.05f, 0f);
