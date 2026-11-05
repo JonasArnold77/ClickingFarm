@@ -481,4 +481,5 @@
 ## Medaillen-Pflanzen mit Metall-Überzug statt Kontur (05.11.2026)
 - Ernte-Pflanzen auf Bronze, Silber, Gold (und ihre Erntestücke) sind nicht mehr umrandet, sondern von Metall überzogen: eine Kopie des Bildes liegt direkt darüber, Shader „SeedClicker/MetalCoat“ färbt sie im Metallton × Helligkeit des Bildes (Kontrast leicht angehoben, Glanz auf hellen Stellen), Deckkraft 90 %. So bleiben Blätter, Früchte und Schattierungen erkennbar.
 - MedalAura.cs nutzt jetzt eine Kopie statt 16 Konturkopien – auch günstiger auf großen Höfen.
+- Nachtrag: Gold-Überzug dezenter (Deckkraft 50 % statt 90 %), und der Überzug nimmt 30 % der echten Farbe mit – die Pflanze schimmert golden, ihre Farbe bleibt erkennbar.
 

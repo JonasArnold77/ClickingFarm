@@ -16,7 +16,8 @@ namespace SeedClicker
         (Sprite, int, int, bool, bool) lastKey;
         static Material coatMat;
         static bool shaderLooked;
-        const float Cover = 0.9f;   // Deckkraft des Ueberzugs (darunter scheint die Pflanze noch leicht durch)
+        /// <summary>Deckkraft des Ueberzugs: Gold dezent, damit die echte Farbe der Pflanze durchschimmert.</summary>
+        static float Cover(int level) => level >= 4 ? 0.5f : 0.9f;
 
         /// <summary>Stufe setzen (unter 2 = kein Ueberzug). width/dirs stammen von der frueheren Kontur und werden ignoriert.</summary>
         public static void Set(SpriteRenderer host, int level, float width = 0f, int dirs = 0)
@@ -52,7 +53,7 @@ namespace SeedClicker
             var c = WorldBuilder.MedalColor(level);
             coat.sprite = host.sprite;
             coat.flipX = host.flipX; coat.flipY = host.flipY;
-            coat.color = new Color(c.r, c.g, c.b, Cover);
+            coat.color = new Color(c.r, c.g, c.b, Cover(level));
             coat.sortingLayerID = host.sortingLayerID;
             coat.sortingOrder = host.sortingOrder + 1;   // ueber dem Bild
         }

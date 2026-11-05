@@ -44,6 +44,8 @@ Shader "SeedClicker/MetalCoat"
                 // Kontrast etwas anheben, damit Blaetter und Fruechte als Metall-Relief wirken
                 half k = saturate((lum - 0.08) * 1.35);
                 half3 c = i.color.rgb * (0.22 + 1.05 * k) + pow(k, 4) * _Sheen * 0.55;
+                // etwas von der echten Farbe mitnehmen (im Metallton), damit die Pflanze erkennbar bleibt
+                c = lerp(c, t.rgb * (i.color.rgb * 0.6 + 0.55), 0.3);
                 return fixed4(c, t.a * i.color.a);
             }
             ENDCG
