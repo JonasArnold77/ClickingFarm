@@ -511,4 +511,7 @@
 ## Ziehen sichtbar machen (05.11.2026)
 - Jede Pflanze sagt, wohin man sie ziehen kann: im Hover-Schild (zweite Zeile) und im Pflanzen-Fenster, z. B. „Ziehen: auf eine Mauer oder einen Wachturm“ (Steinmoos), „auf die Waffenbank“ (Elemente), „in ein Steinpult“ (Wurzelherz), „auf ein Nebel-Feld am Hof“ (reife Sonnenlilie), sonst „auf eine gleiche Pflanze oder ein freies Feld“.
 - Während man eine Pflanze trägt, leuchten alle Orte grün und durchsichtig (pulsierend), an denen man sie ablegen kann: freie Felder, gleiche reife Pflanzen, passende Mauerabschnitte, Steinpulte, Wachtürme, die Waffenbank. Für die Sonnenlilie färbt sich der Nebel der lichtbaren Areale grün. Berechnet nur für den sichtbaren Bereich, alle 0,3 s.
+- Nachtrag: Ein Nebel-Feld ist jetzt 2 × 2 Felder groß (statt 5 × 5); Start-Hof 8 × 5 davon (16 × 10 Felder), Raster 30 × 21. Ein Wolkenballen je Feld, groß genug, dass der Nebel dicht zusammenfließt; der Rand zeigt die feine Stufung.
+- Preis je Nebel-Feld eigene Reihe: 300 Münzen × 1,15 je bereits gelichtetem Feld, dazu etwas Holz (fog.areaBase, fog.growth, fog.areaWood); die Lilie kostet das Doppelte. Die alten Ausbaustufen-Preise passten nicht mehr zu so kleinen Stücken.
+- Spielstände mit 5×5-Arealen werden umgerechnet: jedes offene große Areal öffnet alle kleinen darin (save.areaSize).
 
