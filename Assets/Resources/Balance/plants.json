@@ -2223,8 +2223,8 @@
   },
   "fog": {
     "costMult": 2,
-    "growth": 1.15,
-    "areaBase": 300,
-    "areaWood": 2
+    "growth": 1.6,
+    "areaBase": 1500,
+    "areaWood": 10
   }
 }

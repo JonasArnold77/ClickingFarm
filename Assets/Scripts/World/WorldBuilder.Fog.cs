@@ -4,7 +4,7 @@ using UnityEngine;
 namespace SeedClicker
 {
     /// <summary>
-    /// Nebel-Areale: Rund um den Hof ist das Land wie ein Schachbrett in quadratische Areale (2×2 Felder) geteilt, jedes
+    /// Nebel-Areale: Rund um den Hof ist das Land wie ein Schachbrett in quadratische Areale (10×10 Felder) geteilt, jedes
     /// unter eigenem, dichtem, weissem, wabernden Nebel (weiche Wolkenballen, die treiben, atmen und sich drehen; benachbarte
     /// Areale leicht unterschiedlich hell, damit man die Felder des Schachbretts erkennt). Der Platz um Haus und Laden ist frei.
     /// Nachts kommen die Zombies aus den Nebel-Arealen am Hof (FogSpawnPoint).
@@ -23,9 +23,9 @@ namespace SeedClicker
         float fogCheckT;
         const int FogOrder = 30500;   // ueber Baeumen, Steinen und Zombies (die kommen aus dem Nebel), unter der Oberflaeche
 
-        // Raster der Areale: 2×2 Felder, Ursprung so, dass der Start-Hof genau 8×5 Areale ist (16×10 Felder)
-        const int FogAreaCells = 2, AreaOX = -8, AreaOY = -6;
-        const int AreaMinX = -11, AreaMaxX = 18, AreaMinY = -16, AreaMaxY = 4;   // Areale, die man lichten kann (darueber: Haus)
+        // Raster der Areale: 10×10 Felder, Ursprung so, dass der Start-Hof genau 2×1 Areale ist (20×10 Felder, mittig unter dem Haus)
+        const int FogAreaCells = 10, AreaOX = -10, AreaOY = -6;
+        const int AreaMinX = -2, AreaMaxX = 3, AreaMinY = -3, AreaMaxY = 0;   // Areale, die man lichten kann (darueber: Haus)
 
         static int FloorDiv(int a, int b) => a >= 0 ? a / b : -((-a + b - 1) / b);
         public static Vector2Int AreaOf(Cell c) => new Vector2Int(FloorDiv(c.x - AreaOX, FogAreaCells), FloorDiv(c.y - AreaOY, FogAreaCells));
@@ -39,7 +39,7 @@ namespace SeedClicker
         }
 
         static bool InAreaRange(Vector2Int a) => a.x >= AreaMinX && a.x <= AreaMaxX && a.y >= AreaMinY && a.y <= AreaMaxY;
-        static bool StartArea_(Vector2Int a) => a.x >= 0 && a.x <= 7 && a.y >= 0 && a.y <= 4;
+        static bool StartArea_(Vector2Int a) => a.x >= 0 && a.x <= 1 && a.y == 0;
 
         /// <summary>Gehoert das Areal zum Hof (oder liegt es oben beim Haus, wo nie Nebel ist)?</summary>
         public bool IsAreaOpen(Vector2Int a)
@@ -65,14 +65,16 @@ namespace SeedClicker
         {
             if (save.areasInit && save.areaSize != FogAreaCells)
             {
-                // Spielstand mit anderer Areal-Groesse (frueher 5×5): jedes offene Areal in die neuen, kleinen Areale umrechnen
+                // Spielstand mit anderer Areal-Groesse (frueher 5×5 bzw. 2×2): jedes offene Areal in die neuen Areale umrechnen
+                // (ein neues Areal ist offen, sobald ein altes offenes darin liegt); fruehere Raster begannen bei Feld (-8, -6)
                 int oldSize = save.areaSize > 0 ? save.areaSize : 5;
+                const int oldOX = -8, oldOY = -6;
                 var olds = new List<Vector2Int>(save.openAreas);
                 save.openAreas.Clear(); openAreas.Clear();
                 save.areaSize = FogAreaCells;
                 foreach (var oa in olds)
-                    for (int x = AreaOX + oa.x * oldSize; x < AreaOX + (oa.x + 1) * oldSize; x++)
-                        for (int y = AreaOY + oa.y * oldSize; y < AreaOY + (oa.y + 1) * oldSize; y++)
+                    for (int x = oldOX + oa.x * oldSize; x < oldOX + (oa.x + 1) * oldSize; x++)
+                        for (int y = oldOY + oa.y * oldSize; y < oldOY + (oa.y + 1) * oldSize; y++)
                         {
                             var na = AreaOf(new Cell(x, y));
                             if (na.y > AreaMaxY || StartArea_(na) || openAreas.Contains(na)) continue;
@@ -153,8 +155,9 @@ namespace SeedClicker
             var r = AreaRect(a);
             bool light = ((a.x + a.y) & 1) == 0;   // Schachbrett: jedes zweite Areal etwas heller
             float alpha = light ? 0.86f : 0.95f;
-            // ein Ballen je Areal (2×2 Felder), etwas groesser als das Areal – die Naehte zeigen das Schachbrett
-            var spots = new[] { new Vector2(0.5f, 0.5f) };
+            // 3×3 Ballen je Areal (10×10 Felder), dicht – an den Raendern zeigen leichte Naehte das Schachbrett
+            var spots = new List<Vector2>();
+            for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++) spots.Add(new Vector2((i + 0.5f) / 3f, (j + 0.5f) / 3f));
             foreach (var s in spots)
             {
                 var home = new Vector2(r.x + r.width * (s.x + (float)(rnd.NextDouble() - 0.5) * 0.08f), r.y + r.height * (s.y + (float)(rnd.NextDouble() - 0.5) * 0.08f));
@@ -164,7 +167,7 @@ namespace SeedClicker
                 sr.sortingOrder = FogOrder;
                 var f = new FogPuff
                 {
-                    sr = sr, area = a, home = home, size = r.width * (1.8f + (float)rnd.NextDouble() * 0.15f),
+                    sr = sr, area = a, home = home, size = r.width * (0.56f + (float)rnd.NextDouble() * 0.06f),
                     phase = (float)rnd.NextDouble() * 50f, alpha = alpha, fade = fadeIn ? 0f : 1f
                 };
                 // gleich an seinen Platz – sonst haengt er bis zum ersten Blick in der Kartenmitte
@@ -198,7 +201,7 @@ namespace SeedClicker
                 else if (f.fade < 1f) f.fade = Mathf.Min(1f, f.fade + dt * 0.5f);
                 if (!view.Contains(f.home)) continue;   // nur was man sieht bewegt sich
                 // langsam treiben, atmen, drehen (im eigenen Areal)
-                var off = new Vector2(Mathf.Sin(t * 0.23f + f.phase) * 0.1f, Mathf.Cos(t * 0.19f + f.phase * 1.3f) * 0.08f);
+                var off = new Vector2(Mathf.Sin(t * 0.23f + f.phase) * 0.25f, Mathf.Cos(t * 0.19f + f.phase * 1.3f) * 0.18f);
                 f.sr.transform.position = f.home + off;
                 float s = f.size * (1f + 0.06f * Mathf.Sin(t * 0.37f + f.phase * 0.7f)) / FogSprite.bounds.size.x;
                 f.sr.transform.localScale = new Vector3(s, s, 1f);
@@ -289,7 +292,7 @@ namespace SeedClicker
 
         // ------------------------------------------------------------------ Preis
 
-        /// <summary>Preis des naechsten Areals (2×2 Felder): fog.areaBase × fog.growth^(gelichtete Areale), dazu etwas Holz.</summary>
+        /// <summary>Preis des naechsten Areals (10×10 Felder): fog.areaBase × fog.growth^(gelichtete Areale), dazu etwas Holz.</summary>
         public FarmLevelDef NextAreaCost()
         {
             var F = PlantBalance.I.Fog;

@@ -514,4 +514,5 @@
 - Nachtrag: Ein Nebel-Feld ist jetzt 2 × 2 Felder groß (statt 5 × 5); Start-Hof 8 × 5 davon (16 × 10 Felder), Raster 30 × 21. Ein Wolkenballen je Feld, groß genug, dass der Nebel dicht zusammenfließt; der Rand zeigt die feine Stufung.
 - Preis je Nebel-Feld eigene Reihe: 300 Münzen × 1,15 je bereits gelichtetem Feld, dazu etwas Holz (fog.areaBase, fog.growth, fog.areaWood); die Lilie kostet das Doppelte. Die alten Ausbaustufen-Preise passten nicht mehr zu so kleinen Stücken.
 - Spielstände mit 5×5-Arealen werden umgerechnet: jedes offene große Areal öffnet alle kleinen darin (save.areaSize).
+- Nachtrag 2: Nebel-Blöcke jetzt 10 × 10 Felder (Raster 6 × 4 Blöcke, Ursprung Feld (-10, -6)); Start-Hof 2 × 1 Blöcke = 20 × 10 Felder mittig unter dem Haus. 3 × 3 Wolkenballen je Block. Preis je Block 1.500 Münzen × 1,6 je gelichtetem Block, dazu 10 Holz (wächst mit), Lilie doppelt. Ältere Raster (5×5, 2×2) werden umgerechnet: ein Block ist offen, sobald ein früher gelichtetes Stück darin liegt.
 
